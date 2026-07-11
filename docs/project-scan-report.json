@@ -1,0 +1,58 @@
+{
+  "workflow_version": "1.2.0",
+  "timestamps": {
+    "started": "2026-07-10T00:00:00Z",
+    "last_updated": "2026-07-10T00:00:00Z",
+    "completed": "2026-07-10T00:00:00Z"
+  },
+  "mode": "full_rescan",
+  "scan_level": "deep",
+  "project_root": "/home/alessandro/Scrivania/projects/penpot-design-system",
+  "project_knowledge": "/home/alessandro/Scrivania/projects/penpot-design-system/docs",
+  "repository_type": "monorepo",
+  "current_step": "completed",
+  "completed_steps": [
+    { "step": "step_1", "status": "completed", "summary": "Riclassificato monorepo: 8 parti (6 packages + 2 apps, packages/ui nuovo)" },
+    { "step": "step_2", "status": "completed", "summary": "Inventario doc esistenti in docs/ (20 file)" },
+    { "step": "step_3", "status": "completed", "summary": "Tech stack aggiornato per tutte le 8 parti, incl. JHipster/Spring Boot 4/Java 21" },
+    { "step": "step_4", "status": "completed", "summary": "Deep scan via 5 agenti paralleli: tokens/scripts, primitives/puck-components/ui, pagebuilder, strapi, root/storybook/tooling" },
+    { "step": "step_5", "status": "completed", "summary": "Source tree rigenerato con struttura 8 parti + discrepanza pnpm-workspace" },
+    { "step": "step_6", "status": "completed", "summary": "Dev/deployment guide corrette (comando dev pagebuilder duplicato, CI/CD assente)" },
+    { "step": "step_7", "status": "completed", "summary": "Integration architecture riscritta: 14 punti di integrazione, 6 rischi aperti" },
+    { "step": "step_8", "status": "completed", "summary": "Architecture docs per pagebuilder (nuova) + design-system (aggiornata) + strapi (verificata)" },
+    { "step": "step_9", "status": "completed", "summary": "Supporting docs generati/aggiornati: component-inventory, api-contracts x2, data-models x2, project-parts.json" },
+    { "step": "step_10", "status": "completed", "summary": "Master index rigenerato con sezione rischi/discrepanze" },
+    { "step": "step_11", "status": "completed", "summary": "Validazione: nessun marker (To be generated) residuo" },
+    { "step": "step_12", "status": "completed", "summary": "Workflow completato" }
+  ],
+  "project_types": [
+    { "part_id": "tokens", "project_type_id": "library", "display_name": "Design token (da Penpot)" },
+    { "part_id": "primitives", "project_type_id": "library", "display_name": "Libreria UI React (Radix + CVA)" },
+    { "part_id": "puck-components", "project_type_id": "library", "display_name": "Blocchi Puck del design system" },
+    { "part_id": "ui", "project_type_id": "library", "display_name": "Composizioni page-builder (non ancora consumate)" },
+    { "part_id": "scripts", "project_type_id": "library", "display_name": "Pipeline di generazione Penpot -> codice (MCP)" },
+    { "part_id": "storybook", "project_type_id": "library", "display_name": "Storybook (docs/playground)" },
+    { "part_id": "pagebuilder", "project_type_id": "web", "display_name": "JHipster/Spring Boot page-builder (nuovo backend)" },
+    { "part_id": "strapi", "project_type_id": "backend", "display_name": "Strapi 5 + plugin Puck (legacy)" }
+  ],
+  "outputs_generated": [
+    "project-scan-report.json",
+    "index.md",
+    "project-overview.md",
+    "source-tree-analysis.md",
+    "integration-architecture.md",
+    "architecture-strapi.md",
+    "architecture-design-system.md",
+    "architecture-pagebuilder.md",
+    "design-token-pipeline.md",
+    "component-inventory.md",
+    "data-models-strapi.md",
+    "data-models-pagebuilder.md",
+    "api-contracts-strapi.md",
+    "api-contracts-pagebuilder.md",
+    "development-guide.md",
+    "deployment-guide.md",
+    "project-parts.json"
+  ],
+  "resume_instructions": "Workflow completed"
+}

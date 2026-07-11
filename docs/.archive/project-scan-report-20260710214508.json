@@ -1,0 +1,53 @@
+{
+  "workflow_version": "1.2.0",
+  "timestamps": {
+    "started": "2026-06-03T19:39:13Z",
+    "last_updated": "2026-06-03T19:45:00Z",
+    "completed": "2026-06-03T19:45:00Z"
+  },
+  "mode": "initial_scan",
+  "scan_level": "deep",
+  "project_root": "/home/alessandro/Scrivania/projects/penpot-design-system",
+  "project_knowledge": "/home/alessandro/Scrivania/projects/penpot-design-system/docs",
+  "repository_type": "monorepo",
+  "current_step": "completed",
+  "completed_steps": [
+    { "step": "step_1", "status": "completed", "summary": "Classificato monorepo (pnpm+turbo) con 6 parti" },
+    { "step": "step_2", "status": "completed", "summary": "Doc esistenti: README strapi + 2 report ricerca migrazione" },
+    { "step": "step_3", "status": "completed", "summary": "Tech stack: TS, React 18/19, Strapi 5, Puck, Tailwind 4, Radix, tsup, Vitest" },
+    { "step": "step_4", "status": "completed", "summary": "Analisi condizionale: API (5 rotte), 1 content-type, 18+20 componenti, pipeline Penpot" },
+    { "step": "step_5", "status": "completed", "summary": "Source tree annotato" },
+    { "step": "step_6", "status": "completed", "summary": "Dev/deployment documentati" },
+    { "step": "step_7", "status": "completed", "summary": "8 integration points documentati" },
+    { "step": "step_8", "status": "completed", "summary": "Architecture: strapi + design-system libraries" },
+    { "step": "step_9", "status": "completed", "summary": "Supporting docs generati" },
+    { "step": "step_10", "status": "completed", "summary": "Master index generato" },
+    { "step": "step_11", "status": "completed", "summary": "Validazione: nessun marker (To be generated)" },
+    { "step": "step_12", "status": "completed", "summary": "Workflow completato" }
+  ],
+  "project_types": [
+    { "part_id": "strapi", "project_type_id": "backend", "display_name": "Strapi 5 + plugin Puck (puck-builder)" },
+    { "part_id": "primitives", "project_type_id": "library", "display_name": "Libreria UI React (Radix + CVA)" },
+    { "part_id": "puck-components", "project_type_id": "library", "display_name": "Blocchi Puck del design system" },
+    { "part_id": "tokens", "project_type_id": "library", "display_name": "Design token (da Penpot)" },
+    { "part_id": "scripts", "project_type_id": "library", "display_name": "Pipeline di generazione Penpot -> codice (MCP)" },
+    { "part_id": "storybook", "project_type_id": "library", "display_name": "Storybook (docs/playground)" }
+  ],
+  "outputs_generated": [
+    "project-scan-report.json",
+    "index.md",
+    "project-overview.md",
+    "source-tree-analysis.md",
+    "integration-architecture.md",
+    "architecture-strapi.md",
+    "architecture-design-system.md",
+    "design-token-pipeline.md",
+    "component-inventory.md",
+    "data-models-strapi.md",
+    "api-contracts-strapi.md",
+    "development-guide.md",
+    "deployment-guide.md",
+    "project-parts.json"
+  ],
+  "resume_instructions": "Workflow completed"
+}

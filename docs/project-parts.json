@@ -1,0 +1,100 @@
+{
+  "repository_type": "monorepo",
+  "tooling": {
+    "package_manager": "pnpm@10.33.0",
+    "task_runner": "turbo@^2",
+    "note": "apps/pagebuilder ora dentro il workspace pnpm senza esclusione esplicita (commit ae6327a ha rimosso !apps/pagebuilder da pnpm-workspace.yaml, nonostante il messaggio di commit dica il contrario)"
+  },
+  "parts": [
+    {
+      "part_id": "tokens",
+      "package": "@penpot-ds/tokens",
+      "project_type_id": "library",
+      "root_path": "packages/tokens",
+      "depends_on": [],
+      "entry_points": ["src/index.ts", "src/tailwind-theme.css", "src/tailwind-extras.css", "src/tokens.generated.ts"]
+    },
+    {
+      "part_id": "primitives",
+      "package": "@penpot-ds/primitives",
+      "project_type_id": "library",
+      "root_path": "packages/primitives",
+      "depends_on": ["@penpot-ds/tokens"],
+      "entry_points": ["src/index.ts"],
+      "tests": "vitest + testing-library + vitest-axe",
+      "component_count": 28,
+      "exported_component_count": 25
+    },
+    {
+      "part_id": "puck-components",
+      "package": "@penpot-ds/puck-components",
+      "project_type_id": "library",
+      "root_path": "packages/puck-components",
+      "depends_on": ["@penpot-ds/primitives", "@penpot-ds/tokens"],
+      "entry_points": ["src/index.ts"],
+      "block_count": 20
+    },
+    {
+      "part_id": "ui",
+      "package": "@penpot-ds/ui",
+      "project_type_id": "library",
+      "root_path": "packages/ui",
+      "depends_on": ["@penpot-ds/primitives", "@penpot-ds/tokens"],
+      "entry_points": ["src/index.ts"],
+      "composition_count": 6,
+      "note": "nuovo dopo inizio giugno 2026; non ancora consumato da nessuna app (apps/pagebuilder usa react-bootstrap)"
+    },
+    {
+      "part_id": "scripts",
+      "package": "@penpot-ds/scripts",
+      "project_type_id": "library",
+      "root_path": "packages/scripts",
+      "depends_on": ["@penpot-ds/tokens"],
+      "entry_points": ["src/generate-theme.ts", "src/theme-generator.ts", "src/check-artifacts.ts"]
+    },
+    {
+      "part_id": "storybook",
+      "package": "@penpot-ds/storybook",
+      "project_type_id": "library",
+      "root_path": "packages/storybook",
+      "depends_on": ["@penpot-ds/primitives", "@penpot-ds/puck-components", "@penpot-ds/tokens"],
+      "entry_points": [".storybook/main.ts"]
+    },
+    {
+      "part_id": "strapi",
+      "package": "@penpot-ds/strapi",
+      "project_type_id": "backend",
+      "root_path": "apps/strapi",
+      "depends_on": ["@penpot-ds/primitives", "@penpot-ds/puck-components", "@penpot-ds/tokens"],
+      "entry_points": ["src/index.ts", "src/plugins/puck-builder/strapi-server.ts", "src/plugins/puck-builder/strapi-admin.ts"],
+      "status": "legacy, sola lettura fino al cutover Epic 5"
+    },
+    {
+      "part_id": "pagebuilder",
+      "package": "pagebuilder",
+      "project_type_id": "web",
+      "root_path": "apps/pagebuilder",
+      "depends_on": [],
+      "entry_points": ["src/main/java/.../web/rest/PageResource.java", "src/main/webapp/app/pagebuilder/"],
+      "tech": "JHipster 9.1.0 + Spring Boot 4.0.6 + Java 21 + React 19.2.6, Postgres, Keycloak OIDC",
+      "entity_count": 2,
+      "rest_endpoint_count_approx": 20,
+      "status": "in migrazione attiva, Epic 4"
+    }
+  ],
+  "integration_points": [
+    { "from": "scripts", "to": "Penpot", "type": "MCP", "details": "PenpotReader legge componenti/token via StreamableHTTP (.mcp.json -> localhost:4401/mcp)" },
+    { "from": "scripts", "to": "primitives", "type": "code-generation", "details": "CodeGenerator scrive .tsx/.test/.stories, rispetta file editati a mano" },
+    { "from": "scripts", "to": "tokens", "type": "code-generation", "details": "theme-generator.ts scrive tailwind-theme.css + tokens.generated.ts, sempre sovrascritti" },
+    { "from": "tokens", "to": "primitives/puck-components/ui", "type": "import", "details": "CSS vars + tokens.generated.ts" },
+    { "from": "puck-components", "to": "primitives", "type": "import", "details": "ogni blocco wrappa una primitive" },
+    { "from": "strapi:admin", "to": "puck-components", "type": "import", "details": "TemplateEditor monta <Puck config={puckConfig}> (legacy)" },
+    { "from": "strapi:admin", "to": "strapi:server", "type": "REST(admin)", "details": "useTemplateApi ↔ /puck-builder/templates CRUD" },
+    { "from": "strapi:server", "to": "database", "type": "Documents API", "details": "content-type template, colonna JSON config" },
+    { "from": "pagebuilder:frontend", "to": "pagebuilder:backend", "type": "REST", "details": "pagebuilderApi.ts -> /api/pages, /api/page-versions; possibile refuso path /versions vs /versions/history" },
+    { "from": "pagebuilder:frontend", "to": "Keycloak", "type": "OIDC", "details": "login via dev-server :9000" },
+    { "from": "pagebuilder:backend", "to": "Postgres", "type": "JPA/Hibernate+Liquibase", "details": "Page, PageVersion, entrambe @Audited (Envers)" },
+    { "from": "puck-components", "to": "pagebuilder:backend", "type": "duplicazione manuale", "details": "field-classifier.json identico in entrambi, nessun sync automatico" },
+    { "from": "strapi", "to": "pagebuilder", "type": "migrazione dati non scriptata", "details": "nessuno script converte template.config -> PageVersion.payload; gap pre-Epic5" }
+  ]
+}

@@ -1,0 +1,10 @@
+# OS / editor noise
+.DS_Store
+Thumbs.db
+
+# Local, personal overrides — team-shared skill defs (.claude/ .agents/ .opencode/) are NOT covered by this
+CLAUDE.local.md
+.claude/settings.local.json
+
+# _bmad personal overrides already handled by _bmad/custom/.gitignore (*.user.toml) —
+# don't duplicate that rule here, it's scoped correctly where it is
