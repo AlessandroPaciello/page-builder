@@ -110,9 +110,22 @@ If `develop` is behind `origin`, warn before branching.
 
 Format: `<type>(<scope>)[bmad:{story_key}]: <description>`
 
-Types: `feat`, `fix`, `bmad` (changes under `_bmad-output/`, `_bmad/custom/`, `docs/`), `docs`, `refactor`, `test`, `chore`. Never `wip` on a commit destined for a PR — squash first.
+Type is decided by which path the diff actually touches — not by guessing from conversation. In order:
 
-Read the actual staged diff (`git diff --cached`) before drafting — don't guess at scope/type from conversation alone. If the change touches both `_bmad-output/` and `src/`-equivalent app code, prefer the app-code type (`feat`/`fix`) and mention the BMAD update in the body, not the type.
+| Path touched | Type |
+|---|---|
+| `src/`, `tests/` (once they exist) | `feat` / `fix` / `refactor` / `test` — normal conventional-commit rules |
+| `_bmad-output/planning-artifacts/`, `_bmad-output/implementation-artifacts/`, `_bmad/custom/*.toml` | `bmad` — artifacts the BMAD workflow itself generates or consumes (stories, PRD, architecture, overrides) |
+| `docs/`, `README.md` | `docs` — human-authored project knowledge, not BMAD-workflow output |
+| `.gitignore`, `.github/**`, CI config, other repo tooling | `chore` |
+
+No overlap between `bmad` and `docs` — `docs/` is never `bmad`, even though it's also "AI context" in the path-mapping table above; the type reflects who/what produced the change (a human writing docs vs. a BMAD workflow step), not who reads it later.
+
+**Mixed diffs**, most-specific-wins:
+- App code + anything else → `feat`/`fix` wins, mention the other change in the body.
+- `_bmad-output/` + `docs/`, no app code → whichever path has the larger/driving change; if genuinely tied, `bmad`.
+
+Read the actual staged diff (`git diff --cached`) before drafting — don't guess at scope/type from conversation alone.
 
 Add a footer only when it carries real information — don't pad every commit with a boilerplate footer:
 ```
