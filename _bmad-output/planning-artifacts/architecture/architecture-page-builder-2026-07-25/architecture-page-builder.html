@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Architettura — Page Builder</title>
+<style>
+  :root{
+    --bg:#f7f8fa; --panel:#ffffff; --ink:#1a1d24; --muted:#5b6472; --line:#e3e7ee;
+    --accent:#3b6cf0; --accent-soft:#eaf0ff; --good:#1f8b4c; --warn:#b7791f; --chip:#eef1f6;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{--bg:#0f1216;--panel:#161b22;--ink:#e6e9ef;--muted:#9aa4b2;--line:#232a33;
+      --accent:#6f9bff;--accent-soft:#1a2540;--good:#48c07d;--warn:#e0a94b;--chip:#1c232c;}
+  }
+  :root[data-theme="dark"]{--bg:#0f1216;--panel:#161b22;--ink:#e6e9ef;--muted:#9aa4b2;--line:#232a33;--accent:#6f9bff;--accent-soft:#1a2540;--good:#48c07d;--warn:#e0a94b;--chip:#1c232c;}
+  :root[data-theme="light"]{--bg:#f7f8fa;--panel:#fff;--ink:#1a1d24;--muted:#5b6472;--line:#e3e7ee;--accent:#3b6cf0;--accent-soft:#eaf0ff;--good:#1f8b4c;--warn:#b7791f;--chip:#eef1f6;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:960px;margin:0 auto;padding:32px 20px 80px}
+  header.hero{padding:28px 0 8px;border-bottom:1px solid var(--line);margin-bottom:28px}
+  .kicker{color:var(--accent);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+  h1{font-size:30px;margin:6px 0 8px;letter-spacing:-.02em}
+  .sub{color:var(--muted);max-width:70ch}
+  .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+  .chip{background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:3px 11px;font-size:13px;color:var(--muted)}
+  .chip strong{color:var(--ink)}
+  h2{font-size:21px;margin:40px 0 12px;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+  h2 .n{font-size:13px;color:var(--accent);border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:1px 8px}
+  h3{font-size:16px;margin:22px 0 8px}
+  p{margin:10px 0}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:14px 0}
+  .lead{font-size:17px}
+  .grid{display:grid;gap:12px}
+  @media(min-width:680px){.grid.two{grid-template-columns:1fr 1fr}}
+  .ad{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:14px 16px}
+  .ad h4{margin:0 0 6px;font-size:15px}
+  .ad .tag{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:700}
+  .ad .adopted{color:var(--good);border:1px solid var(--good);border-radius:4px;font-size:10px;padding:0 5px;margin-left:6px;vertical-align:middle}
+  .ad dl{margin:8px 0 0;font-size:13.5px}
+  .ad dt{color:var(--muted);text-transform:uppercase;font-size:10.5px;letter-spacing:.06em;margin-top:6px}
+  .ad dd{margin:1px 0 0}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin:6px 0}
+  .scroll{overflow-x:auto}
+  th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+  th{background:var(--chip);font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  code{font-family:var(--mono);font-size:.88em;background:var(--chip);padding:1px 5px;border-radius:4px}
+  .diagram{font-family:var(--mono);font-size:13px;white-space:pre;overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;color:var(--muted);line-height:1.5}
+  .callout{border-left:3px solid var(--good);background:var(--accent-soft);border-radius:0 10px 10px 0;padding:12px 16px;margin:14px 0}
+  .callout.warn{border-color:var(--warn)}
+  ul.clean{margin:8px 0;padding-left:20px}
+  ul.clean li{margin:5px 0}
+  .verdict{display:flex;gap:12px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .verdict .big{font-size:26px;line-height:1}
+  footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+  .toggle{position:fixed;top:14px;right:14px;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:13px}
+</style>
+</head>
+<body>
+<button class="toggle" onclick="var r=document.documentElement;var d=(r.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'))==='dark';r.setAttribute('data-theme',d?'light':'dark')">◐ tema</button>
+<div class="wrap">
+
+<header class="hero">
+  <div class="kicker">Architecture Spine · build-substrate</div>
+  <h1>Page Builder — Architettura</h1>
+  <p class="sub">Riscrittura greenfield full-TypeScript del page builder end-to-end: design system Penpot→codice, editor a blocchi con versioning/publish/RBAC/audit, render pubblico e integrazione commerce pluggable. Questo documento è la lettura navigabile della <code>ARCHITECTURE-SPINE.md</code>; il contratto vincolante resta la spine.</p>
+  <div class="meta">
+    <span class="chip"><strong>Paradigma:</strong> esagonale su monolite Next.js</span>
+    <span class="chip"><strong>Altitudine:</strong> feature → epics</span>
+    <span class="chip"><strong>13</strong> Architecture Decision</span>
+    <span class="chip"><strong>Gate:</strong> lint 0 · 3 lenti superate</span>
+    <span class="chip"><strong>2026-07-25</strong></span>
+  </div>
+</header>
+
+<h2><span class="n">01</span> In una riga</h2>
+<div class="panel lead">
+  Monolite <strong>Next.js full-TypeScript</strong> con un <strong>core di dominio esagonale estraibile</strong> (unico punto di accesso al dominio, RBAC deny-by-default a copertura totale su lettura <em>e</em> scrittura), <strong>Postgres + Prisma</strong> (invariante “≤1 pubblicata” garantito dal DB via indice parziale SQL), <strong>Better Auth</strong>, <strong>oRPC</strong>, render pubblico <strong>SSG+ISR</strong> invalidato su publish, e integrazione <strong>commerce pluggable</strong> dietro il port <code>CommerceProvider</code>.
+</div>
+
+<h2><span class="n">02</span> Le tre scelte che hanno definito tutto</h2>
+
+<h3>Perché full-TypeScript e non Spring Boot</h3>
+<p>Il nodo non era Spring Boot: era <strong>JHipster</strong> che auto-generava endpoint CRUD scoperti, bypassando l’RBAC. Il tier che renderizza Puck + design system <em>è</em> React/TS per necessità — un backend Java sarebbe stato un tier <em>in più</em>, non uno al posto. Inoltre gli schemi dei blocchi e la classificazione structure/content sono già TS/Zod: un backend TS li <strong>condivide</strong> (una sola fonte di verità), un backend Java li <strong>duplica</strong> — esattamente il dolore ricorrente del legacy.</p>
+
+<div class="verdict">
+  <div class="big">→</div>
+  <div><strong>La competenza Java non è persa.</strong> Il giorno in cui costruirai il tuo commerce backend, potrà essere Spring Boot — ma vivrà <em>dietro</em> l’astrazione <code>CommerceProvider</code>, come adapter accanto a Shopify, non dentro il page builder. Java dove è forte (dominio commerce transazionale), TS dove è forte (rendering, design system, schemi condivisi).</div>
+</div>
+
+<h3>Next.js e non TanStack Start</h3>
+<p>A parità di monolite fullstack, ha pesato l’<strong>ISR-on-publish</strong>: quando pubblichi una pagina, rigeneri l’HTML statico di quello slug con <code>revalidateTag(slug)</code>. Mapping quasi perfetto col render by-slug SEO. La “cerimonia” RSC attorno all’editor Puck si riduce a due confini <code>"use client"</code>; la maturità dell’ecosistema abbassa il rischio per uno sviluppatore solo.</p>
+
+<h3>Commerce pluggable</h3>
+<p>Il page builder <strong>renderizza lui</strong> la vetrina, con i dati commerce risolti a render-time. Poiché la sorgente (Shopify e/o backend proprio) non è ancora decisa, i blocchi commerce non parlano mai a una sorgente concreta ma al port <code>CommerceProvider</code>. Cambiare o affiancare sorgente = cambiare un adapter, non riscrivere i blocchi.</p>
+
+<h2><span class="n">03</span> Il paradigma</h2>
+<p>Esagonale (Ports &amp; Adapters). Il <strong>core</strong> in <code>packages/domain</code> non conosce HTTP né React; gli <strong>adapter</strong> lo circondano.</p>
+<div class="diagram">        ┌─ Adapter inbound ──────────────┐
+        │  oRPC (editor)   Route SSR/ISR  │
+        └──────────┬──────────────┬───────┘
+                   ▼              ▼
+        ╔═══════════════════════════════════╗
+        ║   packages/domain — CORE          ║
+        ║   casi d'uso · RBAC · audit        ║
+        ║   pipeline payload · PORT          ║
+        ║   (no HTTP · no React)            ║
+        ╚═════╤═════════╤═════════╤═════════╝
+              ▼         ▼         ▼         ▼
+          Prisma/PG  BetterAuth  Commerce  CacheInvalidator
+                                 Provider   (Next ISR)
+                                  │   │
+                              Shopify  Backend proprio</div>
+
+<h3>Dipendenze consentite (è una regola)</h3>
+<div class="diagram">tokens → primitives → puck-components
+                    → ui
+apps/web → ui · puck-components · packages/domain · commerce-provider
+packages/domain → commerce-provider
+packages/domain ─╳→ apps/web        (il core non dipende dal web)
+primitives ─╳→ ui                   (le primitive non conoscono il dominio)</div>
+
+<h2><span class="n">04</span> Le 13 Architecture Decision</h2>
+<div class="grid two">
+
+  <div class="ad"><h4><span class="tag">AD-1</span> Core esagonale, unico accesso al dominio</h4>
+    <dl><dt>Previene</dt><dd>Logica sparsa e CRUD scoperti (regressione legacy).</dd>
+    <dt>Regola</dt><dd>Ogni mutazione <em>e lettura non-pubblica</em> passa da un caso d’uso del core. Nessun accesso Prisma diretto dagli adapter inbound.</dd></dl></div>
+
+  <div class="ad"><h4><span class="tag">AD-2</span> Monolite con core estraibile</h4>
+    <dl><dt>Regola</dt><dd>Una sola app (<code>apps/web</code>); il core in <code>packages/domain</code> senza React/HTTP, così un’API standalone futura non tocca il dominio.</dd></dl></div>
+
+  <div class="ad"><h4><span class="tag">AD-3</span> Consuma il design system<span class="adopted">ADOPTED</span></h4>
+    <dl><dt>Previene</dt><dd>Due stack UI paralleli (drift react-bootstrap del legacy).</dd>
+    <dt>Regola</dt><dd>UI solo su <code>@penpot-ds/ui</code> + primitives. Layering tokens ← primitives ← {puck-components, ui}.</dd></dl></div>
+
+  <div class="ad"><h4><span class="tag">AD-4</span> RBAC deny-by-default; auth ≠ authz<span class="adopted">ADOPTED</span></h4>
+    <dl><dt>Regola</dt><dd>Better Auth dà identità + ruolo grossolano; l’authz fine (assegnazione Cliente↔pagina, content/structure) è dato di dominio nel core, su lettura <em>e</em> scrittura. Unica read anonima: PUBLISHED by-slug su proiezione pubblicata.</dd></dl></div>
+
+  <div class="ad"><h4><span class="tag">AD-5</span> Payload: una fonte FE/BE (Zod + classifier)</h4>
+    <dl><dt>Previene</dt><dd>Duplicazione/drift structure-content (dolore #1 legacy) e payload non sanitizzato.</dd>
+    <dt>Regola</dt><dd>Schemi Zod + classifier vivono una volta in <code>puck-components</code>; il core valida, classifica e sanitizza i campi content (XSS) prima di persistere.</dd></dl></div>
+
+  <div class="ad"><h4><span class="tag">AD-6</span> Forma payload, proprietà id/versioni</h4>
+    <dl><dt>Regola</dt><dd>Puck <code>{content,root,zones}</code> in jsonb; block-id client-owned <strong>immutabili</strong>; <code>schemaVersion</code> di <code>puck-components</code>; <code>versionNumber</code> allocato dal core in transazione, <code>UNIQUE(page_id, version_number)</code>.</dd></dl></div>
+
+  <div class="ad"><h4><span class="tag">AD-7</span> Coerenza publish enforced dal DB</h4>
+    <dl><dt>Previene</dt><dd>Due PUBLISHED per pagina; pagina archiviata con versione ancora pubblicata.</dd>
+    <dt>Regola</dt><dd>Indice univoco parziale Postgres (<code>WHERE status='PUBLISHED'</code>) via migration SQL; publish/rollback/archive in una transazione che accoppia <code>Page.status</code>↔<code>PageVersion.status</code>.</dd></dl></div>
+
+  <div class="ad"><h4><span class="tag">AD-8</span> Audit nel core, sui metadati, un writer</h4>
+    <dl><dt>Regola</dt><dd>Un unico <code>AuditWriter</code> scrive <code>AuditLog</code> canonico (actor/action/entity/timestamp/metadataDiff — non il blob). Solo ADMIN consulta.</dd></dl></div>
+
+  <div class="ad"><h4><span class="tag">AD-9</span> Render pubblico SSG+ISR via port</h4>
+    <dl><dt>Regola</dt><dd>Core puro: espone <code>CacheInvalidator</code>, un adapter fa <code>revalidateTag</code> post-commit. Cache draft/published <strong>disgiunte</strong>; anteprima draft dinamica non cachata e protetta.</dd></dl></div>
+
+  <div class="ad"><h4><span class="tag">AD-10</span> Commerce dietro il port CommerceProvider</h4>
+    <dl><dt>Previene</dt><dd>Lock-in su una sorgente; DTO commerce incompatibili tra blocchi.</dd>
+    <dt>Regola</dt><dd>Port canonico (metodi + DTO <code>ProductRef</code>/<code>Price{amount,currency}</code>); adapter Shopify + custom; risoluzione server-side a render-time.</dd></dl></div>
+
+  <div class="ad"><h4><span class="tag">AD-11</span> Pipeline Penpot→codice preservata<span class="adopted">ADOPTED</span></h4>
+    <dl><dt>Regola</dt><dd>Penpot single source dei valori; token e componenti generati e marcati <code>@generated</code>, mai editati a mano; rigenerazione preserva i file scritti a mano.</dd></dl></div>
+
+  <div class="ad"><h4><span class="tag">AD-12</span> Snapshot di contenuto immutabili</h4>
+    <dl><dt>Regola</dt><dd>Ogni save crea una nuova <code>PageVersion</code> DRAFT; mai mutazione in-place. Il Cliente crea una DRAFT con i soli campi <code>content</code> editabili; structure bloccati.</dd></dl></div>
+
+  <div class="ad"><h4><span class="tag">AD-13</span> Errori tipizzati e semantica 404/403</h4>
+    <dl><dt>Regola</dt><dd>Errori di dominio tipizzati → set oRPC fisso. Su risorsa non-pubblica non autorizzata si risponde <strong>404</strong> (non si rivela l’esistenza), non 403.</dd></dl></div>
+
+</div>
+
+<h2><span class="n">05</span> Stack</h2>
+<div class="scroll"><table>
+  <tr><th>Tecnologia</th><th>Versione</th><th>Nota</th></tr>
+  <tr><td>Next.js (App Router)</td><td>16.x</td><td>render editor + storefront, ISR</td></tr>
+  <tr><td>React</td><td>19</td><td>design system + editor</td></tr>
+  <tr><td>PostgreSQL</td><td>18</td><td>jsonb payload, indice parziale</td></tr>
+  <tr><td>Prisma</td><td>7.9+</td><td>ORM; indice parziale via SQL esplicito</td></tr>
+  <tr><td>Better Auth</td><td>corrente</td><td>identità/ruoli; futuro issuer OIDC</td></tr>
+  <tr><td>oRPC</td><td>corrente</td><td>transport type-safe + OpenAPI</td></tr>
+  <tr><td>@puckeditor/core</td><td>0.22.x</td><td><code>@measured/puck</code> è deprecato</td></tr>
+  <tr><td>Tailwind CSS</td><td>4</td><td>token via <code>@theme</code></td></tr>
+  <tr><td>Node.js / pnpm / Turborepo</td><td>LTS / 10 / 2</td><td>monorepo</td></tr>
+</table></div>
+<p class="sub" style="font-size:13px">Versioni verificate contro il registry npm al 2026-07-25 dal reviewer gate; da riconfermare allo scaffold.</p>
+
+<h2><span class="n">06</span> Dove vivono le capability</h2>
+<div class="scroll"><table>
+  <tr><th>Capability</th><th>Vive in</th><th>Governata da</th></tr>
+  <tr><td>CAP-1/2 pipeline Penpot→token/componenti</td><td>scripts, tokens, primitives</td><td>AD-11</td></tr>
+  <tr><td>CAP-3 primitive accessibili</td><td>packages/primitives</td><td>AD-3, a11y</td></tr>
+  <tr><td>CAP-4 blocchi Puck</td><td>packages/puck-components</td><td>AD-3, AD-5, AD-6</td></tr>
+  <tr><td>CAP-5 composizioni editor</td><td>packages/ui</td><td>AD-3</td></tr>
+  <tr><td>CAP-6 authoring drag-and-drop</td><td>apps/web/(app) + domain</td><td>AD-1, AD-5, AD-6, AD-12</td></tr>
+  <tr><td>CAP-7 autosave/bozza</td><td>core save-version</td><td>AD-1, AD-4, AD-12</td></tr>
+  <tr><td>CAP-8 versioning/publish</td><td>core publish + DB</td><td>AD-1, AD-7, AD-9</td></tr>
+  <tr><td>CAP-9 rollback</td><td>core rollback + DB</td><td>AD-1, AD-7</td></tr>
+  <tr><td>CAP-10 archive/restore</td><td>core</td><td>AD-1, AD-7</td></tr>
+  <tr><td>CAP-11 render by-slug</td><td>apps/web/(public)/[slug]</td><td>AD-4, AD-9, AD-10</td></tr>
+  <tr><td>CAP-12 RBAC</td><td>core + Better Auth + PageAssignment</td><td>AD-4, AD-12</td></tr>
+  <tr><td>CAP-13 structure/content</td><td>puck-components + core</td><td>AD-5, AD-12</td></tr>
+  <tr><td>CAP-14 audit trail</td><td>core AuditWriter</td><td>AD-8</td></tr>
+  <tr><td>Integrazione commerce</td><td>packages/commerce-provider</td><td>AD-10</td></tr>
+</table></div>
+
+<h2><span class="n">07</span> Rimandato (Deferred)</h2>
+<div class="panel">
+<ul class="clean">
+  <li><strong>Sorgente commerce concreta</strong> (Shopify / backend proprio / entrambi) e suo linguaggio — il port AD-10 tiene la scelta aperta senza costo.</li>
+  <li><strong>Provider DB e orchestratore container</strong> — decisione di deploy; l’envelope Docker li rende intercambiabili.</li>
+  <li><strong>Logging/monitoring/backup/CI-CD</strong> di dettaglio — strategia nominata, dettaglio in implementazione.</li>
+  <li><strong>Better Auth come issuer OIDC/JWT</strong> per l’ecosistema — quando esiste un secondo servizio da autenticare.</li>
+  <li><strong>Policy di migrazione <code>schemaVersion</code></strong> del payload — alla prima evoluzione degli schemi dei blocchi.</li>
+  <li><strong>Migrazione dati dal legacy Strapi</strong> — fuori scope SPEC salvo re-ingaggio.</li>
+</ul>
+</div>
+
+<div class="callout warn">
+  <strong>Nota di allineamento con lo SPEC.</strong> L’architettura ha fatto emergere contesto nuovo non presente nello SPEC originale (integrazione commerce, il page builder come storefront). Va riflesso nello SPEC come capability aggiuntiva, adottando questa spine come companion — così SPEC e architettura non divergono.
+</div>
+
+<footer>
+  Generato dal workflow <strong>bmad-architecture</strong> (Coaching path) · Reviewer gate: lint 0 findings + reality-check versioni + lente avversariale + rubric walker.
+  Contratto vincolante: <code>ARCHITECTURE-SPINE.md</code>. Razionale completo: <code>.memlog.md</code>. Review: <code>reviews/</code>.
+</footer>
+
+</div>
+</body>
+</html>
