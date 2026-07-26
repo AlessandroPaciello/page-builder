@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Key screen — Editor canvas denso (Marco)</title>
+<style>
+/*
+  Governa questo mock: EXPERIENCE.md § Foundation (desktop-first denso),
+  § Component Patterns (TopBar, blocchi Puck, SaveStateIndicator),
+  § Interaction Primitives (drag-and-drop + equivalente tastiera),
+  DESIGN.md § Layout & Spacing (griglia 3 colonne, [ASSUMPTION]).
+  Colori NEUTRI/PLACEHOLDER — vedi nota di stato in DESIGN.md.
+*/
+* { box-sizing: border-box; }
+body { margin:0; font-family: -apple-system, "Segoe UI", system-ui, sans-serif; background:#e7e5e4; }
+.chrome { padding:8px 16px; font-size:12px; color:#78716c; font-family: ui-monospace, monospace; }
+.app { display:grid; grid-template-columns: 220px 1fr 280px; height: 640px; background:#fff; border:1px solid #d6d3d1; border-radius:8px; overflow:hidden; margin:0 24px 24px; }
+.topbar { grid-column: 1 / -1; display:flex; align-items:center; gap:14px; padding:10px 20px; border-bottom:1px solid #e7e5e4; background:#fafaf9; }
+.breadcrumb { font-size:13px; color:#78716c; }
+.badge { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:600; background:#e7e5e4; color:#44403c; }
+.badge::before { content:"●"; font-size:8px; }
+.save-state { font-size:12px; color:#78716c; flex:1; text-align:left; margin-left:8px;}
+.save-state::before { content:"✓ "; color:#166534; }
+.actions { display:flex; gap:8px; }
+.btn { padding:7px 14px; border-radius:4px; font-size:13px; font-weight:500; border:1px solid #d6d3d1; background:#fff; cursor:default; }
+.btn-primary { background:#292524; color:#fff; border-color:#292524; }
+.panel-blocks { border-right:1px solid #e7e5e4; padding:14px; overflow:auto; }
+.panel-blocks h3 { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:#a8a29e; margin:0 0 10px; }
+.block-chip { display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid #e7e5e4; border-radius:6px; margin-bottom:6px; font-size:13px; }
+.canvas { padding:24px; overflow:auto; background:#fafaf9; }
+.blk { background:#fff; border:1px dashed #d6d3d1; border-radius:6px; padding:16px; margin-bottom:14px; position:relative; }
+.blk.selected { border:2px solid #292524; border-style:solid; }
+.blk.focus-ring { outline: 3px solid #78716c; outline-offset: 3px; }
+.blk-label { position:absolute; top:-10px; left:10px; background:#292524; color:#fff; font-size:10px; padding:1px 6px; border-radius:3px; }
+.hero { height:120px; display:flex; align-items:center; justify-content:center; background:#f0efee; color:#78716c; font-size:14px; }
+.grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.product { background:#f0efee; border-radius:4px; padding:24px 8px; text-align:center; font-size:12px; color:#78716c; }
+.panel-props { padding:16px; overflow:auto; }
+.panel-props h3 { font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:#a8a29e; margin:0 0 10px; }
+.field { margin-bottom:12px; }
+.field label { display:block; font-size:12px; color:#57534e; margin-bottom:4px; }
+.field .input { border:1px solid #d6d3d1; border-radius:4px; padding:6px 8px; font-size:13px; color:#78716c; }
+.kbd-note { grid-column: 1/-1; padding:8px 20px; font-size:12px; color:#78716c; border-top:1px solid #e7e5e4; background:#fafaf9; }
+kbd { border:1px solid #d6d3d1; border-radius:3px; padding:1px 5px; font-family:ui-monospace,monospace; font-size:11px; background:#fff; }
+</style>
+</head>
+<body>
+<div class="chrome">/pages/[id]/editor — vista Admin/Editor (densa). La vista Cliente semplificata (/my-pages/[id]/editor) non è renderizzata qui: mostra solo i campi content del blocco selezionato, senza pannello blocchi né struttura.</div>
+<div class="app">
+  <div class="topbar">
+    <span class="breadcrumb">Pagine › Collezione Estate 2026</span>
+    <span class="badge">Bozza</span>
+    <span class="save-state">Salvato alle 14:32</span>
+    <div class="actions">
+      <button class="btn">Anteprima</button>
+      <button class="btn btn-primary">Pubblica</button>
+    </div>
+  </div>
+  <div class="panel-blocks">
+    <h3>Blocchi</h3>
+    <div class="block-chip">▤ Hero</div>
+    <div class="block-chip">▦ ProductGrid</div>
+    <div class="block-chip">▭ RichText</div>
+    <div class="block-chip">▥ Columns</div>
+    <div class="block-chip">☐ Spacer</div>
+  </div>
+  <div class="canvas">
+    <div class="blk focus-ring">
+      <span class="blk-label">Hero — a fuoco (tastiera)</span>
+      <div class="hero">Hero — "Collezione Estate 2026"</div>
+    </div>
+    <div class="blk selected">
+      <span class="blk-label">ProductGrid — selezionato</span>
+      <div class="grid3">
+        <div class="product">Prodotto A · €39</div>
+        <div class="product">Prodotto B · €59</div>
+        <div class="product">Prodotto C · €45</div>
+      </div>
+    </div>
+  </div>
+  <div class="panel-props">
+    <h3>Proprietà — ProductGrid</h3>
+    <div class="field"><label>Colonne</label><div class="input">3</div></div>
+    <div class="field"><label>Spaziatura (token)</label><div class="input">space.4 — 16px</div></div>
+    <div class="field"><label>Fonte prodotti</label><div class="input">Provider commerce · Collezione Estate</div></div>
+  </div>
+  <div class="kbd-note">
+    Equivalente tastiera drag-and-drop: <kbd>Spazio</kbd> afferra il blocco a fuoco (annuncio live "Hero afferrato, usa le frecce per spostare") → <kbd>↑</kbd>/<kbd>↓</kbd> sposta tra posizioni valide → <kbd>Spazio</kbd> rilascia, <kbd>Esc</kbd> annulla. Vedi EXPERIENCE.md § Interaction Primitives.
+  </div>
+</div>
+</body>
+</html>

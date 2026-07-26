@@ -1,0 +1,93 @@
+# generated: 2026-07-26
+# last_updated: 2026-07-26
+# project: page-builder
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: {project-root}/_bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# Action Item Status:
+#   - open: Committed during a retrospective, not yet addressed
+#   - in-progress: Actively being worked on
+#   - done: Completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Retrospective appends its action items to action_items; sprint-status surfaces open ones
+
+generated: 2026-07-26
+last_updated: 2026-07-26
+project: page-builder
+project_key: NOKEY
+tracking_system: file-system
+story_location: "{project-root}/_bmad-output/implementation-artifacts"
+
+development_status:
+  epic-1: backlog
+  1-1-scaffolding-greenfield-del-workspace: backlog
+  1-2-skeleton-del-core-di-dominio-esagonale: backlog
+  1-3-modello-dati-e-invariante-di-pubblicazione-a-livello-db: backlog
+  1-4-autenticazione-con-ruoli-admin-editor-cliente: backlog
+  1-5-context-orpc-con-principal-e-policy-deny-by-default: backlog
+  1-6-envelope-docker-e-migration-in-release: backlog
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-pipeline-token-penpot-codice: backlog
+  2-2-generazione-componenti-primitive-da-penpot: backlog
+  2-3-libreria-primitive-accessibili: backlog
+  2-4-storybook-del-design-system: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-ponte-token-controlli-puck: backlog
+  3-2-blocchi-puck-che-wrappano-le-primitive: backlog
+  3-3-classifier-structure-content-come-single-source-of-truth: backlog
+  3-4-composizioni-dell-editor: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-shell-editor-con-canvas-puck: backlog
+  4-2-salvataggio-bozza-con-snapshot-immutabile: backlog
+  4-3-pipeline-payload-server-validazione-structure-content-sanitizzazione-xss: backlog
+  4-4-autosave-con-indicatore-di-stato: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-pubblicazione-con-invariante-atomico: backlog
+  5-2-rollback-a-una-versione-precedente: backlog
+  5-3-archiviazione-e-ripristino: backlog
+  5-4-audit-trail-delle-operazioni: backlog
+  epic-5-retrospective: optional
+
+  epic-6: backlog
+  6-1-render-pubblico-by-slug-ssg: backlog
+  6-2-invalidazione-isr-su-publish-e-anteprima-draft: backlog
+  6-3-port-commerceprovider-e-adapter-di-riferimento: backlog
+  6-4-blocchi-commerce-data-driven: backlog
+  epic-6-retrospective: optional
