@@ -49,7 +49,7 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 
 development_status:
   epic-1: in-progress
-  1-1-scaffolding-greenfield-del-workspace: ready-for-dev
+  1-1-scaffolding-greenfield-del-workspace: review
   1-2-skeleton-del-core-di-dominio-esagonale: backlog
   1-3-modello-dati-e-invariante-di-pubblicazione-a-livello-db: backlog
   1-4-autenticazione-con-ruoli-admin-editor-cliente: backlog
