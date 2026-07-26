@@ -8,3 +8,56 @@ CLAUDE.local.md
 
 # _bmad personal overrides already handled by _bmad/custom/.gitignore (*.user.toml) —
 # don't duplicate that rule here, it's scoped correctly where it is
+
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build outputs
+dist
+build
+*.tsbuildinfo
+.next
+
+# Environment variables
+.env
+.env*.local
+
+# IDEs and editors
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea
+*.swp
+*.swo
+*~
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Turbo
+.turbo
+.nx
+
+# Better-T-Stack
+.alchemy
+.vercel
+
+# Testing
+coverage
+.nyc_output
+
+# Misc
+*.tgz
+.cache
+tmp
+temp

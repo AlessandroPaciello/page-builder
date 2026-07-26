@@ -1,0 +1,35 @@
+{
+  "name": "app",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "type": "module",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "check-types": "turbo run check-types",
+    "dev:web": "turbo run dev -F web",
+    "db:push": "turbo run db:push -F @app/db",
+    "db:studio": "turbo run db:studio -F @app/db",
+    "db:generate": "turbo run db:generate -F @app/db",
+    "db:migrate": "turbo run db:migrate -F @app/db",
+    "db:start": "turbo run db:start -F @app/db",
+    "db:watch": "turbo run db:watch -F @app/db",
+    "db:stop": "turbo run db:stop -F @app/db",
+    "db:down": "turbo run db:down -F @app/db"
+  },
+  "dependencies": {
+    "@app/env": "workspace:*",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@app/config": "workspace:*",
+    "@types/node": "^22.13.14",
+    "turbo": "^2.10.2",
+    "typescript": "catalog:"
+  },
+  "packageManager": "pnpm@10.33.0"
+}
