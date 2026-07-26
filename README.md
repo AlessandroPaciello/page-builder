@@ -16,7 +16,18 @@ This project was created with [Better-T-Stack](https://github.com/AmanVarshney01
 
 ## Getting Started
 
-First, install the dependencies:
+First, set up your environment variables:
+
+```bash
+cp apps/web/.env.example apps/web/.env
+```
+
+Then fill in `BETTER_AUTH_SECRET` (at least 32 characters — generate one with
+`openssl rand -base64 32`). The other defaults work out of the box for local
+development. These variables are validated at runtime, so the app will refuse to
+start if any of them is missing or malformed.
+
+Then install the dependencies:
 
 ```bash
 pnpm install
@@ -26,10 +37,13 @@ pnpm install
 
 This project uses PostgreSQL with Prisma.
 
-1. Make sure you have a PostgreSQL database set up.
-2. Update your `apps/web/.env` file with your PostgreSQL connection details.
+1. Start the local PostgreSQL container (or point `DATABASE_URL` at your own instance):
 
-3. Apply the schema to your database:
+```bash
+pnpm run db:start
+```
+
+2. Apply the schema to your database:
 
 ```bash
 pnpm run db:push
