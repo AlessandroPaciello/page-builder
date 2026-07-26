@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>UX Design Validation: page-builder</title>
+<style>
+  :root {
+    --bg: #fafaf9;
+    --surface: #ffffff;
+    --border: #e7e5e4;
+    --text: #1c1917;
+    --muted: #78716c;
+
+    --verdict-strong: #16a34a;
+    --verdict-adequate: #65a30d;
+    --verdict-thin: #d97706;
+    --verdict-broken: #dc2626;
+
+    --sev-low: #64748b;
+    --sev-medium: #ca8a04;
+    --sev-high: #ea580c;
+    --sev-critical: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  header.report-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .title h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .title .subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+
+  .synthesis {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--muted);
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin-bottom: 24px;
+    font-size: 15.5px;
+  }
+  .synthesis p { margin: 0 0 10px; }
+  .synthesis p:last-child { margin-bottom: 0; }
+
+  .dimension-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .dim-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .dim-card .dim-name { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .dim-card .dim-verdict { font-size: 14px; font-weight: 600; }
+
+  section.dimension, section.reviewer-section { margin-bottom: 14px; }
+  section.dimension details, section.reviewer-section details {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  section summary {
+    padding: 14px 20px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  section summary::-webkit-details-marker { display: none; }
+  section summary::before {
+    content: "▸";
+    display: inline-block;
+    color: var(--muted);
+    transition: transform 0.15s ease;
+  }
+  section details[open] summary::before { transform: rotate(90deg); }
+  section summary h2 {
+    display: inline;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    flex: 1;
+  }
+  .verdict-pill {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: white;
+  }
+  .verdict-strong { background: var(--verdict-strong); }
+  .verdict-adequate { background: var(--verdict-adequate); }
+  .verdict-thin { background: var(--verdict-thin); }
+  .verdict-broken { background: var(--verdict-broken); }
+
+  .dim-body { padding: 4px 20px 18px; }
+  .dim-judgment { color: var(--text); font-size: 14.5px; }
+  .dim-judgment p { margin: 0 0 10px; }
+
+  .findings-list { padding: 0 20px 4px; }
+  article.finding {
+    padding: 14px 0;
+    border-top: 1px solid var(--border);
+  }
+  article.finding:first-child { border-top: none; }
+  article.finding header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .badge {
+    font-size: 10.5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+  }
+  .badge-sev-low { background: rgba(100, 116, 139, 0.12); color: var(--sev-low); }
+  .badge-sev-medium { background: rgba(202, 138, 4, 0.14); color: var(--sev-medium); }
+  .badge-sev-high { background: rgba(234, 88, 12, 0.14); color: var(--sev-high); }
+  .badge-sev-critical { background: rgba(220, 38, 38, 0.14); color: var(--sev-critical); }
+  .finding-title { margin: 0; font-size: 15px; font-weight: 500; flex: 1; min-width: 200px; }
+  .finding-location { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; color: var(--muted); }
+  .finding-note, .finding-fix { margin-top: 6px; font-size: 14px; }
+  .finding-fix strong { color: var(--muted); font-weight: 500; }
+
+  .reviewer-source {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  .mechanical {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-top: 24px;
+    font-size: 14px;
+  }
+  .mechanical h3 { margin: 0 0 10px; font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .mechanical ul { margin: 0; padding-left: 20px; }
+  .mechanical li { margin-bottom: 4px; color: var(--text); }
+
+  footer.report-footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  footer .meta { display: flex; gap: 24px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+  <div class="container">
+
+    <header class="report-header">
+      <div class="title">
+        <h1>page-builder — UX Design Validation Report</h1>
+        <div class="subtitle">_bmad-output/planning-artifacts/ux-designs/ux-page-builder-2026-07-26/</div>
+      </div>
+    </header>
+
+    <div class="synthesis">
+      <p>DESIGN.md/EXPERIENCE.md formano una bozza fast-path disciplinata: l'inheritance da SPEC/companion/architecture è pulita, la numerazione delle capability e i termini di glossario sono usati correttamente, e la politica dei token placeholder è tracciata in modo trasparente in frontmatter, prosa e <code>.memlog.md</code>. La coppia non è ancora contract-ready: mancano failure path nei Key Flow, un flow dedicato per CAP-10 (archive/restore), lo stato "slug non trovato" per il render pubblico, e DESIGN.md § Components è vuoto mentre EXPERIENCE.md § Component Patterns ha già contenuto comportamentale reale.</p>
+      <p>La revisione accessibilità aggiunge un secondo strato di rischio, più specifico: i cinque punti della a11y-baseline sono ereditati correttamente ovunque si applichino, ma sui due problemi più difficili di questo prodotto — operabilità da tastiera del canvas drag-and-drop e vincolo di contrasto colore — il documento si ferma a "serve, ma non specifica come" (2 finding critical). Si aggiungono lacune del tutto assenti: supporto screen reader per il canvas, gestione a11y dell'errore RBAC per il Cliente, e accessibilità mobile nel render pubblico, nonostante Luca sia un Key Flow ufficiale e il prodotto sia dichiaratamente consumer/e-commerce.</p>
+      <p>Nessun problema è strutturale — tutti colmabili con un giro di Update mirato — ma <strong>C1 e C2 vanno chiusi prima che le Epic 3/4 (blocchi editor, drag-and-drop) vengano stimate</strong>.</p>
+    </div>
+
+    <div class="dimension-summary">
+      <div class="dim-card"><div class="dim-name">Flow coverage</div><div class="dim-verdict" style="color: var(--verdict-thin)">partial</div></div>
+      <div class="dim-card"><div class="dim-name">Token completeness</div><div class="dim-verdict" style="color: var(--verdict-adequate)">adequate (caveat)</div></div>
+      <div class="dim-card"><div class="dim-name">Component coverage</div><div class="dim-verdict" style="color: var(--verdict-thin)">weak</div></div>
+      <div class="dim-card"><div class="dim-name">State coverage</div><div class="dim-verdict" style="color: var(--verdict-adequate)">mostly strong</div></div>
+      <div class="dim-card"><div class="dim-name">Visual reference coverage</div><div class="dim-verdict" style="color: var(--verdict-strong)">n/a — strong by absence</div></div>
+      <div class="dim-card"><div class="dim-name">Bloat &amp; overspecification</div><div class="dim-verdict" style="color: var(--verdict-strong)">strong</div></div>
+      <div class="dim-card"><div class="dim-name">Inheritance discipline</div><div class="dim-verdict" style="color: var(--verdict-strong)">strong</div></div>
+      <div class="dim-card"><div class="dim-name">Shape fit</div><div class="dim-verdict" style="color: var(--verdict-adequate)">mostly correct</div></div>
+    </div>
+
+    <section class="dimension">
+      <details open>
+        <summary><h2>1. Flow coverage</h2><span class="verdict-pill verdict-thin">partial</span></summary>
+        <div class="dim-body"><div class="dim-judgment"><p>Ogni capability SPEC (CAP-1…15) confrontata coi 4 Key Flow per protagonista nominato, step numerati, climax beat e failure path.</p></div></div>
+        <div class="findings-list">
+          <article class="finding"><header><span class="badge badge-sev-high">high</span><h3 class="finding-title">Nessun Key Flow dramatizza CAP-10 (archive/restore)</h3><span class="finding-location">EXPERIENCE.md § Key Flows</span></header><div class="finding-note">La transizione archive/restore è asimmetrica e transazionale (AD-7) — merita un flow, non solo una riga di stato.</div><div class="finding-fix"><strong>Fix:</strong> aggiungere un 5° flow o estendere quello di Sara con un passo di archiviazione.</div></article>
+          <article class="finding"><header><span class="badge badge-sev-high">high</span><h3 class="finding-title">Nessun Key Flow ha un'annotazione Failure:</h3><span class="finding-location">EXPERIENCE.md § Key Flows</span></header><div class="finding-note">A differenza degli esempi di riferimento, l'errore è delegato solo a State Patterns, scollegato dalla narrativa del flow.</div><div class="finding-fix"><strong>Fix:</strong> una riga di fallimento per flow (dialog annullato, azione non autorizzata via URL, rollback con una versione sola, slug non trovato).</div></article>
+          <article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">Fallback commerce auto-flaggato ma non nel flow di Luca</h3><span class="finding-location">EXPERIENCE.md, Key Flow Luca</span></header><div class="finding-note">Il gap è segnalato in Component Patterns ma il flow di Luca mostra solo l'happy path.</div><div class="finding-fix"><strong>Fix:</strong> aggiungere il ramo di fallback al flow di Luca.</div></article>
+          <article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">CAP-5 senza flow proprio</h3><span class="finding-location">EXPERIENCE.md § Key Flows</span></header><div class="finding-note">Coperto strutturalmente e presente negli altri flow — accettabile, solo nota.</div><div class="finding-fix"><strong>Fix:</strong> nessuna azione richiesta.</div></article>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary><h2>2. Token completeness</h2><span class="verdict-pill verdict-adequate">adequate con caveat</span></summary>
+        <div class="dim-body"><div class="dim-judgment"><p>I placeholder sono una decisione di progetto tracciata (Penpot CAP-1, .memlog.md), non un difetto. Verificata solo la coerenza di applicazione tra categorie di token.</p></div></div>
+        <div class="findings-list">
+          <article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">Disciplina placeholder incoerente tra categorie</h3><span class="finding-location">DESIGN.md frontmatter</span></header><div class="finding-note">`colors` usa un sentinel uniforme inequivocabile (#000000); `rounded`/`spacing`/`typography` portano valori plausibili segnalati solo da commento YAML.</div><div class="finding-fix"><strong>Fix:</strong> applicare lo stesso sentinel "ovviamente falso" a tutte le categorie, o marcare l'assumption per-chiave.</div></article>
+          <article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">components: {} vuoto in frontmatter</h3><span class="finding-location">DESIGN.md frontmatter</span></header><div class="finding-note">Internamente coerente con la prosa, ma vedi Component coverage per il gap a valle.</div><div class="finding-fix"><strong>Fix:</strong> vedi §3.</div></article>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details open>
+        <summary><h2>3. Component coverage</h2><span class="verdict-pill verdict-thin">weak</span></summary>
+        <div class="dim-body"><div class="dim-judgment"><p>Ogni componente nominato dovrebbe avere riga in DESIGN.md § Components e in EXPERIENCE.md § Component Patterns.</p></div></div>
+        <div class="findings-list">
+          <article class="finding"><header><span class="badge badge-sev-high">high</span><h3 class="finding-title">DESIGN.md § Components ha zero righe per-componente</h3><span class="finding-location">DESIGN.md § Components</span></header><div class="finding-note">Tutto rimandato a Finalize; asimmetrico rispetto a EXPERIENCE.md che ha già regole comportamentali reali.</div><div class="finding-fix"><strong>Fix:</strong> righe strutturali placeholder per i 5 componenti-chiave (TopBar, PageList, VersionList, LifecycleBadge, SaveStateIndicator).</div></article>
+          <article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">LifecycleBadge senza riga propria in Component Patterns</h3><span class="finding-location">EXPERIENCE.md § Component Patterns</span></header><div class="finding-note">Nominato come componente-chiave in DESIGN.md ma appare solo inline dentro TopBar in EXPERIENCE.md.</div><div class="finding-fix"><strong>Fix:</strong> promuovere a riga propria.</div></article>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary><h2>4. State coverage</h2><span class="verdict-pill verdict-adequate">mostly strong</span></summary>
+        <div class="dim-body"><div class="dim-judgment"><p>Ogni superficie IA confrontata con gli stati rilevanti (empty, error, permission-denied).</p></div></div>
+        <div class="findings-list">
+          <article class="finding"><header><span class="badge badge-sev-high">high</span><h3 class="finding-title">/[slug] senza stato "non trovato"</h3><span class="finding-location">EXPERIENCE.md § State Patterns</span></header><div class="finding-note">Né per slug inesistente né per pagina ARCHIVED — probabilmente lo stato più comune per una vetrina pubblica reale.</div><div class="finding-fix"><strong>Fix:</strong> aggiungere stato 404/unavailable per il render pubblico.</div></article>
+          <article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">/login senza stato di fallimento</h3><span class="finding-location">EXPERIENCE.md § Information Architecture / § State Patterns</span></header><div class="finding-note">Accettabile in un fast-path draft, ma va segnalato.</div><div class="finding-fix"><strong>Fix:</strong> riga o nota esplicita di deferral all'auth provider di architettura.</div></article>
+          <article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">Nessuno stato per il fallimento server-side dell'azione confermata</h3><span class="finding-location">EXPERIENCE.md § Interaction Primitives</span></header><div class="finding-note">Il gate di conferma è specificato, non il ramo di fallimento dell'azione gated.</div><div class="finding-fix"><strong>Fix:</strong> aggiungere il ramo di errore post-conferma.</div></article>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary><h2>5. Visual reference coverage</h2><span class="verdict-pill verdict-strong">n/a — strong by absence</span></summary>
+        <div class="dim-body"><div class="dim-judgment"><p>Nessun mockup/wireframe/import esiste ancora in questa fase iniziale — corretto per la fase, non un difetto.</p></div></div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary><h2>6. Bloat &amp; overspecification</h2><span class="verdict-pill verdict-strong">strong</span></summary>
+        <div class="dim-body"><div class="dim-judgment"><p>Nessuno scope creep: entrambi i file restano dentro le 15 capability SPEC, gli [ASSUMPTION] sono onesti, il fast-path è rispettato.</p></div></div>
+        <div class="findings-list">
+          <article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">"Stato = testo + colore" ripetuto in 4 punti</h3><span class="finding-location">DESIGN.md + EXPERIENCE.md, più sezioni</span></header><div class="finding-note">Giustificato come vincolo a11y trasversale, ma crea 4 punti da mantenere sincronizzati.</div><div class="finding-fix"><strong>Fix (opzionale):</strong> dichiararlo una volta e fare riferimento incrociato.</div></article>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary><h2>7. Inheritance discipline</h2><span class="verdict-pill verdict-strong">strong</span></summary>
+        <div class="dim-body"><div class="dim-judgment"><p>Tutti i 7 `sources:` risolvono a file reali e identici tra i due documenti. Nessun drift terminologico su capability/glossario/RBAC/architettura — la categoria più solida della coppia.</p></div></div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary><h2>8. Shape fit</h2><span class="verdict-pill verdict-adequate">mostly correct</span></summary>
+        <div class="dim-body"><div class="dim-judgment"><p>DESIGN.md segue l'ordine canonico completo. EXPERIENCE.md ha una violazione reale di ordine.</p></div></div>
+        <div class="findings-list">
+          <article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">"Key Flows" precede "Responsive &amp; Platform"</h3><span class="finding-location">EXPERIENCE.md, ordine sezioni</span></header><div class="finding-note">Entrambi gli esempi di riferimento pongono Responsive &amp; Platform prima di Key Flows, sempre ultimo.</div><div class="finding-fix"><strong>Fix:</strong> spostare "Responsive &amp; Platform" subito dopo "Accessibility Floor".</div></article>
+          <article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">"Inspiration &amp; Anti-patterns" omesso senza traccia in memlog</h3><span class="finding-location">EXPERIENCE.md</span></header><div class="finding-note">Omissione accettabile (nessun riferimento competitor fornito) ma non tracciata come decisione esplicita.</div><div class="finding-fix"><strong>Fix:</strong> nota facoltativa in .memlog.md per simmetria di tracciabilità.</div></article>
+        </div>
+      </details>
+    </section>
+
+    <section class="reviewer-section">
+      <details open>
+        <summary><h2>Accessibility review</h2><span class="reviewer-source">review-accessibility.md</span></summary>
+        <div class="dim-body"><div class="dim-judgment"><p><strong>Verdetto: CONDIZIONATO</strong> — l'eredità testuale della a11y-baseline è corretta ovunque si applichi, ma sui due punti più difficili del prodotto (tastiera nel drag-and-drop, contrasto colore) il documento si ferma a "serve, ma non specifica come".</p></div></div>
+        <div class="findings-list">
+          <article class="finding"><header><span class="badge badge-sev-critical">critical</span><h3 class="finding-title">C1 — Drag-and-drop keyboard equivalent non specificato come meccanismo</h3><span class="finding-location">EXPERIENCE.md § Interaction Primitives / § Accessibility Floor</span></header><div class="finding-note">Manca il meta-modello (es. WAI-ARIA APG "Reorder"), lo stato annunciato via aria-live, e il comportamento per drop-target invalidi. Flusso primario dell'editor, gli stessi autori lo segnalano come incerto.</div><div class="finding-fix"><strong>Fix:</strong> sotto-sezione dedicata con meta-modello, tasti, live region, drop-target invalidi; requisito di Story prima di stimare l'Epic editor.</div></article>
+          <article class="finding"><header><span class="badge badge-sev-critical">critical</span><h3 class="finding-title">C2 — Contrasto colore senza vincolo numerico dichiarato</h3><span class="finding-location">DESIGN.md § Colors</span></header><div class="finding-note">Corretto rimandare i valori a Penpot, ma manca la riga di vincolo (≥4.5:1 / ≥3:1) contro cui validarli quando arriveranno.</div><div class="finding-fix"><strong>Fix:</strong> aggiungere vincolo esplicito WCAG 1.4.3/1.4.11 in DESIGN.md § Colors.</div></article>
+          <article class="finding"><header><span class="badge badge-sev-high">high</span><h3 class="finding-title">H1 — Nessun supporto screen reader per il canvas, oltre alla tastiera</h3><span class="finding-location">EXPERIENCE.md § Interaction Primitives / § Accessibility Floor</span></header><div class="finding-note">Operabilità motoria ≠ leggibilità screen reader — sono due assi ortogonali, solo uno trattato.</div><div class="finding-fix"><strong>Fix:</strong> struttura ARIA tree/treeitem, live region, test con screen reader reale come criterio di accettazione.</div></article>
+          <article class="finding"><header><span class="badge badge-sev-high">high</span><h3 class="finding-title">H2 — Errore RBAC Cliente senza considerazione screen reader/focus</h3><span class="finding-location">EXPERIENCE.md § State Patterns / Key Flow Giulia</span></header><div class="finding-note">Nessuna specifica su role/aria-live o dove va il focus dopo l'errore — rischio doppio (RBAC + a11y) su un utente non tecnico.</div><div class="finding-fix"><strong>Fix:</strong> role="alert"/aria-live="assertive" + focus esplicito sul messaggio d'errore.</div></article>
+          <article class="finding"><header><span class="badge badge-sev-high">high</span><h3 class="finding-title">H3 — Nessuna a11y mobile nel render pubblico responsive</h3><span class="finding-location">EXPERIENCE.md § Responsive &amp; Platform</span></header><div class="finding-note">Touch target, reflow a 320px, zoom 400% assenti nonostante Luca sia un Key Flow ufficiale e il prodotto sia consumer/e-commerce.</div><div class="finding-fix"><strong>Fix:</strong> touch target ≥44×44px, reflow senza scroll orizzontale, zoom 400%, nessun blocco orientamento.</div></article>
+          <article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">M1 — SaveStateIndicator: annunci live potenzialmente rumorosi</h3><span class="finding-location">EXPERIENCE.md § Component Patterns</span></header><div class="finding-note">Autosave su debounce ripetuto per 20 minuti può generare un flusso di annunci screen reader eccessivo.</div><div class="finding-fix"><strong>Fix:</strong> throttle degli annunci indipendente dal debounce di salvataggio.</div></article>
+          <article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">M2 — Selezione vs focus-visible sui blocchi Puck non specificati visivamente</h3><span class="finding-location">EXPERIENCE.md § Component Patterns; DESIGN.md</span></header><div class="finding-note">"Due segnali diversi" dichiarato ma non come si distinguono né come coesistono.</div><div class="finding-fix"><strong>Fix:</strong> nota visiva minima in DESIGN.md — bordo continuo per selezione, ring offset per focus, sommabili.</div></article>
+          <article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">M3 — Stato errore blocco commerce non specificato per screen reader in pubblicazione</h3><span class="finding-location">EXPERIENCE.md § Component Patterns / § State Patterns</span></header><div class="finding-note">Non chiaro se il fallback è annunciato per un visitatore screen reader, non solo indicato visivamente.</div><div class="finding-fix"><strong>Fix:</strong> aria-label descrittivo anche nel render pubblico.</div></article>
+          <article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">L1 — Griglia editor a 3 colonne senza navigazione da tastiera tra regioni</h3><span class="finding-location">DESIGN.md § Layout &amp; Spacing</span></header><div class="finding-note">Nessun landmark ARIA/skip-link menzionato tra i tre pannelli.</div><div class="finding-fix"><strong>Fix:</strong> landmark ARIA distinti + skip-link, da confermare col wireframe.</div></article>
+          <article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">L2 — WCAG 2.1 AA trattato come "fermo" mentre la fonte lo marca "da confermare"</h3><span class="finding-location">EXPERIENCE.md § Accessibility Floor vs a11y-baseline.md</span></header><div class="finding-note">Ragionevole come baseline di lavoro, ma la open question a monte non è ancora chiusa formalmente.</div><div class="finding-fix"><strong>Fix:</strong> chiudere la Open Question in SPEC.md prima di stimare le Epic editor/render pubblico.</div></article>
+        </div>
+      </details>
+    </section>
+
+    <div class="mechanical">
+      <h3>Mechanical notes</h3>
+      <ul>
+        <li>Tutti i link incrociati verificati e funzionanti (DESIGN.md → penpot-pipeline.md, design-system.md; EXPERIENCE.md → DESIGN.md ×2, a11y-baseline.md).</li>
+        <li>Frontmatter completo e coerente tra i due file.</li>
+        <li>Nessun naming drift trovato rispetto a SPEC.md/design-system.md/rbac-matrix.md/a11y-baseline.md/glossary.md/ARCHITECTURE-SPINE.md.</li>
+        <li>I 6 [ASSUMPTION] aperti in .memlog.md sono tutti tracciabili a marker corrispondenti nei due file — nessuna assumption non documentata trovata oltre a quanto già tracciato.</li>
+      </ul>
+    </div>
+
+    <footer class="report-footer">
+      <div class="meta">
+        <span>Rubric: review-rubric.md</span>
+        <span>Generated: 2026-07-26</span>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

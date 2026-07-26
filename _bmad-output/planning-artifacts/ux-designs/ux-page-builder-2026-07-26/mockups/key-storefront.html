@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Key screen — Storefront pubblico (Luca, mobile)</title>
+<style>
+/*
+  Governa questo mock: EXPERIENCE.md § Responsive & Platform (mobile a11y:
+  touch target >=44x44, reflow 320px), § Key Flows (Luca), § State Patterns
+  (fallback prodotto rimosso/provider irraggiungibile).
+  Colori NEUTRI/PLACEHOLDER — vedi nota di stato in DESIGN.md.
+*/
+* { box-sizing: border-box; }
+body { margin:0; font-family: -apple-system, "Segoe UI", system-ui, sans-serif; background:#e7e5e4; }
+.chrome { padding:8px 16px; font-size:12px; color:#78716c; font-family: ui-monospace, monospace; }
+.phone { width:360px; margin:0 auto 24px; background:#fff; border:8px solid #292524; border-radius:32px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,.15); }
+.screen { height:640px; overflow:auto; }
+.hero { height:180px; background:#f0efee; display:flex; align-items:flex-end; padding:16px; }
+.hero h1 { font-size:20px; margin:0; color:#1c1917; }
+.section { padding:16px; }
+.section h2 { font-size:15px; margin:0 0 12px; }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.card { border:1px solid #e7e5e4; border-radius:8px; padding:10px; }
+.card .img { height:96px; background:#f0efee; border-radius:6px; margin-bottom:8px; }
+.card .name { font-size:13px; font-weight:500; margin-bottom:2px; }
+.card .price { font-size:13px; color:#78716c; margin-bottom:8px; }
+.card .cta { width:100%; min-height:44px; border-radius:6px; background:#292524; color:#fff; border:none; font-size:13px; }
+.card.unavailable .img { background:repeating-linear-gradient(45deg,#f0efee,#f0efee 6px,#e7e5e4 6px,#e7e5e4 12px); display:flex; align-items:center; justify-content:center; }
+.card.unavailable .cta { background:#e7e5e4; color:#78716c; }
+.badge-unavail { font-size:11px; color:#78716c; }
+.note { padding:10px 16px; font-size:11px; color:#78716c; border-top:1px solid #e7e5e4; }
+</style>
+</head>
+<body>
+<div class="chrome">/collezione-estate — render pubblico SSG, responsive (viewport mobile 360px). Touch target CTA ≥44×44px, reflow senza scroll orizzontale a 320px (EXPERIENCE.md § Responsive & Platform).</div>
+<div class="phone">
+  <div class="screen">
+    <div class="hero"><h1>Collezione Estate 2026</h1></div>
+    <div class="section">
+      <h2>Prodotti in evidenza</h2>
+      <div class="grid">
+        <div class="card">
+          <div class="img"></div>
+          <div class="name">Prodotto A</div>
+          <div class="price">€39</div>
+          <button class="cta">Aggiungi al carrello</button>
+        </div>
+        <div class="card">
+          <div class="img"></div>
+          <div class="name">Prodotto B</div>
+          <div class="price">€59</div>
+          <button class="cta">Aggiungi al carrello</button>
+        </div>
+        <div class="card unavailable" aria-label="Prodotto non più disponibile">
+          <div class="img">—</div>
+          <div class="name">Prodotto C</div>
+          <div class="price badge-unavail">Non più disponibile</div>
+          <button class="cta" disabled>Non disponibile</button>
+        </div>
+        <div class="card">
+          <div class="img"></div>
+          <div class="name">Prodotto D</div>
+          <div class="price">€45</div>
+          <button class="cta">Aggiungi al carrello</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="note">Terza card: stato fallback prodotto rimosso dal catalogo — indicazione visiva + aria-label descrittivo, non un vuoto silenzioso.</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Key screen — Dialog di conferma pubblicazione</title>
+<style>
+/*
+  Governa questo mock: EXPERIENCE.md § Interaction Primitives (conferma
+  esplicita per azioni distruttive/di stato), § Accessibility Floor
+  (focus trap, role=dialog, portale root condiviso), a11y-baseline.md §3/§5.
+  Colori NEUTRI/PLACEHOLDER — vedi nota di stato in DESIGN.md.
+*/
+* { box-sizing: border-box; }
+body { margin:0; font-family: -apple-system, "Segoe UI", system-ui, sans-serif; background:#e7e5e4; }
+.chrome { padding:8px 16px; font-size:12px; color:#78716c; font-family: ui-monospace, monospace; }
+.stage { position:relative; height:520px; margin:0 24px 24px; border-radius:8px; overflow:hidden; border:1px solid #d6d3d1; }
+.bg { position:absolute; inset:0; background:
+    linear-gradient(#fafaf9,#fafaf9) padding-box;
+  filter: blur(1px) opacity(.5);
+  padding:24px;
+  font-size:13px;
+  color:#a8a29e;
+}
+.overlay-root {
+  position:absolute; inset:0;
+  background: rgba(28,25,23,.45);
+  display:flex; align-items:center; justify-content:center;
+}
+.dialog {
+  background:#fff; border-radius:8px; width:420px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.18);
+  padding:24px;
+}
+.dialog h2 { margin:0 0 4px; font-size:16px; }
+.dialog .sub { font-size:13px; color:#78716c; margin-bottom:18px; }
+.dialog .impact { background:#f0efee; border-radius:6px; padding:12px 14px; font-size:13px; color:#44403c; margin-bottom:20px; }
+.row { display:flex; gap:10px; justify-content:flex-end; }
+.btn { padding:8px 16px; border-radius:4px; font-size:14px; font-weight:500; border:1px solid #d6d3d1; background:#fff; cursor:default; }
+.btn-primary { background:#292524; color:#fff; border-color:#292524; }
+.aria-note { position:absolute; bottom:10px; left:10px; right:10px; font-size:11px; color:#fff; background:rgba(0,0,0,.5); padding:6px 10px; border-radius:4px; font-family:ui-monospace,monospace; }
+</style>
+</head>
+<body>
+<div class="chrome">Overlay montato sul portale root DOM condiviso, sopra il canvas editor (a11y-baseline.md §5) — non nello stacking context del canvas.</div>
+<div class="stage">
+  <div class="bg">— canvas editor sullo sfondo, sfocato dietro l'overlay —</div>
+  <div class="overlay-root">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-title">
+      <h2 id="dlg-title">Pubblicare questa versione?</h2>
+      <div class="sub">Collezione Estate 2026</div>
+      <div class="impact">Questo sostituirà la versione attualmente <strong>pubblicata</strong>, che tornerà automaticamente allo stato <strong>Bozza</strong>. L'operazione è tracciata nell'audit trail.</div>
+      <div class="row">
+        <button class="btn">Annulla</button>
+        <button class="btn btn-primary">Pubblica</button>
+      </div>
+    </div>
+  </div>
+  <div class="aria-note">role="dialog" · aria-modal="true" · aria-labelledby="dlg-title" · focus trap attivo · focus iniziale su "Annulla" (azione meno distruttiva) · Esc chiude e restituisce focus al pulsante "Pubblica" del TopBar</div>
+</div>
+</body>
+</html>
