@@ -28,15 +28,18 @@ const apiHandler = new OpenAPIHandler(appRouter, {
 });
 
 async function handleRequest(req: NextRequest) {
+  // Resolved once per request: createContext hits the DB for the session.
+  const context = await createContext(req);
+
   const rpcResult = await rpcHandler.handle(req, {
     prefix: "/api/rpc",
-    context: await createContext(req),
+    context,
   });
   if (rpcResult.response) return rpcResult.response;
 
   const apiResult = await apiHandler.handle(req, {
     prefix: "/api/rpc/api-reference",
-    context: await createContext(req),
+    context,
   });
   if (apiResult.response) return apiResult.response;
 

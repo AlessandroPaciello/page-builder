@@ -10,5 +10,16 @@ export function createPrismaClient() {
   return new PrismaClient({ adapter });
 }
 
-const prisma = createPrismaClient();
-export default prisma;
+const globalForPrisma = globalThis as unknown as {
+  prisma?: PrismaClient;
+};
+
+/**
+ * One pool per process. Cached on globalThis so dev hot-reloads reuse the
+ * existing client instead of opening a new pg pool on every reload.
+ */
+export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+
+if (env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+}

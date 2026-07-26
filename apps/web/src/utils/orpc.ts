@@ -39,7 +39,15 @@ export function getQueryClient() {
 }
 
 export const link = new RPCLink({
-  url: `${typeof window !== "undefined" ? window.location.origin : "http://localhost:3001"}/api/rpc`,
+  url: async () => {
+    if (typeof window !== "undefined") {
+      return `${window.location.origin}/api/rpc`;
+    }
+
+    // Dynamic import keeps the server-only env module out of the client bundle.
+    const { env } = await import("@app/env/server");
+    return `${env.BETTER_AUTH_URL}/api/rpc`;
+  },
   fetch(url, options) {
     return fetch(url, {
       ...options,
@@ -51,8 +59,20 @@ export const link = new RPCLink({
       return {};
     }
 
+    // Forward only what the RPC call needs to authenticate. Copying every
+    // inbound header would carry over content-length/host/connection from the
+    // incoming request and corrupt the outbound one.
     const { headers } = await import("next/headers");
-    return Object.fromEntries(await headers());
+    const incoming = await headers();
+
+    const forwarded: Record<string, string> = {};
+    for (const name of ["cookie", "authorization"]) {
+      const value = incoming.get(name);
+      if (value) {
+        forwarded[name] = value;
+      }
+    }
+    return forwarded;
   },
 });
 
