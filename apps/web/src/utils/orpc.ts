@@ -22,7 +22,21 @@ export function createQueryClient() {
   });
 }
 
-export const queryClient = createQueryClient();
+let browserQueryClient: QueryClient | undefined;
+
+/**
+ * On the server every request gets a fresh cache, otherwise a single
+ * module-scope client would leak data between concurrent users.
+ * In the browser we reuse one client so state survives re-renders.
+ */
+export function getQueryClient() {
+  if (typeof window === "undefined") {
+    return createQueryClient();
+  }
+
+  browserQueryClient ??= createQueryClient();
+  return browserQueryClient;
+}
 
 export const link = new RPCLink({
   url: `${typeof window !== "undefined" ? window.location.origin : "http://localhost:3001"}/api/rpc`,
