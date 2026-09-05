@@ -15,6 +15,7 @@
     "build": "turbo run build",
     "check-types": "turbo run check-types",
     "lint": "turbo run lint",
+    "test": "turbo run test",
     "dev:web": "turbo run dev -F web",
     "db:push": "turbo run db:push -F @app/db",
     "db:studio": "turbo run db:studio -F @app/db",

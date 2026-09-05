@@ -1,0 +1,23 @@
+{
+  "name": "@app/domain",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "lint": "node ./scripts/check-boundaries.mjs",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@app/config": "workspace:*",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}
