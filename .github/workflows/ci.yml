@@ -22,6 +22,10 @@ jobs:
       # manca. In CI non c'è nessun `.env` (non è committato): l'env di build non è
       # un input della pipeline, la validazione serve a chi deploya.
       SKIP_ENV_VALIDATION: "1"
+      # Il postinstall di @app/db esegue `prisma generate`, che carica
+      # prisma.config.ts e risolve DATABASE_URL anche se non si connette mai al
+      # DB. In CI non c'è .env (non è committato): basta un placeholder.
+      DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci"
     steps:
       - uses: actions/checkout@v5
 
