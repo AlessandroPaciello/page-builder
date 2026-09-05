@@ -50,10 +50,10 @@ This project uses PostgreSQL with Prisma.
 pnpm run db:start
 ```
 
-2. Apply the schema to your database:
+2. Apply the migrations to your database:
 
 ```bash
-pnpm run db:push
+pnpm run db:migrate
 ```
 
 Then, run the development server:
@@ -111,7 +111,7 @@ page-builder/
 - `pnpm run dev:web`: Start only the web application
 - `pnpm run check-types`: Check TypeScript types across all apps
 - `pnpm run lint`: Run the blocking checks (incl. the `domains/` → `editor/` boundary)
-- `pnpm run db:push`: Push schema changes to database
+- `pnpm run db:push`: **disabilitato** — `prisma db push` eliminerebbe l'indice parziale AD-7 (`page_version_published_unique`), che vive solo nel SQL della migration; usa `db:migrate`
 - `pnpm run db:generate`: Generate database client/types
 - `pnpm run db:migrate`: Run database migrations
 - `pnpm run db:studio`: Open database studio UI

@@ -17,6 +17,23 @@ concurrency:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    # Il test di integrazione dell'invariante di pubblicazione (AD-7) richiede
+    # un Postgres reale: il gate deve essere rosso se DB o migration mancano,
+    # mai verde vacuo. Credenziali allineate al placeholder DATABASE_URL sotto.
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       # `next build` importa `@app/env/web`, che lancia se `NEXT_PUBLIC_SERVER_URL`
       # manca. In CI non c'è nessun `.env` (non è committato): l'env di build non è
@@ -49,6 +66,12 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      # Il test dell'invariante (AC#2 Story 1.3) parte su uno schema già
+      # applicato: `migrate deploy` è il percorso di release (Story 1.6) e
+      # applica le migration committate senza evolve.
+      - name: Apply database migrations
+        run: pnpm --filter @app/db exec prisma migrate deploy
 
       - name: Test
         run: pnpm test

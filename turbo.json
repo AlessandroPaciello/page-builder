@@ -11,7 +11,7 @@
   ],
   "tasks": {
     "build": {
-      "dependsOn": ["^build", "lint"],
+      "dependsOn": ["^build", "lint", "^check-types"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "env": [
         "DATABASE_URL",
@@ -36,7 +36,9 @@
       ]
     },
     "test": {
-      "dependsOn": ["^test"]
+      "dependsOn": ["^test"],
+      "cache": false,
+      "env": ["DATABASE_URL"]
     },
     "dev": {
       "cache": false,

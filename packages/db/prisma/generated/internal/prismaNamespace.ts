@@ -400,7 +400,11 @@ export const ModelName = {
   User: 'User',
   Session: 'Session',
   Account: 'Account',
-  Verification: 'Verification'
+  Verification: 'Verification',
+  Page: 'Page',
+  PageVersion: 'PageVersion',
+  PageAssignment: 'PageAssignment',
+  AuditLog: 'AuditLog'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -416,7 +420,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "session" | "account" | "verification"
+    modelProps: "user" | "session" | "account" | "verification" | "page" | "pageVersion" | "pageAssignment" | "auditLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -716,6 +720,302 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    Page: {
+      payload: Prisma.$PagePayload<ExtArgs>
+      fields: Prisma.PageFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PageFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PageFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagePayload>
+        }
+        findFirst: {
+          args: Prisma.PageFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PageFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagePayload>
+        }
+        findMany: {
+          args: Prisma.PageFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagePayload>[]
+        }
+        create: {
+          args: Prisma.PageCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagePayload>
+        }
+        createMany: {
+          args: Prisma.PageCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PageCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagePayload>[]
+        }
+        delete: {
+          args: Prisma.PageDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagePayload>
+        }
+        update: {
+          args: Prisma.PageUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagePayload>
+        }
+        deleteMany: {
+          args: Prisma.PageDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PageUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PageUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagePayload>[]
+        }
+        upsert: {
+          args: Prisma.PageUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagePayload>
+        }
+        aggregate: {
+          args: Prisma.PageAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePage>
+        }
+        groupBy: {
+          args: Prisma.PageGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PageGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PageCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PageCountAggregateOutputType> | number
+        }
+      }
+    }
+    PageVersion: {
+      payload: Prisma.$PageVersionPayload<ExtArgs>
+      fields: Prisma.PageVersionFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PageVersionFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageVersionPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PageVersionFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageVersionPayload>
+        }
+        findFirst: {
+          args: Prisma.PageVersionFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageVersionPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PageVersionFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageVersionPayload>
+        }
+        findMany: {
+          args: Prisma.PageVersionFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageVersionPayload>[]
+        }
+        create: {
+          args: Prisma.PageVersionCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageVersionPayload>
+        }
+        createMany: {
+          args: Prisma.PageVersionCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PageVersionCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageVersionPayload>[]
+        }
+        delete: {
+          args: Prisma.PageVersionDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageVersionPayload>
+        }
+        update: {
+          args: Prisma.PageVersionUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageVersionPayload>
+        }
+        deleteMany: {
+          args: Prisma.PageVersionDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PageVersionUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PageVersionUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageVersionPayload>[]
+        }
+        upsert: {
+          args: Prisma.PageVersionUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageVersionPayload>
+        }
+        aggregate: {
+          args: Prisma.PageVersionAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePageVersion>
+        }
+        groupBy: {
+          args: Prisma.PageVersionGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PageVersionGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PageVersionCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PageVersionCountAggregateOutputType> | number
+        }
+      }
+    }
+    PageAssignment: {
+      payload: Prisma.$PageAssignmentPayload<ExtArgs>
+      fields: Prisma.PageAssignmentFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PageAssignmentFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageAssignmentPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PageAssignmentFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageAssignmentPayload>
+        }
+        findFirst: {
+          args: Prisma.PageAssignmentFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageAssignmentPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PageAssignmentFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageAssignmentPayload>
+        }
+        findMany: {
+          args: Prisma.PageAssignmentFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageAssignmentPayload>[]
+        }
+        create: {
+          args: Prisma.PageAssignmentCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageAssignmentPayload>
+        }
+        createMany: {
+          args: Prisma.PageAssignmentCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PageAssignmentCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageAssignmentPayload>[]
+        }
+        delete: {
+          args: Prisma.PageAssignmentDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageAssignmentPayload>
+        }
+        update: {
+          args: Prisma.PageAssignmentUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageAssignmentPayload>
+        }
+        deleteMany: {
+          args: Prisma.PageAssignmentDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PageAssignmentUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PageAssignmentUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageAssignmentPayload>[]
+        }
+        upsert: {
+          args: Prisma.PageAssignmentUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PageAssignmentPayload>
+        }
+        aggregate: {
+          args: Prisma.PageAssignmentAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePageAssignment>
+        }
+        groupBy: {
+          args: Prisma.PageAssignmentGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PageAssignmentGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PageAssignmentCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PageAssignmentCountAggregateOutputType> | number
+        }
+      }
+    }
+    AuditLog: {
+      payload: Prisma.$AuditLogPayload<ExtArgs>
+      fields: Prisma.AuditLogFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AuditLogFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AuditLogFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload>
+        }
+        findFirst: {
+          args: Prisma.AuditLogFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AuditLogFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload>
+        }
+        findMany: {
+          args: Prisma.AuditLogFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload>[]
+        }
+        create: {
+          args: Prisma.AuditLogCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload>
+        }
+        createMany: {
+          args: Prisma.AuditLogCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AuditLogCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload>[]
+        }
+        delete: {
+          args: Prisma.AuditLogDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload>
+        }
+        update: {
+          args: Prisma.AuditLogUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload>
+        }
+        deleteMany: {
+          args: Prisma.AuditLogDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AuditLogUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AuditLogUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload>[]
+        }
+        upsert: {
+          args: Prisma.AuditLogUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditLogPayload>
+        }
+        aggregate: {
+          args: Prisma.AuditLogAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAuditLog>
+        }
+        groupBy: {
+          args: Prisma.AuditLogGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AuditLogGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AuditLogCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AuditLogCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -813,12 +1113,65 @@ export const VerificationScalarFieldEnum = {
 export type VerificationScalarFieldEnum = (typeof VerificationScalarFieldEnum)[keyof typeof VerificationScalarFieldEnum]
 
 
+export const PageScalarFieldEnum = {
+  id: 'id',
+  slug: 'slug',
+  title: 'title',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PageScalarFieldEnum = (typeof PageScalarFieldEnum)[keyof typeof PageScalarFieldEnum]
+
+
+export const PageVersionScalarFieldEnum = {
+  id: 'id',
+  pageId: 'pageId',
+  versionNumber: 'versionNumber',
+  status: 'status',
+  payload: 'payload',
+  createdAt: 'createdAt'
+} as const
+
+export type PageVersionScalarFieldEnum = (typeof PageVersionScalarFieldEnum)[keyof typeof PageVersionScalarFieldEnum]
+
+
+export const PageAssignmentScalarFieldEnum = {
+  id: 'id',
+  pageId: 'pageId',
+  userId: 'userId'
+} as const
+
+export type PageAssignmentScalarFieldEnum = (typeof PageAssignmentScalarFieldEnum)[keyof typeof PageAssignmentScalarFieldEnum]
+
+
+export const AuditLogScalarFieldEnum = {
+  id: 'id',
+  actor: 'actor',
+  action: 'action',
+  entityType: 'entityType',
+  entityId: 'entityId',
+  timestamp: 'timestamp',
+  metadataDiff: 'metadataDiff'
+} as const
+
+export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typeof AuditLogScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {
@@ -835,6 +1188,15 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
 
 
@@ -879,6 +1241,20 @@ export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaM
 
 
 /**
+ * Reference to a field of type 'PageStatus'
+ */
+export type EnumPageStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PageStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'PageStatus[]'
+ */
+export type ListEnumPageStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PageStatus[]'>
+    
+
+
+/**
  * Reference to a field of type 'Int'
  */
 export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int'>
@@ -889,6 +1265,48 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'In
  * Reference to a field of type 'Int[]'
  */
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+/**
+ * Reference to a field of type 'PageVersionStatus'
+ */
+export type EnumPageVersionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PageVersionStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'PageVersionStatus[]'
+ */
+export type ListEnumPageVersionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PageVersionStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Json'
+ */
+export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
+    
+
+
+/**
+ * Reference to a field of type 'QueryMode'
+ */
+export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+/**
+ * Reference to a field of type 'Float'
+ */
+export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+/**
+ * Reference to a field of type 'Float[]'
+ */
+export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
 
 /**
@@ -1046,6 +1464,10 @@ export type GlobalOmitConfig = {
   session?: Prisma.SessionOmit
   account?: Prisma.AccountOmit
   verification?: Prisma.VerificationOmit
+  page?: Prisma.PageOmit
+  pageVersion?: Prisma.PageVersionOmit
+  pageAssignment?: Prisma.PageAssignmentOmit
+  auditLog?: Prisma.AuditLogOmit
 }
 
 /* Types for Logging */
