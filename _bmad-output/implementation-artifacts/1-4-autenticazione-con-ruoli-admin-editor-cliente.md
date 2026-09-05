@@ -4,7 +4,7 @@ baseline_commit: ba2ce3f9a35676c4bac414c053f02fbd96b7cc5d
 
 # Story 1.4: Autenticazione con ruoli Admin/Editor/Cliente
 
-Status: ready-for-dev
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -21,24 +21,24 @@ So that le operazioni successive possano essere autorizzate per ruolo (FR12 fond
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Estendere `packages/auth` con ruolo e hardening (AC: #1)
-  - [ ] Aggiungere campo `role String` al modello `User` in `packages/db/prisma/schema/auth.prisma` (`@default("CLIENTE")`, non nullable, mappato come le altre colonne camelCase in tabella `user` — meglio colonna che `additionalFields` virtuali: il ruolo è dato di dominio persistente, non un dato di sessione volatile).
-  - [ ] Dichiarare il ruolo a Better Auth via `user.additionalFields` (`{ role: { type: "string", defaultValue: "CLIENTE", input: false } }`) così che compaia in `session.user` lato client e server; `input: false` perché il ruolo NON è assegnabile dal client di registro (deny-by-default fin dall'ingresso, vedi Dev Notes "Assegnazione ruoli").
-  - [ ] Configurare `emailAndPassword.minPasswordLength` server-side (es. 8) — la policy attuale vive solo negli schemi Zod dei form ed è bypassabile chiamando `/api/auth/sign-up/email` direttamente (voce aperta in `deferred-work.md`, chiusa qui).
-  - [ ] Configurare `rateLimit` esplicito su Better Auth (finestra e max espliciti, non i default impliciti — vedi Dev Notes "Hardening").
-  - [ ] **Decisione da documentare, non automatizzare**: `requireEmailVerification`. Il campo `emailVerified` esiste ma non è mai usato. Per il percorso di sviluppo della Story 1.4 mantenerlo a `false` (l'invio email richiederebbe un provider non previsto dallo Spine) ma registrare la decisione e il debito esplicitamente — è un gate di sicurezza reale in release (rimando documentato, vedi Dev Notes "Hardening").
-  - [ ] Migration per la nuova colonna `role` (`prisma migrate dev --create-only` + revisione SQL); rigenerare e committare il client `packages/db/prisma/generated/`.
-- [ ] Task 2: Normalizzare i ruoli di dominio (AC: #1)
-  - [ ] Un modulo `packages/auth` (o `packages/db`) che esporta la tassonomia `Role = "ADMIN" | "EDITOR" | "CLIENTE"` come union TS con nomi agli **enum di dominio** dello Spine (Consistency Conventions: `role ∈ {ADMIN, EDITOR, CLIENTE}`, AD-4). Il valore in colonna è una stringa — la validazione dell'insieme valido avviene alla lettura (fail-fast se valore fuori tassonomia).
-  - [ ] Uno `zod`/check di normalizzazione che trasforma il valore DB grezzo nel tipo `Role`, rifiutando valori sconosciuti (deny-by-default anche sulla forma del dato: un ruolo non riconosciuto non è mai trattato come ammesso).
-- [ ] Task 3: Esposizione del ruolo lato app + guard della shell autenticata (AC: #1, #2)
-  - [ ] La dashboard/esempio autenticato mostra il ruolo dell'utente corrente (prova visiva che il ruolo fluisce dalla sessione al client).
-  - [ ] **Un guard server-side minimale** per una risorsa protetta di prova (es. la route `/dashboard`): senza sessione valida → redirect/401, con sessione valida → contenuto. Nota di scope: questo NON è l'enforcement RBAC del core (quello arriva in Story 1.5 con Principal nel context oRPC, AD-4) — è solo la dimostrazione dell'AC#2 a livello di app. Un client test di sessione invalida è accettabile come verifica (vedi Testing).
-  - [ ] Cancellare l'auto-registrazione pubblica se emergesse in conflitto con l'assegnazione dei ruoli: il sign-up resta aperto (ruolo default CLIENTE), nessun utente nasce ADMIN/EDITOR (Dev Notes "Assegnazione ruoli").
-- [ ] Task 4: Test e CI (AC: #1, #2)
-  - [ ] Test di integrazione DB (pattern `packages/db/tests/invariants.integration.test.ts`, Postgres reale docker): nuovo utente default → ruolo `CLIENTE`; tentativo di settare un ruolo non valido via API di registro → rifiutato/non appunto onorato (`input: false` di Better Auth).
-  - [ ] Test del guard: richiesta senza cookie di sessione alla risorsa protetta → 401/redirect (mai 200).
-  - [ ] Verificare `pnpm check-types`, `pnpm test`, `pnpm lint`, `pnpm build` verdi su tutti i package; CI già esistente continua a passare.
+- [x] Task 1: Estendere `packages/auth` con ruolo e hardening (AC: #1)
+  - [x] Aggiungere campo `role String` al modello `User` in `packages/db/prisma/schema/auth.prisma` (`@default("CLIENTE")`, non nullable, mappato come le altre colonne camelCase in tabella `user` — meglio colonna che `additionalFields` virtuali: il ruolo è dato di dominio persistente, non un dato di sessione volatile).
+  - [x] Dichiarare il ruolo a Better Auth via `user.additionalFields` (`{ role: { type: "string", defaultValue: "CLIENTE", input: false } }`) così che compaia in `session.user` lato client e server; `input: false` perché il ruolo NON è assegnabile dal client di registro (deny-by-default fin dall'ingresso, vedi Dev Notes "Assegnazione ruoli").
+  - [x] Configurare `emailAndPassword.minPasswordLength` server-side (es. 8) — la policy attuale vive solo negli schemi Zod dei form ed è bypassabile chiamando `/api/auth/sign-up/email` direttamente (voce aperta in `deferred-work.md`, chiusa qui).
+  - [x] Configurare `rateLimit` esplicito su Better Auth (finestra e max espliciti, non i default impliciti — vedi Dev Notes "Hardening").
+  - [x] **Decisione da documentare, non automatizzare**: `requireEmailVerification`. Il campo `emailVerified` esiste ma non è mai usato. Per il percorso di sviluppo della Story 1.4 mantenerlo a `false` (l'invio email richiederebbe un provider non previsto dallo Spine) ma registrare la decisione e il debito esplicitamente — è un gate di sicurezza reale in release (rimando documentato, vedi Dev Notes "Hardening").
+  - [x] Migration per la nuova colonna `role` (`prisma migrate dev --create-only` + revisione SQL); rigenerare e committare il client `packages/db/prisma/generated/`.
+- [x] Task 2: Normalizzare i ruoli di dominio (AC: #1)
+  - [x] Un modulo `packages/auth` (o `packages/db`) che esporta la tassonomia `Role = "ADMIN" | "EDITOR" | "CLIENTE"` come union TS con nomi agli **enum di dominio** dello Spine (Consistency Conventions: `role ∈ {ADMIN, EDITOR, CLIENTE}`, AD-4). Il valore in colonna è una stringa — la validazione dell'insieme valido avviene alla lettura (fail-fast se valore fuori tassonomia).
+  - [x] Uno `zod`/check di normalizzazione che trasforma il valore DB grezzo nel tipo `Role`, rifiutando valori sconosciuti (deny-by-default anche sulla forma del dato: un ruolo non riconosciuto non è mai trattato come ammesso).
+- [x] Task 3: Esposizione del ruolo lato app + guard della shell autenticata (AC: #1, #2)
+  - [x] La dashboard/esempio autenticato mostra il ruolo dell'utente corrente (prova visiva che il ruolo fluisce dalla sessione al client).
+  - [x] **Un guard server-side minimale** per una risorsa protetta di prova (es. la route `/dashboard`): senza sessione valida → redirect/401, con sessione valida → contenuto. Nota di scope: questo NON è l'enforcement RBAC del core (quello arriva in Story 1.5 con Principal nel context oRPC, AD-4) — è solo la dimostrazione dell'AC#2 a livello di app. Un client test di sessione invalida è accettabile come verifica (vedi Testing).
+  - [x] Cancellare l'auto-registrazione pubblica se emergesse in conflitto con l'assegnazione dei ruoli: il sign-up resta aperto (ruolo default CLIENTE), nessun utente nasce ADMIN/EDITOR (Dev Notes "Assegnazione ruoli").
+- [x] Task 4: Test e CI (AC: #1, #2)
+  - [x] Test di integrazione DB (pattern `packages/db/tests/invariants.integration.test.ts`, Postgres reale docker): nuovo utente default → ruolo `CLIENTE`; tentativo di settare un ruolo non valido via API di registro → rifiutato/non appunto onorato (`input: false` di Better Auth).
+  - [x] Test del guard: richiesta senza cookie di sessione alla risorsa protetta → 401/redirect (mai 200).
+  - [x] Verificare `pnpm check-types`, `pnpm test`, `pnpm lint`, `pnpm build` verdi su tutti i package; CI già esistente continua a passare.
 
 ## Dev Notes
 
@@ -104,8 +104,58 @@ So that le operazioni successive possano essere autorizzate per ruolo (FR12 fond
 
 ### Agent Model Used
 
+opencode-go / glm-5.3-flash (opencode)
+
 ### Debug Log References
+
+- RED→GREEN confermato: i test iniziali fallivano per colonna `role` assente e modulo `roles.ts` inesistente; dopo implementazione tutti verdi.
+- 429 nei test di integrazione auth: le **special rules** di Better Auth limitano `/sign-up/*` a 3 richieste/10s per IP (verificato in `better-auth/dist/api/rate-limiter`); l'header `x-forwarded-for` con UUID non valido viene scartato dalla validazione IP e cade su `127.0.0.1`. Risolto con IP IPv4 validi e univoci per richiesta. La verifica esplicita del 429 arriva dalla code review (test dedicato sulle special rules).
+- Migration `20260905180753_user_role`: creata con `--create-only`, SQL rivisto (`ALTER TABLE "user" ADD COLUMN "role" TEXT NOT NULL DEFAULT 'CLIENTE'`), applicata; secondo `migrate dev` = "Already in sync" (no drift). Client Prisma rigenerato e committato.
+- Nota: `User.id` non ha default nello schema (lo genera Better Auth) — nel test DB l'id è fornito esplicitamente.
 
 ### Completion Notes List
 
+- **Colonna `user.role`** (`TEXT NOT NULL DEFAULT 'CLIENTE'`): dato di dominio persistente, non additionalFields virtuali. Il default è il minor privilegio della matrice RBAC.
+- **Hardening server-side** in `packages/auth/src/index.ts`: `minPasswordLength: 8` (chiude la voce `deferred-work.md` aperta per questa story), `rateLimit` esplicito (window 60s, max 10, più special rules native su `/sign-up/*` = 3/10s). `requireEmailVerification` resta `false` **per scelta documentata**: decisione registrata in `deferred-work.md` come gate di release per Story 1.6 (nessun provider email previsto dallo Spine).
+- **Tassonomia** (`packages/auth/src/roles.ts`, re-export da `index`): `Role = "ADMIN" | "EDITOR" | "CLIENTE"` (AD-4), `DEFAULT_ROLE = "CLIENTE"`, `parseRole` fail-fast (zod enum) e `safeParseRole` per i guard. Valore DB non riconosciuto → mai trattato come ammesso.
+- **Deny-by-default sull'ingresso testato**: sign-up con `role: "ADMIN"` nel payload → utente resta CLIENTE in DB e in sessione (`input: false`). Sign-up senza role → CLIENTE. Password corta via API diretta → 400.
+- **Guard app** (`apps/web/src/app/dashboard/page.tsx`): senza sessione → redirect `/login` (comportamento preesistente, ora testato via `auth.api.getSession` senza/con cookie invalida → null); con sessione ma ruolo fuori tassonomia → redirect; ruolo mostrato in dashboard.
+- **Scope non toccato**: `packages/domain`, rotta oRPC, enforcement RBAC (Story 1.5); sign-up resta aperto, nessun conflitto con l'assegnazione ruoli (nessuna cancellazione necessaria — subtask Task 3 verificato).
+- **Debito registrato in `deferred-work.md`**: verifica email (gate Story 1.6), assegnazione/promozione ruoli senza endpoint (serve alla prima story che ne ha bisogno, probabile 1.5 o Epic 2+).
+- Verifica finale: `pnpm check-types` (7/7), `pnpm lint`, `pnpm test` (19 test, 3 package), `pnpm build` (8/8) — tutti verdi.
+
 ### File List
+
+- packages/db/prisma/schema/auth.prisma (modificato: colonna `role` su User)
+- packages/db/prisma/migrations/20260905180753_user_role/migration.sql (nuovo)
+- packages/db/prisma/generated/ (rigenerato: models/User.ts, internal/*.ts)
+- packages/db/tests/role.integration.test.ts (nuovo)
+- packages/auth/src/index.ts (modificato: additionalFields role, minPasswordLength, rateLimit, requireEmailVerification documentata, re-export ruoli)
+- packages/auth/src/roles.ts (nuovo)
+- packages/auth/tests/setup-env.ts (nuovo)
+- packages/auth/tests/roles.test.ts (nuovo)
+- packages/auth/tests/auth.integration.test.ts (nuovo)
+- packages/auth/vitest.config.ts (nuovo)
+- packages/auth/package.json (modificato: script test + devDep vitest)
+- apps/web/src/app/dashboard/page.tsx (modificato: guard ruolo + visualizzazione)
+- pnpm-lock.yaml (modificato: vitest per @app/auth)
+- _bmad-output/implementation-artifacts/deferred-work.md (modificato: chiusura voce hardening, nuove voci verifica email + assegnazione ruoli)
+- _bmad-output/implementation-artifacts/sprint-status.yaml (modificato: status story)
+- _bmad-output/implementation-artifacts/1-4-autenticazione-con-ruoli-admin-editor-cliente.md (questo file)
+
+## Change Log
+
+- 2026-09-05: Story implementata — colonna `user.role` + migration, hardening Better Auth (minPasswordLength 8, rateLimit esplicito, decisione requireEmailVerification documentata), tassonomia Role con normalizzazione fail-fast, guard ruolo in dashboard, 12 nuovi test (6 auth + 4 ruoli TS + 2 ruoli DB; totale suite 19 su 3 package). Voce hardening in deferred-work.md chiusa; debitore registrati (verifica email, assegnazione ruoli). Status → review.
+
+## Review Findings
+
+_Code review adversariale del 2026-09-05 (Blind Hunter + Edge Case Hunter + Acceptance Auditor). Base diff: delta non committato (`git diff HEAD` + file nuovi, esclusi client generato e lockfile). Auditor: **PASS**. Triage: 1 decision-needed, 4 patch, 3 defer, 3 dismiss. Decisione risolta da Alessandro (opzione 1: configura ora); tutte le patch applicate e verificate — `check-types` 7/7, `test` 20/20 (11 auth, incluso il nuovo 429), `lint` verdi._
+
+- [x] [Review][Decision→Patch] Rate limit bypassabile: IP risolto da `x-forwarded-for` spoofabile, niente `trustedProxies` [packages/auth/src/index.ts:34-38] — Better Auth 1.6.23 di default fida un singolo XFF controllato dal client (verificato in `@better-auth/core/dist/utils/ip.mjs`: "The leftmost token is spoofable"): un attaccante ruota l'header per richiesta e ottiene bucket freschi a piacere → brute-force illimitato su `/sign-in` e `/sign-up`. Inoltre con XFF multi-valore (proxy che appende il client IP) `getIp` → null → bucket globale condiviso `no-trusted-ip|path` → 429 collettivi. Stessa superficie di config: eventuale regola dedicata/esenzione per `/get-session` (rientra nel max globale 10/60s, chiamata a ogni navigazione/tab). **Risoluzione (decisione Alessandro, opzione "configura ora")**: `advanced.ipAddress.trustedProxies: []` esplicita la postura "nessun proxy" (IP per-IP best-effort finché non c'è un proxy); `rateLimit.customRules["/get-session"]: false` esenta la rotta di sessione dal bucket generico. La CIDR reale del proxy va impostata al gate di release Story 1.6 (nota in `deferred-work.md`).
+- [x] [Review][Patch] Nessun test verifica il 429 del rate limit; claim "il rate limiting funziona ed è coperto" sovrastato [packages/auth/tests/auth.integration.test.ts:316-341] — i test aggirano il limiter con IP univoci (corretto) ma nessun `expect(429)`; la chiusura della voce hardening in `deferred-work.md` poggia su una copertura inesistente. **Applicata**: nuovo test che riusa lo stesso IP per 4 sign-up → `200,200,200,429` (special rules 3/10s); commenti e voce deferred-work corretti.
+- [x] [Review][Patch] Secondo test DB quasi vacuo: non pinna il valore atteso [packages/db/tests/role.integration.test.ts:640-658] — asserisce solo `not ADMIN`/`not EDITOR` (passerebbe per "ROOT" o "admin"); rafforzare con `toBe("CLIENTE")` o fondere col primo test. **Applicata**: assertion `toBe("CLIENTE")` con titolo/commento allineati.
+- [x] [Review][Patch] Conteggio test nel Change Log inesatto [_bmad-output/.../1-4-...md#Change Log] — i nuovi test reali sono 12 (6 auth + 4 roles + 2 db), non 10; il totale è 19 su 3 package, non 18 (verificato per esecuzione). **Applicata**: Change Log e Completion Notes corretti (i conteggi post-review sono 13 nuovi/20 totali).
+- [x] [Review][Patch] IP di test random senza deduplica: flakiness 429 possibile [packages/auth/tests/auth.integration.test.ts:317-324] — `uniqueTestIp()` campiona `10.x.x.x` random; con 4-5 sign-up per run una collisione (→ 429) è improbabile ma non nulla. Sostituire con generazione deterministica a contatore. **Applicata**: contatore deterministico `10.0.x.y` senza collisioni.
+- [x] [Review][Defer] Storage del rate limit in-memory: contatori per-processo e azzerati al riavvio [packages/auth/src/index.ts:34-38] — deferred, pre-existing design default; con singola istanza dev è best-effort accettabile — storage condiviso (`secondaryStorage`/modello dedicato) da valutare all'envelope release (Story 1.6) e comunque prima del multi-istanza.
+- [x] [Review][Defer] Guard `/dashboard` non esercitato a livello rotta [apps/web/src/app/dashboard/page.tsx:19-22] — deferred: l'AC#2 è coperto a livello libreria (`getSession` null senza/con cookie invalida) e lo spec dichiara esplicitamente accettabile il client test; il ramo nuovo `safeParseRole` → redirect è l'unico comportamento di `page.tsx` senza coverage — un test di rotta richiede infra E2E, rivalidare in Story 1.5/Epic 2.
+- [x] [Review][Defer] Ruolo fuori tassonomia con sessione valida → loop login↔redirect senza feedback [apps/web/src/app/dashboard/page.tsx:19-22] — deferred: irraggiungibile via flow normale (colonna con default + `input: false`), rischio solo da scritture esterne; il deny è corretto ma una 403/pagina di errore sarebbe la risposta giusta — Story 1.5+ (Principal nel context).
