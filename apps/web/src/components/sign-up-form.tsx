@@ -1,6 +1,6 @@
-import { Button } from "@app/ui/components/button";
-import { Input } from "@app/ui/components/input";
-import { Label } from "@app/ui/components/label";
+"use client";
+
+import { Button, Input, Label } from "@penpot-ds/ui/editor";
 import { useForm } from "@tanstack/react-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";

@@ -1,13 +1,20 @@
-# app
+# page-builder
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines Next.js, Self, ORPC, and more.
+Page builder end-to-end: design system generato dal catalogo Penpot, editor
+pagine a blocchi (authoring drag-and-drop, versioning/publish/rollback) e render
+pubblico by-slug, con RBAC, audit e integrazione commerce pluggable.
 
-## Features
+Il contratto vincolante dell'architettura è
+[`ARCHITECTURE-SPINE.md`](_bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md).
+
+Lo scaffold è stato generato con [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack).
+
+## Stack
 
 - **TypeScript** - For type safety and improved developer experience
 - **Next.js** - Full-stack React framework
 - **TailwindCSS** - Utility-first CSS for rapid UI development
-- **Shared UI package** - shadcn/ui primitives live in `packages/ui`
+- **`@penpot-ds/ui`** - libreria componenti unica: `domains/` (generato da Penpot) + `editor/` (a mano)
 - **oRPC** - End-to-end type-safe APIs with OpenAPI integration
 - **Prisma** - TypeScript-first ORM
 - **PostgreSQL** - Database engine
@@ -57,43 +64,44 @@ pnpm run dev
 
 Open [http://localhost:3001](http://localhost:3001) in your browser to see the fullstack application.
 
-## UI Customization
+## Il package UI: `domains/` e `editor/`
 
-React web apps in this stack share shadcn/ui primitives through `packages/ui`.
+`@penpot-ds/ui` è la **libreria componenti unica** del progetto (AD-3/AD-11) ed
+espone due entry point distinti:
 
-- Change design tokens and global styles in `packages/ui/src/styles/globals.css`
-- Update shared primitives in `packages/ui/src/components/*`
-- Adjust shadcn aliases or style config in `packages/ui/components.json` and `apps/web/components.json`
+| Export | Cartella | Chi ci scrive | Cosa contiene |
+| --- | --- | --- | --- |
+| `@penpot-ds/ui` | `src/domains/` | il **generatore** | componenti derivati dal catalogo Penpot (dalla Story 2.4) |
+| `@penpot-ds/ui/editor` | `src/editor/` | **a mano** | il chrome dell'editor page-builder |
 
-### Add more shared components
-
-Run this from the project root to add more primitives to the shared UI package:
+**Regola di confine assoluta:** `domains/` non conosce il dominio page-builder e
+non importa mai da `editor/`. La dipendenza va solo nel verso opposto. Persa la
+barriera di package con la fusione, il confine è difeso da un check bloccante:
 
 ```bash
-npx shadcn@latest add accordion dialog popover sheet table -c packages/ui
+pnpm run lint    # packages/ui/scripts/check-boundaries.mjs
 ```
 
-Import shared components like this:
+Token e stili globali stanno in `packages/ui/src/styles/globals.css`; gli alias
+shadcn in `packages/ui/components.json` e `apps/web/components.json`.
 
 ```tsx
-import { Button } from "@app/ui/components/button";
+import { Button } from "@penpot-ds/ui/editor";
 ```
 
-### Add app-specific blocks
-
-If you want to add app-specific blocks instead of shared primitives, run the shadcn CLI from `apps/web`.
-
-## Project Structure
+## Struttura
 
 ```
-app/
+page-builder/
 ├── apps/
-│   └── web/         # Fullstack application (Next.js)
+│   └── web/         # unico adapter inbound (Next.js App Router)
 ├── packages/
-│   ├── ui/          # Shared shadcn/ui components and styles
-│   ├── api/         # API layer / business logic
-│   ├── auth/        # Authentication configuration & logic
-│   └── db/          # Database schema & queries
+│   ├── ui/          # @penpot-ds/ui — design system (domains/ + editor/)
+│   ├── api/         # router oRPC
+│   ├── auth/        # configurazione Better Auth
+│   ├── config/      # tsconfig condivisi
+│   ├── db/          # schema Prisma e client
+│   └── env/         # validazione env (server + client)
 ```
 
 ## Available Scripts
@@ -102,6 +110,7 @@ app/
 - `pnpm run build`: Build all applications
 - `pnpm run dev:web`: Start only the web application
 - `pnpm run check-types`: Check TypeScript types across all apps
+- `pnpm run lint`: Run the blocking checks (incl. the `domains/` → `editor/` boundary)
 - `pnpm run db:push`: Push schema changes to database
 - `pnpm run db:generate`: Generate database client/types
 - `pnpm run db:migrate`: Run database migrations

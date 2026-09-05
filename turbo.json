@@ -1,17 +1,39 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
+  "globalEnv": [
+    "NODE_ENV",
+    "SKIP_ENV_VALIDATION"
+  ],
+  "globalDependencies": [
+    "**/.env.example",
+    "pnpm-workspace.yaml"
+  ],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "lint"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "env": [
+        "DATABASE_URL",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "CORS_ORIGIN",
+        "NEXT_PUBLIC_SERVER_URL"
+      ],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "lint": {
       "dependsOn": ["^lint"]
     },
     "check-types": {
-      "dependsOn": ["^check-types"]
+      "dependsOn": ["^check-types"],
+      "env": [
+        "DATABASE_URL",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "CORS_ORIGIN",
+        "NEXT_PUBLIC_SERVER_URL"
+      ]
     },
     "dev": {
       "cache": false,
@@ -25,15 +47,14 @@
     },
     "db:migrate": {
       "cache": false,
-      "persistent": true
+      "interactive": true
     },
     "db:studio": {
       "cache": false,
       "persistent": true
     },
     "db:start": {
-      "cache": false,
-      "persistent": true
+      "cache": false
     },
     "db:stop": {
       "cache": false

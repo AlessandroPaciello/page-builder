@@ -18,6 +18,10 @@ output_folder = "{project-root}/_bmad-output"
 [modules.bmm]
 planning_artifacts = "{project-root}/_bmad-output/planning-artifacts"
 implementation_artifacts = "{project-root}/_bmad-output/implementation-artifacts"
+# Documentazione del progetto attuale (greenfield Next.js). Da popolare con [GPC]/[DP].
+# NOTA: `docs/legacy/` contiene la documentazione della codebase PRECEDENTE
+# (penpot-design-system: Strapi + JHipster) ed è solo riferimento storico —
+# non va usata come grounding per story o decisioni tecniche. Vedi docs/README.md.
 project_knowledge = "{project-root}/docs"
 
 [agents.bmad-agent-analyst]

@@ -1,15 +1,14 @@
 "use client";
 
-import { Button } from "@app/ui/components/button";
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@app/ui/components/dropdown-menu";
+} from "@penpot-ds/ui/editor";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import * as React from "react";
 
 export function ModeToggle() {
   const { setTheme } = useTheme();
