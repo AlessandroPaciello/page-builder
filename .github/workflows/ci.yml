@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Token a privilegi minimi sui run di PR; le pipeline sovrapposte sullo stesso
+# ref si cancellano a vicenda (push ravvicinati → una sola esecuzione utile).
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    env:
+      # `next build` importa `@app/env/web`, che lancia se `NEXT_PUBLIC_SERVER_URL`
+      # manca. In CI non c'è nessun `.env` (non è committato): l'env di build non è
+      # un input della pipeline, la validazione serve a chi deploya.
+      SKIP_ENV_VALIDATION: "1"
+    steps:
+      - uses: actions/checkout@v5
+
+      # Senza `version:`: l'action legge `packageManager` da package.json, così
+      # la versione di pnpm vive in un solo posto.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check types
+        run: pnpm check-types
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        run: pnpm test
