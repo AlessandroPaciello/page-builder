@@ -4,6 +4,10 @@ model User {
   email         String
   emailVerified Boolean   @default(false)
   image         String?
+  // AD-4: il ruolo è dato di dominio persistente (colonna, non additionalFields
+  // virtuali). Il default è il minor privilegio della matrice RBAC; la
+  // tassonomia valida è filtrata fail-fast alla lettura (packages/auth/roles.ts).
+  role          String    @default("CLIENTE") @map("role")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
