@@ -1,5 +1,5 @@
 # generated: 2026-07-26
-# last_updated: 2026-07-26
+# last_updated: 2026-09-05
 # project: page-builder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-07-26
-last_updated: 2026-07-26
+last_updated: 2026-09-05
 project: page-builder
 project_key: NOKEY
 tracking_system: file-system
@@ -49,7 +49,7 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 
 development_status:
   epic-1: in-progress
-  1-1-scaffolding-greenfield-del-workspace: review
+  1-1-scaffolding-greenfield-del-workspace: in-progress
   1-2-skeleton-del-core-di-dominio-esagonale: backlog
   1-3-modello-dati-e-invariante-di-pubblicazione-a-livello-db: backlog
   1-4-autenticazione-con-ruoli-admin-editor-cliente: backlog
@@ -59,9 +59,10 @@ development_status:
 
   epic-2: backlog
   2-1-pipeline-token-penpot-codice: backlog
-  2-2-generazione-componenti-primitive-da-penpot: backlog
-  2-3-libreria-primitive-accessibili: backlog
-  2-4-storybook-del-design-system: backlog
+  2-2-estrazione-componenti-e-schema-delle-ricette: backlog
+  2-3-renderer-deterministico-e-gate-ci: backlog
+  2-4-libreria-componenti-accessibile: backlog
+  2-5-storybook-del-design-system: backlog
   epic-2-retrospective: optional
 
   epic-3: backlog

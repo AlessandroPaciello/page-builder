@@ -26,7 +26,7 @@ Esiste già un prodotto end-to-end che va dal design al codice fino alla pubblic
 
 - **CAP-2 — Generazione componenti design→codice**
   - **intent:** generare primitive accessibili dai componenti Penpot, mappando la matrice di varianti Penpot in un modello di varianti.
-  - **success:** la pipeline emette componente + test + story + barrel; i file scritti a mano sono preservati (skip salvo forzatura); un gate di completezza artefatti passa in CI.
+  - **success:** l'estrazione di un componente produce fixture e ricetta committate; il renderer emette componente + test + story + barrel in modo **riproducibile** (rigenerare dà diff zero); i file scritti a mano sono preservati; i quattro gate (completezza, rigenerazione, a11y, drift fixture) passano in CI.
 
 - **CAP-3 — Libreria di primitive accessibili**
   - **intent:** offrire una libreria di componenti UI headless/accessibili organizzati per dominio (data-display, inputs, feedback, layout, navigation, overlays).
@@ -90,7 +90,7 @@ Esiste già un prodotto end-to-end che va dal design al codice fino alla pubblic
 - **Invariante autoritativo:** al più una versione PUBLISHED per pagina (garantito in modo autoritativo, non solo nella logica applicativa).
 - **A11y baseline obbligatoria — target WCAG 2.1 AA** — per ogni primitiva/composizione (focus visibile, stato=testo+colore, ARIA corretto, overlay su portale root condiviso sopra il canvas). Dettaglio → [a11y-baseline.md](./a11y-baseline.md).
 - **Il frontend del page-builder DEVE consumare il design system** (composizioni `ui` + primitive), non uno stack UI parallelo. Il drift legacy (l'app che usava una UI toolkit generica invece delle composizioni del design system) è un anti-pattern esplicito da non ripetere.
-- **Confine di layering del design system:** tokens ← primitives ← {puck-components, ui}; le primitive non importano mai da `ui` né conoscono il dominio page-builder.
+- **Confine di layering del design system:** tokens ← componenti generati ← {puck-components, composizioni editor}; i componenti generati non importano mai dalle composizioni editor né conoscono il dominio page-builder.
 
 ## Non-goals
 

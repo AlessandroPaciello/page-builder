@@ -4,7 +4,7 @@ baseline_commit: 6d731044cdec9b781e58e105ef76a305438553c3
 
 # Story 1.1: Scaffolding greenfield del workspace
 
-Status: review
+Status: in-progress
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -17,7 +17,8 @@ so that esiste una base full-TypeScript avviabile su cui costruire tutto il rest
 ## Acceptance Criteria
 
 1. **Given** un workspace vuoto (solo `docs/` legacy di riferimento) **When** eseguo lo scaffolding con create-better-t-stack (Next.js App Router, Node LTS, Prisma, Better Auth, oRPC) e configuro pnpm + Turborepo **Then** l'app Next parte in dev senza errori e il monorepo espone `apps/web` e la cartella `packages/`.
-2. Le versioni sono pinnate come da architecture spine (Next 16.x, React 19, Prisma 7.9+, @puckeditor/core 0.22.x, Tailwind 4) e nessun residuo legacy (JHipster/Strapi) è presente nel codice scaffoldato.
+2. Le versioni sono pinnate come da architecture spine (Next 16.x, React 19, Prisma 7.9+, Tailwind 4) e nessun residuo legacy (JHipster/Strapi) è presente nel codice scaffoldato. `@puckeditor/core` è **fuori scope** di questa story (arriva in Epic 3/4).
+3. `packages/ui` è predisposto come **libreria componenti unica** (AD-3/AD-11 riviste, Sprint Change Proposal 2026-07-26): `src/domains/` (destinato al generato) e `src/editor/` (a mano) esistono con export separati `.` e `./editor`; `@base-ui/react` è rimosso; una regola di **lint bloccante** vieta gli import `domains/**` → `editor/**`.
 
 ## Tasks / Subtasks
 
@@ -51,6 +52,60 @@ so that esiste una base full-TypeScript avviabile su cui costruire tutto il rest
 - [x] Task 4: Igiene repo (AC: #1)
   - [x] Verificare/aggiornare `.gitignore` esistente per coprire gli artefatti tipici del nuovo stack (`.next/`, `node_modules/`, `.turbo/`, file env locali) senza duplicare regole già presenti.
   - [x] Non modificare `.github/`, `.claude/`, `_bmad/`, `_bmad-output/` — sono infrastruttura del progetto BMAD, fuori scope di questa story.
+- [ ] Task 5: Predisporre `packages/ui` secondo AD-3/AD-11 riviste (AC: #3)
+  - [ ] Rimuovere `@base-ui/react` da `packages/ui/package.json`. Radix **non** entra ora: arriva con i componenti generati nella Story 2.4.
+  - [ ] Creare `packages/ui/src/domains/` e `packages/ui/src/editor/`, spostando i componenti oggi presenti nella destinazione corretta (i componenti di prodotto consumati da `apps/web` — header, mode-toggle, user-menu, sign-in-form — appartengono a `editor/`).
+  - [ ] Dichiarare i due export nel `package.json` di `ui`: `.` → `src/domains`, `./editor` → `src/editor`; aggiornare gli import di `apps/web` di conseguenza.
+  - [ ] Aggiungere la regola di lint **bloccante** che vieta gli import da `domains/**` verso `editor/**` (il confine ha perso la barriera di package con la fusione: dev'essere difeso da un check, non da una frase).
+  - [ ] Verificare `pnpm build` e `pnpm check-types` verdi dopo la ristrutturazione.
+
+### Review Findings
+
+_Code review adversariale del 2026-07-26 (Blind Hunter + Edge Case Hunter + Acceptance Auditor). Base diff: `main...HEAD`. Verifiche empiriche eseguite: `pnpm build` ✅ EXIT 0, `pnpm check-types` ✅ EXIT 0 (6/6 package), nessun segreto nei chunk client statici._
+
+**Decision needed**
+
+- [x] [Review][Decision] ✅ **SCIOLTA il 2026-09-05** — la Sprint Change Proposal su AD-11 è stata approvata e applicata (spine, companion, SPEC, epics). Esito: `packages/ui` **è** la libreria componenti unica, quindi non occupa impropriamente lo slot di `@penpot-ds/ui` — nessuna violazione di AD-3. Resta però da rimuovere `@base-ui/react`, che non era la scelta giusta (il comportamento verrà da Radix, dichiarato nelle ricette) e da introdurre la separazione `domains/` ↔ `editor/` con lint: vedi **Task 5**. Testo originale del finding: ⛔ **BLOCCATA — in attesa di revisione architetturale di AD-11.** Il 2026-07-26 è stato messo in discussione se `tokens`/`primitives` debbano davvero essere generati dal catalogo Penpot. L'esito ribalta il verdetto su questo punto: se le primitive tornano scritte a mano, `@base-ui/react` già presente in `packages/ui` diventa una fondazione legittima invece di una violazione. Non risolvere prima che AD-11 sia richiuso (via `bmad-correct-course` o update di `bmad-architecture`). — `packages/ui` occupa lo slot di `@penpot-ds/ui` con uno stack UI generico concorrente — `packages/ui/package.json` dichiara `@base-ui/react`, `@shadcn/react`, `shadcn`, `cva`, `tailwind-merge`, e `apps/web` già consuma `@app/ui/components/*` (header, mode-toggle, user-menu, sign-in-form). Spine#Structural Seed assegna `packages/ui` a `@penpot-ds/ui` e AD-3 vieta una libreria UI generica concorrente. Da decidere prima di Epic 2: tollerare come boilerplate temporaneo con nota esplicita, rinominare, o rimuovere.
+- [ ] [Review][Decision] TypeScript pinnato a `^6` (risolve 6.0.3) mentre Spine#Stack dichiara `~5.7+` — `pnpm-workspace.yaml:12`. `~5.7` in semver è `>=5.7 <5.8`: è un salto di major non ratificato. O si aggiorna lo Spine, o si allinea il catalog. Inoltre il caret su una major del compilatore lascia entrare minor upstream su lockfile rigenerato (`better-auth: 1.6.23` è invece pinnato esatto: incoerenza).
+- [ ] [Review][Decision] Naming del workspace fermo ai default del CLI — root `package.json:2` `"name": "app"`, namespace `@app/*`, `apps/web/src/app/layout.tsx` `title/description: "app"`, `packages/db/docker-compose.yml` `name: app` e DB `app`. Spine#Consistency Conventions radica su `page-builder` / `@penpot-ds/*`. Rinominare ora o accettare la deriva e ratificarla.
+- [ ] [Review][Decision] Contraddizione interna della spec su `@puckeditor/core` — AC2 lo elenca tra le versioni "pinnate", Task 2 e Dev Notes vietano di installarlo in questa story. L'implementazione segue Task 2 (0 occorrenze nel repo, verificato), quindi AC2 non è letteralmente soddisfacibile: va corretto in `epics.md` (Story 1.1 e `[STARTER]`) e qui.
+
+**Patch**
+
+- [ ] [Review][Patch] Cache Turborepo cieca alle variabili d'ambiente: task `build` senza `env`/`globalEnv`, quindi `DATABASE_URL`/`BETTER_AUTH_SECRET`/`BETTER_AUTH_URL`/`CORS_ORIGIN` non entrano nella chiave di cache [turbo.json:5-9]
+- [ ] [Review][Patch] `.gitignore` non copre `.env.production` / `.env.development`: ignora solo `.env` e `.env*.local`, un file di segreti di produzione verrebbe committato senza protestare [.gitignore:23-25]
+- [ ] [Review][Patch] Node engine LTS non pinnato nel repo: nessun campo `engines`, nessun `.nvmrc`/`.node-version` (Task 2 lo richiede esplicitamente; il pin oggi vive solo nella shell dello sviluppatore) [package.json:34]
+- [ ] [Review][Patch] `OpenAPIReferencePlugin` registrato senza gate d'ambiente: `/api/rpc/api-reference` espone l'intera superficie API anche in produzione [apps/web/src/app/api/rpc/[[...rest]]/route.ts:17-22]
+- [ ] [Review][Patch] `apps/web/tsconfig.json` non estende `@app/config/tsconfig.base.json`: l'unico adapter inbound gira senza `noUncheckedIndexedAccess`, `noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch` [apps/web/tsconfig.json:2]
+- [ ] [Review][Patch] `packages/env/src/web.ts` ha `client: {}` e `runtimeEnv: {}` (non valida nulla) mentre README e `.env.example` promettono fail-fast all'avvio [packages/env/src/web.ts:3-8]
+- [ ] [Review][Patch] Task `lint` dichiarato in turbo.json ma nessuno script `lint` in alcun package e nessuna config linter nel repo: gate di qualità fantasma [turbo.json:10-12]
+- [ ] [Review][Patch] `sign-in-form.tsx`, `sign-up-form.tsx`, `user-menu.tsx` usano `useRouter`/`useForm`/`useSession` senza `"use client"` proprio: funzionano solo perché gli import attuali sono client [apps/web/src/components/sign-in-form.tsx:1]
+- [ ] [Review][Patch] `createContext` chiamato prima del match della route e fuori dagli interceptor `onError`: query DB su ogni 404 e su `healthCheck` pubblico, ed eccezioni non loggate [apps/web/src/app/api/rpc/[[...rest]]/route.ts:30-32]
+- [ ] [Review][Patch] `db:start` e `db:migrate` marcati `persistent: true` ma `docker compose up -d` è detached ed esce subito: `persistent` impedisce di usarli come dipendenza di altri task [turbo.json:26-37]
+- [ ] [Review][Patch] Nessuna normalizzazione dello slash finale su `CORS_ORIGIN` e `BETTER_AUTH_URL`: `trustedOrigins` rifiuta un origin legittimo, e l'URL SSR diventa `//api/rpc` [packages/auth/src/index.ts:13]
+- [ ] [Review][Patch] `@orpc/tanstack-query` (`^1.14.6`) e `@tanstack/react-query*` fissati a mano in `apps/web/package.json` mentre `@orpc/{server,client,openapi,zod}` passano da `catalog:`: il catalog perde il suo scopo [apps/web/package.json]
+- [ ] [Review][Patch] `context.auth: null` è un campo fantasma sempre nullo, mai usato: verrà copiato in ogni futura procedura [packages/api/src/context.ts:9]
+- [ ] [Review][Patch] `privateData` usa `context.session?.user` pur essendo dietro `protectedProcedure`: il tipo di ritorno include `user: User | undefined`, un caso che il middleware ha già escluso [packages/api/src/routers/index.ts:12]
+- [ ] [Review][Patch] `skipValidation: !!process.env.SKIP_ENV_VALIDATION` è vero anche per `"false"` e `"0"`: la validazione env si disattiva per errore [packages/env/src/server.ts:14]
+- [ ] [Review][Patch] `createAuthClient({})` senza `baseURL`: funziona solo same-origin, `BETTER_AUTH_URL` non arriva al client [apps/web/src/lib/auth-client.ts:3]
+- [ ] [Review][Patch] `--font-sans: "Inter Variable"` mai caricato mentre `layout.tsx` scarica Geist/Geist_Mono: i font caricati non vengono usati, fallback al sans di sistema [packages/ui/src/styles/globals.css:79]
+- [ ] [Review][Patch] `@types/node` divergente nel monorepo: `^20` in `apps/web`, `^22.13.14` in root e `packages/env` [apps/web/package.json]
+- [ ] [Review][Patch] Dipendenze di build in `dependencies` invece di `devDependencies`: `babel-plugin-react-compiler`, `@swc/helpers` in `apps/web`, CLI `shadcn` in `packages/ui` [apps/web/package.json]
+- [ ] [Review][Patch] Metadata e README fermi al template generato: `title/description: "app"`, `README.md` "# app", ASCII art "BETTER T STACK" in `page.tsx` — nulla dice che il progetto è page-builder [apps/web/src/app/layout.tsx]
+- [ ] [Review][Patch] `prisma.config.ts` usa `dotenv.config({ path: "../../apps/web/.env" })` relativo alla cwd e cabla la posizione di `apps/web` dentro il layer DB [packages/db/prisma.config.ts]
+
+**Deferred**
+
+- [x] [Review][Defer] Nessun test, nessun task `test` in turbo.json, nessun workflow CI in `.github/` — deferred, fuori scope: Testing Requirements della story esclude esplicitamente test applicativi (arrivano in Story 1.2)
+- [x] [Review][Defer] Nessuna protezione CSRF esplicita sulle rotte RPC (`GET/POST/PUT/PATCH/DELETE` + `credentials: "include"`, nessun check `Origin`/`Referer`) [apps/web/src/app/api/rpc/[[...rest]]/route.ts:49-53] — deferred, nessuna mutation esiste ancora; da affrontare in Story 1.5
+- [x] [Review][Defer] Registrazione aperta senza `requireEmailVerification`, senza `minPasswordLength` server-side, senza `rateLimit` esplicito; policy password solo in Zod lato form [packages/auth/src/index.ts:14-16] — deferred, Story 1.4
+- [x] [Review][Defer] Form auth senza `aria-invalid`/`aria-describedby` e senza live region per gli errori [apps/web/src/components/sign-in-form.tsx] — deferred, a11y-baseline in Epic 2
+- [x] [Review][Defer] Stati `isLoading`/`isError` non gestiti: `dashboard.tsx` mostra "API: " vuoto, `page.tsx` mostra il pallino rosso già durante il caricamento [apps/web/src/app/dashboard/dashboard.tsx:7-11] — deferred, codice demo del template sostituito in Epic 4
+- [x] [Review][Defer] Il percorso SSR di `orpc.ts` (queryClient per-richiesta, forwarding header, fetch loopback senza timeout, nessun `MutationCache`) è oggi codice morto: nessun `HydrationBoundary`/prefetch server-side esiste [apps/web/src/utils/orpc.ts:32-77] — deferred, si attiva in Epic 4/6
+- [x] [Review][Defer] `output: "standalone"` assente in `next.config.ts`, richiesto da Spine#Envelope operativo [apps/web/next.config.ts] — deferred, Story 1.6 (Docker e migration in release)
+- [x] [Review][Defer] `composite`/`declaration`/`outDir` dichiarati ma inerti nei tsconfig dei package (`tsc --noEmit`, nessun `references`) [packages/api/tsconfig.json] — deferred, cargo-cult del template
+- [x] [Review][Defer] `check-types` e `build` non dipendono da `db:generate` in turbo.json [turbo.json:13-15] — deferred, innocuo oggi perché il client Prisma è committato
+- [x] [Review][Defer] `docker-compose.yml`: porta host 5432 hardcoded (collide con un postgres locale) e `image: postgres:18` non pinnata a patch [packages/db/docker-compose.yml] — deferred, ambiente di sviluppo locale
 
 ## Dev Notes
 
@@ -128,5 +183,7 @@ claude-sonnet-5
 - `packages/ui/**` (nuovo — package UI boilerplate del template)
 
 ## Change Log
+
+- 2026-09-05 — Applicata la Sprint Change Proposal su AD-11 (approvata da Alessandro): AC2 corretto sul falso pin di `@puckeditor/core`, nuovo AC3 e Task 5 per `packages/ui` (`domains/` + `editor/`, rimozione `@base-ui/react`, lint di confine); sciolto il decision-needed della code review che era bloccato da AD-11.
 
 - 2026-07-26: Scaffold greenfield completato con create-better-t-stack@3.37.0; monorepo pnpm+Turborepo con `apps/web` e `packages/*`; Prisma allineato da `^7.8.0` a `^7.9.0` per rispettare il pin `7.9+`; `.gitignore` aggiornato per unione; `pnpm dev` e `pnpm build` verificati con successo. Tutti i task completati, story pronta per review.

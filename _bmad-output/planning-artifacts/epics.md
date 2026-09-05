@@ -45,7 +45,7 @@ NFR2 (Sicurezza/Authz): Autorizzazione deny-by-default enforced server-side a co
 NFR3 (Sicurezza/XSS): I campi content del payload sono sanitizzati lato server prima di persist/publish; campi/blocchi ignoti trattati come content (fail-safe).
 NFR4 (Integrità dati): Invariante ≤1 PUBLISHED per pagina garantito a livello DB (indice univoco parziale); ogni salvataggio crea una nuova versione DRAFT immutabile (no mutazione in-place); versionNumber allocato dal core con UNIQUE(page_id, version_number).
 NFR5 (Coerenza design↔codice): Penpot è single source of truth dei valori; artefatti generati marcati @generated e mai editati a mano; la rigenerazione preserva i file scritti a mano.
-NFR6 (Confine UI): Il frontend consuma esclusivamente il design system (@penpot-ds/ui + primitives), non uno stack UI parallelo; layering tokens ← primitives ← {puck-components, ui}.
+NFR6 (Confine UI): Il frontend consuma esclusivamente il design system (@penpot-ds/ui), non uno stack UI stilistico parallelo; layering tokens ← ui/domains ← {puck-components, ui/editor}. Le primitive headless (Radix) non sono una libreria concorrente: importabili solo da ui/src/domains.
 NFR7 (Intercambiabilità commerce): I blocchi commerce e il render parlano solo al port CommerceProvider; cambiare/affiancare sorgente = cambiare un adapter, non riscrivere i blocchi.
 NFR8 (Deferred — Perf): Budget di latenza render/save deliberatamente deferiti (da misurare in implementazione, non vincolati qui).
 
@@ -53,9 +53,9 @@ NFR8 (Deferred — Perf): Budget di latenza render/save deliberatamente deferiti
 
 _Da Architecture Spine (AD-1…13) e Stack — vincoli tecnici che impattano l'implementazione._
 
-- **[STARTER] Scaffolding greenfield (Epic 1, Story 1):** workspace inizializzato con `create-better-t-stack` (3.37.0) → Next.js App Router + TypeScript; monorepo pnpm (10) + Turborepo (2); rimozione di ogni residuo legacy. Stack pinnato: Next 16.x, React 19, PostgreSQL 18, Prisma 7.9+, Better Auth, oRPC, @puckeditor/core 0.22.x (NB: `@measured/puck` è deprecato), Tailwind 4, Node LTS.
+- **[STARTER] Scaffolding greenfield (Epic 1, Story 1):** workspace inizializzato con `create-better-t-stack` (3.37.0) → Next.js App Router + TypeScript; monorepo pnpm (10) + Turborepo (2); rimozione di ogni residuo legacy. Stack pinnato allo scaffold: Next 16.x, React 19, PostgreSQL 18, Prisma 7.9+, Better Auth, oRPC, Tailwind 4, Node LTS. `@puckeditor/core` 0.22.x (NB: `@measured/puck` è deprecato) è ratificato nello spine ma **installato in Epic 3/4**, non allo scaffold.
 - **AD-1/AD-2 (paradigma):** core di dominio esagonale in `packages/domain` (no HTTP, no React), unico punto di accesso al dominio (mutazioni + letture non-pubbliche); adapter attorno; core estraibile.
-- **AD-3/AD-11 (design system):** ricostruzione dei `packages/*` (tokens/primitives/puck-components/ui/scripts/storybook); token e componenti generati via pipeline Penpot→codice.
+- **AD-3/AD-11 (design system):** ricostruzione dei `packages/*` (tokens/ui/puck-components/scripts/storybook; nessun package `primitives`); token e componenti `ui/domains` generati via pipeline Penpot→codice con regime fixture → ricetta → renderer.
 - **AD-4/AD-13 (auth/authz/errori):** Better Auth (adapter Prisma) fornisce Principal+ruolo nel context oRPC; authz fine nel core; errori di dominio tipizzati → set oRPC fisso; semantica 404 (non rivelare esistenza) vs 403.
 - **AD-5/AD-6 (payload):** schemi Zod + classifier structure/content condivisi FE/BE in `packages/puck-components`; payload jsonb {content,root,zones}; block-id client-owned immutabili; schemaVersion di puck-components.
 - **AD-7 (integrità publish):** indice univoco parziale Postgres via migration SQL esplicita (eseguita in release, prima dell'avvio app, gate CI); publish/rollback/archive in transazione che accoppia Page.status↔PageVersion.status.
@@ -81,7 +81,7 @@ UX-DR8: Blocchi Puck con campi guidati dai token (spacing/radius) e slot annidab
 
 FR1: Epic 2 — pipeline Penpot→token
 FR2: Epic 2 — generazione componenti da Penpot
-FR3: Epic 2 — libreria primitive accessibili
+FR3: Epic 2 — libreria componenti accessibile (ui/domains)
 FR4: Epic 3 — blocchi Puck token-driven
 FR5: Epic 3 — composizioni editor
 FR6: Epic 4 — authoring drag-and-drop
@@ -101,12 +101,12 @@ FR15: Epic 6 — integrazione commerce pluggable
 Scaffolding greenfield del workspace (create-better-t-stack → Next.js App Router, monorepo pnpm+Turborepo), skeleton del core di dominio esagonale (packages/domain), modello dati (Page/PageVersion/PageAssignment/AuditLog + indice univoco parziale ≤1 pubblicata), autenticazione Better Auth con ruoli Admin/Editor/Cliente, envelope Docker. Outcome: un utente si autentica, il sistema riconosce il suo ruolo e la shell dell'app gira.
 **FRs covered:** FR12 (fondamenta); abilita tutti gli altri. Vincoli: AD-1, AD-2, AD-4, AD-7 (schema indice), NFR2, NFR4, [STARTER].
 
-### Epic 2: Design system — token e primitive da Penpot
-Pipeline Penpot→codice (packages/scripts) che genera token (packages/tokens) e primitive React accessibili (packages/primitives), con Storybook. Outcome: si generano token e primitive accessibili dal catalogo Penpot, visibili e testate in Storybook.
+### Epic 2: Design system — token e componenti da Penpot
+Pipeline Penpot→codice (packages/scripts) che genera token (packages/tokens) e componenti React accessibili (packages/ui/src/domains) attraverso il regime fixture → ricetta → renderer puro (AD-11), con Storybook. Outcome: si generano token e componenti accessibili dal catalogo Penpot in modo riproducibile, visibili e testati in Storybook.
 **FRs covered:** FR1, FR2, FR3. Vincoli: AD-3, AD-11, NFR1, NFR5, UX-DR1-5,7.
 
 ### Epic 3: Blocchi ed elementi dell'editor
-Blocchi Puck che wrappano le primitive con campi token-driven e slot annidabili (packages/puck-components), classifier structure/content come single source of truth, e composizioni di prodotto dell'editor (packages/ui: TopBar, PageList, VersionList, LifecycleBadge, SaveStateIndicator, EmptyState). Outcome: esistono i blocchi e le composizioni; la config Puck è pronta per l'editor.
+Blocchi Puck che wrappano i componenti `ui/domains` con campi token-driven e slot annidabili (packages/puck-components), classifier structure/content come single source of truth, e composizioni di prodotto dell'editor (packages/ui/src/editor: TopBar, PageList, VersionList, LifecycleBadge, SaveStateIndicator, EmptyState). Outcome: esistono i blocchi e le composizioni; la config Puck è pronta per l'editor.
 **FRs covered:** FR4, FR5, FR13 (definizione). Vincoli: AD-3, AD-5, AD-6, UX-DR6,8.
 
 ### Epic 4: Editor e bozze
@@ -136,7 +136,7 @@ So that esiste una base full-TypeScript avviabile su cui costruire tutto il rest
 **Given** un workspace vuoto (solo `docs/` legacy di riferimento)
 **When** eseguo lo scaffolding con create-better-t-stack (Next.js App Router, Node LTS, Prisma, Better Auth, oRPC) e configuro pnpm + Turborepo
 **Then** l'app Next parte in dev senza errori e il monorepo espone `apps/web` e la cartella `packages/`
-**And** le versioni sono pinnate come da spine (Next 16.x, React 19, Prisma 7.9+, @puckeditor/core 0.22.x, Tailwind 4) e nessun residuo legacy (JHipster/Strapi) è presente.
+**And** le versioni sono pinnate come da spine (Next 16.x, React 19, Prisma 7.9+, Tailwind 4) e nessun residuo legacy (JHipster/Strapi) è presente; `@puckeditor/core` non è installato in questa story.
 
 ### Story 1.2: Skeleton del core di dominio esagonale
 
@@ -203,9 +203,9 @@ So that l'app sia deployabile in modo portabile con lo schema sempre applicato p
 **Then** `prisma migrate deploy` gira prima dell'avvio dell'app e l'app risponde in ambiente containerizzato
 **And** dev/staging/prod usano lo stesso artefatto con configurazione via env.
 
-## Epic 2: Design system — token e primitive da Penpot
+## Epic 2: Design system — token e componenti da Penpot
 
-Si generano token e primitive React accessibili dal catalogo Penpot, visibili e testate in Storybook.
+Si generano token e componenti React accessibili dal catalogo Penpot in modo riproducibile, visibili e testati in Storybook. Il regime è `fixture → ricetta → renderer puro` (AD-11): l'unico passo di giudizio è la ricetta, committata e rivedibile; il codice è funzione pura di fixture+ricetta.
 
 ### Story 2.1: Pipeline token Penpot→codice
 
@@ -218,46 +218,65 @@ So that i valori di design abbiano un'unica fonte generata, non scritta a mano (
 **Given** un catalogo token Penpot (live o fixture)
 **When** eseguo la generazione token
 **Then** vengono prodotti `@generated` CSS custom properties (Tailwind v4 @theme) + scala TS, raggruppati per set Penpot
-**And** un nuovo set Penpot produce una nuova sezione senza modifiche al codice, e i file generati portano il marker `@generated`.
+**And** un nuovo set Penpot produce una nuova sezione senza modifiche al codice, e i file generati portano il marker `@generated`
+**And** il catalogo token letto da Penpot è serializzato in una **fixture committata**, così la generazione gira offline e il diff della fixture mostra cosa è cambiato nel design
+**And** le variabili senza corrispondenza Penpot (font utility, line-height) vivono in un file separato e non generato, che la rigenerazione non tocca.
 
-### Story 2.2: Generazione componenti primitive da Penpot
+### Story 2.2: Estrazione componenti e schema delle ricette
 
-As a sviluppatore,
-I want generare i componenti primitive (variant matrix → modello varianti) dalla pipeline,
-So that le primitive nascano dal design, con test e story, preservando il codice scritto a mano (FR2).
+As a designer/sviluppatore,
+I want estrarre un singolo componente da Penpot e ottenerne una ricetta validata,
+So that il giudizio su varianti, headless e a11y sia congelato in un artefatto rivedibile invece che disperso nel codice (FR2, AD-11).
 
 **Acceptance Criteria:**
 
-**Given** la pagina componenti in Penpot
-**When** eseguo la generazione componenti
-**Then** per ogni componente supportato sono prodotti `.tsx` + test + story + barrel marcati `@generated`
-**And** un file già editato a mano (senza marker) non viene sovrascritto, e il gate di completezza artefatti passa.
+**Given** un componente con le sue varianti su Penpot
+**When** ne chiedo l'estrazione (per-componente e su richiesta, mai in CI né in build)
+**Then** sono prodotti `<comp>.fixture.json` (shape, assi e celle delle varianti, token binding, CSS raw) e `<comp>.recipe.json` (dominio, headless, modello CVA, requisiti a11y), entrambi committati
+**And** la ricetta è validata contro lo schema **e** contro il vocabolario dei token dello Stadio 1: una classe con valore literal (`bg-[#3b82f6]`, `p-[7px]`) fa fallire la validazione
+**And** il confine è rispettato — nella fixture solo ciò che si legge da Penpot senza sapere cosa sia React; nella ricetta ciò che richiede React e accessibilità.
 
-### Story 2.3: Libreria primitive accessibili
+### Story 2.3: Renderer deterministico e gate CI
 
 As a sviluppatore,
-I want una libreria di primitive headless organizzata per dominio e conforme alla a11y baseline,
+I want un renderer puro che applichi la ricetta a una base shadcn,
+So that il codice sia riproducibile e il drift design↔codice sia un test rosso invece di una scoperta tardiva (FR2, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** fixture e ricetta committate e la base shadcn del componente
+**When** eseguo il rendering
+**Then** il blocco `cva` della ricetta è applicato alla base shadcn e sono prodotti `.tsx` + test + story + barrel, marcati `@generated` con la provenienza (`penpotComponentId` + `fixtureHash`)
+**And** rigenerare produce **diff zero**, un file senza marker non viene mai sovrascritto, e i quattro gate passano in CI (completezza artefatti, rigenerazione, a11y con vitest-axe, drift della fixture vs Penpot live)
+**And** lo schema è validato su tre componenti di complessità crescente — Badge (presentazionale), Input (varianti), Accordion (composto con headless) — **prima** di generalizzare; se la ricetta di Accordion smette di essere una tabella e diventa un albero annidato, la story si ferma e il regime si rivaluta.
+
+### Story 2.4: Libreria componenti accessibile
+
+As a sviluppatore,
+I want una libreria di componenti organizzata per dominio e conforme alla a11y baseline,
 So that l'editor e le composizioni possano costruirci sopra (FR3, NFR1).
 
 **Acceptance Criteria:**
 
-**Given** i token generati
-**When** implemento/genero le primitive per i domini (data-display, inputs, feedback, layout, navigation, overlays)
-**Then** ogni componente interattivo ha focus visibile WCAG AA, stato comunicato da testo+colore e ARIA corretto
-**And** i test axe passano su tutte le primitive e le primitive non importano dal package `ui`.
+**Given** i token generati e il renderer della Story 2.3
+**When** genero i componenti per i sei domini (data-display, inputs, feedback, layout, navigation, overlays) in `packages/ui/src/domains`
+**Then** ogni componente interattivo ha focus visibile WCAG AA, stato comunicato da testo+colore e ARIA corretto, con il comportamento fornito dall'headless Radix dichiarato nella ricetta
+**And** i test axe passano su tutti i componenti e i componenti in `domains/` non importano da `editor/`, verificato da **lint bloccante**
+**And** i componenti senza headless disponibile e con logica propria (Table con sorting, Carousel) sono scritti a mano, senza marker `@generated`, e la pipeline li ignora.
 
-### Story 2.4: Storybook del design system
+### Story 2.5: Storybook del design system
 
 As a sviluppatore,
-I want uno Storybook che aggrega le storie delle primitive con addon di accessibilità,
+I want uno Storybook che aggrega le storie dei componenti con addon di accessibilità,
 So that il design system sia esplorabile e verificabile visivamente.
 
 **Acceptance Criteria:**
 
-**Given** le primitive con le loro story
+**Given** i componenti `ui/domains` con le loro story
 **When** avvio Storybook
-**Then** le storie delle primitive sono navigabili con i token applicati e l'addon a11y attivo
+**Then** le storie dei componenti sono navigabili con i token applicati e l'addon a11y attivo
 **And** il build statico di Storybook è prodotto senza errori.
+
 
 ## Epic 3: Blocchi ed elementi dell'editor
 
@@ -276,16 +295,16 @@ So that una modifica ai token propaghi sia agli stili sia ai menu dei blocchi (F
 **Then** i controlli dei blocchi espongono le opzioni derivate dai token
 **And** cambiare un token spacing/radius aggiorna sia le classi sia le opzioni disponibili nei campi.
 
-### Story 3.2: Blocchi Puck che wrappano le primitive
+### Story 3.2: Blocchi Puck che wrappano i componenti ui/domains
 
 As a autore,
-I want blocchi Puck con campi validati e slot annidabili che wrappano le primitive,
+I want blocchi Puck con campi validati e slot annidabili che wrappano i componenti del design system,
 So that possa comporre pagine con elementi del design system (FR4).
 
 **Acceptance Criteria:**
 
-**Given** le primitive e il ponte token
-**When** implemento i blocchi (schema Zod + campi + render che wrappa la primitiva) e li aggrego in `puckConfig`
+**Given** i componenti `ui/domains` e il ponte token
+**When** implemento i blocchi (schema Zod + campi + render che wrappa un componente `domains`) e li aggrego in `puckConfig`
 **Then** i blocchi espongono le varianti come campi editabili e i container hanno slot annidabili (content; col1/col2/col3)
 **And** ogni blocco valida i propri campi con lo schema Zod.
 
@@ -305,15 +324,15 @@ So that permessi editor e sanitizzazione server condividano la stessa fonte (FR1
 ### Story 3.4: Composizioni dell'editor
 
 As a sviluppatore,
-I want le composizioni di prodotto dell'editor costruite su primitive+token,
+I want le composizioni di prodotto dell'editor costruite su componenti `ui/domains` + token,
 So that l'editor abbia gli elementi di alto livello di cui ha bisogno (FR5, UX-DR6).
 
 **Acceptance Criteria:**
 
-**Given** le primitive
-**When** implemento LifecycleBadge, SaveStateIndicator, TopBar, PageList, VersionList, EmptyState in `packages/ui`
-**Then** le composizioni usano solo primitive+token (nessuna dipendenza applicativa/store) e rispettano la a11y baseline (es. SaveStateIndicator con aria-live)
-**And** `packages/ui` non è importato dalle primitive e le sue story sono in Storybook.
+**Given** i componenti `ui/domains`
+**When** implemento LifecycleBadge, SaveStateIndicator, TopBar, PageList, VersionList, EmptyState in `packages/ui/src/editor`
+**Then** le composizioni usano solo `ui/domains` + token (nessuna dipendenza applicativa/store) e rispettano la a11y baseline (es. SaveStateIndicator con aria-live)
+**And** `editor/` non è importato da `domains/` (lint bloccante) e le sue story sono in Storybook.
 
 ## Epic 4: Editor e bozze
 

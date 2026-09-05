@@ -5,16 +5,16 @@ Companion di [SPEC.md](./SPEC.md). Contenuto stack-agnostico: descrive **cosa** 
 ## Layering e confini
 
 ```
-tokens  ◄── primitives  ◄── puck-components
-                     ◄── ui
-scripts (pipeline Penpot) ── genera ──► tokens, primitives
+tokens  ◄── ui/domains  ◄── puck-components
+                        ◄── ui/editor
+scripts (pipeline Penpot) ── genera ──► tokens, ui/domains
 ```
 
 - `tokens` — foglia del grafo, nessuna dipendenza interna.
-- `primitives` — dipende solo da `tokens`.
-- `puck-components` — dipende da `primitives` + `tokens`.
-- `ui` (composizioni di prodotto) — dipende solo da `primitives` + `tokens`.
-- **Regola di confine assoluta:** una primitiva non conosce il dominio page-builder e non importa mai da `ui`. La semantica dell'editor vive in `ui`, mai in `primitives`.
+- `ui/domains` — dipende solo da `tokens` (+ headless Radix). Export `.`.
+- `ui/editor` — dipende solo da `ui/domains` + `tokens`. Export `./editor`.
+- `puck-components` — dipende da `ui/domains` + `tokens`. **Non** vede `ui/editor`.
+- **Regola di confine assoluta:** un componente in `domains/` non conosce il dominio page-builder e non importa mai da `editor/`. La semantica dell'editor vive in `editor/`, mai in `domains/`. Persa la barriera di package, il confine è tenuto da una regola di **lint bloccante in CI** e dai due export separati.
 
 ## tokens — fonte di verità stilistica
 
@@ -22,11 +22,11 @@ Colori, tipografia, spacing, radii, ombre, estratti da Penpot. Due forme di outp
 - variabili CSS custom (per lo styling, raggruppate per SET Penpot);
 - una scala tipizzata (spacing/radii) + opzioni/mappe per i controlli dell'editor.
 
-Il nome della variabile deriva dal **tipo** del token (namespace stabile: color, text, font-weight, tracking, font, space, radius, border-width, opacity, shadow), mai dal nome del set → un nuovo set Penpot produce automaticamente una nuova sezione senza modifiche al codice. Le variabili non presenti in Penpot (es. font utility, line-height) sono l'unica parte scritta a mano e non vengono mai sovrascritte dalla rigenerazione.
+Il nome della variabile deriva dal **tipo** del token (namespace stabile: color, text, font-weight, tracking, font, space, radius, border-width, opacity, shadow), mai dal nome del set → un nuovo set Penpot produce automaticamente una nuova sezione senza modifiche al codice. Le variabili non presenti in Penpot (es. font utility, line-height) sono l'unica parte scritta a mano: vivono in un file **separato e non generato**, importato da quello generato, così la rigenerazione non può sovrascriverle.
 
-## primitives — libreria accessibile per dominio
+## ui/domains — componenti generati da Penpot
 
-Componenti UI headless/riusabili, organizzati per dominio, con varianti guidate dai token e ref forwarding. Ogni componente rispetta la [a11y-baseline](./a11y-baseline.md). Domini e componenti di riferimento:
+Componenti UI riusabili, organizzati per dominio, con varianti guidate dai token e ref forwarding. Sono **generati** dalla pipeline fixture → ricetta → renderer (AD-11) e compongono primitive **headless** (Radix) per il comportamento, che il design non esprime. Ogni componente rispetta la [a11y-baseline](./a11y-baseline.md). I pochi componenti senza headless disponibile e con logica propria (Table con sorting, Carousel) sono scritti a mano, senza marker `@generated`, e ignorati dalla pipeline. Domini e componenti di riferimento:
 
 | Dominio | Componenti |
 |---|---|
@@ -39,7 +39,7 @@ Componenti UI headless/riusabili, organizzati per dominio, con varianti guidate 
 
 ## puck-components — blocchi del page-builder
 
-Blocchi che **incapsulano** le primitive esponendone le varianti come campi editabili. Ogni blocco = schema validato + campi editor + render che wrappa una primitiva. I campi spacing/radius derivano dai token (una modifica ai token propaga sia agli stili sia ai menu dei blocchi). Aggregati in un'unica config con categorie. Blocchi di riferimento:
+Blocchi che **incapsulano** i componenti di `ui/domains` esponendone le varianti come campi editabili. Ogni blocco = schema validato + campi editor + render che wrappa un componente `domains`. I campi spacing/radius derivano dai token (una modifica ai token propaga sia agli stili sia ai menu dei blocchi). Aggregati in un'unica config con categorie. Blocchi di riferimento:
 
 | Categoria | Blocchi |
 |---|---|
@@ -48,13 +48,13 @@ Blocchi che **incapsulano** le primitive esponendone le varianti come campi edit
 | Feedback | Alert |
 | Layout | Accordion, Box, Collapsible, Columns, Hero, Separator, Spacer, Grid, Flex, Section |
 
-I blocchi `Box/Grid/Columns/Spacer/Hero/Section` sono specifici del page-building e non hanno una primitiva 1:1. **Slot** (container annidabili): `content` su Box/Grid/Flex/Section/Hero; `col1/col2/col3` su Columns.
+I blocchi `Box/Grid/Columns/Spacer/Hero/Section` sono specifici del page-building e non hanno un componente `domains` 1:1. **Slot** (container annidabili): `content` su Box/Grid/Flex/Section/Hero; `col1/col2/col3` su Columns.
 
 Ogni blocco dichiara la classificazione **structure vs content** dei propri campi in una single source of truth (vedi CAP-13 in SPEC.md): `content` = campi testo/contenuto editabili (soggetti a sanitizzazione), `structure` = layout/configurazione (variant, size, padding, colori). Default per campi/componenti ignoti: content (fail-safe).
 
-## ui — composizioni di prodotto (editor)
+## ui/editor — composizioni di prodotto
 
-Componenti composti con semantica dell'editor page-builder, costruiti solo su primitive+token:
+Componenti composti con semantica dell'editor page-builder, **scritti a mano**, costruiti solo su `ui/domains` + token:
 
 | Composizione | Scopo |
 |---|---|

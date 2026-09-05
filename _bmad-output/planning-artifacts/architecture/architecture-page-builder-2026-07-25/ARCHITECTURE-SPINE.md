@@ -4,7 +4,7 @@ type: architecture-spine
 purpose: build-substrate
 altitude: feature
 paradigm: 'hexagonal (core di dominio + adapter) su monolite Next.js fullstack'
-scope: 'Page builder end-to-end: design system (Penpot→token→primitives→puck-components→ui) + editor pagine (authoring drag-and-drop, versioning/publish/rollback/archive, render pubblico by-slug), RBAC, audit, structure/content + sanitizzazione, integrazione commerce pluggable. Riscrittura greenfield full-TypeScript.'
+scope: 'Page builder end-to-end: design system (Penpot→token→componenti ui/domains→puck-components) + editor pagine (authoring drag-and-drop, versioning/publish/rollback/archive, render pubblico by-slug), RBAC, audit, structure/content + sanitizzazione, integrazione commerce pluggable. Riscrittura greenfield full-TypeScript.'
 status: final
 created: '2026-07-25'
 updated: '2026-07-25'
@@ -64,18 +64,18 @@ Diagramma delle dipendenze consentite (chi può dipendere da chi). È **una rego
 
 ```mermaid
 graph LR
-  tokens --> primitives
-  primitives --> puck[puck-components]
-  primitives --> ui
+  tokens --> domains["ui/src/domains (generato)"]
+  domains --> editor["ui/src/editor (a mano)"]
+  domains --> puck[puck-components]
   tokens --> puck
-  tokens --> ui
-  web[apps/web] --> ui
+  tokens --> editor
+  web[apps/web] --> editor
   web --> puck
   web --> core[packages/domain]
   web --> commerce[commerce-provider]
   core --> commerce
   core -.no.-> web
-  primitives -.no.-> ui
+  domains -.no.-> editor
 ```
 
 ### AD-1 — Core di dominio esagonale, unico punto di accesso al dominio
@@ -94,7 +94,7 @@ graph LR
 
 - **Binds:** CAP-3, CAP-4, CAP-5, CAP-6; `apps/web`.
 - **Prevents:** due stack UI paralleli e divergenti (il drift legacy: app su react-bootstrap invece delle composizioni del design system).
-- **Rule:** `apps/web` costruisce la UI **solo** su `@penpot-ds/ui` + `@penpot-ds/primitives` (+ token). Vietato introdurre una libreria UI generica concorrente. Layering `tokens ← primitives ← {puck-components, ui}`; le primitive non importano da `ui` né conoscono il dominio page-builder.
+- **Rule:** `apps/web` costruisce la UI **solo** su `@penpot-ds/ui` (+ token). Vietato introdurre una libreria UI **stilistica** concorrente. Le primitive **headless** (Radix) non sono una libreria concorrente: non portano stile, sono la dipendenza di *comportamento* dichiarata nelle ricette (AD-11), e sono importabili **solo** da `@penpot-ds/ui/src/domains/**` — mai da `apps/web`, mai da `editor/**`. Layering `tokens ← ui{ domains ← editor } ← puck-components`. **Regola di confine assoluta:** i componenti in `domains/` non conoscono il dominio page-builder e non importano mai da `editor/`. Persa la barriera di package con la fusione, il confine è tenuto da una **regola di lint bloccante in CI** e dai due export separati del package.
 
 ### AD-4 — RBAC deny-by-default a copertura totale nel core; auth ≠ authz [ADOPTED]
 
@@ -138,11 +138,17 @@ graph LR
 - **Prevents:** lock-in su una sorgente commerce; riscrittura dei blocchi al cambio/affiancamento di sorgente; chiamate commerce dirette sparse nei blocchi; DTO commerce incompatibili tra blocchi.
 - **Rule:** i blocchi commerce (ProductCard/ProductGrid/AddToCart/…) e il render **non** parlano mai direttamente a Shopify o a un backend specifico, ma al **port `CommerceProvider`** con contratto canonico (metodi es. `getProduct`/`listProducts`/`getCollection`; DTO `ProductRef`, `Price { amount, currency }`, …). Adapter: Shopify (Storefront API GraphQL) e backend proprio. La risoluzione dati avviene **server-side a render-time** (`resolveData`/external fields di Puck).
 
-### AD-11 — Pipeline Penpot→codice preservata, artefatti generati immutabili [ADOPTED]
+### AD-11 — Penpot genera i componenti; il giudizio si congela in ricette, il codice è funzione pura [ADOPTED]
 
-- **Binds:** CAP-1, CAP-2.
-- **Prevents:** valori di design inventati a mano e artefatti generati modificati fuori pipeline (drift design↔codice).
-- **Rule:** Penpot resta single source of truth dei valori; token e componenti sono **generati** (data-driven dal catalogo Penpot) e marcati `@generated`, mai editati a mano; la rigenerazione preserva i file scritti a mano. Dettaglio → companion `penpot-pipeline.md`.
+- **Binds:** CAP-1, CAP-2, CAP-3.
+- **Prevents:** valori di design inventati a mano; drift design↔codice; componenti generati non accessibili perché il design non esprime comportamento; generazione non riproducibile.
+- **Rule:** Penpot è single source of truth di **valori, aspetto e matrice varianti**. La pipeline si articola in tre artefatti con garanzie distinte:
+  (a) **fixture** per-componente, lette da Penpot via MCP, **committate** e verificate per hash;
+  (b) **ricetta** per-componente, prodotta da un code agent — l'unico passo di giudizio — **committata** e validata contro uno schema e contro il vocabolario dei token generati;
+  (c) **codice** (`.tsx` + test + story + barrel) emesso da un **renderer puro** che applica il blocco `cva` della ricetta a una **base shadcn** (headless Radix + CVA + `cn()` + `forwardRef`), marcato `@generated` e **rigenerabile a diff zero**.
+  Il **comportamento accessibile non è disegnabile in Penpot**: entra dalla base shadcn/headless dichiarata nella ricetta, che è quindi *input* del rendering, mai suo output. Penpot possiede **soltanto lo strato di stile**: quel blocco `cva`, e nient'altro.
+  I componenti privi di headless e con logica propria (es. Table con sorting, Carousel) sono **scritti a mano**, senza marker, e ignorati dalla pipeline.
+  I file `@generated` non si editano a mano: si modifica la ricetta e si rigenera. I file scritti a mano (privi di marker) sono sempre preservati. Dettaglio → companion `penpot-pipeline.md`.
 
 ### AD-12 — Snapshot di contenuto immutabili
 
@@ -161,7 +167,7 @@ graph LR
 | Concern | Convention |
 | --- | --- |
 | Naming entità | `Page` (slug pubblico univoco), `PageVersion`, `PageAssignment` (Cliente↔pagina), `AuditLog`; `PageStatus` DRAFT/PUBLISHED/ARCHIVED, `PageVersionStatus` DRAFT/PUBLISHED |
-| Confini package | `@penpot-ds/*` = design system; `packages/domain` = core (no React/HTTP); `packages/commerce-provider` = port + adapter |
+| Confini package | `@penpot-ds/*` = design system (`tokens` + `ui` + `puck-components`; nessun package `primitives`); `packages/domain` = core (no React/HTTP); `packages/commerce-provider` = port + adapter |
 | Contratti condivisi core-attraversanti | tipi canonici e proprietari unici: `Principal` (context oRPC), `AuditLog` (via `AuditWriter`), `CommerceProvider` DTO, `CacheInvalidator` port, errori di dominio tipizzati (AD-13) |
 | Transport / errori | oRPC editor→dominio; OpenAPI derivato; errori di dominio tipizzati → set oRPC fisso (AD-13) |
 | Dati & formati | id/date default Prisma/Postgres; payload `Json` (jsonb) forma Puck `{content,root,zones}`; block-id client-owned immutabili; `versionNumber` core-owned `UNIQUE(page_id, version_number)` |
@@ -193,7 +199,7 @@ graph LR
 
 ## Structural Seed
 
-Workspace **greenfield** (oggi contiene solo `docs/` come riferimento legacy). Monorepo pnpm + Turborepo. I `packages/*` del design system sono **(ri)costruiti** in questa riscrittura guidati da SPEC+companion — token e primitive-artefatti **generati** via pipeline Penpot (AD-11); lo spine ne ratifica **ruoli e layering**, non un codice preesistente.
+Workspace **greenfield** (oggi contiene solo `docs/` come riferimento legacy). Monorepo pnpm + Turborepo. I `packages/*` del design system sono **(ri)costruiti** in questa riscrittura guidati da SPEC+companion — token e componenti `domains/` **generati** via pipeline Penpot (AD-11); lo spine ne ratifica **ruoli e layering**, non un codice preesistente.
 
 ```text
 page-builder/
@@ -208,11 +214,20 @@ page-builder/
   packages/
     domain/                  # CORE esagonale: casi d'uso, RBAC, audit, pipeline payload, PORT (AD-1,2,4,5,8)
     commerce-provider/       # port CommerceProvider + adapter Shopify/custom (AD-10)
-    tokens/                  # @penpot-ds/tokens         (generato, AD-11)
-    primitives/              # @penpot-ds/primitives     (AD-3)
-    puck-components/          # @penpot-ds/puck-components — schemi Zod + classifier CONDIVISI, schemaVersion owner (AD-5,6)
-    ui/                      # @penpot-ds/ui             (composizioni editor)
-    scripts/                 # pipeline Penpot→codice     (AD-11)
+    tokens/                  # @penpot-ds/tokens — GENERATO da Penpot (AD-11)
+    ui/                      # @penpot-ds/ui — libreria componenti unica (AD-3, AD-11)
+      src/domains/           #   GENERATO: data-display, inputs, feedback, layout,
+                             #   navigation, overlays — shadcn/Radix/CVA, @generated
+                             #   export `.`  → unico consumo per puck-components
+      src/editor/            #   A MANO: composizioni di prodotto (TopBar, PageList,
+                             #   LifecycleBadge, SaveStateIndicator, EmptyState, VersionList)
+                             #   export `./editor` → unico consumo per apps/web (app)
+    puck-components/         # @penpot-ds/puck-components — schemi Zod + classifier CONDIVISI, schemaVersion owner (AD-5,6)
+    scripts/                 # pipeline Penpot→codice (AD-11)
+      penpot/                #   lettore MCP → fixture committate
+      recipes/               #   schema + validazione ricette
+      render/                #   renderer puro ricetta+fixture → tsx/test/story
+      gates/                 #   check artefatti · drift · zero-hardcoded
     storybook/               # docs/playground
 ```
 
@@ -222,10 +237,10 @@ page-builder/
 
 | Capability | Lives in | Governed by |
 | --- | --- | --- |
-| CAP-1/CAP-2 pipeline Penpot→token/componenti | `packages/scripts`, `tokens`, `primitives` | AD-11 |
-| CAP-3 primitive accessibili | `packages/primitives` | AD-3, a11y-baseline |
+| CAP-1/CAP-2 pipeline Penpot→token/componenti | `packages/scripts`, `tokens`, `ui/src/domains` | AD-11 |
+| CAP-3 primitive accessibili | `packages/ui/src/domains` | AD-3, AD-11, a11y-baseline |
 | CAP-4 blocchi Puck | `packages/puck-components` | AD-3, AD-5, AD-6 |
-| CAP-5 composizioni editor | `packages/ui` | AD-3 |
+| CAP-5 composizioni editor | `packages/ui/src/editor` | AD-3 |
 | CAP-6 authoring drag-and-drop | `apps/web/(app)` + `packages/domain` | AD-1, AD-5, AD-6, AD-12 |
 | CAP-7 autosave/bozza | core `save-version` + oRPC | AD-1, AD-4, AD-12 |
 | CAP-8 versioning/publish | core `publish` + DB | AD-1, AD-7, AD-9 |
@@ -246,3 +261,4 @@ page-builder/
 - **Migrazione `schemaVersion` del payload** — policy di upgrade quando `schemaVersion` cambia (contratto authoring↔render). Da fissare alla prima evoluzione degli schemi dei blocchi; oggi `schemaVersion` è dichiarata e posseduta da `puck-components` (AD-6).
 - **Strategia di migrazione dati dal legacy Strapi** — fuori scope SPEC salvo re-ingaggio esplicito.
 - **Envelope perf/latenza** (budget render/save) — da misurare in implementazione, non vincolato qui.
+- **Estensione della pipeline ai blocchi Puck** (Hero, Section, Columns, Card…). Il regime fixture → ricetta → renderer si estende ai blocchi cambiando solo il `kind` della ricetta (`"block"` invece di `"component"`): si genererebbe il **guscio presentazionale** — wrapper, spacing, allineamento, background, matrice varianti — mentre restano **sempre scritti a mano**: la **composizione interna** (quali componenti, in che ordine: è struttura, non stile); lo **schema Zod** e i campi editor (`puck-components` è proprietario dichiarato di `schemaVersion`, e il contratto authoring↔render non può essere output di una pipeline, AD-6); la **classificazione structure/content** (CAP-13), che è un **confine di sicurezza** — decide cosa un Cliente può modificare (AD-12) e cosa passa per la sanitizzazione XSS lato server (AD-5), e non è un posto dove si generano decisioni per inferenza, con o senza default fail-safe; la distinzione tra **contenuto d'esempio e design** (un testo nel mockup Penpot deve diventare il default di un campo editabile, non finire nel codice). **Riaprire quando** Epic 2 avrà dimostrato che lo schema della ricetta regge su componenti composti.

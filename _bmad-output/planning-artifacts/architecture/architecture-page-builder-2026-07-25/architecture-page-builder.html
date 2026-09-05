@@ -115,12 +115,12 @@
                               Shopify  Backend proprio</div>
 
 <h3>Dipendenze consentite (è una regola)</h3>
-<div class="diagram">tokens → primitives → puck-components
-                    → ui
-apps/web → ui · puck-components · packages/domain · commerce-provider
+<div class="diagram">tokens → ui/domains → puck-components
+                   → ui/editor
+apps/web → ui/editor · puck-components · packages/domain · commerce-provider
 packages/domain → commerce-provider
 packages/domain ─╳→ apps/web        (il core non dipende dal web)
-primitives ─╳→ ui                   (le primitive non conoscono il dominio)</div>
+ui/domains ─╳→ ui/editor            (i componenti generati non conoscono il dominio)</div>
 
 <h2><span class="n">04</span> Le 13 Architecture Decision</h2>
 <div class="grid two">
@@ -134,7 +134,7 @@ primitives ─╳→ ui                   (le primitive non conoscono il dominio
 
   <div class="ad"><h4><span class="tag">AD-3</span> Consuma il design system<span class="adopted">ADOPTED</span></h4>
     <dl><dt>Previene</dt><dd>Due stack UI paralleli (drift react-bootstrap del legacy).</dd>
-    <dt>Regola</dt><dd>UI solo su <code>@penpot-ds/ui</code> + primitives. Layering tokens ← primitives ← {puck-components, ui}.</dd></dl></div>
+    <dt>Regola</dt><dd>UI solo su <code>@penpot-ds/ui</code>. Vietata una libreria UI <strong>stilistica</strong> concorrente; gli headless Radix non lo sono e vivono solo in <code>ui/src/domains</code>. Layering tokens ← ui{domains ← editor} ← puck-components, con lint bloccante sul confine.</dd></dl></div>
 
   <div class="ad"><h4><span class="tag">AD-4</span> RBAC deny-by-default; auth ≠ authz<span class="adopted">ADOPTED</span></h4>
     <dl><dt>Regola</dt><dd>Better Auth dà identità + ruolo grossolano; l’authz fine (assegnazione Cliente↔pagina, content/structure) è dato di dominio nel core, su lettura <em>e</em> scrittura. Unica read anonima: PUBLISHED by-slug su proiezione pubblicata.</dd></dl></div>
@@ -160,8 +160,8 @@ primitives ─╳→ ui                   (le primitive non conoscono il dominio
     <dl><dt>Previene</dt><dd>Lock-in su una sorgente; DTO commerce incompatibili tra blocchi.</dd>
     <dt>Regola</dt><dd>Port canonico (metodi + DTO <code>ProductRef</code>/<code>Price{amount,currency}</code>); adapter Shopify + custom; risoluzione server-side a render-time.</dd></dl></div>
 
-  <div class="ad"><h4><span class="tag">AD-11</span> Pipeline Penpot→codice preservata<span class="adopted">ADOPTED</span></h4>
-    <dl><dt>Regola</dt><dd>Penpot single source dei valori; token e componenti generati e marcati <code>@generated</code>, mai editati a mano; rigenerazione preserva i file scritti a mano.</dd></dl></div>
+  <div class="ad"><h4><span class="tag">AD-11</span> Penpot genera i componenti; il giudizio si congela in ricette<span class="adopted">ADOPTED</span></h4>
+    <dl><dt>Regola</dt><dd>Penpot è single source di valori, aspetto e matrice varianti. Tre artefatti: <strong>fixture</strong> (da Penpot via MCP, committata, hash-verificata) → <strong>ricetta</strong> (code agent, unico passo di giudizio, committata e validata) → <strong>codice</strong> da un <strong>renderer puro</strong> che applica il blocco <code>cva</code> a una base shadcn, <code>@generated</code> e rigenerabile a <strong>diff zero</strong>. Il comportamento accessibile non è disegnabile in Penpot: entra dall'headless dichiarato nella ricetta.</dd></dl></div>
 
   <div class="ad"><h4><span class="tag">AD-12</span> Snapshot di contenuto immutabili</h4>
     <dl><dt>Regola</dt><dd>Ogni save crea una nuova <code>PageVersion</code> DRAFT; mai mutazione in-place. Il Cliente crea una DRAFT con i soli campi <code>content</code> editabili; structure bloccati.</dd></dl></div>
@@ -189,10 +189,10 @@ primitives ─╳→ ui                   (le primitive non conoscono il dominio
 <h2><span class="n">06</span> Dove vivono le capability</h2>
 <div class="scroll"><table>
   <tr><th>Capability</th><th>Vive in</th><th>Governata da</th></tr>
-  <tr><td>CAP-1/2 pipeline Penpot→token/componenti</td><td>scripts, tokens, primitives</td><td>AD-11</td></tr>
-  <tr><td>CAP-3 primitive accessibili</td><td>packages/primitives</td><td>AD-3, a11y</td></tr>
+  <tr><td>CAP-1/2 pipeline Penpot→token/componenti</td><td>scripts, tokens, ui/src/domains</td><td>AD-11</td></tr>
+  <tr><td>CAP-3 primitive accessibili</td><td>packages/ui/src/domains</td><td>AD-3, AD-11, a11y</td></tr>
   <tr><td>CAP-4 blocchi Puck</td><td>packages/puck-components</td><td>AD-3, AD-5, AD-6</td></tr>
-  <tr><td>CAP-5 composizioni editor</td><td>packages/ui</td><td>AD-3</td></tr>
+  <tr><td>CAP-5 composizioni editor</td><td>packages/ui/src/editor</td><td>AD-3</td></tr>
   <tr><td>CAP-6 authoring drag-and-drop</td><td>apps/web/(app) + domain</td><td>AD-1, AD-5, AD-6, AD-12</td></tr>
   <tr><td>CAP-7 autosave/bozza</td><td>core save-version</td><td>AD-1, AD-4, AD-12</td></tr>
   <tr><td>CAP-8 versioning/publish</td><td>core publish + DB</td><td>AD-1, AD-7, AD-9</td></tr>
