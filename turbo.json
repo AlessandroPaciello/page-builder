@@ -35,6 +35,9 @@
         "NEXT_PUBLIC_SERVER_URL"
       ]
     },
+    "test": {
+      "dependsOn": ["^test"]
+    },
     "dev": {
       "cache": false,
       "persistent": true
