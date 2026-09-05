@@ -1,15 +1,20 @@
 {
-  "name": "app",
+  "name": "page-builder",
   "private": true,
   "workspaces": [
     "apps/*",
     "packages/*"
   ],
   "type": "module",
+  "engines": {
+    "node": ">=22.13.0 <23",
+    "pnpm": ">=10 <11"
+  },
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
     "check-types": "turbo run check-types",
+    "lint": "turbo run lint",
     "dev:web": "turbo run dev -F web",
     "db:push": "turbo run db:push -F @app/db",
     "db:studio": "turbo run db:studio -F @app/db",
@@ -27,7 +32,7 @@
   },
   "devDependencies": {
     "@app/config": "workspace:*",
-    "@types/node": "^22.13.14",
+    "@types/node": "catalog:",
     "turbo": "^2.10.2",
     "typescript": "catalog:"
   },

@@ -1,17 +1,17 @@
-name: app
+name: page-builder
 
 services:
   postgres:
     image: postgres:18
-    container_name: app-postgres
+    container_name: page-builder-postgres
     environment:
-      POSTGRES_DB: app
+      POSTGRES_DB: page_builder
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"
     volumes:
-      - app_postgres_data:/var/lib/postgresql
+      - page_builder_postgres_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -20,4 +20,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  app_postgres_data:
+  page_builder_postgres_data:

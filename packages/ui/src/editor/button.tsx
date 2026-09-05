@@ -1,6 +1,6 @@
-import { cn } from "@app/ui/lib/utils";
-import { Button as ButtonPrimitive } from "@base-ui/react/button";
+import { cn } from "@penpot-ds/ui/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
+import * as React from "react";
 
 const buttonVariants = cva(
   "group/button inline-flex shrink-0 items-center justify-center rounded-none border border-transparent bg-clip-padding text-xs font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-1 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
@@ -41,13 +41,22 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  // `<button>` nativo assume `submit` dentro un form; Base UI assumeva `button`.
+  // Manteniamo il default precedente perché i call site passano `type="submit"`
+  // esplicitamente dove serve.
+  type = "button",
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: React.ComponentProps<"button"> & VariantProps<typeof buttonVariants>) {
   return (
-    <ButtonPrimitive
+    <button
+      type={type}
+      {...props}
+      // `data-slot="button"` è l'aggancio di stile del pacchetto: deve
+      // vincere sempre, anche quando questo componente è renderizzato come
+      // `render` di un altro trigger (es. DropdownMenuTrigger) che inietta
+      // un proprio `data-slot` dentro `props`. Va quindi DOPO lo spread.
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
     />
   );
 }

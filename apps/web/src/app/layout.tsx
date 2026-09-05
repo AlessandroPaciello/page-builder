@@ -16,8 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "app",
-  description: "app",
+  title: "page-builder",
+  description:
+    "Page builder: design system generato da Penpot, editor pagine a blocchi e render pubblico.",
 };
 
 export default function RootLayout({

@@ -7,9 +7,11 @@ export const appRouter = {
     return "OK";
   }),
   privateData: protectedProcedure.handler(({ context }) => {
+    // `requireAuth` ha già scartato le sessioni assenti: l'optional chaining
+    // riaprirebbe nel tipo di ritorno un caso che il middleware ha escluso.
     return {
       message: "This is private",
-      user: context.session?.user,
+      user: context.session.user,
     };
   }),
 };

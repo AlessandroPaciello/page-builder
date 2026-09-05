@@ -181,7 +181,7 @@ graph LR
 
 | Name | Version |
 | --- | --- |
-| TypeScript | ~5.7+ |
+| TypeScript | ~6.0 |
 | Next.js (App Router) | 16.x |
 | React | 19 |
 | PostgreSQL | 18 |

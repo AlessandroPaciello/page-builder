@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@app/ui/lib/utils";
+import { cn } from "@penpot-ds/ui/lib/utils";
 import * as React from "react";
 
 function Label({ className, ...props }: React.ComponentProps<"label">) {

@@ -1,5 +1,7 @@
-import { Button } from "@app/ui/components/button";
+"use client";
+
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -7,8 +9,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@app/ui/components/dropdown-menu";
-import { Skeleton } from "@app/ui/components/skeleton";
+  Skeleton,
+} from "@penpot-ds/ui/editor";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 

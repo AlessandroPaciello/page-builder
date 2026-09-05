@@ -12,11 +12,11 @@
   },
   "iconLibrary": "lucide",
   "aliases": {
-    "components": "@app/ui/components",
-    "utils": "@app/ui/lib/utils",
-    "hooks": "@app/ui/hooks",
-    "lib": "@app/ui/lib",
-    "ui": "@app/ui/components"
+    "components": "@penpot-ds/ui/editor",
+    "utils": "@penpot-ds/ui/lib/utils",
+    "hooks": "@penpot-ds/ui/hooks",
+    "lib": "@penpot-ds/ui/lib",
+    "ui": "@penpot-ds/ui/editor"
   },
   "menuColor": "default",
   "menuAccent": "subtle",
