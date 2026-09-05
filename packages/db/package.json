@@ -10,8 +10,9 @@
     }
   },
   "scripts": {
-    "check-types": "tsc --noEmit",
-    "db:push": "prisma db push",
+    "check-types": "prisma generate && tsc --noEmit",
+    "test": "vitest run",
+    "db:push": "echo \"db:push disabilitato: prisma db push eliminerebbe l'indice parziale AD-7 (page_version_published_unique), che vive solo nel SQL della migration e non nello schema DSL. Usa db:migrate.\" && exit 1",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "postinstall": "prisma generate",
@@ -33,6 +34,7 @@
     "@app/config": "workspace:*",
     "@types/pg": "^8.20.0",
     "prisma": "^7.9.0",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

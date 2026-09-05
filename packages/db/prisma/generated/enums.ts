@@ -9,7 +9,18 @@
 * 🟢 You can import this file directly.
 */
 
+export const PageStatus = {
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED',
+  ARCHIVED: 'ARCHIVED'
+} as const
+
+export type PageStatus = (typeof PageStatus)[keyof typeof PageStatus]
 
 
-// This file is empty because there are no enums in the schema.
-export {}
+export const PageVersionStatus = {
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED'
+} as const
+
+export type PageVersionStatus = (typeof PageVersionStatus)[keyof typeof PageVersionStatus]

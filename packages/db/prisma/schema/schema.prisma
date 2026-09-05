@@ -7,3 +7,78 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// Nota AD-7: l'indice univoco parziale `UNIQUE(page_id) WHERE status = 'PUBLISHED'`
+// su `page_version` NON vive in questo DSL ma nel SQL esplicito della migration
+// `page_data_model`. Vedi Dev Notes della Story 1.3.
+
+enum PageStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+
+  @@map("page_status")
+}
+
+enum PageVersionStatus {
+  DRAFT
+  PUBLISHED
+
+  @@map("page_version_status")
+}
+
+model Page {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  title       String
+  status      PageStatus @default(DRAFT)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  versions    PageVersion[]
+  assignments PageAssignment[]
+
+  @@map("page")
+}
+
+// AD-12: ogni salvataggio crea una nuova PageVersion DRAFT; il DB non impedisce
+// la mutazione in-place, lo garantisce il core.
+model PageVersion {
+  id            String            @id @default(cuid())
+  pageId        String
+  page          Page              @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  versionNumber Int
+  status        PageVersionStatus @default(DRAFT)
+  payload       Json
+  createdAt     DateTime          @default(now())
+
+  // AD-6: versionNumber allocato dal core, vincolo a livello DB.
+  @@unique([pageId, versionNumber])
+  @@map("page_version")
+}
+
+model PageAssignment {
+  id     String @id @default(cuid())
+  pageId String
+  page   Page   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, userId])
+  @@map("page_assignment")
+}
+
+// AD-8: forma canonica. `actor` è lo userId come stringa, nessuna FK al payload
+// né blob di contenuto: solo il diff dei metadati.
+model AuditLog {
+  id           String   @id @default(cuid())
+  actor        String
+  action       String
+  entityType   String
+  entityId     String
+  timestamp    DateTime @default(now())
+  metadataDiff Json
+
+  @@index([entityType, entityId])
+  @@index([timestamp])
+  @@map("audit_log")
+}

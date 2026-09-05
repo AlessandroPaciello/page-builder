@@ -61,3 +61,23 @@ export type Account = Prisma.AccountModel
  * 
  */
 export type Verification = Prisma.VerificationModel
+/**
+ * Model Page
+ * 
+ */
+export type Page = Prisma.PageModel
+/**
+ * Model PageVersion
+ * 
+ */
+export type PageVersion = Prisma.PageVersionModel
+/**
+ * Model PageAssignment
+ * 
+ */
+export type PageAssignment = Prisma.PageAssignmentModel
+/**
+ * Model AuditLog
+ * 
+ */
+export type AuditLog = Prisma.AuditLogModel
