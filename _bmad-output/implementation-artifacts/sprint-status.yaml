@@ -55,7 +55,7 @@ development_status:
   1-4-autenticazione-con-ruoli-admin-editor-cliente: done
   1-5-context-orpc-con-principal-e-policy-deny-by-default: done
   1-6-envelope-docker-e-migration-in-release: done
-  epic-1-retrospective: optional
+  epic-1-retrospective: done
 
   epic-2: backlog
   2-1-pipeline-token-penpot-codice: backlog
@@ -92,3 +92,25 @@ development_status:
   6-3-port-commerceprovider-e-adapter-di-riferimento: backlog
   6-4-blocchi-commerce-data-driven: backlog
   epic-6-retrospective: optional
+
+action_items:
+  - epic: 1
+    action: "Aggiungere test automatici rosso/verde per gli script check-boundaries.mjs (packages/ui, packages/domain, packages/api), oggi verificati solo con canary manuali"
+    owner: "Charlie (Dev)"
+    status: open
+  - epic: 1
+    action: "Estendere la disciplina 'test del gate, non solo canary' ai 4 nuovi gate CI di Story 2.3 (completezza artefatti, rigenerazione, a11y vitest-axe, drift fixture vs Penpot) fin dalla loro introduzione"
+    owner: "Charlie (Dev)"
+    status: open
+  - epic: 1
+    action: "Sorvegliare il criterio di stop esplicito di Story 2.3 (se la ricetta Accordion diventa un albero annidato invece di una tabella piatta, fermarsi e rivalutare il regime AD-11)"
+    owner: "Amelia (Dev)"
+    status: open
+  - epic: 1
+    action: "Correggere gli alias shadcn in components.json (puntano al barrel editor/index.ts invece che a una directory) quando Story 2.4 inizia a usare il CLI shadcn"
+    owner: "Dev"
+    status: open
+  - epic: 1
+    action: "Rivalutare la robustezza del dropdown-menu scritto a mano (focus trap, portal, ARIA) quando Story 2.4 genera il primo primitivo reale via Radix"
+    owner: "Dev"
+    status: open
