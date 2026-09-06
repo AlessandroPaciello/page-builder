@@ -27,12 +27,11 @@ Story 2.1 (Epic 2, `page-builder`) richiede di generare i design token da un cat
 - Il container `penpot-mcp` non espone porte host nel compose ufficiale Penpot (raggiungibile solo dalla rete Docker interna) — va aggiunta esplicitamente `ports: ["4401:4401"]` (vedi companion).
 - AD-11 (Architecture Spine di `page-builder`): Penpot è single source of truth dei valori di design — nessuna fixture con valori inventati; se il catalogo Penpot reale non è ancora popolato con token veri, la generazione (Story 2.1) resta bloccata finché non lo è.
 - Solo uso locale (`localhost`): nessuna esposizione pubblica, nessun setup HTTPS/reverse proxy in questo spec.
-- L'istanza Penpot esistente vive in una directory separata (`~/Scrivania/projects/penpot/`), fuori dal repo `page-builder` — questo spec non introduce un docker-compose nel repo `page-builder`.
+- Il docker-compose dello stack Penpot vive in `docker/penpot/docker-compose.yml` dentro il repo `page-builder` (spostato dalla directory esterna `~/Scrivania/projects/penpot/`, decisione 2026-09-06). Il campo `name: penpot` è pinnato esplicitamente nel file — **non va rimosso**: preserva i volumi dati esistenti (`penpot_penpot_assets`, `penpot_penpot_postgres_v15`) indipendentemente dalla directory da cui si lancia `docker compose up`.
 
 ## Non-goals
 
 - Il contenuto della library Penpot (quali colori/componenti/token) — decisione di design separata, non coperta da questo spec tecnico.
-- Un docker-compose per Penpot dentro il repo `page-builder` — l'istanza resta gestita nella sua directory esistente.
 - Deploy/esposizione di Penpot o del suo MCP oltre a `localhost` (niente HTTPS, niente produzione, niente accesso da altre macchine).
 - Pin della versione (`PENPOT_VERSION`) dello stack Penpot esistente: oggi floating (`:latest`); non è nello scope di questo spec (strumento di sviluppo personale, non l'app in release di `page-builder`).
 
@@ -42,7 +41,7 @@ Da terminale, dopo aver applicato la modifica al compose esterno e riavviato lo 
 
 ## Assumptions
 
-- Lo stack Penpot esistente (progetto compose `penpot`, `~/Scrivania/projects/penpot/docker-compose.yaml`) è quello che Alessandro vuole continuare a usare per tutta Epic 2 — non se ne prevede la sostituzione.
+- Lo stack Penpot esistente (progetto compose `penpot`, ora `docker/penpot/docker-compose.yml` nel repo `page-builder`) è quello che Alessandro vuole continuare a usare per tutta Epic 2 — non se ne prevede la sostituzione.
 - La versione floating (`penpotapp/*:latest`) dello stack esistente resta accettabile per uso locale/personale; non viene applicata la disciplina di pin delle versioni che vale per il repo `page-builder` (quello è un ambiente di sviluppo esterno al repo, non un artefatto di release).
 
 ## Open Questions
