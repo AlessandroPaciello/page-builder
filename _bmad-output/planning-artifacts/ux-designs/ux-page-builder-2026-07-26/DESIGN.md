@@ -12,45 +12,51 @@ sources:
   - "_bmad-output/specs/spec-page-builder/glossary.md"
   - "_bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md"
 colors:
-  # [ASSUMPTION] Valori placeholder — Penpot è la single source of truth (CAP-1).
-  # Questi nomi anticipano la struttura attesa; i valori esadecimali vanno sostituiti
-  # 1:1 con l'estrazione reale da Penpot appena disponibile, senza inventare hex.
-  primary: "#000000"
-  surface: "#000000"
-  surface-raised: "#000000"
-  border: "#000000"
-  text-primary: "#000000"
-  text-secondary: "#000000"
-  feedback-success: "#000000"
-  feedback-error: "#000000"
-  feedback-warning: "#000000"
-  feedback-info: "#000000"
+  # Estratti dal vivo dalla library Penpot reale (mis.color / feedback.color, set radix.color)
+  # il 2026-09-06. Nomi Penpot tra parentesi dove il ruolo non è 1:1 col nome.
+  primary: "#006C49" # color.mis.primary ({accent.9})
+  surface: "#F3F3F4" # color.mis.background
+  surface-raised: "#FFFFFF" # color.mis.surface_raised ({gray.surface})
+  border: "#7A8F85" # color.mis.border ({gray.8}) — corretto in Penpot il 2026-09-06: {gray.6} (#BDCAC0) falliva ≥3:1 contro ogni superficie (1.5-1.7:1); {gray.8} passa (3.1-3.5:1)
+  text-primary: "#1A1C1C" # color.mis.text ({gray.12})
+  text-secondary: "#3E4942" # color.mis.text_muted ({gray.11})
+  feedback-success: "#2e7d32" # color.feedback.success
+  feedback-error: "#ba1a1a" # color.feedback.error
+  feedback-warning: "#8f6c00" # color.feedback.warning
+  feedback-info: "#0a4fa0" # color.feedback.info
 typography:
-  # [ASSUMPTION] Ramp indicativo — famiglia/pesi reali da Penpot.
+  # font.mis.sans (Manrope) / font.mis.serif (Noto Serif) — mis.typography, estratto 2026-09-06.
   heading:
-    fontWeight: 600
+    fontFamily: "Manrope"
+    fontWeight: 600 # fontWeight.mis.semibold
   body:
-    fontWeight: 400
+    fontFamily: "Manrope"
+    fontWeight: 400 # fontWeight.mis.regular
   mono:
-    note: "usato solo per slug/id tecnici visibili all'Admin (es. block-id, versionNumber)"
+    note: "DEFERRED — nessun font.mis.mono nella library Penpot al 2026-09-06. Non blocca Story 2.1 (l'AC non richiede il ruolo mono); da aggiungere quando arriva la story che costruisce la UI Admin che lo usa (block-id, versionNumber)."
 rounded:
-  # [ASSUMPTION] Scala indicativa, valori da confermare via Penpot.
-  sm: "4px"
-  md: "8px"
-  lg: "12px"
-  full: "9999px"
+  # mis.radius, estratto 2026-09-06.
+  sm: "4px" # radius.mis.sm ({radix.radius.2})
+  md: "8px" # radius.mis.md ({radix.radius.4})
+  lg: "12px" # radius.mis.lg ({radix.radius.5})
+  full: "9999px" # radius.mis.full ({radix.radius.full})
 spacing:
-  # [ASSUMPTION] Scala indicativa 4px-based, coerente con "controlli guidati dai token" (CAP-4).
+  # radix.space, estratto 2026-09-06 — confermato 4px-based end-to-end.
   "1": "4px"
   "2": "8px"
   "3": "12px"
   "4": "16px"
-  "6": "24px"
-  "8": "32px"
+  "6": "24px" # space.5
+  "8": "32px" # space.6
+shadow:
+  # mis.shadow, estratto 2026-09-06 — soddisfa AC#1 Story 2.1, nessuna estensione necessaria.
+  raised: "0 1px 3px 0 rgba(26,28,28,0.12)" # shadow.mis.raised — pannelli/card
+  overlay: "0 4px 12px 0 rgba(26,28,28,0.16), 0 1px 2px 0 rgba(26,28,28,0.10)" # shadow.mis.overlay — dialog/drawer
+  toast: "0 8px 24px 0 rgba(26,28,28,0.20), 0 2px 4px 0 rgba(26,28,28,0.12)" # shadow.mis.toast — massimo, temporaneo
 components: {}
 ---
 
-> **Nota di stato.** I token concreti (`colors`, valori `typography`, valori numerici `rounded`/`spacing`) sono **placeholder** in attesa dell'estrazione reale da Penpot (CAP-1, [penpot-pipeline.md](../../../specs/spec-page-builder/penpot-pipeline.md)). Decisione presa con l'utente: la palette di questo design system deve allinearsi il più possibile a quella Penpot, quindi non vengono inventati valori qui — si definiscono quando l'allineamento è verificabile. Questo file cattura nel frattempo **struttura, ruoli e regole** dei token, non i loro valori finali.
+> **Nota di stato.** Colori/tipografia/radii/spacing/ombre sono stati **validati contro la library Penpot reale il 2026-09-06** (sessione UX, via MCP `execute_code` su `penpot.library.local.tokens`), non più placeholder. Un difetto di contrasto (`border` sotto ≥3:1, NFR non negoziabile) è stato trovato e corretto direttamente in Penpot in quella sessione — vedi nota sul token `border` sopra. Restano extra non ancora ruoli documentati qui: `color.mis.text_subtle` (terzo livello di testo, sotto text-secondary — usare quando serve un livello "muted" più tenue, es. metadata/placeholder) e `color.mis.surface_soft`/`surface_tint`/`surface_warm` (varianti superficie oltre ai due ruoli base). Il ruolo `mono` resta deferred (vedi `typography.mono.note`).
 
 ## Brand & Style
 
