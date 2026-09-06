@@ -24,5 +24,12 @@ export default defineConfig({
   },
   datasource: {
     url: env("DATABASE_URL"),
+    // Opzionale, solo per `migrate diff --from-migrations` (drift check CI,
+    // Story 1.6): il differ applica le migration su un DB shadow per calcolare
+    // lo stato atteso. Assente ⇒ le funzioni che lo richiedono falliscono
+    // esplicitamente; migrate deploy/dev non lo usano mai.
+    ...(process.env.SHADOW_DATABASE_URL
+      ? { shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL }
+      : {}),
   },
 });

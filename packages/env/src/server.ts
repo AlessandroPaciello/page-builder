@@ -21,6 +21,34 @@ export const env = createEnv({
     BETTER_AUTH_SECRET: z.string().min(32),
     BETTER_AUTH_URL: originUrl,
     CORS_ORIGIN: originUrl,
+    /**
+     * CIDR/IP fidati come proxy davanti all'app (Better Auth risolve l'IP
+     * client reale stripperando XFF da destra al primo hop non fidato).
+     * Lista separata da virgole; default [] = NESSUN proxy fidato (topologia
+     * senza reverse proxy, la postura di dev). In release il compose imposta
+     * la subnet della rete interna dichiarata in docker-compose.release.yml.
+     */
+    TRUSTED_PROXIES: z
+      .string()
+      .default("")
+      .transform((value) =>
+        value
+          .split(",")
+          .map((cidr) => cidr.trim())
+          .filter(Boolean),
+      ),
+    /**
+     * Gate di verifica email: default FALSE (decisione documentata — l'invio
+     * email richiederebbe un provider non previsto dallo Spine). Se attivata,
+     * Better Auth non autentica utenti con email non verificata e la
+     * callback sendVerificationEmail (stub su stdout in packages/auth) emette
+     * il link di verifica. La decisione di attivarla al rilascio è di
+     * Alessandro: flag env, mai hard-coded.
+     */
+    REQUIRE_EMAIL_VERIFICATION: z
+      .enum(["true", "false"])
+      .default("false")
+      .transform((value) => value === "true"),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   },
   runtimeEnv: process.env,

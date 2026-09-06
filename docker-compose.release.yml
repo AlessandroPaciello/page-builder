@@ -1,0 +1,105 @@
+# Compose di RELEASE (Story 1.6): postgres → migrate → app.
+#
+# Ordinamento garantito, senza wait-loop nell'app:
+#   postgres (service_healthy) → migrate (service_completed_successfully) → app.
+# `migrate` exit ≠ 0 ⇒ l'app NON parte: è il fail-closed dell'AC, non un
+# retry cieco. Nessun dato sensibile in questo file: tutte le credenziali
+# arrivano dall'environment (shell o file `.env` alla root, NON committato).
+#
+# ENV build-time/runtime:
+# - NEXT_PUBLIC_SERVER_URL: build-arg dell'immagine app (baked nel bundle
+#   client) → cambia per-BUILD: ricostruire l'immagine per cambiarla.
+# - DATABASE_URL/BETTER_AUTH_SECRET/BETTER_AUTH_URL/CORS_ORIGIN/TRUSTED_PROXIES:
+#   runtime-only via `environment` → stesso artefatto per dev/staging/prod.
+#
+# Variabili richieste (es. in `.env` alla root):
+#   POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD   — DB di release
+#   BETTER_AUTH_SECRET (min 32 caratteri)            — firma sessioni
+#   BETTER_AUTH_URL, CORS_ORIGIN, NEXT_PUBLIC_SERVER_URL — URL pubblici
+#   TRUSTED_PROXIES                                  — opzionale (default: niente proxy fidato)
+# Vedi README.md § Deploy.
+
+name: page-builder-release
+
+networks:
+  release:
+    driver: bridge
+    # Subnet DICHIARATA esplicitamente: la CIDR di una rete Docker di default
+    # è dinamica; qui è stabile e coincide con TRUSTED_PROXIES (Better Auth
+    # risolve l'IP client reale dietro il gateway/nat della rete interna).
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+services:
+  postgres:
+    # Pinnata a patch (18.1), non tag floating: build riproducibili.
+    image: postgres:18.1
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:?POSTGRES_DB mancante - definirlo nel .env di release}"
+      POSTGRES_USER: "${POSTGRES_USER:?POSTGRES_USER mancante - definirlo nel .env di release}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD mancante - definirlo nel .env di release}"
+    volumes:
+      - release_postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks: [release]
+
+  migrate:
+    # Stessa immagine sorgente, target `migrator` (workspace completo con i
+    # node_modules reali: il CLI Prisma + schema engine NON esistono nel
+    # runner standalone). Il container esegue `prisma migrate deploy` e
+    # termina a exit 0; restart esplicitamente "no" (il riavvio automatico di
+    # una migration fallita maschererebbe il fallimento del deploy).
+    build:
+      context: .
+      target: migrator
+    image: page-builder-migrate:latest
+    environment:
+      # Il service name `postgres` è l'host DNS interno della rete release:
+      # le credenziali vengono interpolate dalle stesse variabili del servizio.
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    networks: [release]
+
+  app:
+    build:
+      context: .
+      target: runner
+      args:
+        # ⚠️ Baked a build time nel bundle client (build-arg, non env runtime).
+        NEXT_PUBLIC_SERVER_URL: "${NEXT_PUBLIC_SERVER_URL:?NEXT_PUBLIC_SERVER_URL mancante - definirlo nel .env di release (build-arg)}"
+    image: page-builder-app:latest
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      BETTER_AUTH_SECRET: "${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET mancante - definirlo nel .env di release (min 32 caratteri)}"
+      BETTER_AUTH_URL: "${BETTER_AUTH_URL:?BETTER_AUTH_URL mancante - definirlo nel .env di release}"
+      CORS_ORIGIN: "${CORS_ORIGIN:?CORS_ORIGIN mancante - definirlo nel .env di release}"
+      # CIDR della rete dichiarata sopra: solo i container/host della rete
+      # interna sono considerati proxy fidati. Override per topologie reali
+      # con reverse proxy esterno (es. nginx/Traefik) nel .env di release.
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-172.28.0.0/16}
+      # Default "false": impostarla nel .env di release per attivare il gate
+      # (Review 1.6 — prima non era inoltrata: il flag non aveva alcun effetto).
+      REQUIRE_EMAIL_VERIFICATION: ${REQUIRE_EMAIL_VERIFICATION:-false}
+    depends_on:
+      migrate:
+        # Fail-closed: migrate fallito ⇒ l'app non parte mai.
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+    ports:
+      # Mapping opzionale per l'operatore: default 3000, overridabile.
+      - "${APP_PORT:-3000}:3000"
+    restart: unless-stopped
+    networks: [release]
+
+volumes:
+  release_postgres_data:

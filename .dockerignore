@@ -1,0 +1,30 @@
+# Il build context è il repo intero (monorepo): escludere tutto ciò che non
+# serve al build dell'immagine. Un context gonfio rallenta ogni `docker build`
+# e rischia di copiare segreti nell'immagine.
+node_modules
+**/node_modules
+.next
+**/.next
+.git
+.gitignore
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+# Artifacts BMAD e documentazione: non fanno parte del runtime.
+_bmad
+_bmad-output
+.agents
+.claude
+.opencode
+docs
+# Build artifacts e cache di tooling.
+.turbo
+**/.turbo
+**/dist
+**/tsconfig.tsbuildinfo
+# Test e CI non servono dentro l'immagine.
+.github
+# Infra di sviluppo (solo Postgres per dev): la release usa docker-compose.release.yml.
+packages/db/docker-compose.yml

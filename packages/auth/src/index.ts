@@ -25,11 +25,22 @@ export function createAuth() {
     emailAndPassword: {
       enabled: true,
       minPasswordLength: MIN_PASSWORD_LENGTH,
-      // DECISIONE DOCUMENTATA (debito in deferred-work.md): la verifica email
-      // resta disattivata per lo sviluppo — l'invio email richiederebbe un
-      // provider non previsto dallo Spine. `requireEmailVerification` è un gate
-      // di sicurezza reale: da attivare prima del deploy in release (Story 1.6).
-      requireEmailVerification: false,
+      // Gate di verifica email: disattivata di DEFAULT (flag env, non
+      // hard-coded — decisione di release di Alessandro, Story 1.6). Il
+      // provider di invio è uno stub che logga su stdout: nessun provider
+      // email nello Spine (dettaglio Deferred). Attivata ⇒ utenti con email
+      // non verificata non autenticano.
+      requireEmailVerification: env.REQUIRE_EMAIL_VERIFICATION,
+    },
+    emailVerification: {
+      // Provider stub (Story 1.6): il link di verifica va su stdout, nessun
+      // provider email nello Spine. Il dettaglio del provider reale è
+      // Deferred alla prima topologia che lo richiede.
+      sendVerificationEmail: async ({ user, url }) => {
+        console.log(
+          `[email-verification stub] utente: ${user.email} — link di verifica: ${url}`,
+        );
+      },
     },
     rateLimit: {
       enabled: true,
@@ -44,13 +55,12 @@ export function createAuth() {
     },
     advanced: {
       ipAddress: {
-        // Topologia attuale: NESSUN reverse proxy — un XFF a valore singolo è
-        // comunque controllabile dal client, quindi il limite per-IP resta
-        // best-effort (spoofabile ruotando l'header). Quando l'envelope di
-        // release (Story 1.6) introdurrà il proxy, impostare qui la CIDR del
-        // proxy: Better Auth stripperà la catena da destra al primo hop non
-        // fidato e l'XFF falsificato dal client verrà ignorato.
-        trustedProxies: [],
+        // CIDR dei proxy fidati dalla topologia di release (Story 1.6):
+        // default [] = nessun proxy fidato. In release il compose dichiara la
+        // subnet della rete interna (172.28.0.0/16 in docker-compose.release.yml)
+        // e Better Auth stripperà la catena XFF da destra al primo hop non
+        // fidato: l'XFF falsificato da un client esterno viene ignorato.
+        trustedProxies: env.TRUSTED_PROXIES,
       },
     },
     user: {

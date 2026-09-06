@@ -1,5 +1,5 @@
 # generated: 2026-07-26
-# last_updated: 2026-09-05
+# last_updated: 2026-09-06
 # project: page-builder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -54,7 +54,7 @@ development_status:
   1-3-modello-dati-e-invariante-di-pubblicazione-a-livello-db: done
   1-4-autenticazione-con-ruoli-admin-editor-cliente: done
   1-5-context-orpc-con-principal-e-policy-deny-by-default: done
-  1-6-envelope-docker-e-migration-in-release: backlog
+  1-6-envelope-docker-e-migration-in-release: done
   epic-1-retrospective: optional
 
   epic-2: backlog

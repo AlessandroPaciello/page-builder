@@ -115,3 +115,71 @@ page-builder/
 - `pnpm run db:generate`: Generate database client/types
 - `pnpm run db:migrate`: Run database migrations
 - `pnpm run db:studio`: Open database studio UI
+
+## Deploy (release)
+
+L'app è deployabile come **immagine Docker standalone** (Next `output: standalone`,
+Story 1.6): l'ordinamento `postgres → migrate → app` è garantito dal compose di
+release, non da script nell'app.
+
+### Build dell'immagine
+
+```bash
+docker build --target runner \
+  --build-arg NEXT_PUBLIC_SERVER_URL=https://app.example.com \
+  -t page-builder-app:latest .
+```
+
+Due target nello stesso `Dockerfile`:
+
+- **`runner`** — solo l'output standalone (`apps/web/.next/standalone` + `.next/static`),
+  utente non-root. Entrypoint: `node apps/web/server.js`. **Non contiene** CLI
+  Prisma né file di migration (il file-tracing di Next non li include).
+- **`migrator`** — workspace completo con i `node_modules` reali; esegue
+  `prisma migrate deploy` e termina a exit 0.
+
+### Avvio con compose di release
+
+```bash
+docker build --target migrator --build-arg NEXT_PUBLIC_SERVER_URL=... -t page-builder-migrate:latest .
+docker compose -f docker-compose.release.yml up -d --wait app
+```
+
+Ordinamento fail-closed: `postgres` (healthcheck `pg_isready`) → `migrate`
+(`service_completed_successfully`, `restart: "no"`) → `app`. Se le migration
+falliscono, **l'app non parte mai**. Il secondo `migrate deploy` su DB già
+applicato è un no-op (idempotente).
+
+> ⚠️ **Mai `docker compose down -v` contro un ambiente di release reale**: cancella
+> il volume `release_postgres_data`, cioè il database di produzione. Il `-v` è
+> usato solo nel teardown della CI (Postgres effimero su un DB di test).
+
+Le variabili di release si definiscono in un file `.env` alla root del repo
+(leggibile da compose, **non committato**) — vedi `apps/web/.env.example`:
+
+| Variabile | Tempo | Note |
+| --- | --- | --- |
+| `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | runtime | credenziali del DB di release (mai credenziali di dev) |
+| `DATABASE_URL` | runtime | derivata da `POSTGRES_*` nel compose |
+| `BETTER_AUTH_SECRET` | runtime | min 32 caratteri (`openssl rand -base64 32`) |
+| `BETTER_AUTH_URL`, `CORS_ORIGIN` | runtime | URL pubblici dell'app |
+| `NEXT_PUBLIC_SERVER_URL` | **build** | sostituita nel bundle client a build time: cambia per-**build** — ricostruire l'immagine per cambiarla (build-arg) |
+| `TRUSTED_PROXIES` | runtime | CIDR dei proxy fidati per Better Auth; default del compose: `172.28.0.0/16` (subnet dichiarata della rete compose). Override per topologie con reverse proxy esterno |
+| `REQUIRE_EMAIL_VERIFICATION` | runtime | default `false`; se `true`, utenti con email non verificata non autenticano e il link di verifica va su stdout (provider stub) |
+
+Nessun `.env` viene committato o copiato nell'immagine: in container le
+variabili arrivano solo da `environment` (la validazione t3-env a runtime passa
+con il solo env).
+
+### Limitazioni documentate (decisioni, non omissioni)
+
+- **Rate limit Better Auth in-memory** (window 60s / max 10): per il compose
+  release **single-instance** è accettabile; i contatori si azzerano a ogni
+  restart e sono per-processo: diventano un problema solo alla prima topology
+  **multi-istanza** — lì serve storage condiviso (DB/Redis), non prima.
+- **Verifica email disattivata di default** (`REQUIRE_EMAIL_VERIFICATION=false`):
+  l'attivazione è una decisione di rilascio (flag env, mai hard-coded); con lo
+  stub il link di verifica finisce su stdout, un provider email reale è
+  rimandato alla prima topologia che lo richiede.
+- **Logging**: log su stdout (default di Next/Prisma), nessun catch-all
+  silenzioso; lo stack di osservabilità è Deferred.
