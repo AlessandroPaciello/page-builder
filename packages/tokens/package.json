@@ -1,0 +1,25 @@
+{
+  "name": "@penpot-ds/tokens",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Design token generati dal catalogo Penpot (colori/tipografia/spacing/radii/ombre). Non editare a mano i file @generated — rigenera con `pnpm --filter @penpot-ds/scripts generate:theme`.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./tailwind-theme.css": "./src/tailwind-theme.css",
+    "./tailwind-extras.css": "./src/tailwind-extras.css"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --out-dir dist",
+    "check-types": "tsc --noEmit",
+    "lint": "node ./scripts/check-boundaries.mjs"
+  },
+  "devDependencies": {
+    "@app/config": "workspace:*",
+    "tsup": "catalog:",
+    "typescript": "catalog:"
+  }
+}
