@@ -33,7 +33,11 @@ export async function withTimeout<T>(
     // intercettato. Attacchiamo il catch diagnostico SOLO in quel caso — se
     // `operation` vince la race (il caso comune), il suo reject è già gestito
     // dall'`await` sopra e ri-agganciare qui logherebbe due volte lo stesso
-    // errore legittimo.
+    // errore legittimo. Nell'unico chiamante reale (il CLI, `extract-component.ts`),
+    // l'errore di timeout propagato fa terminare il processo (`process.exit`)
+    // subito dopo: questo `console.error` serve soprattutto a garantire che
+    // il reject tardivo sia SEMPRE agganciato (mai un unhandled rejection),
+    // non a garantire che venga sempre stampato prima dell'uscita.
     if (timedOut) {
       operation.catch((error: unknown) => {
         console.error(`Rifiuto tardivo (dopo il timeout) su ${description}:`, error);

@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { readComponentFixture } from "./component-reader";
 import { fixtureHash, type TokenCatalog } from "./theme-generator";
@@ -53,7 +53,7 @@ function scriptNameFor(mode: "extract" | "validate"): string {
   return mode === "extract" ? "extract:component" : "validate:recipe";
 }
 
-function parseArgs(args: readonly string[]): { mode: "extract" | "validate"; componentName: string } {
+export function parseArgs(args: readonly string[]): { mode: "extract" | "validate"; componentName: string } {
   // pnpm inoltra il separatore "--" fra script e argomenti: va rimosso, non è un flag.
   const [mode, componentName, ...rest] = args.filter((arg) => arg !== "--");
   if (mode !== "extract" && mode !== "validate") {
@@ -156,12 +156,20 @@ async function main(): Promise<void> {
   }
 }
 
-main()
-  .then(() => {
-    // Exit esplicito: socket MCP/SSE aperti non devono tenere vivo il CLI.
-    process.exit(process.exitCode ?? 0);
-  })
-  .catch((error: unknown) => {
-    console.error(error instanceof Error ? error.message : error);
-    process.exit(1);
-  });
+// Esegui `main()` solo da invocazione diretta (`node --import tsx src/extract-component.ts ...`),
+// mai a un semplice `import` (es. dai test che importano `parseArgs`): senza questa guardia
+// ogni import del modulo chiamerebbe `main()` con l'argv del processo ospite (il test runner)
+// e potenzialmente un `process.exit()` a valle.
+const isDirectInvocation = process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isDirectInvocation) {
+  main()
+    .then(() => {
+      // Exit esplicito: socket MCP/SSE aperti non devono tenere vivo il CLI.
+      process.exit(process.exitCode ?? 0);
+    })
+    .catch((error: unknown) => {
+      console.error(error instanceof Error ? error.message : error);
+      process.exit(1);
+    });
+}
