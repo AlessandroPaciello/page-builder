@@ -1,0 +1,162 @@
+/* @generated from Penpot design tokens — DO NOT EDIT BY HAND. */
+/* Regenerate with: pnpm --filter @penpot-ds/scripts generate:theme */
+/* Source catalog fixture hash: 4e8b8bb772ad */
+@import "./tailwind-extras.css";
+
+@theme static {
+  /* set: radix.space */
+  --spacing-space-1: 4px;
+  --spacing-space-2: 8px;
+  --spacing-space-3: 12px;
+  --spacing-space-4: 16px;
+  --spacing-space-5: 24px;
+  --spacing-space-6: 32px;
+  --spacing-space-7: 40px;
+  --spacing-space-8: 48px;
+  --spacing-space-9: 64px;
+
+  /* set: radix.radius */
+  --radius-1: 3px;
+  --radius-2: 4px;
+  --radius-3: 6px;
+  --radius-4: 8px;
+  --radius-5: 12px;
+  --radius-6: 16px;
+  --radius-full: 9999px;
+
+  /* set: radix.color */
+  --color-gray-1: #FAF4E8;
+  --color-gray-2: #F9F9F9;
+  --color-gray-3: #E8F5EF;
+  --color-gray-4: #E6F0EB;
+  --color-gray-5: #D0DDD5;
+  --color-gray-6: #BDCAC0;
+  --color-gray-7: #9BADA3;
+  --color-gray-8: #7A8F85;
+  --color-gray-9: #6E7A72;
+  --color-gray-10: #4F5E57;
+  --color-gray-11: #3E4942;
+  --color-gray-12: #1A1C1C;
+  --color-accent-1: #E8F5EF;
+  --color-accent-2: #CCE9DA;
+  --color-accent-3: #AEDDC4;
+  --color-accent-4: #8DCFAD;
+  --color-accent-5: #6CBD95;
+  --color-accent-6: #4EAB7E;
+  --color-accent-7: #309A68;
+  --color-accent-8: #1A8555;
+  --color-accent-9: #006C49;
+  --color-accent-10: #005A3D;
+  --color-accent-11: #004830;
+  --color-accent-12: #002113;
+  --color-accent-indicator: #006C49;
+  --color-accent-track: #E8F5EF;
+  --color-accent-contrast: #FFFFFF;
+  --color-gray-surface: #FFFFFF;
+  --color-gray-indicator: #1A1C1C;
+  --color-gray-track: #F9F9F9;
+  --color-background: #FAF4E8;
+  --color-overlay: rgba(0,0,0,0.4);
+  --color-focus: #006C49;
+  --color-panel: #FFFFFF;
+
+  /* set: radix.typography */
+  --text-font-size-1: 12px;
+  --text-font-size-2: 14px;
+  --text-font-size-3: 16px;
+  --text-font-size-4: 18px;
+  --text-font-size-5: 20px;
+  --text-font-size-6: 24px;
+  --text-font-size-7: 28px;
+  --text-font-size-8: 35px;
+  --text-font-size-9: 60px;
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+  --tracking-letter-spacing-1: 0.0025em;
+  --tracking-letter-spacing-2: 0em;
+  --tracking-letter-spacing-3: 0em;
+  --tracking-letter-spacing-4: -0.0025em;
+  --tracking-letter-spacing-5: -0.005em;
+  --tracking-letter-spacing-6: -0.00625em;
+  --tracking-letter-spacing-7: -0.0075em;
+  --tracking-letter-spacing-8: -0.01em;
+  --tracking-letter-spacing-9: -0.025em;
+
+  /* set: mis.color */
+  --color-mis-primary-light: #8CF7C3;
+  --color-mis-surface-warm: #F0ECE8;
+  --color-mis-background: #F3F3F4;
+  --color-mis-dark: #2F3131;
+  --color-mis-image-cool: #DEEEF7;
+  --color-mis-image-green: #C8DFC0;
+  --opacity-1: 0.8;
+  --color-mis-surface-raised: var(--color-gray-surface);
+  --color-mis-surface-soft: var(--color-gray-2);
+  --color-mis-surface-tint: var(--color-accent-1);
+  --color-mis-text: var(--color-gray-12);
+  --color-mis-text-muted: var(--color-gray-11);
+  --color-mis-text-subtle: var(--color-gray-9);
+  --color-mis-border: var(--color-gray-8);
+  --color-mis-primary-dark: var(--color-accent-12);
+  --color-mis-primary: var(--color-accent-9);
+
+  /* set: mis.typography */
+  --font-mis-sans: Manrope;
+  --font-mis-serif: "Noto Serif";
+  --text-font-size-mis-xs: 10px;
+  --text-font-size-mis-base: 13px;
+  --font-weight-mis-semibold: 600;
+  --tracking-letter-spacing-mis-none: 0px;
+  --tracking-letter-spacing-mis-tight: 0.5px;
+  --tracking-letter-spacing-mis-wide: 2px;
+  --tracking-letter-spacing-mis-wider: 3px;
+  --text-font-size-mis-sm: var(--text-font-size-1);
+  --text-font-size-mis-md: var(--text-font-size-2);
+  --text-font-size-mis-lg: var(--text-font-size-3);
+  --text-font-size-mis-xl: var(--text-font-size-4);
+  --text-font-size-mis-2xl: var(--text-font-size-5);
+  --text-font-size-mis-3xl: var(--text-font-size-7);
+  --font-weight-mis-regular: var(--font-weight-regular);
+  --font-weight-mis-bold: var(--font-weight-bold);
+  --font-weight-mis-medium: var(--font-weight-medium);
+  --tracking-typography-spacing-label: 1.5px;
+
+  /* set: mis.radius */
+  --radius-mis-pill: 11px;
+  --radius-mis-icon: 20px;
+  --radius-mis-sm: var(--radius-2);
+  --radius-mis-md: var(--radius-4);
+  --radius-mis-full: var(--radius-full);
+  --radius-mis-rectangle: 0px;
+  --radius-mis-lg: var(--radius-5);
+
+  /* set: feedback.color */
+  --color-feedback-error: #ba1a1a;
+  --color-feedback-error-on: #ffffff;
+  --color-feedback-error-container: #ffdad6;
+  --color-feedback-error-on-container: #690005;
+  --color-feedback-success: #2e7d32;
+  --color-feedback-success-on: #ffffff;
+  --color-feedback-success-container: #b6f2bb;
+  --color-feedback-success-on-container: #002106;
+  --color-feedback-warning: #8f6c00;
+  --color-feedback-warning-on: #ffffff;
+  --color-feedback-warning-container: #ffdf9e;
+  --color-feedback-warning-on-container: #2a1800;
+  --color-feedback-info: #0a4fa0;
+  --color-feedback-info-on: #ffffff;
+  --color-feedback-info-container: #d4e3ff;
+  --color-feedback-info-on-container: #001b3d;
+
+  /* set: border.width */
+  --border-width-hairline: 1px;
+  --border-width-thin: 2px;
+  --border-width-thick: 4px;
+
+  /* set: mis.shadow */
+  --shadow-mis-raised: 0px 1px 3px 0px rgba(26,28,28,0.12);
+  --shadow-mis-overlay: 0px 4px 12px 0px rgba(26,28,28,0.16), 0px 1px 2px 0px rgba(26,28,28,0.10);
+  --shadow-mis-toast: 0px 8px 24px 0px rgba(26,28,28,0.20), 0px 2px 4px 0px rgba(26,28,28,0.12);
+}

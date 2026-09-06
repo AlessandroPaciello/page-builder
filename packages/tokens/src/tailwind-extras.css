@@ -1,0 +1,20 @@
+/*
+ * Variabili scritte a mano, senza corrispondenza nel catalogo token Penpot.
+ * `generate:theme` importa questo file ma non lo tocca mai: non porta il
+ * marker `@generated` e non viene mai sovrascritto dalla rigenerazione.
+ *
+ * --font-utility: font per chrome UI non di brand (non è né mis.sans né
+ * mis.serif, che restano riservati al contenuto disegnato in Penpot) — usa
+ * lo stack di sistema, nessun valore "creativo" inventato.
+ * --leading-1..5: scala di line-height, non modellata in Penpot come token —
+ * valori della scala convenzionale Tailwind (none/tight/normal/relaxed/loose).
+ */
+@theme {
+  --font-utility: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --leading-1: 1;
+  --leading-2: 1.25;
+  --leading-3: 1.5;
+  --leading-4: 1.75;
+  --leading-5: 2;
+}
