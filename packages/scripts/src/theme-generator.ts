@@ -75,6 +75,8 @@ const TYPE_NAMESPACE: Record<TokenType, string> = {
   shadow: "shadow",
 };
 
+export { TYPE_NAMESPACE };
+
 /**
  * Tipi numerici (dimensionali) che possono referenziarsi liberamente tra loro
  * (es. `radius.mis.sm: "{radius.2}"`, o un raggio che parte da uno spacing).
@@ -412,7 +414,13 @@ function renderMap(exportName: string, entries: ScaleEntry[], namespace: string)
   return `export const ${exportName} = ${renderRecordLiteral(entries, (e) => `"var(--${namespace}-${e.suffix})"`)} as const;`;
 }
 
-function fixtureHash(catalog: TokenCatalog): string {
+/**
+ * Impronta di provenienza del catalogo: sha256 del JSON serializzato, tronco
+ * a 12 caratteri. Riusata da Story 2.2 (fixture/ricetta componenti) come
+ * campo `fixtureHash` della ricetta — esportata invece di duplicare
+ * l'algoritmo.
+ */
+export function fixtureHash(catalog: TokenCatalog): string {
   return createHash("sha256").update(JSON.stringify(catalog)).digest("hex").slice(0, 12);
 }
 

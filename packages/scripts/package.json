@@ -6,13 +6,16 @@
   "type": "module",
   "scripts": {
     "generate:theme": "node --import tsx src/generate-theme.ts",
+    "extract:component": "node --import tsx src/extract-component.ts extract",
+    "validate:recipe": "node --import tsx src/extract-component.ts validate",
     "test": "vitest run",
     "check-types": "tsc --noEmit",
     "lint": "node ./scripts/check-boundaries.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "catalog:",
-    "@penpot-ds/tokens": "workspace:*"
+    "@penpot-ds/tokens": "workspace:*",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@app/config": "workspace:*",

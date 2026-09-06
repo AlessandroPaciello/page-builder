@@ -1,0 +1,35 @@
+{
+  "componentName": "Badge",
+  "domain": "data-display",
+  "headless": null,
+  "cva": {
+    "base": ["inline-flex", "items-center", "rounded-full"],
+    "variants": {
+      "colorStyle": {
+        "indigo-solid": ["bg-mis-primary-light", "text-mis-primary-dark"],
+        "indigo-soft": ["bg-mis-surface-tint", "text-mis-primary"],
+        "indigo-outline": ["border", "border-mis-primary", "text-mis-primary"],
+        "green-solid": ["bg-mis-primary-light", "text-mis-primary-dark"],
+        "green-soft": ["bg-mis-surface-tint", "text-mis-primary"],
+        "green-outline": ["border", "border-mis-primary", "text-mis-primary"],
+        "gray-solid": ["bg-mis-text-muted", "text-mis-surface-raised"],
+        "gray-soft": ["bg-mis-surface-soft", "text-mis-text"],
+        "gray-outline": ["border", "border-gray-6", "text-mis-text"],
+        "red-solid": ["bg-feedback-error-container", "text-feedback-error-on-container"],
+        "red-soft": ["bg-feedback-error-container", "text-feedback-error"],
+        "red-outline": ["border", "border-feedback-error", "text-feedback-error"]
+      }
+    },
+    "defaultVariants": {
+      "colorStyle": "green-solid"
+    }
+  },
+  "a11y": {
+    "role": null,
+    "ariaAttributes": [],
+    "focusVisible": false,
+    "stateConveyedByTextAndColor": false
+  },
+  "penpotComponentId": "a0e49680-ec36-8090-8007-bf9d64f75774",
+  "fixtureHash": "4e8b8bb772ad"
+}
