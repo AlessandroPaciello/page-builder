@@ -1,14 +1,16 @@
 import { z } from "zod";
 
-/**
- * Tassonomia dei ruoli di dominio (AD-4): Better Auth fornisce
- * `identità + ruolo grossolano` (`Principal { userId, role }`); l'autorizzazione
- * fine è del core (Story 1.5). La colonna `user.role` è una stringa: la
- * validazione dell'insieme valido avviene alla lettura, fail-fast.
- */
-export const ROLES = ["ADMIN", "EDITOR", "CLIENTE"] as const;
+import { ROLES, type Role } from "@app/domain";
 
-export type Role = (typeof ROLES)[number];
+/**
+ * Tassonomia dei ruoli di dominio (AD-4). La definizione canonica vive in
+ * `@app/domain` (`Principal` è un contratto condiviso core-attraversante):
+ * qui è solo re-export — un'altra definizione creerebbe due tassonomie che
+ * divergono. La direzione adapter→core (`auth → domain`) è lecita; quella
+ * contraria è vietata dal boundary check di domain.
+ */
+export { ROLES } from "@app/domain";
+export type { Role } from "@app/domain";
 
 /**
  * Il minor privilegio della matrice RBAC: nessun percorso di sign-up può

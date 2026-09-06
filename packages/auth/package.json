@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@app/db": "workspace:*",
+    "@app/domain": "workspace:*",
     "@app/env": "workspace:*",
     "better-auth": "catalog:",
     "dotenv": "catalog:",

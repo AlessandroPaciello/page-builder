@@ -10,11 +10,13 @@
     }
   },
   "scripts": {
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "lint": "node ./scripts/check-boundaries.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
     "@app/auth": "workspace:*",
-    "@app/db": "workspace:*",
+    "@app/domain": "workspace:*",
     "@app/env": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/openapi": "catalog:",
@@ -26,6 +28,7 @@
   },
   "devDependencies": {
     "@app/config": "workspace:*",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

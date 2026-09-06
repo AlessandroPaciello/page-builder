@@ -1,5 +1,7 @@
 import { createContext } from "@app/api/context";
+import { mapDomainErrors } from "@app/api/errors";
 import { appRouter } from "@app/api/routers/index";
+import { verifyTrustedOrigin } from "@app/api/origin-guard";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { OpenAPIReferencePlugin } from "@orpc/openapi/plugins";
 import { onError } from "@orpc/server";
@@ -22,8 +24,27 @@ const API_REFERENCE_PREFIX = "/api/rpc/api-reference";
 // esplicito a "development".
 const exposeApiReference = process.env.NODE_ENV === "development";
 
+// Guard Origin/CSRF per le mutation (Story 1.5, chiusura deferred-work 1-1).
+// Legge `process.env.CORS_ORIGIN` direttamente, non l'env validato: con
+// `@t3-oss/env-core` una variabile mancante lancia ALL'IMPORT, rompendo anche
+// i GET. Qui vogliamo il fail-closed chirurgico: la config mancante nega solo
+// le mutation (lista vuota → guard negato), i GET restano servibili.
+//
+// L'allow-list è normalizzata via `new URL().origin` (non solo lo slash
+// finale): case-fold dell'host, porta default rimossa, eventuale path
+// scartato — l'origin della richiesta è già normalizzato così, e un
+// confronto grezzo negherebbe per sempre client legittimi (`HTTP://x:443`,
+// `https://x.com/app`). Un valore non-URL lancia qui, al boot: fail-loud
+// esplicito su una config rotta, non deny silenzioso in produzione.
+const trustedOrigins = process.env.CORS_ORIGIN
+  ? [new URL(process.env.CORS_ORIGIN).origin]
+  : [];
+
 const rpcHandler = new RPCHandler(appRouter, {
   interceptors: [
+    // Mapping AD-13 (dominio → set oRPC fisso) applicato UNA volta sola a
+    // ogni procedura servita dall'handler: nessuna procedura fa try/catch.
+    mapDomainErrors,
     onError((error) => {
       console.error(error);
     }),
@@ -35,6 +56,9 @@ const apiHandler = new OpenAPIHandler(appRouter, {
     ? [new OpenAPIReferencePlugin({ schemaConverters: [new ZodToJsonSchemaConverter()] })]
     : [],
   interceptors: [
+    // Stessa via della RPC: anche OpenAPI è una via di accesso, stessa
+    // semantica di errore.
+    mapDomainErrors,
     onError((error) => {
       console.error(error);
     }),
@@ -59,6 +83,12 @@ async function handleRequest(req: NextRequest) {
   }
   if (isApiReference && !exposeApiReference) {
     return new Response("Not found", { status: 404 });
+  }
+
+  // Prima della sessione (createContext interroga il DB) e di qualunque
+  // handler: una POST cross-site non deve costare nemmeno la lookup sessione.
+  if (!verifyTrustedOrigin(req.method, req.headers, trustedOrigins)) {
+    return new Response("Forbidden", { status: 403 });
   }
 
   let context: Awaited<ReturnType<typeof createContext>>;
