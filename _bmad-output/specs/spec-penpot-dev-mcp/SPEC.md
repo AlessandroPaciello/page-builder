@@ -46,4 +46,4 @@ Da terminale, dopo aver applicato la modifica al compose esterno e riavviato lo 
 
 ## Open Questions
 
-- Il catalogo token/componenti nella library Penpot esistente di Alessandro è quello da usare, o va definita una nuova library da zero? (Risposta di Alessandro: "ho una library di Penpot, ma forse sarebbe meglio definirne una nuova" — non ancora deciso.) Questa decisione blocca il momento in cui Story 2.1 può generare una fixture reale (AD-11), non l'ambiente MCP in sé.
+_(chiusa 2026-09-06)_ ~~Il catalogo token/componenti nella library Penpot esistente di Alessandro è quello da usare, o va definita una nuova library da zero?~~ **Deciso: si riusa la library esistente.** Validata in sessione UX contro i ruoli richiesti da `design-system.md`: colori/typography/spacing/radii/shadow confermati e allineati (valori aggiornati in [DESIGN.md](../../planning-artifacts/ux-designs/ux-page-builder-2026-07-26/DESIGN.md)); un difetto di contrasto sul token `border` (falliva ≥3:1) è stato corretto direttamente in Penpot. Il ruolo tipografico `mono` resta deferred (non richiesto dall'AC di Story 2.1). Story 2.1 può ora generare una fixture reale da questa library.
