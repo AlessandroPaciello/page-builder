@@ -204,7 +204,55 @@ describe("readComponentFixture", () => {
     };
     await expect(
       readComponentFixture("Badge / Default", catalog, { callTool: mockCallTool(unmatchedUnbindable) }),
-    ).rejects.toThrow(/#123abc[\s\S]*Default|Default[\s\S]*#123abc/);
+    ).rejects.toThrow(/#123abc[\s\S]*Default/);
+  });
+
+  it("rifiuta più di una board senza cella corrispondente come struttura incoerente", async () => {
+    const twoUnmatched = {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            result: {
+              container: { id: "container-1", name: "Badge / Default" },
+              axes: ["Color"],
+              boards: [
+                {
+                  id: "board-orphan-1",
+                  name: "Orphan 1",
+                  cellId: null,
+                  variantProps: null,
+                  variantError: null,
+                  matched: false,
+                  fills: [],
+                  strokes: [],
+                  borderRadius: 9999,
+                  textColors: [],
+                  rawCss: "",
+                },
+                {
+                  id: "board-orphan-2",
+                  name: "Orphan 2",
+                  cellId: null,
+                  variantProps: null,
+                  variantError: null,
+                  matched: false,
+                  fills: [],
+                  strokes: [],
+                  borderRadius: 9999,
+                  textColors: [],
+                  rawCss: "",
+                },
+              ],
+            },
+            log: "",
+          }),
+        },
+      ],
+    };
+    await expect(
+      readComponentFixture("Badge / Default", catalog, { callTool: mockCallTool(twoUnmatched) }),
+    ).rejects.toThrow(/board-orphan-1[\s\S]*board-orphan-2/);
   });
 
   it("rifiuta un envelope malformato nominando il campo (mancanza di `result`)", async () => {

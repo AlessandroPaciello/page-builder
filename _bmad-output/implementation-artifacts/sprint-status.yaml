@@ -107,7 +107,7 @@ action_items:
     owner: "Amelia (Dev)"
     status: open
   - epic: 1
-    action: "Correggere gli alias shadcn in components.json (puntano al barrel editor/index.ts invece che a una directory) quando Story 2.4 inizia a usare il CLI shadcn"
+    action: "Correggere gli alias shadcn in components.json (puntano al barrel editor/index.ts invece che a una directory) in Story 2.3 (Task 0), quando il renderer inizia a usare il CLI shadcn per davvero — non attendere la 2.4"
     owner: "Dev"
     status: open
   - epic: 1

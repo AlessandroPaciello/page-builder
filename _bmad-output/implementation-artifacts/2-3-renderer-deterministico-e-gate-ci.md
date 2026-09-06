@@ -1,5 +1,5 @@
 ---
-baseline_commit: efdea901213c55f661a720b89dddfa8193b2f0d0
+baseline_commit: 73402efc43f39731ce6b512faa03c0f8273a416b
 ---
 
 # Story 2.3: Renderer deterministico e gate CI
