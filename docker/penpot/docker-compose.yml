@@ -264,6 +264,10 @@ services:
 
   penpot-mcp:
     image: "penpotapp/mcp:${PENPOT_VERSION:-latest}"
+    # L'immagine ufficiale avvia sempre `node index.js --multi-user`, che richiede
+    # un userToken per plugin che la nostra versione di Penpot self-hosted non genera
+    # ancora. Uso locale single-user: sovrascrive il comando per disattivarla.
+    command: ["node", "index.js"]
     restart: always
     ports:
       - "4401:4401"   # Streamable HTTP MCP — questo è ciò che packages/scripts consuma
