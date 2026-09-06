@@ -59,8 +59,8 @@ development_status:
 
   epic-2: in-progress
   2-1-pipeline-token-penpot-codice: done
-  2-2-estrazione-componenti-e-schema-delle-ricette: backlog
-  2-3-renderer-deterministico-e-gate-ci: backlog
+  2-2-estrazione-componenti-e-schema-delle-ricette: done
+  2-3-renderer-deterministico-e-gate-ci: ready-for-dev
   2-4-libreria-componenti-accessibile: backlog
   2-5-storybook-del-design-system: backlog
   epic-2-retrospective: optional

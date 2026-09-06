@@ -379,6 +379,9 @@ importers:
       '@penpot-ds/tokens':
         specifier: workspace:*
         version: link:../tokens
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
     devDependencies:
       '@app/config':
         specifier: workspace:*

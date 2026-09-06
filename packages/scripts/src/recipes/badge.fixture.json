@@ -1,0 +1,422 @@
+{
+  "componentName": "Badge",
+  "penpotComponentId": "a0e49680-ec36-8090-8007-bf9d64f75774",
+  "variantAxes": [
+    {
+      "name": "Color",
+      "values": [
+        "Red",
+        "Green",
+        "Gray",
+        "Indigo"
+      ]
+    },
+    {
+      "name": "Style",
+      "values": [
+        "outline",
+        "soft",
+        "solid"
+      ]
+    }
+  ],
+  "cells": [
+    {
+      "variantProps": {
+        "Color": "Red",
+        "Style": "outline"
+      },
+      "penpotComponentId": "a0e49680-ec36-8090-8007-bf9d88b09982",
+      "shapeStructure": {
+        "style": {
+          "fills": [],
+          "strokes": [
+            {
+              "strokeColor": "#ba1a1a",
+              "strokeColorRefFile": null,
+              "strokeColorRefId": null,
+              "strokeOpacity": 1,
+              "strokeStyle": "solid",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "strokeCapStart": null,
+              "strokeCapEnd": null,
+              "strokeColorGradient": null
+            }
+          ],
+          "borderRadius": 9999,
+          "textColors": [
+            "#ba1a1a"
+          ]
+        }
+      },
+      "tokenBindings": {
+        "stroke": "color.feedback.error",
+        "text": "color.feedback.error",
+        "borderRadius": "radius.mis.full"
+      },
+      "rawCss": "/* Badge / Default */\n.badge-de-bf9d88b09982 {\n  position: relative;\n  width: 120px;\n  height: 24px;\n  border: 1px solid #ba1a1aFF;\n  border-start-start-radius: 9999px;\n  border-start-end-radius: 9999px;\n  border-end-start-radius: 9999px;\n  border-end-end-radius: 9999px;\n  overflow: hidden;\n  grid-column: 3;\n  grid-row: 4;\n}\n\n/* label */\n.label-bf9d88b09984 {\n  position: absolute;\n  left: 24px;\n  top: 5px;\n  width: 70px;\n  height: 12px;\n}\n.label-bf9d88b09984 .root-0 {\n  \n  \n  display: flex;\n  white-space: break-spaces;\n  align-items: flex-start;\n}\n.label-bf9d88b09984 .root-0-paragraph-set-0 {\n  display: inline-flex;\n  flex-direction: column;\n  justify-content: inherit;\n  min-width: 100%;\n  margin-right: 1px;\n  vertical-align: top;\n}\n.label-bf9d88b09984 .root-0-paragraph-set-0-paragraph-0 {\n  font-size: 0;\n  line-height: 1.2;\n  margin: 0;\n  text-align: center;\n}\n.label-bf9d88b09984 .root-0-paragraph-set-0-paragraph-0-text-0 {\n  color: rgba(186, 26, 26, 1);\n  text-transform: none;\n  \n  line-break: auto;\n  overflow-wrap: initial;\n  white-space: break-spaces;\n  font-size: 10px;\n  text-rendering: geometricPrecision;\n  caret-color: rgba(186, 26, 26, 1);\n  text-decoration: none;\n  letter-spacing: 0px;\n  font-family: \"sourcesanspro\";\n  font-style: normal;\n  font-weight: 700;\n}"
+    },
+    {
+      "variantProps": {
+        "Color": "Red",
+        "Style": "soft"
+      },
+      "penpotComponentId": "a0e49680-ec36-8090-8007-bf9d88a94712",
+      "shapeStructure": {
+        "style": {
+          "fills": [
+            {
+              "fillColor": "#ffdad6",
+              "fillOpacity": 1,
+              "fillColorGradient": null,
+              "fillColorRefFile": null,
+              "fillColorRefId": null,
+              "fillImage": null
+            }
+          ],
+          "strokes": [],
+          "borderRadius": 9999,
+          "textColors": [
+            "#ba1a1a"
+          ]
+        }
+      },
+      "tokenBindings": {
+        "fill": "color.feedback.error.container",
+        "text": "color.feedback.error",
+        "borderRadius": "radius.mis.full"
+      },
+      "rawCss": "/* Badge / Default */\n.badge-de-bf9d88a94712 {\n  position: relative;\n  width: 120px;\n  height: 24px;\n  background: #ffdad6FF;\n  border-start-start-radius: 9999px;\n  border-start-end-radius: 9999px;\n  border-end-start-radius: 9999px;\n  border-end-end-radius: 9999px;\n  overflow: hidden;\n  grid-column: 2;\n  grid-row: 4;\n}\n\n/* label */\n.label-bf9d88a94714 {\n  position: absolute;\n  left: 25px;\n  top: 6px;\n  width: 70px;\n  height: 12px;\n}\n.label-bf9d88a94714 .root-0 {\n  \n  \n  display: flex;\n  white-space: break-spaces;\n  align-items: flex-start;\n}\n.label-bf9d88a94714 .root-0-paragraph-set-0 {\n  display: inline-flex;\n  flex-direction: column;\n  justify-content: inherit;\n  min-width: 100%;\n  margin-right: 1px;\n  vertical-align: top;\n}\n.label-bf9d88a94714 .root-0-paragraph-set-0-paragraph-0 {\n  font-size: 0;\n  line-height: 1.2;\n  margin: 0;\n  text-align: center;\n}\n.label-bf9d88a94714 .root-0-paragraph-set-0-paragraph-0-text-0 {\n  color: rgba(186, 26, 26, 1);\n  text-transform: none;\n  \n  line-break: auto;\n  overflow-wrap: initial;\n  white-space: break-spaces;\n  font-size: 10px;\n  text-rendering: geometricPrecision;\n  caret-color: rgba(186, 26, 26, 1);\n  text-decoration: none;\n  letter-spacing: 0px;\n  font-family: \"sourcesanspro\";\n  font-style: normal;\n  font-weight: 700;\n}"
+    },
+    {
+      "variantProps": {
+        "Color": "Red",
+        "Style": "solid"
+      },
+      "penpotComponentId": "a0e49680-ec36-8090-8007-bf9d88a1f3bc",
+      "shapeStructure": {
+        "style": {
+          "fills": [
+            {
+              "fillColor": "#ffdad6",
+              "fillOpacity": 1,
+              "fillColorGradient": null,
+              "fillColorRefFile": null,
+              "fillColorRefId": null,
+              "fillImage": null
+            }
+          ],
+          "strokes": [],
+          "borderRadius": 9999,
+          "textColors": [
+            "#690005"
+          ]
+        }
+      },
+      "tokenBindings": {
+        "fill": "color.feedback.error.container",
+        "text": "color.feedback.error.on-container",
+        "borderRadius": "radius.mis.full"
+      },
+      "rawCss": "/* Badge / Default */\n.badge-de-bf9d88a1f3bc {\n  position: relative;\n  width: 120px;\n  height: 24px;\n  background: #ffdad6FF;\n  border-start-start-radius: 9999px;\n  border-start-end-radius: 9999px;\n  border-end-start-radius: 9999px;\n  border-end-end-radius: 9999px;\n  overflow: hidden;\n  grid-column: 1;\n  grid-row: 4;\n}\n\n/* label */\n.label-bf9d88a1f3be {\n  position: absolute;\n  left: 25px;\n  top: 6px;\n  width: 70px;\n  height: 12px;\n}\n.label-bf9d88a1f3be .root-0 {\n  \n  \n  display: flex;\n  white-space: break-spaces;\n  align-items: flex-start;\n}\n.label-bf9d88a1f3be .root-0-paragraph-set-0 {\n  display: inline-flex;\n  flex-direction: column;\n  justify-content: inherit;\n  min-width: 100%;\n  margin-right: 1px;\n  vertical-align: top;\n}\n.label-bf9d88a1f3be .root-0-paragraph-set-0-paragraph-0 {\n  font-size: 0;\n  line-height: 1.2;\n  margin: 0;\n  text-align: center;\n}\n.label-bf9d88a1f3be .root-0-paragraph-set-0-paragraph-0-text-0 {\n  color: rgba(105, 0, 5, 1);\n  text-transform: none;\n  \n  line-break: auto;\n  overflow-wrap: initial;\n  white-space: break-spaces;\n  font-size: 10px;\n  text-rendering: geometricPrecision;\n  caret-color: rgba(105, 0, 5, 1);\n  text-decoration: none;\n  letter-spacing: 0px;\n  font-family: \"sourcesanspro\";\n  font-style: normal;\n  font-weight: 700;\n}"
+    },
+    {
+      "variantProps": {
+        "Color": "Green",
+        "Style": "outline"
+      },
+      "penpotComponentId": "a0e49680-ec36-8090-8007-bf9d88c5ee70",
+      "shapeStructure": {
+        "style": {
+          "fills": [],
+          "strokes": [
+            {
+              "strokeColor": "#006c49",
+              "strokeColorRefFile": null,
+              "strokeColorRefId": null,
+              "strokeOpacity": 1,
+              "strokeStyle": "solid",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "strokeCapStart": null,
+              "strokeCapEnd": null,
+              "strokeColorGradient": null
+            }
+          ],
+          "borderRadius": 9999,
+          "textColors": [
+            "#006c49"
+          ]
+        }
+      },
+      "tokenBindings": {
+        "stroke": "color.mis.primary",
+        "text": "color.mis.primary",
+        "borderRadius": "radius.mis.full"
+      },
+      "rawCss": "/* Badge / Default */\n.badge-de-bf9d88c5ee70 {\n  position: relative;\n  width: 120px;\n  height: 24px;\n  border: 1px solid #006c49FF;\n  border-start-start-radius: 9999px;\n  border-start-end-radius: 9999px;\n  border-end-start-radius: 9999px;\n  border-end-end-radius: 9999px;\n  overflow: hidden;\n  grid-column: 3;\n  grid-row: 3;\n}\n\n/* label */\n.label-bf9d88c5ee72 {\n  position: absolute;\n  left: 24px;\n  top: 5px;\n  width: 70px;\n  height: 12px;\n}\n.label-bf9d88c5ee72 .root-0 {\n  \n  \n  display: flex;\n  white-space: break-spaces;\n  align-items: flex-start;\n}\n.label-bf9d88c5ee72 .root-0-paragraph-set-0 {\n  display: inline-flex;\n  flex-direction: column;\n  justify-content: inherit;\n  min-width: 100%;\n  margin-right: 1px;\n  vertical-align: top;\n}\n.label-bf9d88c5ee72 .root-0-paragraph-set-0-paragraph-0 {\n  font-size: 0;\n  line-height: 1.2;\n  margin: 0;\n  text-align: center;\n}\n.label-bf9d88c5ee72 .root-0-paragraph-set-0-paragraph-0-text-0 {\n  color: rgba(0, 108, 73, 1);\n  text-transform: none;\n  \n  line-break: auto;\n  overflow-wrap: initial;\n  white-space: break-spaces;\n  font-size: 10px;\n  text-rendering: geometricPrecision;\n  caret-color: rgba(0, 108, 73, 1);\n  text-decoration: none;\n  letter-spacing: 0px;\n  font-family: \"sourcesanspro\";\n  font-style: normal;\n  font-weight: 700;\n}"
+    },
+    {
+      "variantProps": {
+        "Color": "Green",
+        "Style": "soft"
+      },
+      "penpotComponentId": "a0e49680-ec36-8090-8007-bf9d88be43fb",
+      "shapeStructure": {
+        "style": {
+          "fills": [
+            {
+              "fillColor": "#e8f5ef",
+              "fillOpacity": 1,
+              "fillColorGradient": null,
+              "fillColorRefFile": null,
+              "fillColorRefId": null,
+              "fillImage": null
+            }
+          ],
+          "strokes": [],
+          "borderRadius": 9999,
+          "textColors": [
+            "#006c49"
+          ]
+        }
+      },
+      "tokenBindings": {
+        "fill": "color.mis.surface_tint",
+        "text": "color.mis.primary",
+        "borderRadius": "radius.mis.full"
+      },
+      "rawCss": "/* Badge / Default */\n.badge-de-bf9d88be43fb {\n  position: relative;\n  width: 120px;\n  height: 24px;\n  background: #e8f5efFF;\n  border-start-start-radius: 9999px;\n  border-start-end-radius: 9999px;\n  border-end-start-radius: 9999px;\n  border-end-end-radius: 9999px;\n  overflow: hidden;\n  grid-column: 2;\n  grid-row: 3;\n}\n\n/* label */\n.label-bf9d88be43fd {\n  position: absolute;\n  left: 25px;\n  top: 6px;\n  width: 70px;\n  height: 12px;\n}\n.label-bf9d88be43fd .root-0 {\n  \n  \n  display: flex;\n  white-space: break-spaces;\n  align-items: flex-start;\n}\n.label-bf9d88be43fd .root-0-paragraph-set-0 {\n  display: inline-flex;\n  flex-direction: column;\n  justify-content: inherit;\n  min-width: 100%;\n  margin-right: 1px;\n  vertical-align: top;\n}\n.label-bf9d88be43fd .root-0-paragraph-set-0-paragraph-0 {\n  font-size: 0;\n  line-height: 1.2;\n  margin: 0;\n  text-align: center;\n}\n.label-bf9d88be43fd .root-0-paragraph-set-0-paragraph-0-text-0 {\n  color: rgba(0, 108, 73, 1);\n  text-transform: none;\n  \n  line-break: auto;\n  overflow-wrap: initial;\n  white-space: break-spaces;\n  font-size: 10px;\n  text-rendering: geometricPrecision;\n  caret-color: rgba(0, 108, 73, 1);\n  text-decoration: none;\n  letter-spacing: 0px;\n  font-family: \"sourcesanspro\";\n  font-style: normal;\n  font-weight: 700;\n}"
+    },
+    {
+      "variantProps": {
+        "Color": "Green",
+        "Style": "solid"
+      },
+      "penpotComponentId": "a0e49680-ec36-8090-8007-bf9d88b90cc9",
+      "shapeStructure": {
+        "style": {
+          "fills": [
+            {
+              "fillColor": "#8cf7c3",
+              "fillOpacity": 1,
+              "fillColorGradient": null,
+              "fillColorRefFile": null,
+              "fillColorRefId": null,
+              "fillImage": null
+            }
+          ],
+          "strokes": [],
+          "borderRadius": 9999,
+          "textColors": [
+            "#002113"
+          ]
+        }
+      },
+      "tokenBindings": {
+        "fill": "color.mis.primary_light",
+        "text": "color.mis.primary_dark",
+        "borderRadius": "radius.mis.full"
+      },
+      "rawCss": "/* Badge / Default */\n.badge-de-bf9d88b90cc9 {\n  position: relative;\n  width: 120px;\n  height: 24px;\n  background: #8cf7c3FF;\n  border-start-start-radius: 9999px;\n  border-start-end-radius: 9999px;\n  border-end-start-radius: 9999px;\n  border-end-end-radius: 9999px;\n  overflow: hidden;\n  grid-column: 1;\n  grid-row: 3;\n}\n\n/* label */\n.label-bf9d88b96ad1 {\n  position: absolute;\n  left: 25px;\n  top: 6px;\n  width: 70px;\n  height: 12px;\n}\n.label-bf9d88b96ad1 .root-0 {\n  \n  \n  display: flex;\n  white-space: break-spaces;\n  align-items: flex-start;\n}\n.label-bf9d88b96ad1 .root-0-paragraph-set-0 {\n  display: inline-flex;\n  flex-direction: column;\n  justify-content: inherit;\n  min-width: 100%;\n  margin-right: 1px;\n  vertical-align: top;\n}\n.label-bf9d88b96ad1 .root-0-paragraph-set-0-paragraph-0 {\n  font-size: 0;\n  line-height: 1.2;\n  margin: 0;\n  text-align: center;\n}\n.label-bf9d88b96ad1 .root-0-paragraph-set-0-paragraph-0-text-0 {\n  color: rgba(0, 33, 19, 1);\n  text-transform: none;\n  \n  line-break: auto;\n  overflow-wrap: initial;\n  white-space: break-spaces;\n  font-size: 10px;\n  text-rendering: geometricPrecision;\n  caret-color: rgba(0, 33, 19, 1);\n  text-decoration: none;\n  letter-spacing: 0px;\n  font-family: \"sourcesanspro\";\n  font-style: normal;\n  font-weight: 700;\n}"
+    },
+    {
+      "variantProps": {
+        "Color": "Gray",
+        "Style": "outline"
+      },
+      "penpotComponentId": "a0e49680-ec36-8090-8007-bf9d88995bf4",
+      "shapeStructure": {
+        "style": {
+          "fills": [],
+          "strokes": [
+            {
+              "strokeColor": "#bdcac0",
+              "strokeColorRefFile": null,
+              "strokeColorRefId": null,
+              "strokeOpacity": 1,
+              "strokeStyle": "solid",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "strokeCapStart": null,
+              "strokeCapEnd": null,
+              "strokeColorGradient": null
+            }
+          ],
+          "borderRadius": 9999,
+          "textColors": [
+            "#1a1c1c"
+          ]
+        }
+      },
+      "tokenBindings": {
+        "stroke": "gray.6",
+        "text": "color.mis.text",
+        "borderRadius": "radius.mis.full"
+      },
+      "rawCss": "/* Badge / Default */\n.badge-de-bf9d88995bf4 {\n  position: relative;\n  width: 120px;\n  height: 24px;\n  border: 1px solid #bdcac0FF;\n  border-start-start-radius: 9999px;\n  border-start-end-radius: 9999px;\n  border-end-start-radius: 9999px;\n  border-end-end-radius: 9999px;\n  overflow: hidden;\n}\n\n/* label */\n.label-bf9d88995bf6 {\n  position: absolute;\n  left: 24px;\n  top: 5px;\n  width: 70px;\n  height: 12px;\n}\n.label-bf9d88995bf6 .root-0 {\n  \n  \n  display: flex;\n  white-space: break-spaces;\n  align-items: flex-start;\n}\n.label-bf9d88995bf6 .root-0-paragraph-set-0 {\n  display: inline-flex;\n  flex-direction: column;\n  justify-content: inherit;\n  min-width: 100%;\n  margin-right: 1px;\n  vertical-align: top;\n}\n.label-bf9d88995bf6 .root-0-paragraph-set-0-paragraph-0 {\n  font-size: 0;\n  line-height: 1.2;\n  margin: 0;\n  text-align: center;\n}\n.label-bf9d88995bf6 .root-0-paragraph-set-0-paragraph-0-text-0 {\n  color: rgba(26, 28, 28, 1);\n  text-transform: none;\n  \n  line-break: auto;\n  overflow-wrap: initial;\n  white-space: break-spaces;\n  font-size: 10px;\n  text-rendering: geometricPrecision;\n  caret-color: rgba(26, 28, 28, 1);\n  text-decoration: none;\n  letter-spacing: 0px;\n  font-family: \"sourcesanspro\";\n  font-style: normal;\n  font-weight: 700;\n}"
+    },
+    {
+      "variantProps": {
+        "Color": "Gray",
+        "Style": "soft"
+      },
+      "penpotComponentId": "a0e49680-ec36-8090-8007-bf9d8891406e",
+      "shapeStructure": {
+        "style": {
+          "fills": [
+            {
+              "fillColor": "#f9f9f9",
+              "fillOpacity": 1,
+              "fillColorGradient": null,
+              "fillColorRefFile": null,
+              "fillColorRefId": null,
+              "fillImage": null
+            }
+          ],
+          "strokes": [],
+          "borderRadius": 9999,
+          "textColors": [
+            "#1a1c1c"
+          ]
+        }
+      },
+      "tokenBindings": {
+        "fill": "color.mis.surface_soft",
+        "text": "color.mis.text",
+        "borderRadius": "radius.mis.full"
+      },
+      "rawCss": "/* Badge / Default */\n.badge-de-bf9d8891406e {\n  position: relative;\n  width: 120px;\n  height: 24px;\n  background: #f9f9f9FF;\n  border-start-start-radius: 9999px;\n  border-start-end-radius: 9999px;\n  border-end-start-radius: 9999px;\n  border-end-end-radius: 9999px;\n  overflow: hidden;\n}\n\n/* label */\n.label-bf9d88914070 {\n  position: absolute;\n  left: 25px;\n  top: 6px;\n  width: 70px;\n  height: 12px;\n}\n.label-bf9d88914070 .root-0 {\n  \n  \n  display: flex;\n  white-space: break-spaces;\n  align-items: flex-start;\n}\n.label-bf9d88914070 .root-0-paragraph-set-0 {\n  display: inline-flex;\n  flex-direction: column;\n  justify-content: inherit;\n  min-width: 100%;\n  margin-right: 1px;\n  vertical-align: top;\n}\n.label-bf9d88914070 .root-0-paragraph-set-0-paragraph-0 {\n  font-size: 0;\n  line-height: 1.2;\n  margin: 0;\n  text-align: center;\n}\n.label-bf9d88914070 .root-0-paragraph-set-0-paragraph-0-text-0 {\n  color: rgba(26, 28, 28, 1);\n  text-transform: none;\n  \n  line-break: auto;\n  overflow-wrap: initial;\n  white-space: break-spaces;\n  font-size: 10px;\n  text-rendering: geometricPrecision;\n  caret-color: rgba(26, 28, 28, 1);\n  text-decoration: none;\n  letter-spacing: 0px;\n  font-family: \"sourcesanspro\";\n  font-style: normal;\n  font-weight: 700;\n}"
+    },
+    {
+      "variantProps": {
+        "Color": "Gray",
+        "Style": "solid"
+      },
+      "penpotComponentId": "a0e49680-ec36-8090-8007-bf9d888a3ed7",
+      "shapeStructure": {
+        "style": {
+          "fills": [
+            {
+              "fillColor": "#3e4942",
+              "fillOpacity": 1,
+              "fillColorGradient": null,
+              "fillColorRefFile": null,
+              "fillColorRefId": null,
+              "fillImage": null
+            }
+          ],
+          "strokes": [],
+          "borderRadius": 9999,
+          "textColors": [
+            "#ffffff"
+          ]
+        }
+      },
+      "tokenBindings": {
+        "fill": "color.mis.text_muted",
+        "text": "color.mis.surface_raised",
+        "borderRadius": "radius.mis.full"
+      },
+      "rawCss": "/* Badge / Default */\n.badge-de-bf9d888a3ed7 {\n  position: relative;\n  width: 120px;\n  height: 24px;\n  background: #3e4942FF;\n  border-start-start-radius: 9999px;\n  border-start-end-radius: 9999px;\n  border-end-start-radius: 9999px;\n  border-end-end-radius: 9999px;\n  overflow: hidden;\n}\n\n/* label */\n.label-bf9d888a3ed9 {\n  position: absolute;\n  left: 25px;\n  top: 6px;\n  width: 70px;\n  height: 12px;\n}\n.label-bf9d888a3ed9 .root-0 {\n  \n  \n  display: flex;\n  white-space: break-spaces;\n  align-items: flex-start;\n}\n.label-bf9d888a3ed9 .root-0-paragraph-set-0 {\n  display: inline-flex;\n  flex-direction: column;\n  justify-content: inherit;\n  min-width: 100%;\n  margin-right: 1px;\n  vertical-align: top;\n}\n.label-bf9d888a3ed9 .root-0-paragraph-set-0-paragraph-0 {\n  font-size: 0;\n  line-height: 1.2;\n  margin: 0;\n  text-align: center;\n}\n.label-bf9d888a3ed9 .root-0-paragraph-set-0-paragraph-0-text-0 {\n  color: rgba(255, 255, 255, 1);\n  text-transform: none;\n  \n  line-break: auto;\n  overflow-wrap: initial;\n  white-space: break-spaces;\n  font-size: 10px;\n  text-rendering: geometricPrecision;\n  caret-color: rgba(255, 255, 255, 1);\n  text-decoration: none;\n  letter-spacing: 0px;\n  font-family: \"sourcesanspro\";\n  font-style: normal;\n  font-weight: 700;\n}"
+    },
+    {
+      "variantProps": {
+        "Color": "Indigo",
+        "Style": "outline"
+      },
+      "penpotComponentId": "a0e49680-ec36-8090-8007-bf9d88815080",
+      "shapeStructure": {
+        "style": {
+          "fills": [],
+          "strokes": [
+            {
+              "strokeColor": "#006c49",
+              "strokeColorRefFile": null,
+              "strokeColorRefId": null,
+              "strokeOpacity": 1,
+              "strokeStyle": "solid",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "strokeCapStart": null,
+              "strokeCapEnd": null,
+              "strokeColorGradient": null
+            }
+          ],
+          "borderRadius": 9999,
+          "textColors": [
+            "#006c49"
+          ]
+        }
+      },
+      "tokenBindings": {
+        "stroke": "color.mis.primary",
+        "text": "color.mis.primary",
+        "borderRadius": "radius.mis.full"
+      },
+      "rawCss": "/* Badge / Default */\n.badge-de-bf9d88815080 {\n  position: relative;\n  width: 120px;\n  height: 24px;\n  border: 1px solid #006c49FF;\n  border-start-start-radius: 9999px;\n  border-start-end-radius: 9999px;\n  border-end-start-radius: 9999px;\n  border-end-end-radius: 9999px;\n  overflow: hidden;\n}\n\n/* label */\n.label-bf9d88815082 {\n  position: absolute;\n  left: 24px;\n  top: 5px;\n  width: 70px;\n  height: 12px;\n}\n.label-bf9d88815082 .root-0 {\n  \n  \n  display: flex;\n  white-space: break-spaces;\n  align-items: flex-start;\n}\n.label-bf9d88815082 .root-0-paragraph-set-0 {\n  display: inline-flex;\n  flex-direction: column;\n  justify-content: inherit;\n  min-width: 100%;\n  margin-right: 1px;\n  vertical-align: top;\n}\n.label-bf9d88815082 .root-0-paragraph-set-0-paragraph-0 {\n  font-size: 0;\n  line-height: 1.2;\n  margin: 0;\n  text-align: center;\n}\n.label-bf9d88815082 .root-0-paragraph-set-0-paragraph-0-text-0 {\n  color: rgba(0, 108, 73, 1);\n  text-transform: none;\n  \n  line-break: auto;\n  overflow-wrap: initial;\n  white-space: break-spaces;\n  font-size: 10px;\n  text-rendering: geometricPrecision;\n  caret-color: rgba(0, 108, 73, 1);\n  text-decoration: none;\n  letter-spacing: 0px;\n  font-family: \"sourcesanspro\";\n  font-style: normal;\n  font-weight: 700;\n}"
+    },
+    {
+      "variantProps": {
+        "Color": "Indigo",
+        "Style": "soft"
+      },
+      "penpotComponentId": "a0e49680-ec36-8090-8007-bf9d65041fda",
+      "shapeStructure": {
+        "style": {
+          "fills": [
+            {
+              "fillColor": "#e8f5ef",
+              "fillOpacity": 1,
+              "fillColorGradient": null,
+              "fillColorRefFile": null,
+              "fillColorRefId": null,
+              "fillImage": null
+            }
+          ],
+          "strokes": [],
+          "borderRadius": 9999,
+          "textColors": [
+            "#006c49"
+          ]
+        }
+      },
+      "tokenBindings": {
+        "fill": "color.mis.surface_tint",
+        "text": "color.mis.primary",
+        "borderRadius": "radius.mis.full"
+      },
+      "rawCss": "/* Badge / Default */\n.badge-de-bf9d65041fda {\n  position: relative;\n  width: 120px;\n  height: 24px;\n  background: #e8f5efFF;\n  border-start-start-radius: 9999px;\n  border-start-end-radius: 9999px;\n  border-end-start-radius: 9999px;\n  border-end-end-radius: 9999px;\n  overflow: hidden;\n}\n\n/* label */\n.label-bf9d65045c57 {\n  position: absolute;\n  left: 25px;\n  top: 6px;\n  width: 70px;\n  height: 12px;\n}\n.label-bf9d65045c57 .root-0 {\n  \n  \n  display: flex;\n  white-space: break-spaces;\n  align-items: flex-start;\n}\n.label-bf9d65045c57 .root-0-paragraph-set-0 {\n  display: inline-flex;\n  flex-direction: column;\n  justify-content: inherit;\n  min-width: 100%;\n  margin-right: 1px;\n  vertical-align: top;\n}\n.label-bf9d65045c57 .root-0-paragraph-set-0-paragraph-0 {\n  font-size: 0;\n  line-height: 1.2;\n  margin: 0;\n  text-align: center;\n}\n.label-bf9d65045c57 .root-0-paragraph-set-0-paragraph-0-text-0 {\n  color: rgba(0, 108, 73, 1);\n  text-transform: none;\n  \n  line-break: auto;\n  overflow-wrap: initial;\n  white-space: break-spaces;\n  font-size: 10px;\n  text-rendering: geometricPrecision;\n  caret-color: rgba(0, 108, 73, 1);\n  text-decoration: none;\n  letter-spacing: 0px;\n  font-family: \"sourcesanspro\";\n  font-style: normal;\n  font-weight: 700;\n}"
+    },
+    {
+      "variantProps": null,
+      "penpotComponentId": "a0e49680-ec36-8090-8007-bf9d64d2001b",
+      "shapeStructure": {
+        "style": {
+          "fills": [
+            {
+              "fillColor": "#8cf7c3",
+              "fillOpacity": 1,
+              "fillColorGradient": null,
+              "fillColorRefFile": null,
+              "fillColorRefId": null,
+              "fillImage": null
+            }
+          ],
+          "strokes": [],
+          "borderRadius": 9999,
+          "textColors": [
+            "#002113"
+          ]
+        }
+      },
+      "tokenBindings": {
+        "fill": "color.mis.primary_light",
+        "text": "color.mis.primary_dark",
+        "borderRadius": "radius.mis.full"
+      },
+      "rawCss": "/* Badge / Default */\n.badge-de-bf9d64d2001b {\n  position: relative;\n  width: 120px;\n  height: 24px;\n  background: #8cf7c3FF;\n  border-start-start-radius: 9999px;\n  border-start-end-radius: 9999px;\n  border-end-start-radius: 9999px;\n  border-end-end-radius: 9999px;\n  overflow: hidden;\n}\n\n/* label */\n.label-bf9d64e54fa3 {\n  position: absolute;\n  left: 25px;\n  top: 6px;\n  width: 70px;\n  height: 12px;\n}\n.label-bf9d64e54fa3 .root-0 {\n  \n  \n  display: flex;\n  white-space: break-spaces;\n  align-items: flex-start;\n}\n.label-bf9d64e54fa3 .root-0-paragraph-set-0 {\n  display: inline-flex;\n  flex-direction: column;\n  justify-content: inherit;\n  min-width: 100%;\n  margin-right: 1px;\n  vertical-align: top;\n}\n.label-bf9d64e54fa3 .root-0-paragraph-set-0-paragraph-0 {\n  font-size: 0;\n  line-height: 1.2;\n  margin: 0;\n  text-align: center;\n}\n.label-bf9d64e54fa3 .root-0-paragraph-set-0-paragraph-0-text-0 {\n  color: rgba(0, 33, 19, 1);\n  text-transform: none;\n  \n  line-break: auto;\n  overflow-wrap: initial;\n  white-space: break-spaces;\n  font-size: 10px;\n  text-rendering: geometricPrecision;\n  caret-color: rgba(0, 33, 19, 1);\n  text-decoration: none;\n  letter-spacing: 0px;\n  font-family: \"sourcesanspro\";\n  font-style: normal;\n  font-weight: 700;\n}"
+    }
+  ]
+}
