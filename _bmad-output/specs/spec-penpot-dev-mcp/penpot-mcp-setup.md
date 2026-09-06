@@ -4,17 +4,17 @@ Companion di [SPEC.md](./SPEC.md). Istruzioni operative concrete per CAP-1/CAP-2
 
 ## Dove si applica
 
-**Non nel repo `page-builder`.** Lo stack Penpot gira da una directory separata:
+**Nel repo `page-builder`**, spostato qui il 2026-09-06 dalla directory esterna `~/Scrivania/projects/penpot/` dove viveva originariamente:
 
 ```
-/home/alessandro/Scrivania/projects/penpot/docker-compose.yaml
+docker/penpot/docker-compose.yml
 ```
 
-(rilevato via `docker inspect` sul container `penpot-penpot-frontend-1` in esecuzione — progetto compose `penpot`, servizi `penpot-frontend`/`penpot-backend`/`penpot-exporter`/`penpot-postgres`/`penpot-valkey`/`penpot-mailcatch`, porta 9001, nessun servizio `penpot-mcp`).
+Il file ha `name: penpot` pinnato esplicitamente in testa — **non rimuoverlo**: è ciò che preserva i volumi dati esistenti (`penpot_penpot_assets`, `penpot_penpot_postgres_v15`) indipendentemente dalla directory da cui si lancia `docker compose up`. Servizi: `penpot-frontend`/`penpot-backend`/`penpot-exporter`/`penpot-postgres`/`penpot-valkey`/`penpot-mailcatch`/`penpot-mcp`, porta 9001 (frontend), 4401/4402 (mcp).
 
-## Modifica da applicare
+## Modifica applicata (già presente in questo file)
 
-Aggiungere questo servizio al file sopra (stesso `networks: [penpot]` degli altri servizi):
+Il servizio è già stato aggiunto (stesso `networks: [penpot]` degli altri servizi):
 
 ```yaml
 services:
@@ -28,18 +28,16 @@ services:
       - penpot
 ```
 
-Facoltativo ma consigliato: aggiungere `penpot-mcp` alla lista `depends_on` di `penpot-frontend`, come fa il compose ufficiale Penpot, così l'ordine di avvio è coerente.
+`penpot-mcp` è già presente anche nella lista `depends_on` di `penpot-frontend`, come fa il compose ufficiale Penpot, così l'ordine di avvio è coerente.
 
-Applicare con:
+Per avviare/riavviare lo stack:
 
 ```bash
-cd /home/alessandro/Scrivania/projects/penpot
-docker compose up -d penpot-mcp
-# oppure, per riapplicare tutto il file dopo la modifica:
+cd /home/alessandro/Scrivania/projects/page-builder/docker/penpot
 docker compose up -d
 ```
 
-Non serve fermare o ricreare gli altri servizi: `docker compose up -d` aggiunge solo il servizio nuovo.
+Grazie a `name: penpot` pinnato nel file, questo riusa container e volumi esistenti (verificato: nessuna ricreazione, stessi volumi `penpot_penpot_assets`/`penpot_penpot_postgres_v15`) anche se lanciato da questa nuova posizione nel repo.
 
 ## Abilitare il plugin dentro Penpot
 
