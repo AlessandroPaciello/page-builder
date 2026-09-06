@@ -214,9 +214,9 @@ importers:
       '@app/auth':
         specifier: workspace:*
         version: link:../auth
-      '@app/db':
+      '@app/domain':
         specifier: workspace:*
-        version: link:../db
+        version: link:../domain
       '@app/env':
         specifier: workspace:*
         version: link:../env
@@ -248,12 +248,18 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 5.0.0(@types/node@22.20.1)(vite@8.2.2(@types/node@22.20.1)(jiti@2.7.0))
 
   packages/auth:
     dependencies:
       '@app/db':
         specifier: workspace:*
         version: link:../db
+      '@app/domain':
+        specifier: workspace:*
+        version: link:../domain
       '@app/env':
         specifier: workspace:*
         version: link:../env
