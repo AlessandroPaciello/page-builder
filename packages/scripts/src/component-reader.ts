@@ -85,7 +85,7 @@ function isVariant(shape) {
 // componente ("Badge"), non della singola variante.
 let container = penpotUtils.findShape((shape) => shape.name === targetName && isVariant(shape));
 if (!container) {
-  container = penpotUtils.findShape((shape) => isVariant(shape) && (shape.name + " / ").split(" / ")[0] === targetName);
+  container = penpotUtils.findShape((shape) => isVariant(shape) && shape.name.split(" / ")[0] === targetName);
 }
 if (!container) {
   return { notFound: targetName };
@@ -174,19 +174,35 @@ function parseComponentFacts(result: unknown, componentName: string): ComponentF
   const unmatched: string[] = [];
   facts.boards.forEach((raw: RawBoard, index: number) => {
     const context = `board #${index} di "${componentName}"`;
+    const id = assertString(raw.id, "id", context);
+    const name = assertString(raw.name, "name", context);
     if (raw.matched === false) {
-      unmatched.push(assertString(raw.id, "id", context));
+      // Board senza cella corrispondente in `variantComponents()` (tipicamente
+      // la board "Default", istanza main): resta comunque una riga della
+      // fixture con `variantProps: null` — un drop silenzioso qui
+      // corromperebbe la matrice celle senza che nulla lo segnali.
+      unmatched.push(id);
+      boards.push({
+        id,
+        name,
+        variantProps: null,
+        fills: Array.isArray(raw.fills) ? raw.fills : [],
+        strokes: Array.isArray(raw.strokes) ? raw.strokes : [],
+        borderRadius: (raw.borderRadius ?? null) as number | string | null,
+        textColors: Array.isArray(raw.textColors) ? (raw.textColors as string[]) : [],
+        rawCss: typeof raw.rawCss === "string" ? raw.rawCss : "",
+      });
       return;
     }
     const variantError = raw.variantError ?? null;
     if (variantError !== null) {
       throw new Error(
-        `La cella variante ${JSON.stringify(raw.cellId ?? null)} della board "${assertString(raw.name, "name", context)}" riporta variantError "${String(variantError)}" — la matrice varianti su Penpot è incoerente: correggi il componente in Penpot.`,
+        `La cella variante ${JSON.stringify(raw.cellId ?? null)} della board "${name}" riporta variantError "${String(variantError)}" — la matrice varianti su Penpot è incoerente: correggi il componente in Penpot.`,
       );
     }
     boards.push({
-      id: assertString(raw.id, "id", context),
-      name: assertString(raw.name, "name", context),
+      id,
+      name,
       variantProps: (raw.variantProps ?? null) as Record<string, string> | null,
       fills: Array.isArray(raw.fills) ? raw.fills : [],
       strokes: Array.isArray(raw.strokes) ? raw.strokes : [],
@@ -306,7 +322,7 @@ function bindColor(value: string, index: BindingIndex, shapeName: string, proper
   const candidates = index.colors.get(value.toLowerCase());
   if (candidates && candidates.length > 0) return candidates[0]!.name;
   throw new Error(
-    `Token binding non derivabile per "${property}" = "${value}" sulla shape "${shapeName}" — nessun token di tipo color nel catalogo Stadio 1 con questo valore esatto. È un segnale di stop: applica il token in Penpot (fuori scope di questa estrazione) o correggi il valore.`,
+    `Token binding non derivabile per "${property}" = ${JSON.stringify(value)} sulla shape "${shapeName}" — nessun token di tipo color nel catalogo Stadio 1 con questo valore esatto. È un segnale di stop: applica il token in Penpot (fuori scope di questa estrazione) o correggi il valore.`,
   );
 }
 
@@ -315,7 +331,7 @@ function bindRadius(value: number | string, index: BindingIndex, shapeName: stri
   const candidates = Number.isFinite(numeric) ? index.radii.get(numeric) : undefined;
   if (candidates && candidates.length > 0) return candidates[0]!.name;
   throw new Error(
-    `Token binding non derivabile per "borderRadius" = "${value}" sulla shape "${shapeName}" — nessun token di tipo borderRadius nel catalogo Stadio 1 con questo valore esatto. È un segnale di stop: applica il token in Penpot o correggi il valore.`,
+    `Token binding non derivabile per "borderRadius" = ${JSON.stringify(value)} sulla shape "${shapeName}" — nessun token di tipo borderRadius nel catalogo Stadio 1 con questo valore esatto. È un segnale di stop: applica il token in Penpot o correggi il valore.`,
   );
 }
 
@@ -382,7 +398,10 @@ export async function readComponentFixture(
  * prima del separatore di variante ("Badge / Default" → "Badge").
  */
 function assembleFixture(facts: ComponentFacts, bindingIndex: BindingIndex): ComponentFixture {
-  const componentName = facts.container.name.split(" / ")[0] ?? facts.container.name;
+  // `String.split` restituisce sempre almeno un elemento: l'asserzione è
+  // qui solo per soddisfare `noUncheckedIndexedAccess`, non un fallback
+  // raggiungibile a runtime.
+  const componentName = facts.container.name.split(" / ")[0]!;
 
   const variantAxes = facts.axes.map((axis) => {
     const values: string[] = [];

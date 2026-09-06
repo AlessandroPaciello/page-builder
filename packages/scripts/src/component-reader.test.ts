@@ -102,6 +102,111 @@ describe("readComponentFixture", () => {
     expect(fixture.cells.some((cell) => cell.variantProps === null)).toBe(true);
   });
 
+  it("non scarta in silenzio una board con matched: false — la conserva come riga variantProps: null", async () => {
+    const unmatchedEnvelope = {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            result: {
+              container: { id: "container-1", name: "Badge / Default" },
+              axes: ["Color"],
+              boards: [
+                {
+                  id: "board-red-solid",
+                  name: "Red / solid",
+                  cellId: "cell-red-solid",
+                  variantProps: { Color: "Red" },
+                  variantError: null,
+                  matched: true,
+                  fills: [{ fillColor: "#ffdad6" }],
+                  strokes: [],
+                  borderRadius: 9999,
+                  textColors: ["#ba1a1a"],
+                  rawCss: "",
+                },
+                {
+                  id: "board-default",
+                  name: "Default",
+                  cellId: null,
+                  variantProps: null,
+                  variantError: null,
+                  matched: false,
+                  fills: [{ fillColor: "#ffdad6" }],
+                  strokes: [],
+                  borderRadius: 9999,
+                  textColors: ["#ba1a1a"],
+                  rawCss: "",
+                },
+              ],
+            },
+            log: "",
+          }),
+        },
+      ],
+    };
+    const fixture = await readComponentFixture("Badge / Default", catalog, {
+      callTool: mockCallTool(unmatchedEnvelope),
+    });
+    expect(fixture.cells).toHaveLength(2);
+    const defaultCell = fixture.cells.find((cell) => cell.variantProps === null);
+    expect(defaultCell?.penpotComponentId).toBe("board-default");
+    expect(defaultCell?.rawCss).toBe("");
+    expect(defaultCell?.tokenBindings).toEqual({
+      fill: "color.feedback.error.container",
+      text: "color.feedback.error",
+      borderRadius: "radius.mis.full",
+    });
+  });
+
+  it("applica lo stop-signal anche a una board matched:false con un colore senza corrispondenza nel catalogo", async () => {
+    const unmatchedUnbindable = {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            result: {
+              container: { id: "container-1", name: "Badge / Default" },
+              axes: ["Color"],
+              boards: [
+                {
+                  id: "board-red-solid",
+                  name: "Red / solid",
+                  cellId: "cell-red-solid",
+                  variantProps: { Color: "Red" },
+                  variantError: null,
+                  matched: true,
+                  fills: [{ fillColor: "#ffdad6" }],
+                  strokes: [],
+                  borderRadius: 9999,
+                  textColors: ["#ba1a1a"],
+                  rawCss: "",
+                },
+                {
+                  id: "board-default",
+                  name: "Default",
+                  cellId: null,
+                  variantProps: null,
+                  variantError: null,
+                  matched: false,
+                  fills: [{ fillColor: "#123abc" }],
+                  strokes: [],
+                  borderRadius: 9999,
+                  textColors: [],
+                  rawCss: "",
+                },
+              ],
+            },
+            log: "",
+          }),
+        },
+      ],
+    };
+    await expect(
+      readComponentFixture("Badge / Default", catalog, { callTool: mockCallTool(unmatchedUnbindable) }),
+    ).rejects.toThrow(/#123abc[\s\S]*Default|Default[\s\S]*#123abc/);
+  });
+
   it("rifiuta un envelope malformato nominando il campo (mancanza di `result`)", async () => {
     const callTool = mockCallTool({ content: [{ type: "text", text: JSON.stringify({ log: "ciao" }) }] });
     await expect(readComponentFixture("Badge", catalog, { callTool })).rejects.toThrow(/result/);

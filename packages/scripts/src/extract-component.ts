@@ -48,16 +48,24 @@ function writeAtomic(filePath: string, content: string): void {
   renameSync(tmp, filePath);
 }
 
+/** Nome pnpm dello script CLI per la modalità, usato nei messaggi d'errore. */
+function scriptNameFor(mode: "extract" | "validate"): string {
+  return mode === "extract" ? "extract:component" : "validate:recipe";
+}
+
 function parseArgs(args: readonly string[]): { mode: "extract" | "validate"; componentName: string } {
   // pnpm inoltra il separatore "--" fra script e argomenti: va rimosso, non è un flag.
-  const [mode, componentName] = args.filter((arg) => arg !== "--");
+  const [mode, componentName, ...rest] = args.filter((arg) => arg !== "--");
   if (mode !== "extract" && mode !== "validate") {
     throw new Error(
       `Modalità "${mode ?? "<mancante>"}" non riconosciuta — usare "extract" o "validate": pnpm extract:component -- <Nome> | pnpm validate:recipe -- <Nome>.`,
     );
   }
   if (!componentName || componentName.startsWith("--")) {
-    throw new Error(`Nome componente mancante — usare: pnpm ${mode === "extract" ? "extract:component" : "validate:recipe"} -- <Nome>.`);
+    throw new Error(`Nome componente mancante — usare: pnpm ${scriptNameFor(mode)} -- <Nome>.`);
+  }
+  if (rest.length > 0) {
+    throw new Error(`Argomenti non riconosciuti: ${rest.join(", ")} — usare: pnpm ${scriptNameFor(mode)} -- <Nome>.`);
   }
   return { mode, componentName };
 }
@@ -99,15 +107,18 @@ function validate(componentName: string): void {
   const catalog = loadCatalogFixture();
   const fixtureJson: unknown = JSON.parse(readFileSync(fixturePath, "utf8"));
   const recipeJson: unknown = JSON.parse(readFileSync(recipePath, "utf8"));
+  if (typeof fixtureJson !== "object" || fixtureJson === null || Array.isArray(fixtureJson)) {
+    throw new Error(`Il file fixture "${fixturePath}" non contiene un oggetto JSON valido (trovato: ${JSON.stringify(fixtureJson)}).`);
+  }
+  if (typeof recipeJson !== "object" || recipeJson === null || Array.isArray(recipeJson)) {
+    throw new Error(`Il file ricetta "${recipePath}" non contiene un oggetto JSON valido (trovato: ${JSON.stringify(recipeJson)}).`);
+  }
 
   // Provenienza: la ricetta deve dichiarare la stessa componente e lo stesso
   // hash di catalogo della fixture committata — un mismatch è drift esplicito.
   const fixture = FixtureSchema.parse(fixtureJson);
-  const checks: Array<[boolean, string]> = [
-    [fixture.componentName === componentName, `Il campo componentName della fixture ("${fixture.componentName}") non corrisponde al nome richiesto ("${componentName}").`],
-  ];
-  for (const [ok, message] of checks) {
-    if (!ok) throw new Error(message);
+  if (fixture.componentName !== componentName) {
+    throw new Error(`Il campo componentName della fixture ("${fixture.componentName}") non corrisponde al nome richiesto ("${componentName}").`);
   }
 
   const recipe = recipeJson as { componentName?: string; penpotComponentId?: string; fixtureHash?: string };

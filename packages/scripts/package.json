@@ -2,7 +2,7 @@
   "name": "@penpot-ds/scripts",
   "version": "0.0.0",
   "private": true,
-  "description": "Pipeline MCP che legge il catalogo token da Penpot e genera i file di @penpot-ds/tokens. Stage 1 (token) solo — estrazione componenti/varianti è Story 2.2/2.3.",
+  "description": "Pipeline MCP Penpot→codice: Stage 1 genera i token di @penpot-ds/tokens, Stage 2 estrae per-componente fixture e ricette validate (schema + vocabolario token).",
   "type": "module",
   "scripts": {
     "generate:theme": "node --import tsx src/generate-theme.ts",

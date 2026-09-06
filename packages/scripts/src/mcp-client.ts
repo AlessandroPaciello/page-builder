@@ -13,21 +13,32 @@ export async function withTimeout<T>(
   timeoutMs: number = MCP_TIMEOUT_MS,
 ): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let timedOut = false;
   const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(
-      () =>
-        reject(
-          new Error(
-            `Timeout (${timeoutMs}ms) su ${description} — il server MCP Penpot non risponde: verifica che Penpot sia attivo e raggiungibile.`,
-          ),
+    timer = setTimeout(() => {
+      timedOut = true;
+      reject(
+        new Error(
+          `Timeout (${timeoutMs}ms) su ${description} — il server MCP Penpot non risponde: verifica che Penpot sia attivo e raggiungibile.`,
         ),
-      timeoutMs,
-    );
+      );
+    }, timeoutMs);
   });
   try {
     return await Promise.race([operation, timeout]);
   } finally {
     clearTimeout(timer);
+    // Solo quando il timeout ha vinto la race `operation` resta pendente: un
+    // suo reject successivo sarebbe un unhandled rejection altrimenti non
+    // intercettato. Attacchiamo il catch diagnostico SOLO in quel caso — se
+    // `operation` vince la race (il caso comune), il suo reject è già gestito
+    // dall'`await` sopra e ri-agganciare qui logherebbe due volte lo stesso
+    // errore legittimo.
+    if (timedOut) {
+      operation.catch((error: unknown) => {
+        console.error(`Rifiuto tardivo (dopo il timeout) su ${description}:`, error);
+      });
+    }
   }
 }
 
