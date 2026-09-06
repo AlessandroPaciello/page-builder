@@ -2,7 +2,8 @@ name: page-builder
 
 services:
   postgres:
-    image: postgres:18
+    # Pinnata a patch (18.1), non tag floating — voce chiusa da Story 1.6.
+    image: postgres:18.1
     container_name: page-builder-postgres
     environment:
       POSTGRES_DB: page_builder
