@@ -23,9 +23,7 @@ Solo i comandi live (`generate:theme -- --live`, `extract:component`) parlano co
 | `PENPOT_MCP_URL` | no | `http://localhost:9001/mcp/stream` (proxy MCP del frontend Penpot, flag `enable-mcp`) |
 | `PENPOT_MCP_TOKEN` | no (ma il server multi-user lo richiede per ogni tool) | aggiunto come query `userToken`; mascherato (`userToken=***`) in ogni messaggio |
 
-1. In Penpot: *Settings → Integrations → MCP server*, attiva e copia il token.
-2. Esportalo nella shell o nell'ambiente dell'IDE (mai in un file tracciato): `export PENPOT_MCP_TOKEN="<token>"`. La stessa variabile è usata da `.mcp.json` (Claude Code) e `opencode.json` (OpenCode) alla root.
-3. Nel file Penpot da leggere: *File → Plugins → MCP Server → Connect*.
+Setup di Penpot, del token e di direnv: [README alla root](../../README.md#penpot-locale-e-server-mcp).
 
 Se manca il token, se è stato rigenerato o se il plugin non è connesso, i comandi live falliscono con un errore che nomina `PENPOT_MCP_TOKEN`.
 

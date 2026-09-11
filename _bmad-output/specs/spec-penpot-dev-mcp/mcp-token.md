@@ -7,10 +7,12 @@ Companion di [SPEC.md](./SPEC.md) per CAP-2, CAP-3 e CAP-4. Contiene i fatti ver
 | Cosa | Stato |
 |---|---|
 | UI token | *Settings → Integrations → MCP server*: toggle, chiave, *regenerate* e snippet `{"mcpServers":{"penpot":{"url":"<mcp_server_url>?userToken=<token>"}}}`. Visibile solo con `enable-mcp`. |
+| Cache del browser | Il frontend serve `js/config.js` (dove vivono i flag) con `Cache-Control: max-age=604800` e un `?version=` che cambia solo con la versione di Penpot. Dopo aver cambiato `PENPOT_FLAGS` serve un hard reload (Ctrl+Shift+R), altrimenti la voce *Integrations* non compare. |
 | Proxy frontend | Con `enable-mcp` l'entrypoint del frontend genera un proxy nginx su `:9001`: `/mcp/stream` → `penpot-mcp:4401/mcp`, `/mcp/sse` → `/sse`, `/mcp/ws` → `penpot-mcp:4402`. Si può sovrascrivere con `PENPOT_MCP_URI` e `PENPOT_MCP_URI_WS`. |
 | Flag | Prima del cambio `PENPOT_FLAGS` non conteneva `enable-mcp`, quindi `:9001/mcp/stream` non raggiungeva l'MCP. Ora il flag è attivo. |
 | Container MCP | Prima del cambio il log diceva `Multi-user mode: false`, per l'override della PR #20; ora dice `true`. L'unica opzione CLI è `--multi-user`, il resto si configura con le variabili `PENPOT_MCP_*`. |
 | Multi-user (verificato dopo il cambio) | `initialize` riesce anche senza token, sia su `:9001/mcp/stream` sia su `:4401/mcp`. Il rifiuto arriva nel testo del tool, non come HTTP 401: `No userToken found in session context` se il token manca, `No Penpot instance connected for user token` se il token è sbagliato o il plugin non è connesso con quell'utente. Quindi il plugin va ancora connesso, e le porte dirette non danno accesso ai tool senza token. |
+| Rigenerazione | Verificato: rigenerare il token invalida il precedente (CAP-3) e chiude la connessione del plugin. Finché il plugin non si riconnette, anche la chiave nuova riceve `No Penpot instance connected for user token`. |
 | Script | Prima del cambio i reader hardcodavano `http://127.0.0.1:4401/mcp`. Ora risolvono endpoint e token da `PENPOT_MCP_URL`/`PENPOT_MCP_TOKEN` in `mcp-client.ts`. |
 
 ## Configurazione di riferimento
@@ -23,6 +25,7 @@ Companion di [SPEC.md](./SPEC.md) per CAP-2, CAP-3 e CAP-4. Contiene i fatti ver
 ```bash
 export PENPOT_MCP_TOKEN="<token copiato da Penpot>"   # ~/.bashrc, oppure direnv .envrc (ignorato da git)
 ```
+Metodo di riferimento: `PENPOT_MCP_TOKEN=<token>` nel `.env` (ignorato), caricato da direnv con un `.envrc` che contiene `dotenv`. VS Code va aperto con `code .` da una shell dentro il repo. Procedura completa nel [README alla root](../../../README.md#penpot-locale-e-server-mcp).
 
 **Claude Code**: `.mcp.json` alla root, committato. Claude Code espande `${VAR:-default}`.
 ```json
