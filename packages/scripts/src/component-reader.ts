@@ -1,7 +1,11 @@
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-
-import { parseExecuteCodeEnvelope, withTimeout, type McpCallToolResult } from "./mcp-client";
+import {
+  callPenpotTool,
+  parseExecuteCodeEnvelope,
+  resolveMcpEndpoint,
+  withTimeout,
+  type McpCallToolResult,
+  type McpEndpoint,
+} from "./mcp-client";
 import type { ComponentFixture } from "./recipe-schema";
 import type { PenpotToken, TokenCatalog } from "./theme-generator";
 
@@ -15,12 +19,11 @@ import type { PenpotToken, TokenCatalog } from "./theme-generator";
  * nomina la shape e il valore (Dev Notes Story 2.2).
  */
 
-const DEFAULT_PENPOT_MCP_URL = "http://127.0.0.1:4401/mcp";
-
 export type CallToolFn = (args: { name: string; arguments: { code: string } }) => Promise<unknown>;
 
 export interface ReadComponentOptions {
-  mcpUrl?: string;
+  /** Default: `resolveMcpEndpoint()` (PENPOT_MCP_URL / PENPOT_MCP_TOKEN). */
+  endpoint?: McpEndpoint;
   /** Seam per i test: transport mockato, zero rete. In produzione è assente. */
   callTool?: CallToolFn;
   timeoutMs?: number;
@@ -354,7 +357,7 @@ export async function readComponentFixture(
   catalog: TokenCatalog,
   options: ReadComponentOptions = {},
 ): Promise<ComponentFixture> {
-  const { mcpUrl = DEFAULT_PENPOT_MCP_URL, timeoutMs } = options;
+  const { timeoutMs } = options;
   const bindingIndex = buildBindingIndex(catalog);
 
   async function callToolRaw(args: { name: string; arguments: { code: string } }): Promise<McpCallToolResult> {
@@ -365,24 +368,12 @@ export async function readComponentFixture(
         timeoutMs,
       )) as McpCallToolResult;
     }
-    const client = new Client({ name: "penpot-ds-scripts", version: "0.0.0" });
-    const transport = new StreamableHTTPClientTransport(new URL(mcpUrl));
-    try {
-      await withTimeout(client.connect(transport), `connessione al server MCP Penpot (${mcpUrl})`, timeoutMs);
-      return (await withTimeout(
-        client.callTool(args as never),
-        `chiamata al tool execute_code (lettura componente "${componentName}")`,
-        timeoutMs,
-      )) as McpCallToolResult;
-    } finally {
-      // La close non deve mai mascherare l'errore primario, né lasciare socket
-      // aperti che tengono vivo l'event loop del CLI.
-      try {
-        await client.close();
-      } catch {
-        // ignorato deliberatamente: conta l'esito dell'operazione
-      }
-    }
+    return callPenpotTool(
+      options.endpoint ?? resolveMcpEndpoint(),
+      args,
+      `chiamata al tool execute_code (lettura componente "${componentName}")`,
+      timeoutMs,
+    );
   }
 
   const raw = await callToolRaw({ name: "execute_code", arguments: { code: readComponentCode(componentName) } });
