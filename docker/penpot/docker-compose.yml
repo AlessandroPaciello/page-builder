@@ -30,7 +30,7 @@ name: penpot
 # WARNING: if you're exposing Penpot to the internet, you should remove the flags
 # 'disable-secure-session-cookies' and 'disable-email-verification'
 x-flags: &penpot-flags
-  PENPOT_FLAGS: disable-email-verification enable-smtp enable-prepl-server disable-secure-session-cookies
+  PENPOT_FLAGS: disable-email-verification enable-smtp enable-prepl-server disable-secure-session-cookies enable-mcp
 
 x-uri: &penpot-public-uri
   PENPOT_PUBLIC_URI: http://localhost:9001
@@ -264,13 +264,14 @@ services:
 
   penpot-mcp:
     image: "penpotapp/mcp:${PENPOT_VERSION:-latest}"
-    # L'immagine ufficiale avvia sempre `node index.js --multi-user`, che richiede
-    # un userToken per plugin che la nostra versione di Penpot self-hosted non genera
-    # ancora. Uso locale single-user: sovrascrive il comando per disattivarla.
-    command: ["node", "index.js"]
+    # Comando di default dell'immagine (`node index.js --multi-user`): ogni client
+    # si autentica con il token personale generato in Settings → Integrations
+    # (richiede `enable-mcp` in PENPOT_FLAGS). I client passano da
+    # http://localhost:9001/mcp/stream?userToken=... — vedi
+    # _bmad-output/specs/spec-penpot-dev-mcp/mcp-token.md.
     restart: always
     ports:
-      - "4401:4401"   # Streamable HTTP MCP — questo è ciò che packages/scripts consuma
-      - "4402:4402"   # WebSocket task bridge (facoltativo, non usato da Story 2.1)
+      - "4401:4401"   # Streamable HTTP MCP diretto; client e script usano il proxy :9001/mcp/stream
+      - "4402:4402"   # WebSocket task bridge del plugin
     networks:
       - penpot

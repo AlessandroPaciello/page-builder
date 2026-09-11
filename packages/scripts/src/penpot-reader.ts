@@ -1,37 +1,12 @@
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-
+import { callPenpotTool, isTextContent, resolveMcpEndpoint, type McpCallToolResult, type McpEndpoint } from "./mcp-client";
 import type { TokenCatalog } from "./theme-generator";
 
 /**
  * Client MCP minimale per leggere SOLO il catalogo token
- * (`penpot.library.local.tokens`). La lettura di componenti/varianti per la
- * pipeline Stage 2 è fuori scope qui — vedi Story 2.2/2.3.
+ * (`penpot.library.local.tokens`). La lettura di componenti/varianti è in
+ * component-reader.ts (Story 2.2). Endpoint e token vengono dall'ambiente
+ * (`PENPOT_MCP_URL`, `PENPOT_MCP_TOKEN`): vedi mcp-client.ts.
  */
-const DEFAULT_PENPOT_MCP_URL = "http://127.0.0.1:4401/mcp";
-
-/** Timeout per le operazioni MCP: un server che accetta TCP ma non risponde non deve appendere la pipeline all'infinito. */
-const MCP_TIMEOUT_MS = 15_000;
-
-async function withTimeout<T>(operation: Promise<T>, description: string): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(
-      () =>
-        reject(
-          new Error(
-            `Timeout (${MCP_TIMEOUT_MS}ms) su ${description} — il server MCP Penpot non risponde: verifica che Penpot sia attivo e raggiungibile.`,
-          ),
-        ),
-      MCP_TIMEOUT_MS,
-    );
-  });
-  try {
-    return await Promise.race([operation, timeout]);
-  } finally {
-    clearTimeout(timer);
-  }
-}
 
 /**
  * Eseguito dentro il plugin Penpot via tool `execute_code`. Filtra ai soli
@@ -56,20 +31,6 @@ return {
     })),
 };
 `;
-
-interface McpTextContent {
-  type: "text";
-  text: string;
-}
-
-interface McpCallToolResult {
-  content?: Array<McpTextContent | { type: string; [key: string]: unknown }>;
-  isError?: boolean;
-}
-
-function isTextContent(content: { type: string }): content is McpTextContent {
-  return content.type === "text";
-}
 
 function extractCatalog(result: McpCallToolResult): TokenCatalog {
   if (result.isError) {
@@ -107,28 +68,12 @@ function extractCatalog(result: McpCallToolResult): TokenCatalog {
   return envelope.result;
 }
 
-export async function readPenpotTokenCatalog(mcpUrl: string = DEFAULT_PENPOT_MCP_URL): Promise<TokenCatalog> {
-  const client = new Client({ name: "penpot-ds-scripts", version: "0.0.0" });
-  const transport = new StreamableHTTPClientTransport(new URL(mcpUrl));
-  await withTimeout(client.connect(transport), `connessione al server MCP Penpot (${mcpUrl})`);
-
-  try {
-    const result = (await withTimeout(
-      client.callTool({
-        name: "execute_code",
-        arguments: { code: READ_TOKEN_CATALOG_CODE },
-      }),
-      "chiamata al tool execute_code",
-    )) as McpCallToolResult;
-    return extractCatalog(result);
-  } catch (error) {
-    // L'errore di close non deve mai mascherare l'errore originale.
-    try {
-      await client.close();
-    } catch {
-      // ignorato deliberatamente: conta l'errore primario
-    }
-    throw error;
-  }
-  await client.close();
+/** L'endpoint si risolve alla chiamata, così il percorso offline non legge mai l'ambiente MCP. */
+export async function readPenpotTokenCatalog(endpoint: McpEndpoint = resolveMcpEndpoint()): Promise<TokenCatalog> {
+  const result = await callPenpotTool(
+    endpoint,
+    { name: "execute_code", arguments: { code: READ_TOKEN_CATALOG_CODE } },
+    "chiamata al tool execute_code",
+  );
+  return extractCatalog(result);
 }

@@ -14,7 +14,7 @@ Il file ha `name: penpot` pinnato esplicitamente in testa — **non rimuoverlo**
 
 ## Modifica applicata (già presente in questo file)
 
-Il servizio è già stato aggiunto (stesso `networks: [penpot]` degli altri servizi):
+Il servizio è già stato aggiunto (stesso `networks: [penpot]` degli altri servizi). Dal 2026-09-11 gira con il comando di default dell'immagine (`--multi-user`) e `PENPOT_FLAGS` contiene `enable-mcp`: vedi [mcp-token.md](./mcp-token.md).
 
 ```yaml
 services:
@@ -22,8 +22,8 @@ services:
     image: "penpotapp/mcp:${PENPOT_VERSION:-latest}"
     restart: always
     ports:
-      - "4401:4401"   # Streamable HTTP MCP — questo è ciò che packages/scripts consuma
-      - "4402:4402"   # WebSocket task bridge (facoltativo, non usato da Story 2.1)
+      - "4401:4401"   # Streamable HTTP MCP diretto (i client usano il proxy :9001/mcp/stream)
+      - "4402:4402"   # WebSocket task bridge del plugin
     networks:
       - penpot
 ```
@@ -47,22 +47,23 @@ Nel file Penpot che si vuole leggere via MCP: **File → Plugins → MCP Server 
 
 | Cosa | Valore di default | Override |
 |---|---|---|
-| URL MCP (Streamable HTTP) | `http://localhost:4401/mcp` | variabile d'ambiente `PENPOT_MCP_URL` (facoltativa; se assente, usa il default) |
+| URL MCP (Streamable HTTP) | **superato:** vedi [mcp-token.md](./mcp-token.md) (`http://localhost:9001/mcp/stream`) | variabile d'ambiente `PENPOT_MCP_URL` (facoltativa) |
 | Transport | `StreamableHTTPClientTransport` (`@modelcontextprotocol/sdk`) | — |
 | Tool per leggere il catalogo token | `execute_code` (esegue JS con la Plugin API Penpot; leggere `penpot.library.local.tokens`) | — |
-| Auth | nessuna, in locale (la sessione del plugin nel browser è ciò che autorizza) | — |
+| Auth | token personale `userToken`, dalla variabile `PENPOT_MCP_TOKEN` (vedi [mcp-token.md](./mcp-token.md)) | — |
 
-`packages/scripts` deve trattare `PENPOT_MCP_URL` come opzionale con questo default — non richiedere la variabile obbligatoriamente (fallirebbe l'esecuzione offline sulla fixture, che non deve mai dipendere dall'MCP).
+`packages/scripts` tratta `PENPOT_MCP_URL` come opzionale, con il default indicato in [mcp-token.md](./mcp-token.md) — non richiedere la variabile obbligatoriamente (fallirebbe l'esecuzione offline sulla fixture, che non deve mai dipendere dall'MCP).
 
 ## Verifica
 
 ```bash
-# Il server deve rispondere (non connection-refused). Un 4xx/426 su GET semplice è normale
-# per un endpoint Streamable HTTP che si aspetta una richiesta MCP vera, non un browser.
-curl -i http://localhost:4401/mcp
+# Proxy MCP del frontend (richiede enable-mcp): una GET semplice risponde 406, non la SPA né 404.
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:9001/mcp/stream
+# Il container deve essere in multi-user.
+docker compose -f docker/penpot/docker-compose.yml logs penpot-mcp | grep "Multi-user mode"   # → true
 ```
 
-Verifica applicativa completa: uno script che si connette con `@modelcontextprotocol/sdk` e chiama il tool `high_level_overview` deve ricevere una risposta, non un errore di connessione.
+Verifica applicativa completa: con `PENPOT_MCP_TOKEN` esportato e il plugin connesso, `pnpm --filter @penpot-ds/scripts generate:theme -- --live` legge il catalogo reale.
 
 ## Non fatto qui (fuori scope)
 

@@ -25,6 +25,8 @@ build
 .env.*
 !.env.example
 !.env*.example
+# direnv: può contenere PENPOT_MCP_TOKEN
+.envrc
 
 # IDEs and editors
 .vscode/*

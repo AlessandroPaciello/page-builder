@@ -64,6 +64,37 @@ pnpm run dev
 
 Open [http://localhost:3001](http://localhost:3001) in your browser to see the fullstack application.
 
+## Penpot locale e server MCP
+
+Il design system viene letto da un'istanza Penpot self-hosted tramite il suo server MCP. Serve solo per i comandi live di `packages/scripts` e per usare Penpot da Claude Code o OpenCode: build, test e CI non ne dipendono.
+
+**Setup (una volta sola):**
+
+1. Avvia lo stack: `cd docker/penpot && docker compose up -d`. Penpot risponde su [http://localhost:9001](http://localhost:9001).
+2. In Penpot vai su *Settings → Integrations → MCP server*, attivalo e copia il token personale. Se la voce non compare, ricarica con Ctrl+Shift+R.
+3. Aggiungi il token al `.env` alla root (il file è ignorato da git):
+   ```
+   PENPOT_MCP_TOKEN=<token>
+   ```
+4. Installa [direnv](https://direnv.net) e fagli caricare il `.env` nelle shell aperte nel repo:
+   ```bash
+   sudo apt install direnv
+   echo 'eval "$(direnv hook bash)"' >> ~/.bashrc && source ~/.bashrc
+   echo dotenv > .envrc   # dalla root del repo; .envrc è ignorato da git
+   direnv allow
+   ```
+   Entrando nel repo compare `direnv: loading .envrc … +PENPOT_MCP_TOKEN`.
+5. Chiudi VS Code del tutto e riaprilo da quel terminale con `code .`. Claude Code non legge il `.env`: prende il token solo dall'ambiente in cui parte.
+6. Nel file Penpot da leggere: *File → Plugins → MCP Server → Connect*.
+
+`.mcp.json` (Claude Code) e `opencode.json` (OpenCode) sono già nel repo e contengono il token solo come variabile. Gli script leggono la stessa variabile. **Il token non va mai scritto in un file tracciato.**
+
+**Dopo aver rigenerato il token:** quello vecchio smette di funzionare e il plugin si scollega. Aggiorna il `.env`, riconnetti il plugin (passo 6), poi chiudi VS Code e riaprilo da un terminale nuovo con `direnv reload && code .`.
+
+Direnv carica tutto il `.env`. Per isolare il token, mettilo in `.env.penpot` (anche questo ignorato) e scrivi `dotenv .env.penpot` nel `.envrc`. Senza direnv basta `export PENPOT_MCP_TOKEN=...` nella shell o in `~/.bashrc`.
+
+Variabili ed errori degli script: [packages/scripts/README.md](packages/scripts/README.md#connessione-a-penpot).
+
 ## Il package UI: `domains/` e `editor/`
 
 `@penpot-ds/ui` è la **libreria componenti unica** del progetto (AD-3/AD-11) ed
