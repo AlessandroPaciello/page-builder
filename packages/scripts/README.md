@@ -9,10 +9,25 @@ Pipeline MCP che legge il catalogo token da Penpot e genera i file di [`@penpot-
 | Comando | Cosa fa |
 |---|---|
 | `pnpm --filter @penpot-ds/scripts generate:theme` | Rigenera `tailwind-theme.css` + `tokens.generated.ts` **dalla fixture committata** (`src/__fixtures__/penpot-catalog.json`), offline. |
-| `pnpm --filter @penpot-ds/scripts generate:theme -- --live` | Si connette al server MCP Penpot (`http://127.0.0.1:4401/mcp`), legge il catalogo reale, **aggiorna anche la fixture committata**, poi rigenera. |
+| `pnpm --filter @penpot-ds/scripts generate:theme -- --live` | Si connette al server MCP Penpot (vedi [Connessione a Penpot](#connessione-a-penpot)), legge il catalogo reale, **aggiorna anche la fixture committata**, poi rigenera. |
 | `pnpm --filter @penpot-ds/scripts extract:component -- <Nome>` | **Sempre live** (mai in CI né in build): estrae UN componente da Penpot e scrive `src/recipes/<nome>.fixture.json`. Il nome è quello del componente (`Badge`), non della singola variante (`Badge / Default`). |
 | `pnpm --filter @penpot-ds/scripts validate:recipe -- <Nome>` | Offline: valida `src/recipes/<nome>.recipe.json` contro lo schema e contro il vocabolario token Stadio 1 (fail-loud sulle classi non risolvibili). Ha anche il check di provenienza (`penpotComponentId`, `fixtureHash`). Diventerà un gate CI in Story 2.3 — non è wired qui. |
 | `pnpm --filter @penpot-ds/scripts test` | Test unitari, offline e deterministici — nessuna rete (i transport MCP nei test sono mockati). |
+
+## Connessione a Penpot
+
+Solo i comandi live (`generate:theme -- --live`, `extract:component`) parlano con Penpot; test, `validate:recipe` e `generate:theme` offline non leggono mai queste variabili.
+
+| Variabile | Obbligatoria | Default / effetto |
+|---|---|---|
+| `PENPOT_MCP_URL` | no | `http://localhost:9001/mcp/stream` (proxy MCP del frontend Penpot, flag `enable-mcp`) |
+| `PENPOT_MCP_TOKEN` | no (ma il server multi-user lo richiede per ogni tool) | aggiunto come query `userToken`; mascherato (`userToken=***`) in ogni messaggio |
+
+1. In Penpot: *Settings → Integrations → MCP server*, attiva e copia il token.
+2. Esportalo nella shell o nell'ambiente dell'IDE (mai in un file tracciato): `export PENPOT_MCP_TOKEN="<token>"`. La stessa variabile è usata da `.mcp.json` (Claude Code) e `opencode.json` (OpenCode) alla root.
+3. Nel file Penpot da leggere: *File → Plugins → MCP Server → Connect*.
+
+Se manca il token, se è stato rigenerato o se il plugin non è connesso, i comandi live falliscono con un errore che nomina `PENPOT_MCP_TOKEN`.
 
 ## Dove vive la fixture del catalogo token
 
