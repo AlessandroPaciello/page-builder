@@ -294,7 +294,41 @@ So that il codice sia riproducibile e il drift design↔codice sia un test rosso
 **And** rigenerare produce **diff zero**, un file senza marker non viene mai sovrascritto, e i gate completezza, rigenerazione, a11y (vitest-axe) e conformità al contratto sono bloccanti in CI; il drift fixture vs Penpot live è bloccante se il runner raggiunge Penpot, altrimenti manuale/nightly con decisione documentata; ogni gate ha una propria prova rosso/verde
 **And** il tutto è validato su Badge, Input e AccordionItem prima di generalizzare; Accordion Root non è una ricetta (è una definizione di sezione).
 
-### Story 2.7: Libreria componenti accessibile
+### Story 2.7: Pipeline pronta per più componenti
+
+As a sviluppatore,
+I want che la pipeline regga un catalogo di componenti che cresce e un design che evolve,
+So that la libreria dei sei domini (2.9) si generi senza verdi finti né passaggi a mano fuori dai comandi (FR2, NFR1, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** un giudizio che dichiara `role` e/o `ariaAttributes`
+**When** genero il componente
+**Then** l'emitter li emette nel `.tsx` e il gate a11y fallisce se un attributo dichiarato manca dal componente generato (prova rosso/verde)
+**And** aggiungere un contratto con il suo design non richiede di modificare liste scritte a mano nei test né nel CLI: design e liste sono derivati da `designs/*.design.json` e da `COMPONENT_CONTRACTS`, con un test di copertura design↔registry
+**And** `add:library` crea le celle mancanti di un container esistente (`addCell`, additiva, con guardia anti-duplicato), e `adopt:variant -- <Comp>` rileva i valori d'asse presenti in Penpot e assenti dal contratto, propone il diff e, su conferma, aggiorna contratto, `SCHEMA_VERSION` + fingerprint, binding e design; fallisce con errore nominativo quando la variante non è esprimibile (proprietà che varia con due assi, assi `state`/`behavior` senza mapping 1:1)
+**And** `verify:library` segnala i container il cui plugin data dichiara un contratto inesistente e ricava le coppie di contrasto testo/sfondo dai design invece che da una lista
+**And** un field di contratto con il nome di un attributo HTML globale (es. `title`) è rifiutato
+**And** la regola per alzare la versione di un contratto già presente in Penpot (`nome@versione`) è decisa e documentata in `penpot-pipeline.md`, con il comando o il vincolo che la applica
+**And** ogni controllo nuovo ha una propria prova rosso/verde.
+
+### Story 2.8: Skill `pds-component` — creare e sincronizzare i componenti
+
+As a sviluppatore,
+I want una skill che mi guidi nel ciclo di vita di un componente, dalla creazione all'allineamento con Penpot,
+So that aggiungere o aggiornare un componente non richieda di conoscere a memoria l'ordine dei comandi, i file da scrivere e le decisioni che spettano a me (FR2, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** la pipeline della Story 2.7
+**When** invoco la voce **[PC] Crea componente** per un componente assente dal registry e da Penpot
+**Then** la skill chiede assi, parti, dominio, a11y e l'aspetto delle celle, scrive contratto e design, crea il container richiamando `pds-additive`, poi guida giudizio, binding, base shadcn, estrazione, render, barrel e gate
+**And** la voce **[PS] Sincronizza componente** legge lo stato con `verify:library` e `gates:render` e sceglie il percorso: drift → riestrazione e render con diff; valore d'asse in più da Penpot → `adopt:variant`; cella mancante → `addCell`; proprietà senza token → indicazione al designer
+**And** la skill si ferma solo sulle decisioni umane, non scrive mai su Penpot né sui contratti fuori dai comandi CLI, e l'esito è sempre l'exit code degli script, mai il prompt
+**And** `pds-additive` al passo 3, dopo aver riportato una differenza, indica la voce che la risolve; le due voci sono registrate nel `module-help.csv` di `pds-setup`
+**And** la skill è costruita con `bmad-workflow-builder` e verificata eseguendo i due percorsi su un componente reale.
+
+### Story 2.9: Libreria componenti accessibile
 
 As a sviluppatore,
 I want una libreria di componenti organizzata per dominio e conforme alla a11y baseline,
@@ -302,13 +336,13 @@ So that l'editor e le composizioni possano costruirci sopra (FR3, NFR1).
 
 **Acceptance Criteria:**
 
-**Given** i token generati, i contratti e l'emitter della Story 2.6
-**When** genero i componenti per i sei domini (data-display, inputs, feedback, layout, navigation, overlays) in `packages/ui/src/domains`, ciascuno con prima il proprio contratto e il proprio container Penpot (skill additiva)
+**Given** i token generati, i contratti, l'emitter della Story 2.6 e la pipeline della Story 2.7
+**When** genero i componenti per i sei domini (data-display, inputs, feedback, layout, navigation, overlays) in `packages/ui/src/domains`, ciascuno creato con la voce [PC] di `pds-component` (Story 2.8): prima il contratto e il container Penpot, poi estrazione e render
 **Then** ogni componente interattivo ha focus visibile WCAG AA, stato comunicato da testo+colore e ARIA corretto, con il comportamento fornito dall'headless Radix dichiarato nel binding
 **And** i test axe passano su tutti i componenti e i componenti in `domains/` non importano da `editor/`, verificato da **lint bloccante**
 **And** i componenti senza headless disponibile e con logica propria (Table con sorting, Carousel) e i componenti complessi hanno un contratto completo e un segnaposto in Penpot; l'adapter è scritto a mano, senza marker `@generated`, e la pipeline li ignora.
 
-### Story 2.8: Storybook del design system
+### Story 2.10: Storybook del design system
 
 As a sviluppatore,
 I want uno Storybook che aggrega le storie dei componenti con addon di accessibilità,
@@ -319,6 +353,7 @@ So that il design system sia esplorabile e verificabile visivamente.
 **Given** i componenti `ui/domains` con le loro story
 **When** avvio Storybook
 **Then** le storie dei componenti sono navigabili con i token applicati e l'addon a11y attivo
+**And** l'emitter genera le story in CSF3 valido, con le props in `args`, e un gate esegue le story generate (smoke test), così una story che rende il componente senza props è un test rosso
 **And** il build statico di Storybook è prodotto senza errori.
 
 
