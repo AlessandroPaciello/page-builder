@@ -1,0 +1,10 @@
+{
+  "domain": "data-display",
+  "headless": null,
+  "a11y": {
+    "role": null,
+    "ariaAttributes": [],
+    "focusVisible": false,
+    "stateConveyedByTextAndColor": false
+  }
+}

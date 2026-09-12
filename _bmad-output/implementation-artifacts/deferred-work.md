@@ -109,3 +109,12 @@ Lavoro identificato durante le review e rimandato consapevolmente. Ogni voce ind
 - **`pds-setup` lancia `cleanup-legacy.py --also-remove _config`** — in un progetto gestito dall'installer cancellerebbe `_bmad/_config/`, `_bmad/core/` e `_bmad/pds/`; inoltre `_bmad/pds/config.yaml` contiene `user_name`. È boilerplate del builder (identico a `bmad-bmb-setup`): da valutare a livello di framework BMad.
 - **`applyToken` su `strokeColor`/`strokeWidth` di shape senza stroke preesistente** (divider, chevron, root dell'Input) — non verificato (medium se confermato): controllare in "Page Builder DS" che divider e bordo dell'Input abbiano uno stroke visibile.
 - **Il gate `scripts` non intercetta import relativi fuori dal package** (`../../apps/web/src/x`, `../../ui/src`) — preesistente: il gate a `HEAD` non li copriva neanche prima.
+
+## Deferred from: build review of 2-5-estrazione-adeguata-ricette-per-parti-e-token (2026-09-12, loop 1)
+
+- source_spec: `_bmad-output/implementation-artifacts/2-5-estrazione-adeguata-ricette-per-parti-e-token.md`
+  summary: Il CLI `extract:component` non segnala una parte del contratto con zero binding token in ogni cella né chiavi d'asse extra in `variantProps` — coperte solo dal gate separato `verify:library`.
+  evidence: BH#8+ECH#7+VG-other-2 — `collectPartBindings` valida solo layer con tokens (`extract-component.ts`), `cellKeyOf` itera solo gli assi del contratto; nella library verificata (regole 6/7 di `verifyLibrary`) il caso non è raggiungibile e il workflow documenta `verify:library` come prerequisito, quindi duplicare la verifica nel CLI è ridondanza. Da rivalutare se l'estrazione viene mai eseguita senza verify a monte.
+- source_spec: `_bmad-output/implementation-artifacts/2-5-estrazione-adeguata-ricette-per-parti-e-token.md`
+  summary: I fixture JSON embeddano internals Penpot volatili in `style` (id shadow, `style: "drop-shadow"`, `hidden: false`) — la re-estrazione churnerà su campi che la pipeline non consuma.
+  evidence: BH#13 — visibile in `packages/scripts/src/recipes/input.fixture.json` (shadow con `id` UUID). Non rompe nulla oggi (`validate` non legge `style`), ma mina la riproducibilità diff-zero degli artefatti: la normalizzazione di `style` è una scelta di design da fissare nella Story 2.6 (emitter), che definisce cosa consume.

@@ -8,11 +8,10 @@ import { generateTheme, varName, varSuffix, type TokenCatalog } from "./theme-ge
 
 const here = dirname(fileURLToPath(import.meta.url));
 /**
- * Dal Task 8 della Story 2.4 la fixture `penpot-catalog.json` è la NUOVA
- * library (token semantici shadcn); i test che dipendono dai nomi `mis`
- * leggono la fixture legacy, conservata solo fino alla Story 2.5.
+ * Dalla Story 2.5 la fixture `penpot-catalog.json` (la library della Story
+ * 2.4) è l'unica: la legacy `mis` è stata cancellata e i test ripuntati.
  */
-const fixturePath = resolve(here, "__fixtures__/legacy-mis-catalog.json");
+const fixturePath = resolve(here, "__fixtures__/penpot-catalog.json");
 
 function loadFixture(): TokenCatalog {
   return JSON.parse(readFileSync(fixturePath, "utf8")) as TokenCatalog;
@@ -53,47 +52,37 @@ describe("generateTheme — mapping puro contro la fixture committata", () => {
   it("raggruppa il CSS per set Penpot, in ordine di catalogo", () => {
     const { css } = generateTheme(loadFixture());
     const setComments = [...css.matchAll(/\/\* set: (.+?) \*\//g)].map((m) => m[1]);
-    expect(setComments).toEqual([
-      "radix.space",
-      "radix.radius",
-      "radix.color",
-      "radix.typography",
-      "mis.color",
-      "mis.typography",
-      "mis.radius",
-      "feedback.color",
-      "border.width",
-      "mis.shadow",
-    ]);
+    expect(setComments).toEqual(["palette", "semantic"]);
   });
 
   it("risolve i riferimenti {token.name} in var(--...), preservando l'indirection invece di appiattire il valore", () => {
     const { css } = generateTheme(loadFixture());
-    expect(css).toContain("--color-mis-border: var(--color-gray-8);");
-    expect(css).toContain("--color-mis-primary: var(--color-accent-9);");
+    expect(css).toContain("--color-primary: var(--color-accent-9);");
+    expect(css).toContain("--color-background: var(--color-gray-1);");
   });
 
   it("preserva l'alpha delle shadow (bug noto: resolvedValue di Penpot la perde, per questo si usa il value grezzo)", () => {
     const { css } = generateTheme(loadFixture());
-    expect(css).toContain("--shadow-mis-raised: 0px 1px 3px 0px rgba(26,28,28,0.12);");
+    expect(css).toContain("--shadow-sm: 0px 1px 3px 0px rgba(26,28,28,0.12);");
   });
 
   it("formatta font-family multi-parola tra virgolette", () => {
     const { css } = generateTheme(loadFixture());
-    expect(css).toContain('--font-mis-serif: "Noto Serif";');
-    expect(css).toContain("--font-mis-sans: Manrope;");
+    expect(css).toContain('--font-serif: "Noto Serif";');
+    expect(css).toContain("--font-sans: Manrope;");
   });
 
   it("genera scala/options/map spacing e radii per i field select Puck", () => {
     const { ts } = generateTheme(loadFixture());
     expect(ts).toContain("export const spacing = {");
-    expect(ts).toContain('"space-1": 4,');
+    expect(ts).toContain('"1": 4,');
+    expect(ts).toContain('"9": 64,');
     expect(ts).toContain("export const spacingOptions = [");
-    expect(ts).toContain('{ label: "space.1", value: "space-1" },');
+    expect(ts).toContain('{ label: "spacing.1", value: "1" },');
     expect(ts).toContain("export const spacingMap = {");
-    expect(ts).toContain('"space-1": "var(--spacing-space-1)",');
+    expect(ts).toContain('"1": "var(--spacing-1)",');
     expect(ts).toContain("export const radii = {");
-    expect(ts).toContain('"mis-pill": 11,');
+    expect(ts).toContain('"sm": 4,');
     expect(ts).toContain('"full": 9999,');
   });
 
@@ -317,11 +306,7 @@ describe("generateTheme — guardie fail-loud (review 2.1)", () => {
   });
 
   it("drift guard: i file generati committati coincidono byte per byte con la rigenerazione dalla fixture", () => {
-    // I file generati committati provengono dalla fixture CORRENTE
-    // (penpot-catalog.json, la nuova library dal Task 8 della Story 2.4),
-    // non dalla legacy usata dagli altri test.
-    const currentFixturePath = resolve(here, "__fixtures__/penpot-catalog.json");
-    const { css, ts } = generateTheme(JSON.parse(readFileSync(currentFixturePath, "utf8")) as TokenCatalog);
+    const { css, ts } = generateTheme(JSON.parse(readFileSync(fixturePath, "utf8")) as TokenCatalog);
     const committedCss = readFileSync(resolve(here, "../../tokens/src/tailwind-theme.css"), "utf8");
     const committedTs = readFileSync(resolve(here, "../../tokens/src/tokens.generated.ts"), "utf8");
     expect(css).toBe(committedCss);

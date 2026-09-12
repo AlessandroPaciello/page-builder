@@ -1,0 +1,10 @@
+{
+  "domain": "inputs",
+  "headless": null,
+  "a11y": {
+    "role": null,
+    "ariaAttributes": ["aria-invalid"],
+    "focusVisible": true,
+    "stateConveyedByTextAndColor": false
+  }
+}
