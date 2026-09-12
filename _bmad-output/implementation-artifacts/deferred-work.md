@@ -79,3 +79,12 @@ Lavoro identificato durante le review e rimandato consapevolmente. Ogni voce ind
 
 - **Emitter per una seconda libreria (es. MUI) non provato** — la fattibilità è dedotta dall'API tema MUI (`theme.components.*.variants`/`styleOverrides`), non eseguita. Registrato nel Deferred dello spine (AD-11); da riaprire alla prima richiesta concreta di una libreria non shadcn.
 - **Adeguamento di `RecipeSchema` su codice in main** — il passaggio da classi Tailwind a celle `proprietà → token` per parti tocca `packages/scripts` con 88 test esistenti. Va fatto in **Story 2.5** senza far scendere la copertura su `component-reader`, `mcp-client` e CLI; `badge.fixture.json`/`badge.recipe.json` si sostituiscono per estrazione dalla nuova library, non a mano.
+
+## Deferred from: dev-story of 2-3-package-dei-contratti (2026-09-12)
+
+- **Gli altri cinque `check-boundaries.mjs` restano senza test propri** — `packages/contracts/scripts/check-boundaries.mjs` nasce con il modello da seguire: allowlist, funzione pura `checkBoundaries({ packageRoot })` esportata con tipi `.d.mts`, CLI dietro la guardia di invocazione diretta, prova rosso/verde su package finti in tmpdir più il package reale verde (`tests/check-boundaries.test.ts`). `domain`, `api`, `ui`, `scripts` e `tokens` restano a denylist e senza test. L'action item della retro Epic 1 resta **open**; estenderlo agli altri package era fuori scope della Story 2.3.
+- **Falso positivo fail-closed dello scanner dei contratti** — gli specifier sono cercati con i literal intatti, così una stringa che contiene `from "react"` o `require("x")` è segnalata. È voluto (in `src/` dei contratti non esiste un uso legittimo) ed è coperto da un test "rosso atteso"; da rivalutare solo se un messaggio di errore dei contratti dovesse citare un import.
+
+## Deferred from: code review of 2-3-package-dei-contratti (2026-09-12)
+
+- **Fingerprint fragile per costruzione** — `z.toJSONSchema` lancia su schemi Zod legittimi e probabili in futuro (transform, refinement custom, tipi non-JSON): il test del fingerprint crasherebbe invece di produrre un diff informativo. Inoltre l'output JSON Schema non è garantito stabile tra minor di zod: un upgrade di dipendenza può alterare l'hash e forzare un bump di `SCHEMA_VERSION` senza alcun cambio di contratto. Oggi gli schemi sono solo enum/stringa, quindi il rischio è futuro; da rivalutare quando si aggiunge il primo schema non banale a un contratto o sezione.
