@@ -5,3 +5,11 @@
 #
 # [agents.bmad-agent-pm]
 # description = "Prefers short, bulleted PRDs over narrative drafts."
+
+[modules.bmm]
+# Documentazione del progetto attuale (greenfield Next.js). Da popolare con [GPC]/[DP].
+# NOTA: `docs/legacy/` contiene la documentazione della codebase PRECEDENTE
+# (penpot-design-system: Strapi + JHipster) ed è solo riferimento storico —
+# non va usata come grounding per story o decisioni tecniche. Vedi docs/README.md.
+# (Spostata qui da _bmad/config.toml, che l'installer rigenera a ogni install.)
+project_knowledge = "{project-root}/docs"
