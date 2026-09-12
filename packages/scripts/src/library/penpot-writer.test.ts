@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { COMPONENT_CONTRACTS } from "@app/contracts";
 import { describe, expect, it } from "vitest";
 
+import { committedDesigns } from "./designs-loader";
 import { planLibrary } from "./library-plan";
 import { LIBRARY_SPEC, type SemanticSeed } from "./library-spec";
 import { emptySnapshot } from "./library-snapshot";
@@ -13,15 +14,14 @@ const seed: SemanticSeed = JSON.parse(
   readFileSync(resolve(import.meta.dirname, "semantic-tokens.seed.json"), "utf8"),
 ) as SemanticSeed;
 
-const designs = {
-  badge: JSON.parse(readFileSync(resolve(import.meta.dirname, "designs/badge.design.json"), "utf8")),
-  input: JSON.parse(readFileSync(resolve(import.meta.dirname, "designs/input.design.json"), "utf8")),
-  "accordion-item": JSON.parse(
-    readFileSync(resolve(import.meta.dirname, "designs/accordion-item.design.json"), "utf8"),
-  ),
-};
+const designs = committedDesigns();
 
 const contracts = Object.values(COMPONENT_CONTRACTS);
+
+/** Celle del prodotto cartesiano di un contratto: derivato, non a mano. */
+function cellCount(contract: (typeof contracts)[number]): number {
+  return contract.axes.reduce((count, axis) => count * axis.values.length, 1);
+}
 
 function bootstrapSteps() {
   const plan = planLibrary({ mode: "bootstrap", contracts, spec: LIBRARY_SPEC, seed, designs, snapshot: emptySnapshot() });
@@ -31,8 +31,9 @@ function bootstrapSteps() {
 describe("operationsToSteps", () => {
   it("un'operazione per chiamata (i container in lotti piccoli: una cella + un step finale)", () => {
     const steps = bootstrapSteps();
-    // 2 set + 76 token + (6+1 badge + 4+1 input + 2+1 accordion-item)
-    expect(steps).toHaveLength(2 + seed.palette.length + seed.semantic.length + 15);
+    // 2 set + token del seed + per contratto (una cella per step + lo step del container)
+    const containerSteps = contracts.reduce((total, contract) => total + cellCount(contract) + 1, 0);
+    expect(steps).toHaveLength(2 + seed.palette.length + seed.semantic.length + containerSteps);
   });
 
   it("createSet usa addSet con active: true", () => {
@@ -101,7 +102,7 @@ describe("operationsToSteps — il codice generato è JS valido", () => {
 
   it("lo step del container contiene la guardia anti-duplicato del VariantContainer", () => {
     const containerSteps = bootstrapSteps().filter((step) => step.description.startsWith('createVariantContainer'));
-    expect(containerSteps).toHaveLength(3); // uno per contratto
+    expect(containerSteps).toHaveLength(contracts.length); // uno per contratto
     for (const step of containerSteps) {
       expect(step.code).toContain("isVariantContainer");
       expect(step.code).toContain("esiste già");

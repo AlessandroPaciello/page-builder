@@ -13,6 +13,13 @@ function renderInRoot(ui: ReactElement) {
   return render(<AccordionRoot collapsible type="single">{ui}</AccordionRoot>);
 }
 
+function declaredAttribute(container: HTMLElement, attribute: string): Element | null {
+  const root = container.querySelector('[data-slot="accordion-item"]');
+  if (root === null) return null;
+  if (attribute === "role") return root.hasAttribute("role") ? root : null;
+  return root.hasAttribute(attribute) ? root : root.querySelector("[" + attribute + "]");
+}
+
 describe("AccordionItem", () => {
   it("renderizza i campi content dopo l'apertura", () => {
     const { container, getByText } = renderInRoot(<AccordionItem value="item" label="Etichetta" body="Contenuto" />);
@@ -26,5 +33,21 @@ describe("AccordionItem", () => {
   it("non ha violazioni axe (default)", async () => {
     const { container } = renderInRoot(<AccordionItem value="item" label="Etichetta" body="Contenuto" />);
     expect((await axe(container)).violations).toEqual([]);
+  });
+
+  it("porta l'attributo dichiarato aria-expanded (dopo l'apertura)", () => {
+    const { container } = renderInRoot(<AccordionItem value="item" label="Etichetta" body="Contenuto" />);
+    const trigger = container.querySelector('[data-slot="accordion-item-trigger"]');
+    expect(trigger).toBeTruthy();
+    fireEvent.click(trigger!);
+    expect(declaredAttribute(container, "aria-expanded")).not.toBeNull();
+  });
+
+  it("porta l'attributo dichiarato aria-controls (dopo l'apertura)", () => {
+    const { container } = renderInRoot(<AccordionItem value="item" label="Etichetta" body="Contenuto" />);
+    const trigger = container.querySelector('[data-slot="accordion-item-trigger"]');
+    expect(trigger).toBeTruthy();
+    fireEvent.click(trigger!);
+    expect(declaredAttribute(container, "aria-controls")).not.toBeNull();
   });
 });

@@ -235,6 +235,20 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
     }
   }
 
+  // Regola 11: ogni container che dichiara un contratto via plugin data deve
+  // nominare un contratto del registry — un `alert@1` senza contratto `alert`
+  // non è verificato da nessuna delle regole 1–7 e resterebbe un verde finto.
+  const registered = new Set(contracts.map((contract) => contract.name));
+  for (const container of containers) {
+    if (container.pluginData === null) continue;
+    const declared = container.pluginData.split("@")[0] ?? "";
+    if (!registered.has(declared)) {
+      errors.push(
+        `Container "${container.name}": plugin data pagebuilder/contract = "${container.pluginData}" nomina il contratto "${declared}", assente dal registry (${[...registered].join(", ")}) — container orfano: aggiungi il contratto in @app/contracts o togli il plugin data.`,
+      );
+    }
+  }
+
   // Regola 8: la spec è coperta dal catalogo (nome e tipo); con il seed,
   // anche i valori coincidono con quelli decisi col designer (review 2.4).
   for (const required of spec.tokens) {

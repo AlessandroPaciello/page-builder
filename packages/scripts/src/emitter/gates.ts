@@ -2,7 +2,7 @@ import { componentFixtureFromSnapshot } from "../component-reader";
 import type { ComponentFixture } from "../recipe-schema";
 import type { LibrarySnapshot } from "../library/library-snapshot";
 import { stableStringify, validateRecipe } from "../validate-recipe";
-import { renderCheck, type RenderedFile } from "./render-component";
+import { declaredA11yAssertion, renderCheck, type RenderedFile } from "./render-component";
 
 /**
  * I cinque gate del regime design→codice (Story 2.6, AC #2; penpot-pipeline.md
@@ -79,6 +79,67 @@ export function checkA11y(result: A11ySuiteResult): { ok: boolean; detail: strin
     ok: false,
     detail: `suite ui in rosso (exit ${result.exitCode}${failed.length > 0 ? `; file: ${failed}` : ""}) — violazioni axe o test falliti`,
   };
+}
+
+export interface DeclaredA11yEntry {
+  component: string;
+  /** Percorso del test generato, relativo a `ui/src/domains/`. */
+  path: string;
+  /** `recipe.judgment.a11y`: ciò che il giudizio dichiara. */
+  a11y: { role: string | null; ariaAttributes: readonly string[] };
+  /** Contenuto del test committato; `undefined` = file assente. */
+  testContent: string | undefined;
+}
+
+/**
+ * Gate 3 (parte dichiarata) — il giudizio dichiara `role`/`aria-*`: il test
+ * generato committato deve contenere l'asserzione DOM per ognuno. È ciò che
+ * impedisce che l'asserzione sparisca e il gate a11y resti verde su un
+ * componente che non porta l'attributo (problema 1 del register Alert).
+ * Riparazione del gate a11y esistente, non un sesto gate.
+ */
+export function checkDeclaredA11y(entries: readonly DeclaredA11yEntry[]): {
+  ok: boolean;
+  missing: Array<{ component: string; path: string; attribute: string }>;
+} {
+  const missing: Array<{ component: string; path: string; attribute: string }> = [];
+  for (const { component, path, a11y, testContent } of entries) {
+    const declared: Array<[string, string]> = [
+      ...(a11y.role !== null ? [["role", declaredA11yAssertion("role", a11y.role)] as [string, string]] : []),
+      ...a11y.ariaAttributes.map((attribute): [string, string] => [attribute, declaredA11yAssertion(attribute)]),
+    ];
+    for (const [attribute, assertion] of declared) {
+      if (testContent === undefined || !testContent.includes(assertion)) missing.push({ component, path, attribute });
+    }
+  }
+  return { ok: missing.length === 0, missing };
+}
+
+/**
+ * Gate 3 composto: esito della suite ui (`checkA11y`) + a11y dichiarata
+ * (`checkDeclaredA11y` sui test committati). Restituisce gli errori già
+ * nominativi (componente, file, attributo) che il CLI stampa.
+ */
+export function checkA11yGate(options: {
+  components: ReadonlyArray<{ component: string; domain: string; a11y: DeclaredA11yEntry["a11y"] }>;
+  existing: Record<string, string>;
+  suite: A11ySuiteResult;
+}): { ok: boolean; errors: string[] } {
+  const errors: string[] = [];
+  const suite = checkA11y(options.suite);
+  if (!suite.ok) errors.push(`Gate a11y: ${suite.detail}`);
+  const declared = checkDeclaredA11y(
+    options.components.map(({ component, domain, a11y }) => {
+      const path = `${domain}/${component}.test.tsx`;
+      return { component, path, a11y, testContent: options.existing[path] };
+    }),
+  );
+  for (const missing of declared.missing) {
+    errors.push(
+      `Gate a11y — ${missing.component}: ${missing.path} non asserisce nel DOM l'attributo dichiarato "${missing.attribute}" (rigenera con render:component).`,
+    );
+  }
+  return { ok: errors.length === 0, errors };
 }
 
 export interface ConformanceEntry {

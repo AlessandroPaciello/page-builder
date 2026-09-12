@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 import { COMPONENT_CONTRACTS } from "@app/contracts";
 
 import { callPenpotTool, parseExecuteCodeEnvelope, resolveMcpEndpoint } from "../mcp-client";
+import { committedDesigns } from "./designs-loader";
 import { planLibrary, type ComponentDesign } from "./library-plan";
 import { readLibrarySnapshot } from "./library-reader";
 import { LIBRARY_SPEC, type SemanticSeed } from "./library-spec";
@@ -27,13 +28,8 @@ import { verifyLibrary } from "./verify-library";
  */
 
 const SEED_PATH = new URL("./semantic-tokens.seed.json", import.meta.url);
-const DESIGNS: Record<string, ComponentDesign> = {
-  badge: JSON.parse(readFileSync(new URL("./designs/badge.design.json", import.meta.url), "utf8")) as ComponentDesign,
-  input: JSON.parse(readFileSync(new URL("./designs/input.design.json", import.meta.url), "utf8")) as ComponentDesign,
-  "accordion-item": JSON.parse(
-    readFileSync(new URL("./designs/accordion-item.design.json", import.meta.url), "utf8"),
-  ) as ComponentDesign,
-};
+/** Design derivati da `designs/*.design.json` (Story 2.7): nessuna mappa a mano. */
+const DESIGNS: Record<string, ComponentDesign> = committedDesigns();
 
 /** Timeout per chiamata più ampio del default: le scritture su Penpot sono lente (Dev Notes), il default resta 15 s. */
 const WRITE_TIMEOUT_MS = 60_000;

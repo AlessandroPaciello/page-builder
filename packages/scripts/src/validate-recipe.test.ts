@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -269,8 +269,14 @@ describe("validateRecipe", () => {
     expect(result.errors.join("\n")).toContain('judgments/"badge".json');
   });
 
-  it("valida pulite le coppie fixture+ricetta committate dei tre contratti (AC #1)", () => {
-    for (const name of ["badge", "input", "accordion-item"]) {
+  it("valida pulite le coppie fixture+ricetta committate di ogni contratto (AC #1)", () => {
+    // Nomi derivati dalle ricette committate: una quarta ricetta entra per costruzione.
+    const names = readdirSync(resolve(here, "recipes"))
+      .filter((entry) => entry.endsWith(".recipe.json"))
+      .map((entry) => entry.replace(/\.recipe\.json$/, ""))
+      .sort();
+    expect(names.length).toBeGreaterThan(0);
+    for (const name of names) {
       const fixture = JSON.parse(readFileSync(resolve(here, `recipes/${name}.fixture.json`), "utf8")) as unknown;
       const recipe = JSON.parse(readFileSync(resolve(here, `recipes/${name}.recipe.json`), "utf8")) as unknown;
       const judgment = JSON.parse(readFileSync(resolve(here, `recipes/judgments/${name}.json`), "utf8")) as unknown;

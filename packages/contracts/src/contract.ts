@@ -49,6 +49,57 @@ export const KEBAB_CASE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 /** Nomi di assi, parti e field: identificatori minuscoli, senza spazi né separatori. */
 const IDENTIFIER = /^[a-z][a-zA-Z0-9]*$/;
 
+/**
+ * Attributi HTML globali (lista WHATWG) più `classname`: un field con uno di
+ * questi nomi ombreggia l'attributo sull'elemento generato (`title` diventa
+ * tooltip, `id` rompe le label, `tabIndex` sposta il focus). Confronto
+ * case-insensitive: `tabIndex` e `tabindex` sono lo stesso attributo.
+ */
+const HTML_GLOBAL_ATTRIBUTES: ReadonlySet<string> = new Set([
+  "accesskey",
+  "autocapitalize",
+  "autofocus",
+  "class",
+  "classname",
+  "contenteditable",
+  "dir",
+  "draggable",
+  "enterkeyhint",
+  "hidden",
+  "id",
+  "inert",
+  "inputmode",
+  "is",
+  "itemid",
+  "itemprop",
+  "itemref",
+  "itemscope",
+  "itemtype",
+  "lang",
+  "nonce",
+  "popover",
+  "slot",
+  "spellcheck",
+  "style",
+  "tabindex",
+  "title",
+  "translate",
+  "writingsuggestions",
+]);
+
+/**
+ * Prop riservate di React e `role` (emesso dall'emitter sulla radice prima di
+ * `{...props}`): un field con questo nome collide. Confronto case-insensitive;
+ * gli event handler `on[A-Z]…` si rifiutano sul nome originale (`online` resta valido).
+ */
+const REACT_RESERVED_PROPS: ReadonlySet<string> = new Set([
+  "role",
+  "children",
+  "key",
+  "ref",
+  "dangerouslysetinnerhtml",
+]);
+
 function duplicates(items: readonly string[]): string[] {
   const seen = new Set<string>();
   const dup = new Set<string>();
@@ -89,6 +140,16 @@ export function defineContract<const C extends ComponentContract>(def: C): C {
   for (const [field, def_] of Object.entries(def.fields)) {
     if (!IDENTIFIER.test(field) || field === "__proto__") {
       fail(`field "${field}" ha un nome non valido (identificatore minuscolo)`);
+    }
+    if (REACT_RESERVED_PROPS.has(field.toLowerCase()) || /^on[A-Z]/.test(field)) {
+      fail(
+        `field "${field}" collide con una prop riservata di React o con il role emesso sulla radice (role, children, key, ref, dangerouslySetInnerHTML, on…): rinominalo`,
+      );
+    }
+    if (HTML_GLOBAL_ATTRIBUTES.has(field.toLowerCase())) {
+      fail(
+        `field "${field}" coincide con l'attributo HTML globale "${field.toLowerCase()}" — ombreggerebbe l'attributo sull'elemento generato: rinominalo`,
+      );
     }
     if (!(def_.schema instanceof z.ZodType)) fail(`field "${field}" non ha uno schema Zod`);
     const axis = def.axes.find((a) => a.name === field);

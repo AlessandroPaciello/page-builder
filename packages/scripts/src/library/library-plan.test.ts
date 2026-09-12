@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { COMPONENT_CONTRACTS, type ComponentContract } from "@app/contracts";
 import { describe, expect, it } from "vitest";
 
+import { committedDesigns } from "./designs-loader";
 import { planLibrary, pascalCase, type ComponentDesign, type LibraryPlanResult } from "./library-plan";
 import { LIBRARY_SPEC, type SemanticSeed } from "./library-spec";
 import { emptySnapshot, type LibrarySnapshot, type SnapshotSet } from "./library-snapshot";
@@ -12,13 +13,7 @@ const seed: SemanticSeed = JSON.parse(
   readFileSync(resolve(import.meta.dirname, "semantic-tokens.seed.json"), "utf8"),
 ) as SemanticSeed;
 
-const designs: Record<string, ComponentDesign> = {
-  badge: JSON.parse(readFileSync(resolve(import.meta.dirname, "designs/badge.design.json"), "utf8")) as ComponentDesign,
-  input: JSON.parse(readFileSync(resolve(import.meta.dirname, "designs/input.design.json"), "utf8")) as ComponentDesign,
-  "accordion-item": JSON.parse(
-    readFileSync(resolve(import.meta.dirname, "designs/accordion-item.design.json"), "utf8"),
-  ) as ComponentDesign,
-};
+const designs: Record<string, ComponentDesign> = committedDesigns();
 
 // Il registry è l'unico elenco (Dev Note): i test usano i contratti reali,
 // NON ricopie degli assi/parts (review 2.4).
@@ -65,8 +60,9 @@ describe("bootstrap", () => {
     expect(tokenSets.lastIndexOf("palette")).toBeLessThan(tokenSets.indexOf("semantic"));
 
     const containerOps = result.operations.filter((op) => op.kind === "createContainer");
-    expect(containerOps).toHaveLength(3);
-    expect(containerOps.map((op) => (op as { contract: string }).contract)).toEqual(["badge", "input", "accordion-item"]);
+    // Uno per contratto, nell'ordine del registry: conteggio derivato, non a mano.
+    expect(containerOps).toHaveLength(contracts.length);
+    expect(containerOps.map((op) => (op as { contract: string }).contract)).toEqual(contracts.map((c) => c.name));
   });
 
   it("il container Badge ha gli assi del contratto in ordine e 6 celle complete", () => {

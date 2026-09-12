@@ -154,3 +154,15 @@ Test manuale dopo il merge della 2.6: un componente nuovo (Alert, dominio `feedb
 - **`pds-additive`, passo 3**: oggi "differenze: riportare e basta" è un vicolo cieco per cella mancante e valore d'asse in più; dopo averle riportate deve indicare dove si risolvono (`pds-component` → Sincronizza), senza correggere nulla da sé.
 - **`pds-setup`**: registrare le nuove voci in `.claude/skills/pds-setup/assets/module-help.csv` (sorgente di `_bmad/pds/module-help.csv`); `pds-bootstrap` invariata.
 - **Ordine**: prima i prerequisiti (a)–(c) sopra, poi la skill; la struttura di `pds-component` (domande, percorsi, guardrail) può essere progettata in anticipo con `bmad-workflow-builder` e implementata quando i comandi esistono.
+
+## Deferred from: bmad-build split della Story 2.7 (2026-09-13)
+
+- source_spec: none
+  summary: Story 2.7 parte B "comandi di evoluzione" — `addCell` in `add:library` (additiva, guardia anti-duplicato), `adopt:variant -- <Comp>` (rileva, propone il diff, applica su conferma contratto + `SCHEMA_VERSION`/fingerprint + binding + design, fallisce nominativamente sui casi non esprimibili) e la regola di versionamento `nome@versione` di un contratto già in Penpot, documentata in `penpot-pipeline.md` con il comando o vincolo che la applica.
+  evidence: split deciso da Alessandro al controllo di scope di `bmad-build` sulla 2.7: gli AC sono 7 deliverable indipendenti; la parte A (liste derivate, a11y dal giudizio, `verify:library` orfani+contrasto, rifiuto field con nomi HTML globali) va per prima perché `addCell`/`adopt:variant` scrivono design e contratti e dipendono dalle liste derivate. La 2.7 resta aperta in sprint-status finché anche la parte B non è done.
+
+## Deferred from: build review of 2-7a-niente-verdi-finti (2026-09-13, loop 1)
+
+- source_spec: `_bmad-output/implementation-artifacts/2-7a-niente-verdi-finti.md`
+  summary: Le coppie di contrasto del focus ring non si ricavano dai design — `color.ring` su `color.card` (AccordionItem) resta dichiarata a mano in `CATALOG_PAIRS` (`library-spec.ts`), e un ring nuovo di un binding su un altro sfondo non verrebbe misurato.
+  evidence: ECH#11 — il ring viene dalle classi strutturali `focus-visible:ring-ring` del binding shadcn, che `deriveDesignContrastPairs` non legge; limite preesistente (i binding non sono mai stati una sorgente di coppie). Decisione di Alessandro: esprimere il focus ring nel design (cella `focus` con `strokeColor`) oppure derivare le coppie anche dalle classi `ring-*` dei binding.

@@ -15,7 +15,7 @@ import {
   basesDir,
 } from "./artifacts";
 import {
-  checkA11y,
+  checkA11yGate,
   checkCompleteness,
   checkConformance,
   checkDrift,
@@ -126,12 +126,23 @@ async function main(): Promise<void> {
   const suite = spawnSync("pnpm", ["test"], { cwd: uiPackageRoot, stdio: "inherit" });
   const spawnError =
     suite.error?.message ?? (suite.status === null ? "il processo della suite non ha prodotto un exit code" : null);
-  const a11y = checkA11y({ exitCode: suite.status, failedFiles: [], spawnError });
+  // Suite ui + a11y dichiarata (ogni role/aria-* del giudizio asserito nel
+  // DOM dal test committato): una suite verde senza quell'asserzione è un verde finto.
+  const a11y = checkA11yGate({
+    components: COMPONENTS.map((component) => {
+      const recipe = loadRecipe(component);
+      return { component, domain: recipe.judgment.domain, a11y: recipe.judgment.a11y };
+    }),
+    existing,
+    suite: { exitCode: suite.status, failedFiles: [], spawnError },
+  });
   if (a11y.ok) {
-    console.log("✔ Gate a11y: suite ui verde (assert axe su ogni componente generato).");
+    console.log(
+      "✔ Gate a11y: suite ui verde (assert axe su ogni componente generato) e ogni role/aria-* dichiarato è asserito nel DOM.",
+    );
   } else {
     failed = true;
-    console.error(`✗ Gate a11y: ${a11y.detail}`);
+    for (const error of a11y.errors) console.error(`✗ ${error}`);
   }
 
   // Gate 5 — drift della fixture: bloccante se e solo se Penpot è raggiungibile.
