@@ -14,7 +14,9 @@ Questo è un progetto di **design system**: la coerenza coi token e i componenti
 Il contratto nasce in codice (`@app/contracts`). La library Penpot si allinea al contratto **solo tramite skill** (modulo BMad `penpot-ds`):
 
 - **bootstrap** una tantum: token semantici (**inclusi shadow/ring**) e componenti stilizzati con gli assi dei contratti, token legati a ogni proprietà di stile, plugin data scritto; rifiuta se la library esiste già;
-- **additiva**: crea solo componenti/token mancanti richiesti da un contratto nuovo; non modifica né cancella mai ciò che esiste — le differenze si **segnalano**.
+- **additiva**: crea solo ciò che manca — componenti e token richiesti da un contratto nuovo, e le **celle** di un container esistente richieste da un valore d'asse nuovo del contratto; non modifica né cancella mai ciò che esiste — le differenze si **segnalano**, indicando dove si risolvono.
+
+**Adozione di una variante nata in Penpot.** Se il designer aggiunge in Penpot un valore d'asse che il contratto non ha, la pipeline lo **rileva** (`verify:library` rosso, estrazione ferma senza scrivere) ma non lo adotta da sola: una variante è un nuovo valore di prop per l'editor e un bump di `schemaVersion` (AD-6), quindi entra nel contratto solo con una **decisione esplicita** di chi sviluppa. Presa la decisione, i passi derivati (contratto, `schemaVersion`, binding, design) sono meccanici e affidati a un comando, non al prompt. Il contratto resta del page builder: l'adozione è una decisione in codice, non una sincronizzazione Penpot→codice.
 
 Nessuna sincronizzazione ricorrente codice→Penpot (due sorgenti, conflitto irrisolvibile). Le skill guidano e fanno domande; **pass/fail sta negli script e negli schemi**, mai nel prompt.
 
