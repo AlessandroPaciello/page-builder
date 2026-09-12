@@ -23,7 +23,7 @@ Questo documento decompone i requisiti dello SPEC (spec-kernel, in sostituzione 
 ### Functional Requirements
 
 FR1 (CAP-1): Il sistema estrae i design token da Penpot e genera lo strato token (colori/tipografia/spacing/radii/ombre) consumato dalla UI, data-driven dal catalogo Penpot.
-FR2 (CAP-2): Il sistema genera primitive React accessibili dai componenti Penpot (variant matrix → modello varianti), con componente+test+story+barrel, preservando i file scritti a mano.
+FR2 (CAP-2): Il sistema genera primitive React accessibili dai componenti Penpot (assi del contratto disegnati come varianti in Penpot → ricetta per parti → emitter della libreria), con componente+test+story+barrel, preservando i file scritti a mano.
 FR3 (CAP-3): Il sistema offre una libreria di primitive UI headless/accessibili organizzate per dominio (data-display, inputs, feedback, layout, navigation, overlays).
 FR4 (CAP-4): Il sistema espone le primitive come blocchi del page-builder con campi validati da schema e controlli guidati dai token, aggregati in un'unica config con slot annidabili.
 FR5 (CAP-5): Il sistema fornisce composizioni di prodotto per l'editor (LifecycleBadge, SaveStateIndicator, TopBar, PageList, VersionList, EmptyState) costruite solo su primitive+token.
@@ -44,8 +44,8 @@ NFR1 (Accessibilità): Ogni primitiva/composizione rispetta WCAG 2.1 AA — focu
 NFR2 (Sicurezza/Authz): Autorizzazione deny-by-default enforced server-side a copertura totale, su lettura **e** scrittura; nessuna via di modifica/lettura non-pubblica fuori dal core di dominio (no CRUD auto-generato).
 NFR3 (Sicurezza/XSS): I campi content del payload sono sanitizzati lato server prima di persist/publish; campi/blocchi ignoti trattati come content (fail-safe).
 NFR4 (Integrità dati): Invariante ≤1 PUBLISHED per pagina garantito a livello DB (indice univoco parziale); ogni salvataggio crea una nuova versione DRAFT immutabile (no mutazione in-place); versionNumber allocato dal core con UNIQUE(page_id, version_number).
-NFR5 (Coerenza design↔codice): Penpot è single source of truth dei valori; artefatti generati marcati @generated e mai editati a mano; la rigenerazione preserva i file scritti a mano.
-NFR6 (Confine UI): Il frontend consuma esclusivamente il design system (@penpot-ds/ui), non uno stack UI stilistico parallelo; layering tokens ← ui/domains ← {puck-components, ui/editor}. Le primitive headless (Radix) non sono una libreria concorrente: importabili solo da ui/src/domains.
+NFR5 (Coerenza design↔codice): Penpot è single source of truth di valori e aspetto; il contratto dei componenti è del page builder; artefatti generati marcati @generated e mai editati a mano; la rigenerazione preserva i file scritti a mano.
+NFR6 (Confine UI): Il frontend consuma esclusivamente il design system (@penpot-ds/ui), non uno stack UI stilistico parallelo; layering contracts ← {ui/domains, puck-components, domain, render}; tokens ← ui/domains ← {puck-components, ui/editor}. Le primitive headless (Radix) non sono una libreria concorrente: importabili solo da ui/src/domains.
 NFR7 (Intercambiabilità commerce): I blocchi commerce e il render parlano solo al port CommerceProvider; cambiare/affiancare sorgente = cambiare un adapter, non riscrivere i blocchi.
 NFR8 (Deferred — Perf): Budget di latenza render/save deliberatamente deferiti (da misurare in implementazione, non vincolati qui).
 
@@ -55,9 +55,9 @@ _Da Architecture Spine (AD-1…13) e Stack — vincoli tecnici che impattano l'i
 
 - **[STARTER] Scaffolding greenfield (Epic 1, Story 1):** workspace inizializzato con `create-better-t-stack` (3.37.0) → Next.js App Router + TypeScript; monorepo pnpm (10) + Turborepo (2); rimozione di ogni residuo legacy. Stack pinnato allo scaffold: Next 16.x, React 19, PostgreSQL 18, Prisma 7.9+, Better Auth, oRPC, Tailwind 4, Node LTS. `@puckeditor/core` 0.22.x (NB: `@measured/puck` è deprecato) è ratificato nello spine ma **installato in Epic 3/4**, non allo scaffold.
 - **AD-1/AD-2 (paradigma):** core di dominio esagonale in `packages/domain` (no HTTP, no React), unico punto di accesso al dominio (mutazioni + letture non-pubbliche); adapter attorno; core estraibile.
-- **AD-3/AD-11 (design system):** ricostruzione dei `packages/*` (tokens/ui/puck-components/scripts/storybook; nessun package `primitives`); token e componenti `ui/domains` generati via pipeline Penpot→codice con regime fixture → ricetta → renderer.
+- **AD-3/AD-11 (design system):** ricostruzione dei `packages/*` (tokens/ui/puck-components/scripts/storybook; nessun package `primitives`); token e componenti `ui/domains` generati via pipeline Penpot→codice con regime contratto → fixture → ricetta → emitter per libreria (una libreria per installazione).
 - **AD-4/AD-13 (auth/authz/errori):** Better Auth (adapter Prisma) fornisce Principal+ruolo nel context oRPC; authz fine nel core; errori di dominio tipizzati → set oRPC fisso; semantica 404 (non rivelare esistenza) vs 403.
-- **AD-5/AD-6 (payload):** schemi Zod + classifier structure/content condivisi FE/BE in `packages/puck-components`; payload jsonb {content,root,zones}; block-id client-owned immutabili; schemaVersion di puck-components.
+- **AD-5/AD-6 (contratti/payload):** schemi Zod + classifier structure/content + definizioni di sezione condivisi FE/BE in `packages/contracts` (`@app/contracts`, zero dipendenze UI); payload jsonb {content,root,zones}; block-id client-owned immutabili; schemaVersion di `contracts`.
 - **AD-7 (integrità publish):** indice univoco parziale Postgres via migration SQL esplicita (eseguita in release, prima dell'avvio app, gate CI); publish/rollback/archive in transazione che accoppia Page.status↔PageVersion.status.
 - **AD-8 (audit):** audit applicativo via unico AuditWriter → AuditLog (metadati, non il blob), consultabile solo ADMIN.
 - **AD-9 (render/cache):** SSG + ISR; invalidazione via port CacheInvalidator invocato post-commit; cache draft/published disgiunte; anteprima draft dinamica non cachata e protetta.
@@ -75,7 +75,7 @@ UX-DR4: Regioni aria-live: `polite` per save/cambio lifecycle/toast informativi;
 UX-DR5: Portale root DOM condiviso per gli overlay (Dialog/Toast/Drawer) sopra il canvas dell'editor (tooltip escluso).
 UX-DR6: Composizioni editor: LifecycleBadge, SaveStateIndicator (aria-live), TopBar (breadcrumb+stato+azioni Salva/Anteprima/Pubblica), EmptyState, PageList, VersionList.
 UX-DR7: Catalogo primitive per dominio (Data Display, Inputs, Feedback, Layout, Navigation, Overlays) — vedi design-system.md.
-UX-DR8: Blocchi Puck con campi guidati dai token (spacing/radius) e slot annidabili (content; col1/col2/col3).
+UX-DR8: Blocchi Puck con campi guidati dai token (spacing/radius) e slot annidabili (content; col1/col2/col3); sezioni rigide con slot dichiarati (allow + max).
 
 ### FR Coverage Map
 
@@ -102,15 +102,15 @@ Scaffolding greenfield del workspace (create-better-t-stack → Next.js App Rout
 **FRs covered:** FR12 (fondamenta); abilita tutti gli altri. Vincoli: AD-1, AD-2, AD-4, AD-7 (schema indice), NFR2, NFR4, [STARTER].
 
 ### Epic 2: Design system — token e componenti da Penpot
-Pipeline Penpot→codice (packages/scripts) che genera token (packages/tokens) e componenti React accessibili (packages/ui/src/domains) attraverso il regime fixture → ricetta → renderer puro (AD-11), con Storybook. Outcome: si generano token e componenti accessibili dal catalogo Penpot in modo riproducibile, visibili e testati in Storybook.
-**FRs covered:** FR1, FR2, FR3. Vincoli: AD-3, AD-11, NFR1, NFR5, UX-DR1-5,7.
+Pipeline Penpot→codice (packages/scripts) che genera token (packages/tokens) e componenti React accessibili (packages/ui/src/domains) attraverso il regime contratto → fixture → ricetta → emitter (AD-11), con Storybook. Outcome: si generano token e componenti accessibili dal catalogo Penpot in modo riproducibile, conformi ai contratti del page builder, visibili e testati in Storybook.
+**FRs covered:** FR1, FR2, FR3. Vincoli: AD-3, AD-5, AD-11, NFR1, NFR5, UX-DR1-5,7.
 
 ### Epic 3: Blocchi ed elementi dell'editor
-Blocchi Puck che wrappano i componenti `ui/domains` con campi token-driven e slot annidabili (packages/puck-components), classifier structure/content come single source of truth, e composizioni di prodotto dell'editor (packages/ui/src/editor: TopBar, PageList, VersionList, LifecycleBadge, SaveStateIndicator, EmptyState). Outcome: esistono i blocchi e le composizioni; la config Puck è pronta per l'editor.
-**FRs covered:** FR4, FR5, FR13 (definizione). Vincoli: AD-3, AD-5, AD-6, UX-DR6,8.
+Blocchi Puck come adapter dei contratti (packages/puck-components), blocchi di layout a soli token, definizioni di sezione estratte da Penpot e rigide nell'editor, classifier structure/content esteso a tutti i contratti, e composizioni di prodotto dell'editor (packages/ui/src/editor: TopBar, PageList, VersionList, LifecycleBadge, SaveStateIndicator, EmptyState). Outcome: esistono i blocchi, le sezioni e le composizioni; la config Puck è pronta per l'editor.
+**FRs covered:** FR4, FR5, FR13 (definizione). Vincoli: AD-3, AD-5, AD-6, AD-11, UX-DR6,8.
 
 ### Epic 4: Editor e bozze
-Editor drag-and-drop montato sui blocchi, autosave come nuova versione DRAFT, pipeline payload server-side nel core (validazione con schemi Zod condivisi, enforcement structure/content, sanitizzazione XSS), snapshot immutabili. Outcome: un Editor costruisce una pagina in drag-and-drop e la salva come bozza, con round-trip lossless.
+Editor drag-and-drop montato sui blocchi, autosave come nuova versione DRAFT, pipeline payload server-side nel core (validazione con i contratti di `@app/contracts`, inclusi allow/max degli slot, enforcement structure/content, sanitizzazione XSS), snapshot immutabili. Outcome: un Editor costruisce una pagina in drag-and-drop e la salva come bozza, con round-trip lossless.
 **FRs covered:** FR6, FR7; enforcement FR13, NFR3. Vincoli: AD-1, AD-5, AD-6, AD-12, NFR2.
 
 ### Epic 5: Ciclo di vita e pubblicazione
@@ -118,7 +118,7 @@ Publish (promozione a PUBLISHED con demozione atomica, invariante ≤1 pubblicat
 **FRs covered:** FR8, FR9, FR10, FR14; enforcement NFR4, FR12. Vincoli: AD-1, AD-7, AD-8, AD-13.
 
 ### Epic 6: Render pubblico e vetrina commerce
-Render pubblico by-slug in SSG+ISR (proiezione pubblicata, invalidazione via CacheInvalidator post-publish, anteprima draft dinamica protetta), astrazione CommerceProvider (port + adapter di riferimento) e blocchi commerce data-driven che risolvono dati a render-time. Outcome: un visitatore vede la pagina pubblicata by-slug, inclusi dati commerce reali risolti a render-time.
+Render pubblico by-slug in SSG+ISR (proiezione pubblicata, invalidazione via CacheInvalidator post-publish, anteprima draft dinamica protetta), astrazione CommerceProvider (port + adapter di riferimento) e blocchi commerce data-driven che risolvono dati a render-time. Il render pubblico è un adapter di `@app/contracts` e usa la libreria dell'installazione (AD-5). Outcome: un visitatore vede la pagina pubblicata by-slug, inclusi dati commerce reali risolti a render-time.
 **FRs covered:** FR11, FR15; NFR7. Vincoli: AD-9, AD-10, AD-4 (read pubblica).
 
 ## Epic 1: Fondamenta e accesso
@@ -205,7 +205,9 @@ So that l'app sia deployabile in modo portabile con lo schema sempre applicato p
 
 ## Epic 2: Design system — token e componenti da Penpot
 
-Si generano token e componenti React accessibili dal catalogo Penpot in modo riproducibile, visibili e testati in Storybook. Il regime è `fixture → ricetta → renderer puro` (AD-11): l'unico passo di giudizio è la ricetta, committata e rivedibile; il codice è funzione pura di fixture+ricetta.
+Si generano token e componenti React accessibili dal catalogo Penpot in modo riproducibile, visibili e testati in Storybook. Il regime è `contratto → fixture → ricetta → emitter` (AD-11, rivisto 2026-09-12): il contratto è del page builder (`@app/contracts`), Penpot disegna valori e aspetto; l'unico passo di giudizio è la ricetta, committata e rivedibile; il codice è funzione pura di fixture+ricetta+binding.
+
+**Prerequisito (non è una story):** BMad Builder installato e modulo BMad `penpot-ds` creato prima della Story 2.4 (action item in `sprint-status.yaml`).
 
 ### Story 2.1: Pipeline token Penpot→codice
 
@@ -236,21 +238,63 @@ So that il giudizio su varianti, headless e a11y sia congelato in un artefatto r
 **And** la ricetta è validata contro lo schema **e** contro il vocabolario dei token dello Stadio 1: una classe con valore literal (`bg-[#3b82f6]`, `p-[7px]`) fa fallire la validazione
 **And** il confine è rispettato — nella fixture solo ciò che si legge da Penpot senza sapere cosa sia React; nella ricetta ciò che richiede React e accessibilità.
 
-### Story 2.3: Renderer deterministico e gate CI
+### Story 2.3: Package dei contratti (Badge, Input, Accordion)
 
 As a sviluppatore,
-I want un renderer puro che applichi la ricetta a una base shadcn,
+I want un package `@app/contracts` con i contratti dei primi tre componenti,
+So that il vocabolario delle props appartenga al page builder e non alla libreria generata (AD-5, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** il monorepo
+**When** creo `packages/contracts` con schemi Zod delle props, tipi di asse (`option`/`state`/`behavior`), parti e classifier structure/content per Badge, Input e AccordionItem, e il tipo "definizione di sezione" (con cui si modella Accordion Root, albero di AccordionItem)
+**Then** il package compila e i test passano senza dipendenze da React/Puck/UI, verificato da **lint bloccante** con una prova rosso/verde propria
+**And** `schemaVersion` è esportata, ogni campo è classificato e un campo ignoto risulta `content`.
+
+### Story 2.4: Bootstrap della library Penpot sui contratti
+
+As a designer/sviluppatore,
+I want una skill che crei la nuova library Penpot a partire dai contratti,
+So that i componenti disegnati seguano già la linea del contratto invece di essere interpretati a posteriori (AD-11).
+
+**Acceptance Criteria:**
+
+**Given** i contratti della Story 2.3, il modulo BMad `penpot-ds` e un file Penpot senza library
+**When** eseguo la skill di bootstrap
+**Then** sono creati i token semantici (inclusi shadow/ring) e un VariantContainer per contratto con gli assi del contratto, 0 `variantError`, token legati su ogni proprietà di stile e plugin data `pagebuilder/contract = nome@versione`
+**And** su una library esistente il bootstrap rifiuta; la modalità additiva crea solo ciò che manca e segnala le differenze senza correggerle
+**And** l'esito è deciso da uno script di verifica (un container per contratto, assi e valori coincidenti), non dal prompt della skill
+**And** la pipeline token (Story 2.1) rigira sulla nuova library senza modifiche al codice, e nessun consumer fuori da `packages/tokens` e dalla ricetta Badge usa i vecchi nomi token (verificato il 2026-09-12: zero occorrenze di `mis-` in `ui/editor` e `apps/web`).
+
+### Story 2.5: Estrazione adeguata — ricette per parti e token, validate contro il contratto
+
+As a designer/sviluppatore,
+I want che l'estrazione legga il legame al contratto e produca ricette per parti con celle proprietà→token,
+So that una ricetta alimenti qualunque emitter e sia verificata contro il contratto (AD-11).
+
+**Acceptance Criteria:**
+
+**Given** la library della Story 2.4 e i contratti
+**When** estraggo Badge, Input e AccordionItem
+**Then** l'estrazione legge il plugin data e fallisce su contratto duplicato, nome incoerente o contratto senza container; fixture e ricetta coprono esattamente assi e valori del contratto
+**And** `RecipeSchema` è una mappa di parti a profondità 1 con celle `proprietà → token` esistenti nello Stadio 1: un literal fallisce, una parte annidata con assi propri fa **fallire lo schema** (criterio di stop meccanico, con test rosso/verde), la geometria delle icone è ignorata
+**And** fixture e ricetta Badge attuali sono sostituite (sparisce `colorStyle`) e la copertura di test su reader, `mcp-client` e CLI non scende.
+
+### Story 2.6: Emitter shadcn deterministico e gate CI
+
+As a sviluppatore,
+I want un emitter puro che traduca ricetta e binding in componenti shadcn,
 So that il codice sia riproducibile e il drift design↔codice sia un test rosso invece di una scoperta tardiva (FR2, AD-11).
 
 **Acceptance Criteria:**
 
-**Given** fixture e ricetta committate e la base shadcn del componente
+**Given** fixture, ricetta e binding shadcn committati e la base shadcn del componente
 **When** eseguo il rendering
-**Then** il blocco `cva` della ricetta è applicato alla base shadcn e sono prodotti `.tsx` + test + story + barrel, marcati `@generated` con la provenienza (`penpotComponentId` + `fixtureHash`)
-**And** rigenerare produce **diff zero**, un file senza marker non viene mai sovrascritto, e i quattro gate passano in CI (completezza artefatti, rigenerazione, a11y con vitest-axe, drift della fixture vs Penpot live)
-**And** lo schema è validato su tre componenti di complessità crescente — Badge (presentazionale), Input (varianti), Accordion (composto con headless) — **prima** di generalizzare; se la ricetta di Accordion smette di essere una tabella e diventa un albero annidato, la story si ferma e il regime si rivaluta.
+**Then** gli assi sono instradati per tipo (`option` → `cva`; `state` → `focus-visible:`/`aria-invalid:`/`disabled:`; `behavior` → `data-[state=…]:`) e sono prodotti `.tsx` + test + story + barrel, marcati `@generated` con la provenienza (`penpotComponentId` + `fixtureHash`)
+**And** rigenerare produce **diff zero**, un file senza marker non viene mai sovrascritto, e i gate completezza, rigenerazione, a11y (vitest-axe) e conformità al contratto sono bloccanti in CI; il drift fixture vs Penpot live è bloccante se il runner raggiunge Penpot, altrimenti manuale/nightly con decisione documentata; ogni gate ha una propria prova rosso/verde
+**And** il tutto è validato su Badge, Input e AccordionItem prima di generalizzare; Accordion Root non è una ricetta (è una definizione di sezione).
 
-### Story 2.4: Libreria componenti accessibile
+### Story 2.7: Libreria componenti accessibile
 
 As a sviluppatore,
 I want una libreria di componenti organizzata per dominio e conforme alla a11y baseline,
@@ -258,13 +302,13 @@ So that l'editor e le composizioni possano costruirci sopra (FR3, NFR1).
 
 **Acceptance Criteria:**
 
-**Given** i token generati e il renderer della Story 2.3
-**When** genero i componenti per i sei domini (data-display, inputs, feedback, layout, navigation, overlays) in `packages/ui/src/domains`
-**Then** ogni componente interattivo ha focus visibile WCAG AA, stato comunicato da testo+colore e ARIA corretto, con il comportamento fornito dall'headless Radix dichiarato nella ricetta
+**Given** i token generati, i contratti e l'emitter della Story 2.6
+**When** genero i componenti per i sei domini (data-display, inputs, feedback, layout, navigation, overlays) in `packages/ui/src/domains`, ciascuno con prima il proprio contratto e il proprio container Penpot (skill additiva)
+**Then** ogni componente interattivo ha focus visibile WCAG AA, stato comunicato da testo+colore e ARIA corretto, con il comportamento fornito dall'headless Radix dichiarato nel binding
 **And** i test axe passano su tutti i componenti e i componenti in `domains/` non importano da `editor/`, verificato da **lint bloccante**
-**And** i componenti senza headless disponibile e con logica propria (Table con sorting, Carousel) sono scritti a mano, senza marker `@generated`, e la pipeline li ignora.
+**And** i componenti senza headless disponibile e con logica propria (Table con sorting, Carousel) e i componenti complessi hanno un contratto completo e un segnaposto in Penpot; l'adapter è scritto a mano, senza marker `@generated`, e la pipeline li ignora.
 
-### Story 2.5: Storybook del design system
+### Story 2.8: Storybook del design system
 
 As a sviluppatore,
 I want uno Storybook che aggrega le storie dei componenti con addon di accessibilità,
@@ -295,20 +339,20 @@ So that una modifica ai token propaghi sia agli stili sia ai menu dei blocchi (F
 **Then** i controlli dei blocchi espongono le opzioni derivate dai token
 **And** cambiare un token spacing/radius aggiorna sia le classi sia le opzioni disponibili nei campi.
 
-### Story 3.2: Blocchi Puck che wrappano i componenti ui/domains
+### Story 3.2: Blocchi Puck come adapter dei contratti
 
 As a autore,
-I want blocchi Puck con campi validati e slot annidabili che wrappano i componenti del design system,
-So that possa comporre pagine con elementi del design system (FR4).
+I want blocchi Puck con campi validati e slot annidabili che espongono i contratti tramite la libreria del design system,
+So that possa comporre pagine con elementi del design system (FR4, AD-5).
 
 **Acceptance Criteria:**
 
-**Given** i componenti `ui/domains` e il ponte token
-**When** implemento i blocchi (schema Zod + campi + render che wrappa un componente `domains`) e li aggrego in `puckConfig`
-**Then** i blocchi espongono le varianti come campi editabili e i container hanno slot annidabili (content; col1/col2/col3)
-**And** ogni blocco valida i propri campi con lo schema Zod.
+**Given** i contratti, i componenti `ui/domains` e il ponte token
+**When** implemento per ogni contratto i campi (dagli assi `option`), le `permissions` e il render tramite la libreria dell'installazione, aggregati in `puckConfig`
+**Then** gli assi `state`/`behavior` non diventano campi; Box, Flex, Grid e Columns hanno slot (content; col1/col2/col3) e soli assi a valori token (Box: background/padding/radius/border; Flex: direction/align/justify/gap/wrap)
+**And** ogni blocco valida con lo schema di `@app/contracts`, senza alcuna copia in `puck-components`.
 
-### Story 3.3: Classifier structure/content come single source of truth
+### Story 3.3: Classifier structure/content esteso a tutti i contratti
 
 As a sviluppatore,
 I want una classificazione structure/content dei campi di ogni blocco definita una sola volta,
@@ -316,12 +360,25 @@ So that permessi editor e sanitizzazione server condividano la stessa fonte (FR1
 
 **Acceptance Criteria:**
 
-**Given** i blocchi definiti
-**When** definisco il classifier structure/content in `packages/puck-components` ed esporto schemi + classifier
+**Given** i contratti (Badge, Input, Accordion già classificati in Story 2.3)
+**When** estendo il classifier in `packages/contracts` a ogni contratto e blocco e lo collego all'editor (`readOnly` per singola prop sui campi structure)
 **Then** ogni campo di ogni blocco è classificato come `structure` o `content`
-**And** un campo o blocco sconosciuto è trattato come `content` (fail-safe), e non esiste una seconda copia della classificazione.
+**And** un campo o blocco sconosciuto è trattato come `content` (fail-safe), e `puck-components` deriva i permessi dal classifier senza una seconda copia della classificazione.
 
-### Story 3.4: Composizioni dell'editor
+### Story 3.4: Definizioni di sezione da Penpot
+
+As a sviluppatore/autore,
+I want estrarre una sezione disegnata in Penpot come definizione di dati con slot dichiarati,
+So that hero e sezioni siano fedeli al disegno e rigide nell'editor (FR4, AD-5, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** una sezione in Penpot composta solo da istanze di componenti della library + layout
+**When** la estraggo e scrivo la ricetta di sezione (slot riferiti per id Penpot, `allow`, `max`)
+**Then** la definizione (albero di Box/Flex/componenti + props + slot) vive in `@app/contracts` ed è esposta in Puck per nome; una forma sciolta fa fallire l'estrazione nominando l'elemento; uno slot che punta a un nodo sparito fa fallire la validazione
+**And** in editor la struttura è bloccata e il contenuto modificabile; gli slot accettano solo i blocchi dell'`allow` fino a `max` (`resolvePermissions`); i testi del mockup diventano default dei campi content.
+
+### Story 3.5: Composizioni dell'editor
 
 As a sviluppatore,
 I want le composizioni di prodotto dell'editor costruite su componenti `ui/domains` + token,
@@ -373,9 +430,10 @@ So that solo payload validi e sicuri vengano salvati (FR13 enforcement, NFR3, AD
 **Acceptance Criteria:**
 
 **Given** un payload in arrivo dal salvataggio
-**When** il core esegue la pipeline (validazione con gli schemi Zod condivisi + classificazione structure/content + sanitizzazione dei campi content)
+**When** il core esegue la pipeline (validazione con i contratti di `@app/contracts`, inclusi `allow`/`max` degli slot di sezione + classificazione structure/content + sanitizzazione dei campi content)
 **Then** un payload non conforme agli schemi è rifiutato con errore tipizzato e i campi content sono sanitizzati (XSS) prima del persist
-**And** un Cliente che tenta di modificare un campo `structure` viene rifiutato dal core.
+**And** un Cliente che tenta di modificare un campo `structure` viene rifiutato dal core
+**And** un payload che inserisce in uno slot di sezione un blocco fuori dall'allow-list o oltre il `max` è rifiutato dal core con errore tipizzato (il limite in editor non è l'unico controllo).
 
 ### Story 4.4: Autosave con indicatore di stato
 

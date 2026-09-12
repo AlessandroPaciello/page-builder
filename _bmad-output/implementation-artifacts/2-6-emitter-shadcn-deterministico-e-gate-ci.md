@@ -2,9 +2,11 @@
 baseline_commit: 73402efc43f39731ce6b512faa03c0f8273a416b
 ---
 
-# Story 2.3: Renderer deterministico e gate CI
+# Story 2.6: Emitter shadcn deterministico e gate CI (ex 2.3)
 
-Status: ready-for-dev
+Status: backlog
+
+> ⚠️ **Superata dal correct-course del 2026-09-12** (`_bmad-output/planning-artifacts/sprint-change-proposal-2026-09-12.md`). Il renderer diventa l'emitter shadcn (Story 2.6) e dipende dalle Story 2.3 (contratti), 2.4 (bootstrap library Penpot) e 2.5 (estrazione adeguata). **Va rigenerata con `bmad-create-story` prima dello sviluppo**: gli AC qui sotto sono quelli pre-correct-course (ricetta con classi `cva`, 4 gate, criterio di stop "albero annidato") e non valgono più. Restano validi e riusabili: Task 0 (alias shadcn in `components.json`), Task 5 (infrastruttura di test di `packages/ui`), la decisione sul Gate 4 (drift condizionale alla raggiungibilità di Penpot da CI) e la disciplina rosso/verde per ogni gate.
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 

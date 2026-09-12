@@ -115,7 +115,8 @@
                               Shopify  Backend proprio</div>
 
 <h3>Dipendenze consentite (è una regola)</h3>
-<div class="diagram">tokens → ui/domains → puck-components
+<div class="diagram">contracts → ui/domains · puck-components · packages/domain · apps/web   (foglia, no UI)
+tokens → ui/domains → puck-components
                    → ui/editor
 apps/web → ui/editor · puck-components · packages/domain · commerce-provider
 packages/domain → commerce-provider
@@ -134,17 +135,17 @@ ui/domains ─╳→ ui/editor            (i componenti generati non conoscono i
 
   <div class="ad"><h4><span class="tag">AD-3</span> Consuma il design system<span class="adopted">ADOPTED</span></h4>
     <dl><dt>Previene</dt><dd>Due stack UI paralleli (drift react-bootstrap del legacy).</dd>
-    <dt>Regola</dt><dd>UI solo su <code>@penpot-ds/ui</code>. Vietata una libreria UI <strong>stilistica</strong> concorrente; gli headless Radix non lo sono e vivono solo in <code>ui/src/domains</code>. Layering tokens ← ui{domains ← editor} ← puck-components, con lint bloccante sul confine.</dd></dl></div>
+    <dt>Regola</dt><dd>UI solo su <code>@penpot-ds/ui</code>. Vietata una libreria UI <strong>stilistica</strong> concorrente; gli headless Radix non lo sono e vivono solo in <code>ui/src/domains</code>. Layering contracts ← {ui/domains, puck-components, domain, render}; tokens ← ui{domains ← editor} ← puck-components, con lint bloccante sul confine.</dd></dl></div>
 
   <div class="ad"><h4><span class="tag">AD-4</span> RBAC deny-by-default; auth ≠ authz<span class="adopted">ADOPTED</span></h4>
     <dl><dt>Regola</dt><dd>Better Auth dà identità + ruolo grossolano; l’authz fine (assegnazione Cliente↔pagina, content/structure) è dato di dominio nel core, su lettura <em>e</em> scrittura. Unica read anonima: PUBLISHED by-slug su proiezione pubblicata.</dd></dl></div>
 
-  <div class="ad"><h4><span class="tag">AD-5</span> Payload: una fonte FE/BE (Zod + classifier)</h4>
-    <dl><dt>Previene</dt><dd>Duplicazione/drift structure-content (dolore #1 legacy) e payload non sanitizzato.</dd>
-    <dt>Regola</dt><dd>Schemi Zod + classifier vivono una volta in <code>puck-components</code>; il core valida, classifica e sanitizza i campi content (XSS) prima di persistere.</dd></dl></div>
+  <div class="ad"><h4><span class="tag">AD-5</span> Contratti: una fonte in <code>packages/contracts</code></h4>
+    <dl><dt>Previene</dt><dd>Duplicazione/drift structure-content (dolore #1 legacy), payload non sanitizzato, contratto disperso negli adapter che lega le pagine a una libreria.</dd>
+    <dt>Regola</dt><dd><code>@app/contracts</code> (zero dipendenze UI) contiene una volta schemi Zod delle props, tipi di asse, classifier e definizioni di sezione (slot con <code>allow</code>/<code>max</code>). Adapter: ui/domains, puck-components, render, core. Il core valida (anche <code>max</code>, autoritativo), classifica e sanitizza i campi content. Sezioni rigide per default; Box/Flex/Grid/Columns a soli token.</dd></dl></div>
 
   <div class="ad"><h4><span class="tag">AD-6</span> Forma payload, proprietà id/versioni</h4>
-    <dl><dt>Regola</dt><dd>Puck <code>{content,root,zones}</code> in jsonb; block-id client-owned <strong>immutabili</strong>; <code>schemaVersion</code> di <code>puck-components</code>; <code>versionNumber</code> allocato dal core in transazione, <code>UNIQUE(page_id, version_number)</code>.</dd></dl></div>
+    <dl><dt>Regola</dt><dd>Puck <code>{content,root,zones}</code> in jsonb; block-id client-owned <strong>immutabili</strong>; <code>schemaVersion</code> di <code>contracts</code>; <code>versionNumber</code> allocato dal core in transazione, <code>UNIQUE(page_id, version_number)</code>.</dd></dl></div>
 
   <div class="ad"><h4><span class="tag">AD-7</span> Coerenza publish enforced dal DB</h4>
     <dl><dt>Previene</dt><dd>Due PUBLISHED per pagina; pagina archiviata con versione ancora pubblicata.</dd>
@@ -160,8 +161,8 @@ ui/domains ─╳→ ui/editor            (i componenti generati non conoscono i
     <dl><dt>Previene</dt><dd>Lock-in su una sorgente; DTO commerce incompatibili tra blocchi.</dd>
     <dt>Regola</dt><dd>Port canonico (metodi + DTO <code>ProductRef</code>/<code>Price{amount,currency}</code>); adapter Shopify + custom; risoluzione server-side a render-time.</dd></dl></div>
 
-  <div class="ad"><h4><span class="tag">AD-11</span> Penpot genera i componenti; il giudizio si congela in ricette<span class="adopted">ADOPTED</span></h4>
-    <dl><dt>Regola</dt><dd>Penpot è single source di valori, aspetto e matrice varianti. Tre artefatti: <strong>fixture</strong> (da Penpot via MCP, committata, hash-verificata) → <strong>ricetta</strong> (code agent, unico passo di giudizio, committata e validata) → <strong>codice</strong> da un <strong>renderer puro</strong> che applica il blocco <code>cva</code> a una base shadcn, <code>@generated</code> e rigenerabile a <strong>diff zero</strong>. Il comportamento accessibile non è disegnabile in Penpot: entra dall'headless dichiarato nella ricetta.</dd></dl></div>
+  <div class="ad"><h4><span class="tag">AD-11</span> Il contratto è del page builder; Penpot disegna valori e aspetto<span class="adopted">ADOPTED · rivisto 2026-09-12</span></h4>
+    <dl><dt>Regola</dt><dd>Il contratto (assi, valori, tipo di asse <code>option</code>/<code>state</code>/<code>behavior</code>, parti) vive in <code>contracts</code>; Penpot disegna tutti gli assi e possiede valori e aspetto, legato al contratto via SharedPluginData. Tre artefatti: <strong>fixture</strong> (MCP, committata, hash-verificata, validata vs contratto) → <strong>ricetta</strong> (unico giudizio: parti a profondità 1, celle proprietà→token; parte annidata con assi → lo schema fallisce) → <strong>codice</strong> da un <strong>emitter per libreria</strong> + binding (shadcn di riferimento), <code>@generated</code> a <strong>diff zero</strong>. Una libreria per installazione. Composizioni e sezioni sono definizioni di dati, non ricette. Scrittura su Penpot solo via skill (bootstrap + additiva).</dd></dl></div>
 
   <div class="ad"><h4><span class="tag">AD-12</span> Snapshot di contenuto immutabili</h4>
     <dl><dt>Regola</dt><dd>Ogni save crea una nuova <code>PageVersion</code> DRAFT; mai mutazione in-place. Il Cliente crea una DRAFT con i soli campi <code>content</code> editabili; structure bloccati.</dd></dl></div>
@@ -191,7 +192,7 @@ ui/domains ─╳→ ui/editor            (i componenti generati non conoscono i
   <tr><th>Capability</th><th>Vive in</th><th>Governata da</th></tr>
   <tr><td>CAP-1/2 pipeline Penpot→token/componenti</td><td>scripts, tokens, ui/src/domains</td><td>AD-11</td></tr>
   <tr><td>CAP-3 primitive accessibili</td><td>packages/ui/src/domains</td><td>AD-3, AD-11, a11y</td></tr>
-  <tr><td>CAP-4 blocchi Puck</td><td>packages/puck-components</td><td>AD-3, AD-5, AD-6</td></tr>
+  <tr><td>CAP-4 blocchi Puck</td><td>packages/contracts + puck-components</td><td>AD-3, AD-5, AD-6, AD-11</td></tr>
   <tr><td>CAP-5 composizioni editor</td><td>packages/ui/src/editor</td><td>AD-3</td></tr>
   <tr><td>CAP-6 authoring drag-and-drop</td><td>apps/web/(app) + domain</td><td>AD-1, AD-5, AD-6, AD-12</td></tr>
   <tr><td>CAP-7 autosave/bozza</td><td>core save-version</td><td>AD-1, AD-4, AD-12</td></tr>
@@ -200,7 +201,7 @@ ui/domains ─╳→ ui/editor            (i componenti generati non conoscono i
   <tr><td>CAP-10 archive/restore</td><td>core</td><td>AD-1, AD-7</td></tr>
   <tr><td>CAP-11 render by-slug</td><td>apps/web/(public)/[slug]</td><td>AD-4, AD-9, AD-10</td></tr>
   <tr><td>CAP-12 RBAC</td><td>core + Better Auth + PageAssignment</td><td>AD-4, AD-12</td></tr>
-  <tr><td>CAP-13 structure/content</td><td>puck-components + core</td><td>AD-5, AD-12</td></tr>
+  <tr><td>CAP-13 structure/content</td><td>packages/contracts + core</td><td>AD-5, AD-12</td></tr>
   <tr><td>CAP-14 audit trail</td><td>core AuditWriter</td><td>AD-8</td></tr>
   <tr><td>Integrazione commerce</td><td>packages/commerce-provider</td><td>AD-10</td></tr>
 </table></div>
@@ -212,7 +213,8 @@ ui/domains ─╳→ ui/editor            (i componenti generati non conoscono i
   <li><strong>Provider DB e orchestratore container</strong> — decisione di deploy; l’envelope Docker li rende intercambiabili.</li>
   <li><strong>Logging/monitoring/backup/CI-CD</strong> di dettaglio — strategia nominata, dettaglio in implementazione.</li>
   <li><strong>Better Auth come issuer OIDC/JWT</strong> per l’ecosistema — quando esiste un secondo servizio da autenticare.</li>
-  <li><strong>Policy di migrazione <code>schemaVersion</code></strong> del payload — alla prima evoluzione degli schemi dei blocchi.</li>
+  <li><strong>Policy di migrazione <code>schemaVersion</code></strong> del payload (owner: <code>contracts</code>) — alla prima evoluzione dei contratti.</li>
+  <li><strong>Emitter per una seconda libreria (es. MUI)</strong> — fattibilità dedotta dall’API tema, non eseguita; riaprire alla prima richiesta concreta.</li>
   <li><strong>Migrazione dati dal legacy Strapi</strong> — fuori scope SPEC salvo re-ingaggio.</li>
 </ul>
 </div>

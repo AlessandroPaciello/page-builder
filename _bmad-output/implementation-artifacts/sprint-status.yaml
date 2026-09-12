@@ -1,5 +1,5 @@
 # generated: 2026-07-26
-# last_updated: 2026-09-06
+# last_updated: 2026-09-12
 # project: page-builder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-07-26
-last_updated: 2026-09-06
+last_updated: 2026-09-12
 project: page-builder
 project_key: NOKEY
 tracking_system: file-system
@@ -60,16 +60,20 @@ development_status:
   epic-2: in-progress
   2-1-pipeline-token-penpot-codice: done
   2-2-estrazione-componenti-e-schema-delle-ricette: done
-  2-3-renderer-deterministico-e-gate-ci: ready-for-dev
-  2-4-libreria-componenti-accessibile: backlog
-  2-5-storybook-del-design-system: backlog
+  2-3-package-dei-contratti: backlog
+  2-4-bootstrap-della-library-penpot-sui-contratti: backlog
+  2-5-estrazione-adeguata-ricette-per-parti-e-token: backlog
+  2-6-emitter-shadcn-deterministico-e-gate-ci: backlog
+  2-7-libreria-componenti-accessibile: backlog
+  2-8-storybook-del-design-system: backlog
   epic-2-retrospective: optional
 
   epic-3: backlog
   3-1-ponte-token-controlli-puck: backlog
-  3-2-blocchi-puck-che-wrappano-le-primitive: backlog
-  3-3-classifier-structure-content-come-single-source-of-truth: backlog
-  3-4-composizioni-dell-editor: backlog
+  3-2-blocchi-puck-come-adapter-dei-contratti: backlog
+  3-3-classifier-structure-content-esteso-a-tutti-i-contratti: backlog
+  3-4-definizioni-di-sezione-da-penpot: backlog
+  3-5-composizioni-dell-editor: backlog
   epic-3-retrospective: optional
 
   epic-4: backlog
@@ -99,18 +103,22 @@ action_items:
     owner: "Charlie (Dev)"
     status: open
   - epic: 1
-    action: "Estendere la disciplina 'test del gate, non solo canary' ai 4 nuovi gate CI di Story 2.3 (completezza artefatti, rigenerazione, a11y vitest-axe, drift fixture vs Penpot) fin dalla loro introduzione"
+    action: "Estendere la disciplina 'test del gate, non solo canary' ai 5 gate CI di Story 2.6 (completezza artefatti, rigenerazione, a11y vitest-axe, conformità al contratto, drift fixture vs Penpot) fin dalla loro introduzione — aggiornato dal correct-course 2026-09-12"
     owner: "Charlie (Dev)"
     status: open
   - epic: 1
-    action: "Sorvegliare il criterio di stop esplicito di Story 2.3 (se la ricetta Accordion diventa un albero annidato invece di una tabella piatta, fermarsi e rivalutare il regime AD-11)"
+    action: "Criterio di stop meccanizzato in RecipeSchema (Story 2.5): una parte annidata con assi propri fa fallire lo schema — serve un test rosso/verde dedicato, non la sorveglianza manuale. Sostituisce la sorveglianza 'Accordion albero annidato' della vecchia Story 2.3 (correct-course 2026-09-12)"
     owner: "Amelia (Dev)"
     status: open
   - epic: 1
-    action: "Correggere gli alias shadcn in components.json (puntano al barrel editor/index.ts invece che a una directory) in Story 2.3 (Task 0), quando il renderer inizia a usare il CLI shadcn per davvero — non attendere la 2.4"
+    action: "Correggere gli alias shadcn in components.json (puntano al barrel editor/index.ts invece che a una directory) in Story 2.6 (Task 0), quando l'emitter inizia a usare il CLI shadcn per davvero — ex Story 2.3, rinumerata dal correct-course 2026-09-12"
     owner: "Dev"
     status: open
   - epic: 1
-    action: "Rivalutare la robustezza del dropdown-menu scritto a mano (focus trap, portal, ARIA) quando Story 2.4 genera il primo primitivo reale via Radix"
+    action: "Rivalutare la robustezza del dropdown-menu scritto a mano (focus trap, portal, ARIA) quando Story 2.7 genera il primo primitivo reale via Radix (ex 2.4)"
     owner: "Dev"
+    status: open
+  - epic: 2
+    action: "Installare BMad Builder e creare il modulo BMad penpot-ds (skill di bootstrap/additiva Penpot) prima di Story 2.4 (correct-course 2026-09-12)"
+    owner: "Alessandro"
     status: open
