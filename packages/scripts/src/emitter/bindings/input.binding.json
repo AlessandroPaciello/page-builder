@@ -1,0 +1,34 @@
+{
+  "componentName": "Input",
+  "contract": "input@1",
+  "base": "input",
+  "headless": null,
+  "parts": {
+    "root": {
+      "library": "Input",
+      "element": "input",
+      "parent": null,
+      "structural": "h-8 w-full min-w-0 border outline-none transition-colors disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+    },
+    "placeholder": {
+      "library": "InputPlaceholder",
+      "element": null,
+      "parent": "root",
+      "structural": "",
+      "attribute": "placeholder",
+      "classPrefix": "placeholder:",
+      "contentField": "placeholder"
+    }
+  },
+  "axes": {
+    "state": {
+      "type": "state",
+      "values": {
+        "default": "",
+        "focus": "focus-visible:",
+        "error": "aria-invalid:",
+        "disabled": "disabled:"
+      }
+    }
+  }
+}

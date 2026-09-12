@@ -1,0 +1,74 @@
+{
+  "componentName": "AccordionItem",
+  "contract": "accordion-item@1",
+  "base": "accordion",
+  "headless": {
+    "package": "@radix-ui/react-accordion",
+    "parts": ["Item", "Trigger", "Content"],
+    "root": "Root",
+    "rootProps": {
+      "type": "single",
+      "collapsible": true
+    }
+  },
+  "testProps": {
+    "value": "item"
+  },
+  "parts": {
+    "root": {
+      "library": "Item",
+      "element": "AccordionPrimitive.Item",
+      "parent": null,
+      "structural": "border-b last:border-b-0"
+    },
+    "trigger": {
+      "library": "Trigger",
+      "element": "AccordionPrimitive.Trigger",
+      "parent": "root",
+      "structural": "flex flex-1 items-start justify-between text-left transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 [&[data-state=open]>svg]:rotate-180",
+      "wrapper": "AccordionPrimitive.Header",
+      "wrapperStructural": "flex"
+    },
+    "label": {
+      "library": "TriggerLabel",
+      "element": "span",
+      "parent": "trigger",
+      "structural": "",
+      "contentField": "label"
+    },
+    "chevron": {
+      "library": "ChevronDownIcon",
+      "element": "ChevronDownIcon",
+      "parent": "trigger",
+      "structural": "pointer-events-none size-4 shrink-0 transition-transform duration-200"
+    },
+    "content": {
+      "library": "Content",
+      "element": "AccordionPrimitive.Content",
+      "parent": "root",
+      "structural": "overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
+    },
+    "body": {
+      "library": "ContentBody",
+      "element": "div",
+      "parent": "content",
+      "structural": "",
+      "contentField": "body"
+    },
+    "divider": {
+      "library": "ItemDivider",
+      "element": "div",
+      "parent": "content",
+      "structural": "border-t"
+    }
+  },
+  "axes": {
+    "state": {
+      "type": "behavior",
+      "values": {
+        "closed": "",
+        "open": "data-[state=open]:"
+      }
+    }
+  }
+}

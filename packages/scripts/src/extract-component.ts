@@ -40,7 +40,8 @@ const recipesDir = resolve(here, "recipes");
 const judgmentsDir = resolve(recipesDir, "judgments");
 const catalogFixturePath = resolve(here, "__fixtures__/penpot-catalog.json");
 
-function loadCatalogFixture(): TokenCatalog {
+/** Catalogo Stadio 1 committato: la fonte deterministica del vocabolario. Esportato per i CLI a valle (emitter, gate). */
+export function loadCatalogFixture(): TokenCatalog {
   return JSON.parse(readFileSync(catalogFixturePath, "utf8")) as TokenCatalog;
 }
 
@@ -64,7 +65,8 @@ function loadSnapshotFile(path: string): LibrarySnapshot {
   }
 }
 
-function loadJudgment(contractName: string): ComponentJudgment {
+/** Esportato per i CLI a valle (emitter, gate): stesso file di giudizio, stessa validazione. */
+export function loadJudgment(contractName: string): ComponentJudgment {
   const path = resolve(judgmentsDir, `${contractName}.json`);
   if (!existsSync(path)) {
     throw new Error(`File di giudizio non trovato per il contratto "${contractName}": ${path} — scrivilo a mano (domain, headless, a11y).`);
@@ -77,19 +79,20 @@ function loadJudgment(contractName: string): ComponentJudgment {
   return parsed.data;
 }
 
-/** Nome file kebab-case: "LifecycleBadge" → "lifecycle-badge". */
-function toKebab(name: string): string {
+/** Nome file kebab-case: "LifecycleBadge" → "lifecycle-badge". Esportato per l'emitter (data-slot, nomi file). */
+export function toKebab(name: string): string {
   return name
     .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
     .replace(/([A-Z])([A-Z][a-z])/g, "$1-$2")
     .toLowerCase();
 }
 
-function fixturePathFor(componentName: string, dir: string): string {
+/** Esportati per i CLI a valle (emitter, gate): stesse convenzioni di path dei file committati. */
+export function fixturePathFor(componentName: string, dir: string): string {
   return resolve(dir, `${toKebab(componentName)}.fixture.json`);
 }
 
-function recipePathFor(componentName: string, dir: string): string {
+export function recipePathFor(componentName: string, dir: string): string {
   return resolve(dir, `${toKebab(componentName)}.recipe.json`);
 }
 

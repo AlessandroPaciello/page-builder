@@ -40,6 +40,9 @@
       "cache": false,
       "env": ["DATABASE_URL"]
     },
+    "gates:render": {
+      "cache": false
+    },
     "dev": {
       "cache": false,
       "persistent": true

@@ -1,5 +1,5 @@
 # generated: 2026-07-26
-# last_updated: 2026-09-12
+# last_updated: 2026-09-12 (story 2-6 → review)
 # project: page-builder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -63,7 +63,7 @@ development_status:
   2-3-package-dei-contratti: done
   2-4-bootstrap-della-library-penpot-sui-contratti: done
   2-5-estrazione-adeguata-ricette-per-parti-e-token: done
-  2-6-emitter-shadcn-deterministico-e-gate-ci: backlog
+  2-6-emitter-shadcn-deterministico-e-gate-ci: review
   2-7-libreria-componenti-accessibile: backlog
   2-8-storybook-del-design-system: backlog
   epic-2-retrospective: optional
