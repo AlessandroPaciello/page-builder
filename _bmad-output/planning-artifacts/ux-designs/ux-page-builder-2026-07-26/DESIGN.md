@@ -95,7 +95,7 @@ Gli overlay (Dialog, Toast, Drawer/SidePanel) si montano su un **portale root DO
 
 ## Components
 
-Catalogo ereditato 1:1 da [design-system.md](../../../specs/spec-page-builder/design-system.md) (primitives + puck-components + ui). Valori numerici (colore/spacing esatti) restano pending su Penpot; le righe sotto fissano intanto anatomia/struttura visiva dei 5 componenti-chiave, da rifinire con valori reali ai mock di Finalize.
+Catalogo ereditato 1:1 da [design-system.md](../../../specs/spec-page-builder/design-system.md) (ui/domains + puck-components + ui/editor; sezioni come definizioni di dati). Valori numerici (colore/spacing esatti) restano pending su Penpot; le righe sotto fissano intanto anatomia/struttura visiva dei 5 componenti-chiave, da rifinire con valori reali ai mock di Finalize.
 
 | Componente | Anatomia | Sizing/densità | Stati visivi |
 |---|---|---|---|

@@ -61,7 +61,8 @@ Specifica comportamentale (i visual spec vivono in DESIGN.md.components):
 - **PageList** — tabella con menu azioni (Modifica/Archivia) + stato vuoto (`EmptyState`) quando non esistono pagine. Righe filtrabili per lifecycle [ASSUMPTION — non specificato nello SPEC, dedotto da "storico versioni" e utilità pratica di liste con molte pagine].
 - **VersionList** — elenco versioni con azione di ripristino (rollback); la versione PUBLISHED corrente è visivamente distinta dalle DRAFT storiche (badge + posizione, non solo colore).
 - **SaveStateIndicator** — 3 stati: "Salvato" / "Salvataggio…" / "Modifiche non salvate", annunciati via `aria-live="polite"` (mai un solo stato "Salvato" statico che nasconde il salvataggio in corso).
-- **Blocchi Puck (Box/Grid/Columns/Spacer/Hero/Section + blocchi su primitiva)** — ogni blocco in editing mostra un affordance di selezione/hover chiara (outline) distinta dal focus-visible da tastiera (due segnali visivi diversi, stesso principio "mai solo colore").
+- **Blocchi Puck (Box/Flex/Grid/Columns/Spacer + blocchi su contratto)** — ogni blocco in editing mostra un affordance di selezione/hover chiara (outline) distinta dal focus-visible da tastiera (due segnali visivi diversi, stesso principio "mai solo colore").
+- **Sezioni (es. "Hero collezione", disegnate in Penpot)** — in editor la struttura è bloccata, segnalata da un indicatore con testo ("Struttura bloccata"), non solo dal colore; il pannello proprietà mostra solo i campi content; gli slot dichiarati sono drop-target evidenziati con un contatore quando esiste un `max` (es. "Azioni · 2 di 3"). Uno slot pieno o un blocco fuori dall'allow-list rifiutano il drop con un messaggio visibile e annunciato allo screen reader. *(Correct-course 2026-09-12: Hero/Section non sono più blocchi liberi.)*
 - **Blocchi commerce (ProductCard/ProductGrid/AddToCart)** — in editor mostrano dati di anteprima/placeholder quando il provider non è raggiungibile o il prodotto referenziato non esiste più; in pagina pubblicata un prodotto rimosso dal catalogo non deve rompere il render (stato vuoto/fallback, non errore fatale) — [ASSUMPTION, gap non coperto esplicitamente da SPEC CAP-15, da confermare].
 
 ## State Patterns
@@ -76,12 +77,12 @@ Specifica comportamentale (i visual spec vivono in DESIGN.md.components):
 ## Interaction Primitives
 
 - **Drag-and-drop editor — equivalente da tastiera e screen reader (non negoziabile, WCAG 2.1 AA/NFR1):** meta-modello **WAI-ARIA APG "Reorder" (grab-mode)**, applicato sopra il modello di drag interno di Puck (non in astratto — la keyboard-parity va progettata contro quel modello specifico):
-  - **Afferra:** `Spazio`/`Invio` su un blocco selezionato entra in modalità "sposta" (stato annunciato via live region dedicata, distinta dal `SaveStateIndicator`: "Hero afferrato, usa le frecce per spostare").
-  - **Sposta:** frecce direzionali spostano il blocco tra posizioni/slot validi; uno spostamento su un drop-target non valido (es. Hero dentro AddToCart) non si applica e lo screen reader annuncia il rifiuto.
+  - **Afferra:** `Spazio`/`Invio` su un blocco selezionato entra in modalità "sposta" (stato annunciato via live region dedicata, distinta dal `SaveStateIndicator`: "Sezione Hero collezione afferrata, usa le frecce per spostare").
+  - **Sposta:** frecce direzionali spostano il blocco tra posizioni/slot validi; uno spostamento su un drop-target non valido (es. una sezione dentro AddToCart, un blocco fuori dall'allow-list di uno slot o oltre il suo `max`) non si applica e lo screen reader annuncia il rifiuto.
   - **Rilascia:** `Spazio`/`Invio` conferma la nuova posizione; `Escape` annulla e riporta il blocco alla posizione originale.
   - **Uscita senza spostare:** `Tab` esce dal blocco lasciandolo dov'era.
-  - **Esposizione struttura:** il canvas è esposto come albero (`role="tree"`/`role="treeitem"`, o in alternativa `role="application"`) con `aria-label` di posizione, es. "Hero, blocco 1 di 3, dentro Section" — la tastiera risolve l'operabilità motoria, questo risolve la leggibilità screen reader (sono due assi distinti, entrambi richiesti).
-  - **Vale anche per resize/nesting** di blocchi contenitore (Grid/Columns/Section), non solo per riordino lineare.
+  - **Esposizione struttura:** il canvas è esposto come albero (`role="tree"`/`role="treeitem"`, o in alternativa `role="application"`) con `aria-label` di posizione, es. "Button, blocco 2 di 3, nello slot Azioni della sezione Hero collezione" — la tastiera risolve l'operabilità motoria, questo risolve la leggibilità screen reader (sono due assi distinti, entrambi richiesti).
+  - **Vale anche per resize/nesting** di blocchi contenitore (Box/Flex/Grid/Columns e slot di sezione), non solo per riordino lineare.
   - **Criterio di accettazione:** non solo axe automatico — richiede un test manuale con almeno uno screen reader reale (NVDA/VoiceOver) prima di considerare l'Epic editor completa.
   - Riferimento visivo: [mock editor canvas](./mockups/key-editor-canvas.html) (nota tastiera inclusa nel mock).
 - **Autosave:** trigger su pausa di input (debounce) — non richiede un'azione esplicita "Salva" per la bozza, ma "Salva" resta disponibile come azione esplicita/rassicurante in TopBar [ASSUMPTION sul meccanismo di trigger, CAP-7 specifica solo il risultato non il trigger].
@@ -101,7 +102,7 @@ Eredita integralmente [a11y-baseline.md](../../../specs/spec-page-builder/a11y-b
 ## Responsive & Platform
 
 - **Authoring (Admin/Editor/Cliente):** desktop-only in questa fase — nessun breakpoint mobile/tablet da progettare per l'editor. Se in futuro servisse authoring da tablet, è una revisione esplicita di questa spina, non un'estensione implicita.
-- **Render pubblico:** responsive standard (mobile/tablet/desktop). I blocchi Puck (Grid/Columns/Section/Hero) devono avere un comportamento di collasso/responsive definito per ciascun breakpoint — [ASSUMPTION: breakpoint specifici non forniti, da allineare con DESIGN.md.spacing quando i token reali saranno disponibili].
+- **Render pubblico:** responsive standard (mobile/tablet/desktop). I blocchi di layout (Flex/Grid/Columns) e le sezioni devono avere un comportamento di collasso/responsive definito per ciascun breakpoint — [ASSUMPTION: breakpoint specifici non forniti, da allineare con DESIGN.md.spacing quando i token reali saranno disponibili].
 - **Anteprima draft (`?version=draft`):** eredita il layout responsive del render pubblico (stessa resa, diversa sorgente dati), non un layout separato.
 - **Accessibilità mobile del render pubblico (non negoziabile, WCAG 2.1 AA/consumer e-commerce):**
   - **Touch target ≥44×44px** per ogni CTA commerce (AddToCart, filtri, navigazione) — criterio 2.5.5, best practice consumer/commerce indipendentemente dalla versione WCAG target.
@@ -117,7 +118,7 @@ Marco lavora nel team marketing di un retailer. Deve pubblicare una landing per 
 
 1. Accede da `/pages`, vede l'elenco delle pagine esistenti con stato lifecycle visibile a colpo d'occhio (badge testo+colore).
 2. Clicca "Crea pagina", entra nell'editor denso: pannello blocchi a sinistra, canvas al centro, proprietà a destra.
-3. Trascina un blocco Hero, poi una ProductGrid agganciata al catalogo reale (i prodotti risolvono dati live dal provider commerce anche in editing, non solo a render-time).
+3. Trascina la sezione **Hero collezione** e ne modifica titolo e immagine (la struttura resta quella disegnata); aggiunge un secondo bottone nello slot Azioni, poi una ProductGrid agganciata al catalogo reale (i prodotti risolvono dati live dal provider commerce anche in editing, non solo a render-time).
 4. Continua a modificare per 20 minuti: il SaveStateIndicator passa più volte da "Modifiche non salvate" a "Salvato" senza che Marco debba mai premere un pulsante esplicito.
 5. Vuole vedere come apparirà pubblicata: clic su "Anteprima" → si apre il render dinamico non cachato della bozza corrente, protetto (solo lui autenticato lo vede).
 6. Soddisfatto, clic su "Pubblica" → dialog di conferma ("Questo sostituirà la versione attualmente pubblicata") → conferma.

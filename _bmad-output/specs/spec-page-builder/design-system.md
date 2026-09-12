@@ -1,19 +1,21 @@
 # Design System — catalogo e layering
 
-Companion di [SPEC.md](./SPEC.md). Contenuto stack-agnostico: descrive **cosa** compone il design system e i suoi confini, non la toolchain. I conteggi provengono dalla codebase di riferimento e sono indicativi del target, non un vincolo esatto.
+Companion di [SPEC.md](./SPEC.md). Contenuto stack-agnostico: descrive **cosa** compone il design system e i suoi confini, non la toolchain. I conteggi provengono dalla codebase di riferimento e sono indicativi del target, non un vincolo esatto. *(Rivisto dal correct-course 2026-09-12.)*
 
 ## Layering e confini
 
 ```
-tokens  ◄── ui/domains  ◄── puck-components
-                        ◄── ui/editor
-scripts (pipeline Penpot) ── genera ──► tokens, ui/domains
+contracts  ◄── ui/domains · puck-components · core · render      (foglia, zero dipendenze UI)
+tokens     ◄── ui/domains  ◄── puck-components
+                           ◄── ui/editor
+scripts (pipeline Penpot) ── genera ──► tokens, ui/domains, definizioni di sezione
 ```
 
+- `contracts` — foglia, nessuna dipendenza da React/Puck/UI. Possiede props, tipi di asse, classifier structure/content e definizioni di sezione (AD-5).
 - `tokens` — foglia del grafo, nessuna dipendenza interna.
-- `ui/domains` — dipende solo da `tokens` (+ headless Radix). Export `.`.
+- `ui/domains` — dipende solo da `tokens` + `contracts` (+ headless Radix). Export `.`.
 - `ui/editor` — dipende solo da `ui/domains` + `tokens`. Export `./editor`.
-- `puck-components` — dipende da `ui/domains` + `tokens`. **Non** vede `ui/editor`.
+- `puck-components` — dipende da `contracts` + `ui/domains` + `tokens`. **Non** vede `ui/editor`.
 - **Regola di confine assoluta:** un componente in `domains/` non conosce il dominio page-builder e non importa mai da `editor/`. La semantica dell'editor vive in `editor/`, mai in `domains/`. Persa la barriera di package, il confine è tenuto da una regola di **lint bloccante in CI** e dai due export separati.
 
 ## tokens — fonte di verità stilistica
@@ -26,7 +28,7 @@ Il nome della variabile deriva dal **tipo** del token (namespace stabile: color,
 
 ## ui/domains — componenti generati da Penpot
 
-Componenti UI riusabili, organizzati per dominio, con varianti guidate dai token e ref forwarding. Sono **generati** dalla pipeline fixture → ricetta → renderer (AD-11) e compongono primitive **headless** (Radix) per il comportamento, che il design non esprime. Ogni componente rispetta la [a11y-baseline](./a11y-baseline.md). I pochi componenti senza headless disponibile e con logica propria (Table con sorting, Carousel) sono scritti a mano, senza marker `@generated`, e ignorati dalla pipeline. Domini e componenti di riferimento:
+Componenti UI riusabili, organizzati per dominio, con varianti guidate dai token e ref forwarding. **Implementano i contratti** di `@app/contracts` e sono **generati** dalla pipeline fixture → ricetta → emitter (AD-11); compongono primitive **headless** (Radix) per il comportamento, che il design non esprime. La libreria è **sostituibile**: una sola per installazione, scelta a build time — cambiarla significa ridisegnare in Penpot e generare un'altra libreria, senza toccare contratti, sezioni e pagine salvate. Ogni componente rispetta la [a11y-baseline](./a11y-baseline.md). I pochi componenti senza headless disponibile e con logica propria (Table con sorting, Carousel) e i componenti complessi (3D, mappe, configuratori) hanno un contratto completo e un segnaposto in Penpot, ma l'adapter è scritto a mano, senza marker `@generated`, e ignorato dalla pipeline. Domini e componenti di riferimento:
 
 | Dominio | Componenti |
 |---|---|
@@ -39,18 +41,20 @@ Componenti UI riusabili, organizzati per dominio, con varianti guidate dai token
 
 ## puck-components — blocchi del page-builder
 
-Blocchi che **incapsulano** i componenti di `ui/domains` esponendone le varianti come campi editabili. Ogni blocco = schema validato + campi editor + render che wrappa un componente `domains`. I campi spacing/radius derivano dai token (una modifica ai token propaga sia agli stili sia ai menu dei blocchi). Aggregati in un'unica config con categorie. Blocchi di riferimento:
+**Adapter Puck dei contratti.** Per ogni contratto: campi editor derivati dagli assi `option` (gli assi `state`/`behavior` non diventano campi), `permissions`/`resolvePermissions` (lock della struttura, `max` degli slot) e render tramite la libreria dell'installazione. Schemi e classifier **non vivono qui** (AD-5). I campi spacing/radius derivano dai token (una modifica ai token propaga sia agli stili sia ai menu dei blocchi). Aggregati in un'unica config con categorie. Blocchi di riferimento:
 
 | Categoria | Blocchi |
 |---|---|
 | Data Display | Badge, Card, Carousel, Image, RichText, Typography |
 | Inputs | Button, Checkbox, Input, Switch |
 | Feedback | Alert |
-| Layout | Accordion, Box, Collapsible, Columns, Hero, Separator, Spacer, Grid, Flex, Section |
+| Layout | Accordion, Box, Collapsible, Columns, Separator, Spacer, Grid, Flex |
 
-I blocchi `Box/Grid/Columns/Spacer/Hero/Section` sono specifici del page-building e non hanno un componente `domains` 1:1. **Slot** (container annidabili): `content` su Box/Grid/Flex/Section/Hero; `col1/col2/col3` su Columns.
+I blocchi di layout hanno **compiti separati**, assi tutti `option` a valori token: **Box** = solo riquadro visivo (background, padding, radius, border); **Flex** = disposizione (direction, align, justify, gap, wrap); **Grid/Columns** = griglia. Nessuna prop libera (niente colore o padding arbitrari). `Box/Grid/Columns/Spacer` sono specifici del page-building e non hanno un componente `domains` 1:1. **Slot** (container annidabili): `content` su Box/Grid/Flex; `col1/col2/col3` su Columns.
 
-Ogni blocco dichiara la classificazione **structure vs content** dei propri campi in una single source of truth (vedi CAP-13 in SPEC.md): `content` = campi testo/contenuto editabili (soggetti a sanitizzazione), `structure` = layout/configurazione (variant, size, padding, colori). Default per campi/componenti ignoti: content (fail-safe).
+**Sezioni** (hero, sezione prodotto…): **non sono blocchi scritti a mano**. Ognuna è una **definizione di sezione** estratta da Penpot (albero di Box/Flex/componenti + slot dichiarati), vive in `@app/contracts` ed è esposta in Puck per nome. Rigida per default: struttura bloccata, contenuto modificabile, aperta solo negli slot dichiarati (`allow` + `max`), decisi da sviluppatore/admin.
+
+Ogni blocco dichiara la classificazione **structure vs content** dei propri campi in una single source of truth (vedi CAP-13 in SPEC.md), che vive in `@app/contracts`: `content` = campi testo/contenuto editabili (soggetti a sanitizzazione), `structure` = layout/configurazione (variant, size, padding, colori — questi ultimi **solo da token semantici**, mai colori liberi). Default per campi/componenti ignoti: content (fail-safe).
 
 ## ui/editor — composizioni di prodotto
 

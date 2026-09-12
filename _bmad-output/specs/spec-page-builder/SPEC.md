@@ -26,15 +26,15 @@ Esiste già un prodotto end-to-end che va dal design al codice fino alla pubblic
 
 - **CAP-2 — Generazione componenti design→codice**
   - **intent:** generare primitive accessibili dai componenti Penpot, mappando la matrice di varianti Penpot in un modello di varianti.
-  - **success:** l'estrazione di un componente produce fixture e ricetta committate; il renderer emette componente + test + story + barrel in modo **riproducibile** (rigenerare dà diff zero); i file scritti a mano sono preservati; i quattro gate (completezza, rigenerazione, a11y, drift fixture) passano in CI.
+  - **success:** l'estrazione di un componente produce fixture e ricetta committate, **validate contro il contratto del componente**; il renderer emette componente + test + story + barrel in modo **riproducibile** (rigenerare dà diff zero); i file scritti a mano sono preservati; i cinque gate (completezza, rigenerazione, a11y, drift fixture, **conformità al contratto**) passano in CI (il drift è bloccante se il server Penpot è raggiungibile da CI, altrimenti manuale/nightly con decisione documentata).
 
 - **CAP-3 — Libreria di primitive accessibili**
   - **intent:** offrire una libreria di componenti UI headless/accessibili organizzati per dominio (data-display, inputs, feedback, layout, navigation, overlays).
   - **success:** ogni componente interattivo rispetta la [a11y-baseline](./a11y-baseline.md) (focus visibile, stato=testo+colore, ARIA corretto), verificato da test di accessibilità automatici. Catalogo → [design-system.md](./design-system.md).
 
 - **CAP-4 — Blocchi del page-builder**
-  - **intent:** incapsulare le primitive come blocchi dell'editor, con campi validati da schema e controlli guidati dai token, aggregati in un'unica config con slot annidabili.
-  - **success:** l'editor renderizza i blocchi; una modifica ai token spacing/radii si propaga sia agli stili sia alle opzioni dei campi dei blocchi.
+  - **intent:** esporre i **contratti dei componenti** come blocchi dell'editor, con campi validati da schema e controlli guidati dai token, aggregati in un'unica config con slot annidabili; più **sezioni** disegnate in Penpot, rigide per default e aperte solo negli slot dichiarati.
+  - **success:** l'editor renderizza i blocchi; una modifica ai token spacing/radii si propaga sia agli stili sia alle opzioni dei campi dei blocchi; una sezione rende modificabili solo i campi content e gli slot dichiarati, e un blocco fuori dall'allow-list o oltre il `max` di uno slot è rifiutato lato server.
 
 - **CAP-5 — Composizioni di prodotto per l'editor**
   - **intent:** fornire componenti composti con la semantica dell'editor page-builder (LifecycleBadge, SaveStateIndicator, TopBar, PageList, VersionList, EmptyState), costruiti solo su primitive+token.
@@ -82,7 +82,7 @@ Esiste già un prodotto end-to-end che va dal design al codice fino alla pubblic
 
 ## Constraints
 
-- **Penpot è la single source of truth dei valori di design.** Token e componenti sono *generati*, non scritti a mano; la pipeline token resta data-driven dal catalogo Penpot (nuovo set ⇒ nuova sezione di output senza toccare il codice). Aderenza stretta: usare esattamente i valori del design, mai inventare valori mancanti (solo default neutri).
+- **Penpot è la single source of truth dei valori e dell'aspetto; il contratto dei componenti (assi, valori, parti) è del page builder** — così un cambio di libreria componenti non tocca le pagine salvate. Token e componenti sono *generati*, non scritti a mano; la pipeline token resta data-driven dal catalogo Penpot (nuovo set ⇒ nuova sezione di output senza toccare il codice). Aderenza stretta: usare esattamente i valori del design, mai inventare valori mancanti (solo default neutri).
 - **Gli artefatti generati portano il marker `@generated` e non si editano a mano**; la rigenerazione deve preservare i file scritti a mano (skip salvo forzatura).
 - **Il payload di layout è la forma Puck `{content, root, zones}` accettata 1:1**, senza riscrittura della struttura; ogni blocco porta un id stabile indipendente dalla posizione (abilita diff/audit a livello di blocco).
 - **Lo storico dei contenuti è modellato tramite versioni di pagina esplicite**; l'audit copre solo metadati immutabili — non duplicare l'intero blob di contenuto nello store di audit.
@@ -90,7 +90,7 @@ Esiste già un prodotto end-to-end che va dal design al codice fino alla pubblic
 - **Invariante autoritativo:** al più una versione PUBLISHED per pagina (garantito in modo autoritativo, non solo nella logica applicativa).
 - **A11y baseline obbligatoria — target WCAG 2.1 AA** — per ogni primitiva/composizione (focus visibile, stato=testo+colore, ARIA corretto, overlay su portale root condiviso sopra il canvas). Dettaglio → [a11y-baseline.md](./a11y-baseline.md).
 - **Il frontend del page-builder DEVE consumare il design system** (composizioni `ui` + primitive), non uno stack UI parallelo. Il drift legacy (l'app che usava una UI toolkit generica invece delle composizioni del design system) è un anti-pattern esplicito da non ripetere.
-- **Confine di layering del design system:** tokens ← componenti generati ← {puck-components, composizioni editor}; i componenti generati non importano mai dalle composizioni editor né conoscono il dominio page-builder.
+- **Confine di layering del design system:** contratti dei componenti (foglia, nessuna dipendenza UI) ← {componenti generati, blocchi editor, render, core}; tokens ← componenti generati ← {blocchi editor, composizioni editor}; i componenti generati non importano mai dalle composizioni editor né conoscono il dominio page-builder.
 
 ## Non-goals
 
@@ -109,4 +109,5 @@ Un workspace riscritto in cui i token e i componenti di un designer in Penpot fl
 
 - Penpot resta il tool di design sorgente e la pipeline di generazione è preservata come parte del target (richiesta esplicita "preservare la pipeline Penpot"); solo il backend applicativo cambia.
 - I ruoli di dominio (Admin/Editor/Cliente) e il modello Page/PageVersion sono concetti di prodotto, non artefatti dello stack scartato, e vengono preservati stack-agnosticamente; l'identità utente sarà fornita dallo stack scelto in fase architecture.
+- Una sola libreria componenti per installazione, scelta a build time: oggi la libreria generata da Penpot su base shadcn; una seconda libreria (es. MUI) implementerebbe gli stessi contratti.
 - Le pagine mescolano contenuto statico del design system e blocchi commerce data-driven; la vetrina e-commerce è servita dal page-builder stesso, con i dati commerce risolti server-side a render-time via il provider (CAP-15).

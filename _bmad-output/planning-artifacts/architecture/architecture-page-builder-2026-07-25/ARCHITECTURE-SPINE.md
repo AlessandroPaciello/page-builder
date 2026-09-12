@@ -7,7 +7,7 @@ paradigm: 'hexagonal (core di dominio + adapter) su monolite Next.js fullstack'
 scope: 'Page builder end-to-end: design system (Penpot→token→componenti ui/domains→puck-components) + editor pagine (authoring drag-and-drop, versioning/publish/rollback/archive, render pubblico by-slug), RBAC, audit, structure/content + sanitizzazione, integrazione commerce pluggable. Riscrittura greenfield full-TypeScript.'
 status: final
 created: '2026-07-25'
-updated: '2026-07-25'
+updated: '2026-09-12'
 binds: [CAP-1, CAP-2, CAP-3, CAP-4, CAP-5, CAP-6, CAP-7, CAP-8, CAP-9, CAP-10, CAP-11, CAP-12, CAP-13, CAP-14]
 sources:
   - '../../specs/spec-page-builder/SPEC.md'
@@ -64,15 +64,20 @@ Diagramma delle dipendenze consentite (chi può dipendere da chi). È **una rego
 
 ```mermaid
 graph LR
+  contracts["contracts (foglia, no UI)"]
   tokens --> domains["ui/src/domains (generato)"]
+  contracts --> domains
   domains --> editor["ui/src/editor (a mano)"]
   domains --> puck[puck-components]
+  contracts --> puck
   tokens --> puck
   tokens --> editor
   web[apps/web] --> editor
   web --> puck
   web --> core[packages/domain]
   web --> commerce[commerce-provider]
+  contracts --> core
+  contracts --> web
   core --> commerce
   core -.no.-> web
   domains -.no.-> editor
@@ -94,7 +99,7 @@ graph LR
 
 - **Binds:** CAP-3, CAP-4, CAP-5, CAP-6; `apps/web`.
 - **Prevents:** due stack UI paralleli e divergenti (il drift legacy: app su react-bootstrap invece delle composizioni del design system).
-- **Rule:** `apps/web` costruisce la UI **solo** su `@penpot-ds/ui` (+ token). Vietato introdurre una libreria UI **stilistica** concorrente. Le primitive **headless** (Radix) non sono una libreria concorrente: non portano stile, sono la dipendenza di *comportamento* dichiarata nelle ricette (AD-11), e sono importabili **solo** da `@penpot-ds/ui/src/domains/**` — mai da `apps/web`, mai da `editor/**`. Layering `tokens ← ui{ domains ← editor } ← puck-components`. **Regola di confine assoluta:** i componenti in `domains/` non conoscono il dominio page-builder e non importano mai da `editor/`. Persa la barriera di package con la fusione, il confine è tenuto da una **regola di lint bloccante in CI** e dai due export separati del package.
+- **Rule:** `apps/web` costruisce la UI **solo** su `@penpot-ds/ui` (+ token). Vietato introdurre una libreria UI **stilistica** concorrente. Le primitive **headless** (Radix) non sono una libreria concorrente: non portano stile, sono la dipendenza di *comportamento* dichiarata nelle ricette (AD-11), e sono importabili **solo** da `@penpot-ds/ui/src/domains/**` — mai da `apps/web`, mai da `editor/**`. Layering `contracts ← { ui/domains, puck-components, domain, render }; tokens ← ui{ domains ← editor } ← puck-components` — `contracts` è una foglia come `tokens`; `ui/domains` implementa i contratti, non li possiede (AD-5). **Regola di confine assoluta:** i componenti in `domains/` non conoscono il dominio page-builder e non importano mai da `editor/`. Persa la barriera di package con la fusione, il confine è tenuto da una **regola di lint bloccante in CI** e dai due export separati del package.
 
 ### AD-4 — RBAC deny-by-default a copertura totale nel core; auth ≠ authz [ADOPTED]
 
@@ -102,17 +107,19 @@ graph LR
 - **Prevents:** authz sparsa tra provider auth e app; ruolo grossolano scambiato per permesso su risorsa; endpoint (write **o read**) che toccano dominio senza check.
 - **Rule:** Better Auth fornisce **identità + ruolo grossolano** (`Principal { userId, role }`, `role ∈ {ADMIN, EDITOR, CLIENTE}`) nel context oRPC. L'**autorizzazione fine** (es. "questo Cliente è assegnato a questa pagina?" via `PageAssignment`; "questo campo è content o structure?") è **dato di dominio** decisa dal core, deny-by-default. Ogni adapter inbound passa il `Principal` al core; nessun adapter decide da sé. **Unica lettura anonima ammessa:** la versione PUBLISHED `by-slug` su una **proiezione pubblicata** (nessun campo interno/draft). La UI può nascondere, ma non è mai l'unico controllo.
 
-### AD-5 — Payload Puck: una sola fonte di verità FE/BE (schemi Zod + classifier condivisi)
+### AD-5 — Contratti dei componenti: una sola fonte di verità in `packages/contracts` [rivisto 2026-09-12]
 
-- **Binds:** CAP-4, CAP-6, CAP-13.
-- **Prevents:** duplicazione/drift della classificazione structure/content (il dolore #1 del legacy: `field-classifier.json` duplicato a mano in Java) e payload non validato/non sanitizzato.
-- **Rule:** gli schemi Zod dei blocchi e la classificazione structure/content vivono **una sola volta** in `packages/puck-components` e sono importati sia dall'editor sia dal core server. Alla scrittura/pubblicazione il core: (1) valida il payload contro gli schemi dei blocchi; (2) deriva structure/content dal classifier condiviso; (3) **sanitizza i campi content** (XSS) prima di persistere. Default per campo/blocco ignoto: `content` (fail-safe).
+- **Binds:** CAP-2, CAP-4, CAP-6, CAP-13.
+- **Prevents:** duplicazione/drift della classificazione structure/content (il dolore #1 del legacy: `field-classifier.json` duplicato a mano in Java); payload non validato/non sanitizzato; **contratto disperso negli adapter (libreria, editor, render) che lega le pagine salvate a una libreria specifica**.
+- **Rule:** `packages/contracts` (`@app/contracts`) contiene **una sola volta**: gli schemi Zod delle props di ogni componente/blocco, i tipi di asse (`option`/`state`/`behavior`, AD-11), il classifier structure/content e le **definizioni di sezione** (albero di blocchi del contratto + props + slot con `allow` e `max`). **Zero dipendenze** da React, Puck, shadcn, Tailwind. È la porta; gli adapter sono `ui/domains` (libreria), `puck-components` (editor), render pubblico, `packages/domain` (validazione).
+  Alla scrittura/pubblicazione il core: (1) valida il payload contro i contratti, inclusi `allow`/`max` degli slot (Puck 0.22 non ha `max` nativo: in editor si impone con `resolvePermissions`, **nel core è autoritativo**); (2) deriva structure/content dal classifier; (3) **sanitizza i campi content** (XSS) prima di persistere. Default per campo/blocco ignoto: `content` (fail-safe).
+  **Sezioni rigide per default**: struttura bloccata, contenuto modificabile, aperte solo negli slot dichiarati — decisi da sviluppatore/admin, non dal designer. **Blocchi di layout a soli token**: Box (background, padding, radius, border), Flex (direction, align, justify, gap, wrap), Grid/Columns — tutti assi `option` a valori token, nessun colore o misura libera.
 
 ### AD-6 — Forma del payload, proprietà di id/versioni
 
 - **Binds:** CAP-6, CAP-8, CAP-9, CAP-14.
 - **Prevents:** riscrittura della struttura Puck; perdita del diff a livello di blocco; race sull'allocazione del numero di versione.
-- **Rule:** il payload è la forma Puck `{content, root, zones}` con `schemaVersion`, persistito 1:1 in colonna `Json` (jsonb). **Proprietà:** i **block-id** sono coniati dal client e **immutabili** — il core non li riscrive mai; **`schemaVersion`** è di proprietà di `packages/puck-components`; il **`versionNumber`** è allocato dal **core in transazione**, con vincolo `UNIQUE(page_id, version_number)`.
+- **Rule:** il payload è la forma Puck `{content, root, zones}` con `schemaVersion`, persistito 1:1 in colonna `Json` (jsonb). **Proprietà:** i **block-id** sono coniati dal client e **immutabili** — il core non li riscrive mai; **`schemaVersion`** è di proprietà di `packages/contracts` — un cambio di contratto (nuovo asse o valore) è un bump esplicito; il **`versionNumber`** è allocato dal **core in transazione**, con vincolo `UNIQUE(page_id, version_number)`.
 
 ### AD-7 — Coerenza di pubblicazione enforced dal DB e in transazione
 
@@ -138,17 +145,24 @@ graph LR
 - **Prevents:** lock-in su una sorgente commerce; riscrittura dei blocchi al cambio/affiancamento di sorgente; chiamate commerce dirette sparse nei blocchi; DTO commerce incompatibili tra blocchi.
 - **Rule:** i blocchi commerce (ProductCard/ProductGrid/AddToCart/…) e il render **non** parlano mai direttamente a Shopify o a un backend specifico, ma al **port `CommerceProvider`** con contratto canonico (metodi es. `getProduct`/`listProducts`/`getCollection`; DTO `ProductRef`, `Price { amount, currency }`, …). Adapter: Shopify (Storefront API GraphQL) e backend proprio. La risoluzione dati avviene **server-side a render-time** (`resolveData`/external fields di Puck).
 
-### AD-11 — Penpot genera i componenti; il giudizio si congela in ricette, il codice è funzione pura [ADOPTED]
+### AD-11 — Il contratto è del page builder, Penpot disegna valori e aspetto; il giudizio si congela in ricette, il codice è funzione pura [ADOPTED, rivisto 2026-09-12]
 
-- **Binds:** CAP-1, CAP-2, CAP-3.
-- **Prevents:** valori di design inventati a mano; drift design↔codice; componenti generati non accessibili perché il design non esprime comportamento; generazione non riproducibile.
-- **Rule:** Penpot è single source of truth di **valori, aspetto e matrice varianti**. La pipeline si articola in tre artefatti con garanzie distinte:
-  (a) **fixture** per-componente, lette da Penpot via MCP, **committate** e verificate per hash;
-  (b) **ricetta** per-componente, prodotta da un code agent — l'unico passo di giudizio — **committata** e validata contro uno schema e contro il vocabolario dei token generati;
-  (c) **codice** (`.tsx` + test + story + barrel) emesso da un **renderer puro** che applica il blocco `cva` della ricetta a una **base shadcn** (headless Radix + CVA + `cn()` + `forwardRef`), marcato `@generated` e **rigenerabile a diff zero**.
-  Il **comportamento accessibile non è disegnabile in Penpot**: entra dalla base shadcn/headless dichiarata nella ricetta, che è quindi *input* del rendering, mai suo output. Penpot possiede **soltanto lo strato di stile**: quel blocco `cva`, e nient'altro.
-  I componenti privi di headless e con logica propria (es. Table con sorting, Carousel) sono **scritti a mano**, senza marker, e ignorati dalla pipeline.
-  I file `@generated` non si editano a mano: si modifica la ricetta e si rigenera. I file scritti a mano (privi di marker) sono sempre preservati. Dettaglio → companion `penpot-pipeline.md`.
+- **Binds:** CAP-1, CAP-2, CAP-3, CAP-4.
+- **Prevents:** valori di design inventati a mano; drift design↔codice; componenti generati non accessibili perché il design non esprime comportamento; generazione non riproducibile; **vocabolario delle props — e quindi le pagine salvate — legato alla libreria generata**; ricette utilizzabili da un solo target.
+- **Rule:**
+  **Ownership.** Il **contratto** di ogni componente (assi, valori ammessi, tipo di asse, parti) vive in `packages/contracts` (AD-5) ed è del page builder. Penpot possiede **valori e aspetto**: disegna *tutti* gli assi del contratto come varianti, ma non ne decide né il vocabolario né il tipo. Una variante nuova è un cambio esplicito di contratto (`schemaVersion`), non una scoperta nella fixture.
+  **Tipi di asse**, dichiarati nel contratto e mai in Penpot: `option` (prop scelta in Puck → stile per variante), `state` (browser → `focus-visible:`/`aria-invalid:`/`disabled:`, nessuna prop), `behavior` (headless → `data-[state=…]:`, nessuna prop).
+  **Legame componente→contratto:** SharedPluginData sul VariantContainer (`pagebuilder/contract = nome@versione`), scritto solo dalle skill di pipeline; il nome del container è controllo incrociato. L'estrazione fallisce su contratto dichiarato da due container, nome incoerente, contratto senza container.
+  **Tre artefatti:**
+  (a) **fixture** per-componente, letta da Penpot via MCP, **committata**, verificata per hash e **validata contro il contratto** (ogni asse e valore del contratto presente, nessun asse in più);
+  (b) **ricetta** — l'unico passo di giudizio, committata — è una **mappa di parti a profondità 1** con celle `proprietà → token` (non classi di una libreria), per parte × asse tipizzato. La geometria delle icone è ignorata. Una parte annidata con assi propri fa **fallire lo schema**;
+  (c) **codice** emesso da un **emitter per libreria** + una tabella di binding per componente (componente base, parti→parti della lib, valori asse→API della lib). Emitter di riferimento: shadcn (headless Radix + `cva`/Tailwind + `cn()` + `forwardRef`), marcato `@generated`, rigenerabile a diff zero. **Una sola libreria per installazione**, scelta a build time.
+  Il **comportamento accessibile non è disegnabile in Penpot**: entra dalla base headless dichiarata nel binding, *input* del rendering, mai suo output.
+  **Composizione ≠ ricetta.** Un componente composto (Accordion Root con più item), una hero o una sezione non sono ricette: sono **definizioni di sezione** in `contracts` — alberi di dati (AD-5).
+  **Componenti senza headless o con logica propria** (Table con sorting, Carousel, 3D, mappe): contratto completo come gli altri; in Penpot solo un **segnaposto** (dimensioni, etichetta, plugin data) non estratto; adapter scritto a mano, senza marker.
+  **Scrittura su Penpot solo via skill:** bootstrap una tantum (rifiuta se la library esiste; crea anche i token shadow/ring), poi solo additiva; le differenze si segnalano, non si correggono. Nessuna sincronizzazione ricorrente codice→Penpot.
+  **Pass/fail sta negli script e negli schemi, mai nel prompt di una skill.**
+  I file `@generated` non si editano a mano; i file senza marker sono sempre preservati. Dettaglio → companion `penpot-pipeline.md`.
 
 ### AD-12 — Snapshot di contenuto immutabili
 
@@ -167,14 +181,14 @@ graph LR
 | Concern | Convention |
 | --- | --- |
 | Naming entità | `Page` (slug pubblico univoco), `PageVersion`, `PageAssignment` (Cliente↔pagina), `AuditLog`; `PageStatus` DRAFT/PUBLISHED/ARCHIVED, `PageVersionStatus` DRAFT/PUBLISHED |
-| Confini package | `@penpot-ds/*` = design system (`tokens` + `ui` + `puck-components`; nessun package `primitives`); `packages/domain` = core (no React/HTTP); `packages/commerce-provider` = port + adapter |
+| Confini package | `@app/contracts` = contratti dei componenti, classifier, definizioni di sezione (no React/Puck/UI); `@penpot-ds/*` = design system (`tokens` + `ui` + `puck-components`; nessun package `primitives`); `packages/domain` = core (no React/HTTP); `packages/commerce-provider` = port + adapter |
 | Contratti condivisi core-attraversanti | tipi canonici e proprietari unici: `Principal` (context oRPC), `AuditLog` (via `AuditWriter`), `CommerceProvider` DTO, `CacheInvalidator` port, errori di dominio tipizzati (AD-13) |
 | Transport / errori | oRPC editor→dominio; OpenAPI derivato; errori di dominio tipizzati → set oRPC fisso (AD-13) |
 | Dati & formati | id/date default Prisma/Postgres; payload `Json` (jsonb) forma Puck `{content,root,zones}`; block-id client-owned immutabili; `versionNumber` core-owned `UNIQUE(page_id, version_number)` |
 | Auth | Better Auth (sessione cookie editor); `Principal + role` nel context oRPC; authz fine sempre nel core, deny-by-default (read **e** write) |
 | Mutazione di stato | solo via casi d'uso del core; publish/rollback/archive in transazione che accoppia `Page.status`↔`PageVersion.status`; ogni save = nuova DRAFT (AD-12); ≤1 pubblicata come backstop DB |
 | Cache | domini disgiunti draft/published; invalidazione post-commit via port `CacheInvalidator` (AD-9) |
-| Validazione/sanitizzazione | schemi Zod dei blocchi condivisi FE/BE; sanitizzazione XSS dei campi `content` lato server prima di persist/publish |
+| Validazione/sanitizzazione | schemi Zod dei **contratti** (`@app/contracts`) condivisi FE/BE; sanitizzazione XSS dei campi `content` lato server prima di persist/publish |
 | Accessibilità | baseline WCAG 2.1 AA obbligatoria per primitive/composizioni (companion `a11y-baseline.md`) |
 
 ## Stack
@@ -214,6 +228,7 @@ page-builder/
   packages/
     domain/                  # CORE esagonale: casi d'uso, RBAC, audit, pipeline payload, PORT (AD-1,2,4,5,8)
     commerce-provider/       # port CommerceProvider + adapter Shopify/custom (AD-10)
+    contracts/               # @app/contracts — schemi props, tipi di asse, classifier, definizioni di sezione; zero dipendenze UI (AD-5, AD-6, AD-11)
     tokens/                  # @penpot-ds/tokens — GENERATO da Penpot (AD-11)
     ui/                      # @penpot-ds/ui — libreria componenti unica (AD-3, AD-11)
       src/domains/           #   GENERATO: data-display, inputs, feedback, layout,
@@ -222,8 +237,8 @@ page-builder/
       src/editor/            #   A MANO: composizioni di prodotto (TopBar, PageList,
                              #   LifecycleBadge, SaveStateIndicator, EmptyState, VersionList)
                              #   export `./editor` → unico consumo per apps/web (app)
-    puck-components/         # @penpot-ds/puck-components — schemi Zod + classifier CONDIVISI, schemaVersion owner (AD-5,6)
-    scripts/                 # pipeline Penpot→codice (AD-11)
+    puck-components/         # @penpot-ds/puck-components — adapter Puck dei contratti: config, permissions, resolvePermissions (AD-5)
+    scripts/                 # pipeline Penpot→codice (AD-11): fixture, ricette, emitter per libreria, gate
       penpot/                #   lettore MCP → fixture committate
       recipes/               #   schema + validazione ricette
       render/                #   renderer puro ricetta+fixture → tsx/test/story
@@ -239,7 +254,7 @@ page-builder/
 | --- | --- | --- |
 | CAP-1/CAP-2 pipeline Penpot→token/componenti | `packages/scripts`, `tokens`, `ui/src/domains` | AD-11 |
 | CAP-3 primitive accessibili | `packages/ui/src/domains` | AD-3, AD-11, a11y-baseline |
-| CAP-4 blocchi Puck | `packages/puck-components` | AD-3, AD-5, AD-6 |
+| CAP-4 blocchi Puck | `packages/contracts` + `packages/puck-components` | AD-3, AD-5, AD-6, AD-11 |
 | CAP-5 composizioni editor | `packages/ui/src/editor` | AD-3 |
 | CAP-6 authoring drag-and-drop | `apps/web/(app)` + `packages/domain` | AD-1, AD-5, AD-6, AD-12 |
 | CAP-7 autosave/bozza | core `save-version` + oRPC | AD-1, AD-4, AD-12 |
@@ -248,7 +263,7 @@ page-builder/
 | CAP-10 lifecycle archive/restore | core | AD-1, AD-7 |
 | CAP-11 render pubblico by-slug | `apps/web/(public)/[slug]` | AD-4, AD-9, AD-10 |
 | CAP-12 RBAC (Admin/Editor/Cliente) | core + Better Auth + `PageAssignment` | AD-4, AD-12 |
-| CAP-13 structure/content | `packages/puck-components` + core | AD-5, AD-12 |
+| CAP-13 structure/content | `packages/contracts` + core | AD-5, AD-12 |
 | CAP-14 audit trail | core `AuditWriter` → `AuditLog` | AD-8 |
 | Integrazione commerce | `packages/commerce-provider` | AD-10 |
 
@@ -258,7 +273,7 @@ page-builder/
 - **Provider DB e orchestratore container concreti** (Neon/Supabase/self-managed; K8s/Compose). Decisione di deploy; l'envelope Docker li rende intercambiabili.
 - **Logging/monitoring/backup/CI-CD di dettaglio** — strategia nominata nell'envelope; il dettaglio (stack osservabilità, cadenza backup, pipeline) si fissa in implementazione.
 - **Better Auth come issuer OIDC/JWT per l'ecosistema** (SSO multi-servizio). Attivare quando esiste un secondo servizio da autenticare.
-- **Migrazione `schemaVersion` del payload** — policy di upgrade quando `schemaVersion` cambia (contratto authoring↔render). Da fissare alla prima evoluzione degli schemi dei blocchi; oggi `schemaVersion` è dichiarata e posseduta da `puck-components` (AD-6).
+- **Migrazione `schemaVersion` del payload** — policy di upgrade quando `schemaVersion` cambia (contratto authoring↔render). Da fissare alla prima evoluzione degli schemi dei blocchi; oggi `schemaVersion` è dichiarata e posseduta da `contracts` (AD-6).
 - **Strategia di migrazione dati dal legacy Strapi** — fuori scope SPEC salvo re-ingaggio esplicito.
 - **Envelope perf/latenza** (budget render/save) — da misurare in implementazione, non vincolato qui.
-- **Estensione della pipeline ai blocchi Puck** (Hero, Section, Columns, Card…). Il regime fixture → ricetta → renderer si estende ai blocchi cambiando solo il `kind` della ricetta (`"block"` invece di `"component"`): si genererebbe il **guscio presentazionale** — wrapper, spacing, allineamento, background, matrice varianti — mentre restano **sempre scritti a mano**: la **composizione interna** (quali componenti, in che ordine: è struttura, non stile); lo **schema Zod** e i campi editor (`puck-components` è proprietario dichiarato di `schemaVersion`, e il contratto authoring↔render non può essere output di una pipeline, AD-6); la **classificazione structure/content** (CAP-13), che è un **confine di sicurezza** — decide cosa un Cliente può modificare (AD-12) e cosa passa per la sanitizzazione XSS lato server (AD-5), e non è un posto dove si generano decisioni per inferenza, con o senza default fail-safe; la distinzione tra **contenuto d'esempio e design** (un testo nel mockup Penpot deve diventare il default di un campo editabile, non finire nel codice). **Riaprire quando** Epic 2 avrà dimostrato che lo schema della ricetta regge su componenti composti.
+- **Emitter per una seconda libreria (es. MUI).** Fattibilità dedotta dall'API tema MUI (`theme.components.*.variants`/`styleOverrides`), non eseguita. Riaprire alla prima richiesta concreta di una libreria non shadcn: contratti, sezioni, pagine salvate e core non cambiano; servono token rigenerati per il nuovo target e un adapter per componente (AD-11). *(Sostituisce la voce "Estensione della pipeline ai blocchi Puck", chiusa il 2026-09-12 da AD-5/AD-11: le sezioni sono definizioni di dati estratte da Penpot, i blocchi di layout sono a soli token.)*
