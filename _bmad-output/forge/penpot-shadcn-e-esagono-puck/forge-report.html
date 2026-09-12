@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forge — Penpot shadcn + esagono Puck</title>
+<style>
+  :root{--bg:#f6f3ee;--paper:#fffdf9;--ink:#1c1917;--muted:#6b635b;--line:#e4ddd2;--wax:#9b1c1c;--wax2:#7f1d1d;--ok:#166534;--kill:#9a3412}
+  @media (prefers-color-scheme:dark){:root{--bg:#171412;--paper:#1f1b18;--ink:#f3eee7;--muted:#a89f95;--line:#3a332d;--ok:#4ade80;--kill:#fb923c}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 Georgia,"Iowan Old Style",serif;padding:32px 16px}
+  main{max-width:860px;margin:0 auto;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:40px clamp(18px,5vw,56px)}
+  header{display:flex;gap:28px;align-items:center;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:24px}
+  header .t{flex:1;min-width:260px}
+  .kicker{font:600 12px/1 system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  h1{font-size:30px;line-height:1.15;margin:.35em 0 .3em}
+  h2{font:700 13px/1 system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;margin:36px 0 12px;color:var(--muted)}
+  h3{font-size:17px;margin:18px 0 6px}
+  p.lede{color:var(--muted);margin:0}
+  ul{margin:0;padding-left:1.2em} li{margin:.3em 0}
+  code{font:13px ui-monospace,Menlo,monospace;background:rgba(127,127,127,.12);padding:1px 5px;border-radius:3px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+  .card{border:1px solid var(--line);border-radius:6px;padding:14px 16px}
+  .kill li::marker{content:"✕  ";color:var(--kill)}
+  .ok li::marker{content:"✓  ";color:var(--ok)}
+  .risk li::marker{content:"!  ";color:var(--wax)}
+  .cast{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+  .who{display:flex;gap:10px;border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+  .who .i{font-size:22px} .who b{display:block} .who span{color:var(--muted);font-size:13.5px}
+  .tag{font:600 10px/1 system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-left:4px}
+  footer{margin-top:36px;border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:13px}
+  svg.seal{flex:none;width:170px;height:170px;max-width:100%}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <svg class="seal" viewBox="0 0 200 200" role="img" aria-label="Sigillo HARDENED">
+    <defs>
+      <radialGradient id="w" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#c0392b"/><stop offset=".6" stop-color="#9b1c1c"/><stop offset="1" stop-color="#5f1010"/></radialGradient>
+      <path id="arc" d="M100,100 m-66,0 a66,66 0 1,1 132,0 a66,66 0 1,1 -132,0"/>
+    </defs>
+    <path fill="url(#w)" d="M100 8c14 0 18 10 30 13s24-2 31 9 1 21 6 32 16 17 13 30-15 14-19 26 4 23-6 32-21 3-32 9-15 18-28 18-18-11-30-14-24 3-31-8-1-21-7-32-15-17-12-30 15-14 19-26-4-23 6-32 21-3 32-9 14-18 28-18z"/>
+    <circle cx="100" cy="100" r="74" fill="none" stroke="#f5d0c5" stroke-opacity=".55" stroke-width="1.5"/>
+    <circle cx="100" cy="100" r="52" fill="none" stroke="#f5d0c5" stroke-opacity=".55" stroke-width="1"/>
+    <text font-family="system-ui,sans-serif" font-size="11" font-weight="700" letter-spacing="3" fill="#fde8e1"><textPath href="#arc" startOffset="2%">PAGE-BUILDER · FORGE · 2026-09-12 ·</textPath></text>
+    <text x="100" y="96" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#fff4ef" letter-spacing="1">HARDENED</text>
+    <path d="M78 110 l14 12 l30 -28" fill="none" stroke="#fff4ef" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div class="t">
+    <div class="kicker">BMad Forge Idea · esito</div>
+    <h1>Library Penpot shadcn + esagono Puck</h1>
+    <p class="lede">L'idea ha retto. Il page builder possiede un contratto indipendente dalla libreria. Penpot disegna valori e aspetto sugli assi del contratto, e ogni libreria è un adapter generato da una ricetta a token. Il bootstrap via MCP è stato provato dal vivo.</p>
+  </div>
+</header>
+
+<h2>Decisioni bloccate</h2>
+<div class="grid">
+  <div class="card"><h3>Esagono</h3><ul>
+    <li>Il contratto (assi, valori, parti) lo possiede il page builder; Penpot decide valori e aspetto. <b>Riscrive AD-11.</b></li>
+    <li>Package <code>contracts</code> senza dipendenze da React/Puck/shadcn. <b>Riscrive AD-5.</b></li>
+    <li>Una libreria per installazione, scelta a build time.</li>
+    <li>Tipi di asse dichiarati nel contratto: <code>option</code> · <code>state</code> · <code>behavior</code>.</li>
+  </ul></div>
+  <div class="card"><h3>Pipeline</h3><ul>
+    <li>Ricetta: lista di parti a profondità 1, celle <b>proprietà → token</b>.</li>
+    <li>Un emitter per libreria + una tabella di binding per componente.</li>
+    <li>Legame con il contratto: plugin data sul VariantContainer, nome come controllo incrociato.</li>
+    <li>Pass/fail negli script, mai nel prompt delle skill.</li>
+    <li>Skill Penpot: bootstrap una tantum, poi solo additiva.</li>
+  </ul></div>
+  <div class="card"><h3>Sezioni e layout</h3><ul>
+    <li>Sezione = albero di dati estratto da Penpot, composto solo di istanze.</li>
+    <li>Rigida per default, aperta solo negli slot dichiarati.</li>
+    <li>Box è solo visivo; Flex/Grid dispongono i figli; solo token.</li>
+    <li>Hero/Section diventano definizioni di sezione.</li>
+    <li>Componenti complessi: contratto vero, segnaposto Penpot, adapter a mano.</li>
+  </ul></div>
+  <div class="card"><h3>Sequenza A</h3><ul>
+    <li>Contratti (Badge, Input, Accordion)</li>
+    <li>→ nuova library Penpot disegnata su quei contratti</li>
+    <li>→ estrazione con la 2.2 adeguata</li>
+    <li>→ 2.3 su input definitivi</li>
+  </ul></div>
+</div>
+
+<h2>Scartate</h2>
+<div class="card kill"><ul>
+  <li><b>2.3 subito sulla library attuale</b>: input da buttare (<code>colorStyle</code>, varianti identiche) e test sull'Accordion da rifare due volte.</li>
+  <li><b>Sincronizzazione ricorrente codice → Penpot</b>: due sorgenti, conflitto su chi vince che non si può risolvere.</li>
+  <li><b>Tipo dell'asse dichiarato in Penpot</b>: rimette la proprietà del contratto a Penpot.</li>
+  <li><b>Hero/Section come blocchi generici + preset</b>: due modi per fare la stessa cosa.</li>
+  <li><b>Celle della ricetta in classi Tailwind</b>: legano la ricetta a una sola libreria.</li>
+</ul></div>
+
+<h2>Verificato sotto pressione</h2>
+<div class="card ok"><ul>
+  <li><b>Badge</b>: 12 token, 6 varianti, nessun <code>variantError</code>, binding attivi, <code>switchVariant</code> su un'istanza funzionante.</li>
+  <li><b>AccordionItem</b>: parti a un livello; tra closed e open cambia solo il comportamento. Il criterio di stop era mal formulato, non violato.</li>
+  <li><b>Input</b>: gli stati cambiano lo stile ma diventano pseudo-classi CSS, non props.</li>
+  <li><b>Puck 0.22.4</b>: permessi per componente e <code>readOnly</code> per prop coprono le sezioni rigide; il massimo negli slot va imposto a mano.</li>
+</ul></div>
+
+<h2>Punti deboli che restano</h2>
+<div class="card risk"><ul>
+  <li>Adeguare <code>RecipeSchema</code> tocca codice in main con più di 74 test.</li>
+  <li>Emitter MUI non provato: la fattibilità viene dall'API dei temi MUI, non da un'esecuzione.</li>
+  <li>L'anello di focus non ha token: il bootstrap deve creare anche i token per le ombre.</li>
+  <li>BMad Builder da installare prima del modulo <code>penpot-ds</code>.</li>
+</ul></div>
+
+<h2>Chi l'ha messa sotto pressione</h2>
+<div class="cast">
+  <div class="who"><div class="i">🏗️</div><div><b>Winston <span class="tag">agente</span></b><span>«Prova su un componente vero, uno solo.» Ha spinto a fare le prove prima di rifinire.</span></div></div>
+  <div class="who"><div class="i">🎨</div><div><b>Sally <span class="tag">agente</span></b><span>Ha difeso il designer: un Box troppo povero rende la regola impossibile da rispettare.</span></div></div>
+  <div class="who"><div class="i">💻</div><div><b>Amelia <span class="tag">agente</span></b><span>«Il costo lo paghi adesso oppure mai», sul cambio di formato della ricetta.</span></div></div>
+  <div class="who"><div class="i">🧑‍🔧</div><div><b>Ilaria <span class="tag">designer Penpot</span></b><span>Che l'API crei le varianti non vuol dire che il risultato si possa usare.</span></div></div>
+  <div class="who"><div class="i">🕵️</div><div><b>Marco <span class="tag">manutentore</span></b><span>Il plugin data duplicato non si vede: nasce il controllo sui duplicati.</span></div></div>
+  <div class="who"><div class="i">⚖️</div><div><b>Renata <span class="tag">auditor retro</span></b><span>Riscrivere il criterio di stop dopo averlo visto non scattare sposta la porta: deve poter fallire davvero.</span></div></div>
+  <div class="who"><div class="i">🧾</div><div><b>Dario <span class="tag">sviluppatore erede</span></b><span>Ogni prop "custom" di Box è una pagina salvata che resta indietro al primo cambio di tema.</span></div></div>
+  <div class="who"><div class="i">🎬</div><div><b>Giulia <span class="tag">sviluppatrice 3D</span></b><span>Dentro la pipeline, un visualizzatore 3D trasforma la ricetta in configurazione della scena.</span></div></div>
+</div>
+
+<footer>Sorgenti: <code>.memlog.md</code> (lista completa) · <code>forged-idea.md</code> (input per il correct-course). Prove Penpot in "Nuovo File 4". Prossimo passo: <code>bmad-correct-course</code>.</footer>
+</main>
+</body>
+</html>
