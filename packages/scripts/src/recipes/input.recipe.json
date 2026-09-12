@@ -1,0 +1,101 @@
+{
+  "componentName": "Input",
+  "parts": {
+    "root": {
+      "state=disabled": {
+        "borderRadiusBottomRight": "radius.md",
+        "strokeColor": "color.border",
+        "fill": "color.background",
+        "borderRadiusTopRight": "radius.md",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.2",
+        "strokeWidth": "border-width.default",
+        "paddingLeft": "spacing.3",
+        "opacity": "opacity.disabled",
+        "paddingBottom": "spacing.2",
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusTopLeft": "radius.md"
+      },
+      "state=error": {
+        "borderRadiusBottomRight": "radius.md",
+        "strokeColor": "color.destructive",
+        "fill": "color.background",
+        "borderRadiusTopRight": "radius.md",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.2",
+        "strokeWidth": "border-width.default",
+        "paddingLeft": "spacing.3",
+        "paddingBottom": "spacing.2",
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusTopLeft": "radius.md"
+      },
+      "state=focus": {
+        "borderRadiusBottomRight": "radius.md",
+        "strokeColor": "color.ring",
+        "fill": "color.background",
+        "borderRadiusTopRight": "radius.md",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.2",
+        "strokeWidth": "border-width.default",
+        "paddingLeft": "spacing.3",
+        "paddingBottom": "spacing.2",
+        "shadow": "shadow.ring",
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusTopLeft": "radius.md"
+      },
+      "state=default": {
+        "borderRadiusBottomRight": "radius.md",
+        "strokeColor": "color.border",
+        "fill": "color.background",
+        "borderRadiusTopRight": "radius.md",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.2",
+        "strokeWidth": "border-width.default",
+        "paddingLeft": "spacing.3",
+        "paddingBottom": "spacing.2",
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusTopLeft": "radius.md"
+      }
+    },
+    "placeholder": {
+      "state=disabled": {
+        "fill": "color.muted-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.regular",
+        "letterSpacing": "tracking.none"
+      },
+      "state=error": {
+        "fill": "color.muted-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.regular",
+        "letterSpacing": "tracking.none"
+      },
+      "state=focus": {
+        "fill": "color.muted-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.regular",
+        "letterSpacing": "tracking.none"
+      },
+      "state=default": {
+        "fill": "color.muted-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.regular",
+        "letterSpacing": "tracking.none"
+      }
+    }
+  },
+  "judgment": {
+    "domain": "inputs",
+    "headless": null,
+    "a11y": {
+      "role": null,
+      "ariaAttributes": [
+        "aria-invalid"
+      ],
+      "focusVisible": true,
+      "stateConveyedByTextAndColor": false
+    }
+  },
+  "penpotComponentId": "062d2e96-d208-8096-8008-a0a467a00e5a",
+  "fixtureHash": "4c74af97e6a4"
+}

@@ -1,0 +1,120 @@
+{
+  "componentName": "AccordionItem",
+  "parts": {
+    "root": {
+      "state=open": {
+        "fill": "color.card",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusBottomLeft": "radius.md"
+      },
+      "state=closed": {
+        "fill": "color.card",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusBottomLeft": "radius.md"
+      }
+    },
+    "trigger": {
+      "state=open": {
+        "paddingTop": "spacing.3",
+        "paddingBottom": "spacing.3",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "columnGap": "spacing.2"
+      },
+      "state=closed": {
+        "paddingTop": "spacing.3",
+        "paddingBottom": "spacing.3",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "columnGap": "spacing.2"
+      }
+    },
+    "label": {
+      "state=open": {
+        "fill": "color.foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "state=closed": {
+        "fill": "color.foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      }
+    },
+    "chevron": {
+      "state=open": {
+        "strokeColor": "color.foreground",
+        "strokeWidth": "border-width.default"
+      },
+      "state=closed": {
+        "strokeColor": "color.foreground",
+        "strokeWidth": "border-width.default"
+      }
+    },
+    "content": {
+      "state=open": {
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingBottom": "spacing.4"
+      },
+      "state=closed": {
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingBottom": "spacing.4"
+      }
+    },
+    "body": {
+      "state=open": {
+        "fill": "color.muted-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.regular",
+        "letterSpacing": "tracking.none"
+      },
+      "state=closed": {
+        "fill": "color.muted-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.regular",
+        "letterSpacing": "tracking.none"
+      }
+    },
+    "divider": {
+      "state=open": {
+        "strokeColor": "color.border",
+        "strokeWidth": "border-width.default"
+      },
+      "state=closed": {
+        "strokeColor": "color.border",
+        "strokeWidth": "border-width.default"
+      }
+    }
+  },
+  "judgment": {
+    "domain": "layout",
+    "headless": {
+      "package": "@radix-ui/react-accordion",
+      "parts": [
+        "Item",
+        "Trigger",
+        "Content"
+      ]
+    },
+    "a11y": {
+      "role": null,
+      "ariaAttributes": [
+        "aria-expanded",
+        "aria-controls"
+      ],
+      "focusVisible": true,
+      "stateConveyedByTextAndColor": false
+    },
+    "comment": "headless.parts elenca i COMPONENTI di @radix-ui/react-accordion (Item, Trigger, Content), non le parti del contratto (root, trigger, label, chevron, content, body, divider): campi diversi per costruzione."
+  },
+  "penpotComponentId": "062d2e96-d208-8096-8008-a0a47165506d",
+  "fixtureHash": "4c74af97e6a4"
+}

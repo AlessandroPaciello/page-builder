@@ -1,29 +1,80 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { readComponentFixture } from "./component-reader";
+import { componentFixtureFromSnapshot, contractByName } from "./component-reader";
+import { parseLibrarySnapshot, readLibrarySnapshot } from "./library/library-reader";
+import type { LibrarySnapshot } from "./library/library-snapshot";
+import {
+  FixtureSchema,
+  JudgmentSchema,
+  cellKeyOf,
+  partBindings,
+  type ComponentJudgment,
+  type ComponentFixture,
+  type ComponentRecipe,
+} from "./recipe-schema";
 import { fixtureHash, type TokenCatalog } from "./theme-generator";
 import { validateRecipe } from "./validate-recipe";
-import { FixtureSchema } from "./recipe-schema";
 
 /**
- * Entry CLI Stage 2 per componente (Story 2.2, Task 3):
+ * Entry CLI Stage 2 per componente (Story 2.5):
  *
- *   extract:component -- <ComponentName>   estrazione LIVE da Penpot, scrive <comp>.fixture.json
- *   validate:recipe    -- <ComponentName>  offline: rigira validateRecipe su fixture+ricetta committati
+ *   extract:component -- <ComponentName> [--snapshot <path>]
+ *     estrazione da library live (o da snapshot file, seam offline): scrive
+ *     <comp>.fixture.json (fatti: plugin data + shape.tokens) E
+ *     <comp>.recipe.json (celle dai binding + giudizio dal file per
+ *     contratto + provenienza). Gate PRIMA delle write, e write della coppia
+ *     ATOMICA (rollback della fixture se la ricetta fallisce): un fallimento
+ *     lascia zero artefatti.
+ *   validate:recipe    -- <ComponentName>
+ *     offline: conformance della coppia committata contro il contratto +
+ *     gate token Stadio 1 + provenienza.
  *
  * Entrambi i comandi sono per-componente e su richiesta, MAI in CI né in
  * build (AC #1): nessuno dei due entra in turbo.json come task cacheable.
- * `validate:recipe` diventerà un gate CI in Story 2.3 — non wire-arlo qui.
  */
 
 const here = dirname(fileURLToPath(import.meta.url));
 const recipesDir = resolve(here, "recipes");
+const judgmentsDir = resolve(recipesDir, "judgments");
 const catalogFixturePath = resolve(here, "__fixtures__/penpot-catalog.json");
 
 function loadCatalogFixture(): TokenCatalog {
   return JSON.parse(readFileSync(catalogFixturePath, "utf8")) as TokenCatalog;
+}
+
+/**
+ * Seam `--snapshot <path>`: il file viene validato ALLA FONTE con
+ * `parseLibrarySnapshot` (review loop 1, BH#4+ECH#3) — un JSON valido che
+ * non è uno snapshot produce un errore che nomina il campo malformato, mai
+ * un TypeError grezzo a valle.
+ */
+function loadSnapshotFile(path: string): LibrarySnapshot {
+  let json: unknown;
+  try {
+    json = JSON.parse(readFileSync(path, "utf8"));
+  } catch (error) {
+    throw new Error(`Il file snapshot "${path}" non è JSON leggibile: ${(error as Error).message}`);
+  }
+  try {
+    return parseLibrarySnapshot(json);
+  } catch (error) {
+    throw new Error(`Il file snapshot "${path}" non è uno snapshot di library valido: ${(error as Error).message}`);
+  }
+}
+
+function loadJudgment(contractName: string): ComponentJudgment {
+  const path = resolve(judgmentsDir, `${contractName}.json`);
+  if (!existsSync(path)) {
+    throw new Error(`File di giudizio non trovato per il contratto "${contractName}": ${path} — scrivilo a mano (domain, headless, a11y).`);
+  }
+  const parsed = JudgmentSchema.safeParse(JSON.parse(readFileSync(path, "utf8")));
+  if (!parsed.success) {
+    const issues = parsed.error.issues.map((issue) => `${issue.path.map(String).join(".") || "<root>"}: ${issue.message}`);
+    throw new Error(`File di giudizio malformato per il contratto "${contractName}" (${path}):\n${issues.join("\n")}`);
+  }
+  return parsed.data;
 }
 
 /** Nome file kebab-case: "LifecycleBadge" → "lifecycle-badge". */
@@ -34,12 +85,12 @@ function toKebab(name: string): string {
     .toLowerCase();
 }
 
-function fixturePathFor(componentName: string): string {
-  return resolve(recipesDir, `${toKebab(componentName)}.fixture.json`);
+function fixturePathFor(componentName: string, dir: string): string {
+  return resolve(dir, `${toKebab(componentName)}.fixture.json`);
 }
 
-function recipePathFor(componentName: string): string {
-  return resolve(recipesDir, `${toKebab(componentName)}.recipe.json`);
+function recipePathFor(componentName: string, dir: string): string {
+  return resolve(dir, `${toKebab(componentName)}.recipe.json`);
 }
 
 function writeAtomic(filePath: string, content: string): void {
@@ -53,7 +104,11 @@ function scriptNameFor(mode: "extract" | "validate"): string {
   return mode === "extract" ? "extract:component" : "validate:recipe";
 }
 
-export function parseArgs(args: readonly string[]): { mode: "extract" | "validate"; componentName: string } {
+export function parseArgs(args: readonly string[]): {
+  mode: "extract" | "validate";
+  componentName: string;
+  snapshotPath?: string;
+} {
   // pnpm inoltra il separatore "--" fra script e argomenti: va rimosso, non è un flag.
   const [mode, componentName, ...rest] = args.filter((arg) => arg !== "--");
   if (mode !== "extract" && mode !== "validate") {
@@ -64,43 +119,150 @@ export function parseArgs(args: readonly string[]): { mode: "extract" | "validat
   if (!componentName || componentName.startsWith("--")) {
     throw new Error(`Nome componente mancante — usare: pnpm ${scriptNameFor(mode)} -- <Nome>.`);
   }
-  if (rest.length > 0) {
-    throw new Error(`Argomenti non riconosciuti: ${rest.join(", ")} — usare: pnpm ${scriptNameFor(mode)} -- <Nome>.`);
+  let snapshotPath: string | undefined;
+  for (let index = 0; index < rest.length; index++) {
+    const arg = rest[index];
+    if (arg === "--snapshot") {
+      const value = rest[index + 1];
+      if (!value || value.startsWith("--")) {
+        throw new Error("Opzione --snapshot richiede un percorso file.");
+      }
+      // Un solo snapshot per run (review loop 1, ECH#4): l'ultimo che vince
+      // in silenzio nasconderebbe la sorgente reale dei fatti.
+      if (snapshotPath !== undefined) {
+        throw new Error(`Opzione --snapshot duplicata ("${snapshotPath}" e "${value}") — un solo snapshot per estrazione.`);
+      }
+      snapshotPath = value;
+      index++;
+    } else {
+      throw new Error(`Argomenti non riconosciuti: ${rest.join(", ")} — usare: pnpm ${scriptNameFor(mode)} -- <Nome> [--snapshot <path>].`);
+    }
   }
-  return { mode, componentName };
+  if (snapshotPath !== undefined && mode === "validate") {
+    throw new Error("--snapshot è valido solo su extract: validate:recipe è già offline (legge i file committati).");
+  }
+  return { mode, componentName, snapshotPath };
 }
 
-async function extract(componentName: string): Promise<void> {
-  // Sempre live (nessun default offline): l'estrazione è per-componente e su
-  // richiesta, mai batch/CI (AC #1). Il vocabolario per il binding, invece,
-  // è SEMPRE la fixture Stadio 1 committata: provenienza deterministica — la
-  // stessa estrazione contro lo stesso catalogo committato produce la stessa
-  // fixture, e un drift Penpot↔fixture emerge nel diff della fixture scritta.
+/**
+ * Ricetta dai fatti: celle `proprietà → token` per parte × valore d'asse
+ * derivate dai binding della fixture, giudizio dal file per contratto,
+ * provenienza riregistrata. La fattorizzazione (quali layer sono parti) è
+ * già nel contratto; il giudizio committato resta domain/headless/a11y.
+ */
+export function buildRecipe(
+  fixture: ComponentFixture,
+  catalog: TokenCatalog,
+  judgment: ComponentJudgment,
+): ComponentRecipe {
+  const contractName = fixture.contract.split("@")[0]!;
+  const contract = contractByName(contractName);
+  if (contract === undefined) {
+    throw new Error(
+      `Il plugin data della fixture dichiara il contratto "${fixture.contract}", che non esiste in @app/contracts.`,
+    );
+  }
+
+  const parts: ComponentRecipe["parts"] = {};
+  for (const part of contract.parts) parts[part] = {};
+
+  const seenKeys = new Set<string>();
+  for (const cell of fixture.cells) {
+    const key = cellKeyOf(contract.axes, cell.variantProps);
+    if (seenKeys.has(key)) {
+      throw new Error(`Cella duplicata "${key}" nella fixture di "${fixture.componentName}" — il prodotto cartesiano non ha duplicati.`);
+    }
+    seenKeys.add(key);
+    const { bindings, duplicates } = partBindings(cell.root);
+    // Un binding su un layer che non è una parte del contratto, o una parte
+    // portata da più layer, è un segnale di stop: si segnala, non si corregge.
+    if (duplicates.length > 0) {
+      throw new Error(
+        `Cella "${key}": due layer chiamati "${duplicates.join(", ")}" hanno binding token — ambiguo quale sia la parte: rinomina i layer in Penpot.`,
+      );
+    }
+    for (const [bindingPart, tokens] of bindings) {
+      if (!contract.parts.includes(bindingPart)) {
+        throw new Error(
+          `Cella "${key}": il layer "${bindingPart}" ha binding token (${Object.keys(tokens).join(", ")}) ma non è una parte del contratto "${contract.name}" — l'estrazione segnala, non corregge: allinea la library o il contratto.`,
+        );
+      }
+      parts[bindingPart]![key] = tokens;
+    }
+    // Ogni parte del contratto copre OGNI cella del prodotto cartesiano,
+    // anche quando nella cella non ha binding (celle vuote).
+    for (const part of contract.parts) {
+      if (!(key in parts[part]!)) parts[part]![key] = {};
+    }
+  }
+
+  return {
+    componentName: fixture.componentName,
+    parts,
+    judgment,
+    penpotComponentId: fixture.penpotComponentId,
+    fixtureHash: fixtureHash(catalog),
+  };
+}
+
+export interface ExtractOptions {
+  /** Seam offline: legge lo snapshot da file invece che da Penpot live. */
+  snapshotPath?: string;
+  /** Destinazione degli artefatti; default `src/recipes`. Seam per i test end-to-end. */
+  recipesDir?: string;
+}
+
+export async function extract(
+  componentName: string,
+  options: ExtractOptions = {},
+): Promise<{ fixturePath: string; recipePath: string }> {
+  // Il vocabolario per la validazione è SEMPRE la fixture Stadio 1
+  // committata: provenienza deterministica. La library, invece, arriva dal
+  // snapshot (live di default, `--snapshot <path>` come seam offline).
   const catalog = loadCatalogFixture();
-  const fixture = await readComponentFixture(componentName, catalog);
-  const parsed = FixtureSchema.parse(fixture);
+  const snapshot = options.snapshotPath !== undefined ? loadSnapshotFile(options.snapshotPath) : await readLibrarySnapshot();
+  const fixture = componentFixtureFromSnapshot(componentName, snapshot);
+  const contractName = fixture.contract.split("@")[0]!;
+  const judgment = loadJudgment(contractName);
+  const recipe = buildRecipe(fixture, catalog, judgment);
 
-  mkdirSync(recipesDir, { recursive: true });
-  const path = fixturePathFor(parsed.componentName);
-  writeAtomic(path, `${JSON.stringify(parsed, null, 2)}\n`);
+  // Gate PRIMA di qualsiasi scrittura: un fallimento lascia zero artefatti.
+  const result = validateRecipe(fixture, recipe, catalog, judgment);
+  if (!result.valid) {
+    throw new Error(`La ricetta assemblata per "${fixture.componentName}" non è conforme:\n${result.errors.join("\n")}`);
+  }
 
-  console.log(`Fixture scritta: ${path}`);
-  console.log(`Celle lette: ${parsed.cells.length} (incluse le Default, variantProps null)`);
-  console.log(`Provenienza per la ricetta (scrivi a mano ${recipePathFor(parsed.componentName)}):`);
-  console.log(`  "penpotComponentId": "${parsed.penpotComponentId}"`);
-  console.log(`  "fixtureHash": "${fixtureHash(catalog)}"`);
-  console.log("La ricetta è un artefatto di giudizio: scrivila a mano, poi valida con validate:recipe.");
+  const outDir = options.recipesDir ?? recipesDir;
+  mkdirSync(outDir, { recursive: true });
+  const fixturePath = fixturePathFor(fixture.componentName, outDir);
+  const recipePath = recipePathFor(fixture.componentName, outDir);
+  // Write della coppia ATOMICO (review loop 1, BH#5+ECH#5): due write
+  // indipendenti lascerebbero una fixture orfana se il secondo fallisce —
+  // qui il rollback della fixture ripristina "zero artefatti".
+  writeAtomic(fixturePath, `${JSON.stringify(fixture, null, 2)}\n`);
+  try {
+    writeAtomic(recipePath, `${JSON.stringify(recipe, null, 2)}\n`);
+  } catch (error) {
+    rmSync(fixturePath, { force: true });
+    throw error;
+  }
+
+  console.log(`Fixture scritta: ${fixturePath}`);
+  console.log(`Ricetta scritta: ${recipePath}`);
+  console.log(`Contratto: ${fixture.contract} — celle: ${fixture.cells.length} (prodotto cartesiano completo).`);
+  console.log(`Provenienza: penpotComponentId=${fixture.penpotComponentId} fixtureHash=${fixtureHash(catalog)}`);
+  return { fixturePath, recipePath };
 }
 
 function validate(componentName: string): void {
-  const fixturePath = fixturePathFor(componentName);
-  const recipePath = recipePathFor(componentName);
+  const fixturePath = fixturePathFor(componentName, recipesDir);
+  const recipePath = recipePathFor(componentName, recipesDir);
   for (const [label, path] of [
     ["fixture", fixturePath],
     ["ricetta", recipePath],
   ] as const) {
     if (!existsSync(path)) {
-      throw new Error(`File ${label} non trovato per "${componentName}": ${path} — estrai prima con extract:component (fixture) o scrivi la ricetta a mano.`);
+      throw new Error(`File ${label} non trovato per "${componentName}": ${path} — estrai prima con extract:component (fixture e ricetta).`);
     }
   }
 
@@ -130,7 +292,7 @@ function validate(componentName: string): void {
     provenanceErrors.push(`penpotComponentId "${recipe.penpotComponentId}" ≠ fixture "${fixture.penpotComponentId}"`);
   }
   if (recipe.fixtureHash !== fixtureHash(catalog)) {
-    provenanceErrors.push(`fixtureHash "${recipe.fixtureHash}" ≠ catalogo Stadio 1 corrente "${fixtureHash(catalog)}" — rigenera/riautora la ricetta (drift del vocabolario token).`);
+    provenanceErrors.push(`fixtureHash "${recipe.fixtureHash}" ≠ catalogo Stadio 1 corrente "${fixtureHash(catalog)}" — riestrai il componente (drift del vocabolario token).`);
   }
   if (provenanceErrors.length > 0) {
     console.error(`Provenienza della ricetta non allineata: ${provenanceErrors.join("; ")}`);
@@ -138,9 +300,10 @@ function validate(componentName: string): void {
     return;
   }
 
-  const result = validateRecipe(recipeJson, catalog);
+  const judgment = loadJudgment(fixture.contract.split("@")[0]!);
+  const result = validateRecipe(fixtureJson, recipeJson, catalog, judgment);
   if (result.valid) {
-    console.log(`Ricetta "${componentName}" VALIDA: schema ok, tutte le classi cva risolte al vocabolario Stadio 1.`);
+    console.log(`Ricetta "${componentName}" VALIDA: conformance al contratto ${fixture.contract} ok, tutti i token risolti al catalogo Stadio 1.`);
   } else {
     for (const error of result.errors) console.error(`✗ ${error}`);
     process.exitCode = 1;
@@ -148,9 +311,9 @@ function validate(componentName: string): void {
 }
 
 async function main(): Promise<void> {
-  const { mode, componentName } = parseArgs(process.argv.slice(2));
+  const { mode, componentName, snapshotPath } = parseArgs(process.argv.slice(2));
   if (mode === "extract") {
-    await extract(componentName);
+    await extract(componentName, { snapshotPath });
   } else {
     validate(componentName);
   }

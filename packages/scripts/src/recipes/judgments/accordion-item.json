@@ -1,0 +1,14 @@
+{
+  "domain": "layout",
+  "headless": {
+    "package": "@radix-ui/react-accordion",
+    "parts": ["Item", "Trigger", "Content"]
+  },
+  "a11y": {
+    "role": null,
+    "ariaAttributes": ["aria-expanded", "aria-controls"],
+    "focusVisible": true,
+    "stateConveyedByTextAndColor": false
+  },
+  "comment": "headless.parts elenca i COMPONENTI di @radix-ui/react-accordion (Item, Trigger, Content), non le parti del contratto (root, trigger, label, chevron, content, body, divider): campi diversi per costruzione."
+}

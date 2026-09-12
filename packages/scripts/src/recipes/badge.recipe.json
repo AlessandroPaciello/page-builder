@@ -1,35 +1,123 @@
 {
   "componentName": "Badge",
-  "domain": "data-display",
-  "headless": null,
-  "cva": {
-    "base": ["inline-flex", "items-center", "rounded-full"],
-    "variants": {
-      "colorStyle": {
-        "indigo-solid": ["bg-mis-primary-light", "text-mis-primary-dark"],
-        "indigo-soft": ["bg-mis-surface-tint", "text-mis-primary"],
-        "indigo-outline": ["border", "border-mis-primary", "text-mis-primary"],
-        "green-solid": ["bg-mis-primary-light", "text-mis-primary-dark"],
-        "green-soft": ["bg-mis-surface-tint", "text-mis-primary"],
-        "green-outline": ["border", "border-mis-primary", "text-mis-primary"],
-        "gray-solid": ["bg-mis-text-muted", "text-mis-surface-raised"],
-        "gray-soft": ["bg-mis-surface-soft", "text-mis-text"],
-        "gray-outline": ["border", "border-gray-6", "text-mis-text"],
-        "red-solid": ["bg-feedback-error-container", "text-feedback-error-on-container"],
-        "red-soft": ["bg-feedback-error-container", "text-feedback-error"],
-        "red-outline": ["border", "border-feedback-error", "text-feedback-error"]
+  "parts": {
+    "root": {
+      "variant=destructive|size=md": {
+        "borderRadiusBottomRight": "radius.full",
+        "fill": "color.destructive",
+        "borderRadiusTopRight": "radius.full",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.1",
+        "paddingLeft": "spacing.3",
+        "paddingBottom": "spacing.1",
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusTopLeft": "radius.full"
+      },
+      "variant=destructive|size=sm": {
+        "borderRadiusBottomRight": "radius.full",
+        "fill": "color.destructive",
+        "borderRadiusTopRight": "radius.full",
+        "paddingRight": "spacing.2",
+        "paddingTop": "spacing.1",
+        "paddingLeft": "spacing.2",
+        "paddingBottom": "spacing.1",
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusTopLeft": "radius.full"
+      },
+      "variant=secondary|size=md": {
+        "borderRadiusBottomRight": "radius.full",
+        "fill": "color.secondary",
+        "borderRadiusTopRight": "radius.full",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.1",
+        "paddingLeft": "spacing.3",
+        "paddingBottom": "spacing.1",
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusTopLeft": "radius.full"
+      },
+      "variant=secondary|size=sm": {
+        "borderRadiusBottomRight": "radius.full",
+        "fill": "color.secondary",
+        "borderRadiusTopRight": "radius.full",
+        "paddingRight": "spacing.2",
+        "paddingTop": "spacing.1",
+        "paddingLeft": "spacing.2",
+        "paddingBottom": "spacing.1",
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusTopLeft": "radius.full"
+      },
+      "variant=default|size=md": {
+        "borderRadiusBottomRight": "radius.full",
+        "fill": "color.primary",
+        "borderRadiusTopRight": "radius.full",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.1",
+        "paddingLeft": "spacing.3",
+        "paddingBottom": "spacing.1",
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusTopLeft": "radius.full"
+      },
+      "variant=default|size=sm": {
+        "borderRadiusBottomRight": "radius.full",
+        "fill": "color.primary",
+        "borderRadiusTopRight": "radius.full",
+        "paddingRight": "spacing.2",
+        "paddingTop": "spacing.1",
+        "paddingLeft": "spacing.2",
+        "paddingBottom": "spacing.1",
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusTopLeft": "radius.full"
       }
     },
-    "defaultVariants": {
-      "colorStyle": "green-solid"
+    "label": {
+      "variant=destructive|size=md": {
+        "fill": "color.destructive-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "variant=destructive|size=sm": {
+        "fill": "color.destructive-foreground",
+        "fontSize": "text.xs",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "variant=secondary|size=md": {
+        "fill": "color.secondary-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "variant=secondary|size=sm": {
+        "fill": "color.secondary-foreground",
+        "fontSize": "text.xs",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "variant=default|size=md": {
+        "fill": "color.primary-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "variant=default|size=sm": {
+        "fill": "color.primary-foreground",
+        "fontSize": "text.xs",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      }
     }
   },
-  "a11y": {
-    "role": null,
-    "ariaAttributes": [],
-    "focusVisible": false,
-    "stateConveyedByTextAndColor": false
+  "judgment": {
+    "domain": "data-display",
+    "headless": null,
+    "a11y": {
+      "role": null,
+      "ariaAttributes": [],
+      "focusVisible": false,
+      "stateConveyedByTextAndColor": false
+    }
   },
-  "penpotComponentId": "a0e49680-ec36-8090-8007-bf9d64f75774",
-  "fixtureHash": "4e8b8bb772ad"
+  "penpotComponentId": "062d2e96-d208-8096-8008-a0a45aefa682",
+  "fixtureHash": "4c74af97e6a4"
 }

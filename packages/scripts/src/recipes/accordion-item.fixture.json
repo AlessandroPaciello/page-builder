@@ -1,0 +1,258 @@
+{
+  "componentName": "AccordionItem",
+  "contract": "accordion-item@1",
+  "penpotComponentId": "062d2e96-d208-8096-8008-a0a47165506d",
+  "axes": [
+    {
+      "name": "state",
+      "values": [
+        "closed",
+        "open"
+      ]
+    }
+  ],
+  "cells": [
+    {
+      "variantProps": {
+        "state": "open"
+      },
+      "root": {
+        "name": "AccordionItem",
+        "kind": "board",
+        "tokens": {
+          "fill": "color.card",
+          "borderRadiusTopLeft": "radius.md",
+          "borderRadiusTopRight": "radius.md",
+          "borderRadiusBottomRight": "radius.md",
+          "borderRadiusBottomLeft": "radius.md"
+        },
+        "style": {
+          "fill": [
+            "#ffffff"
+          ],
+          "borderRadiusTopLeft": 8,
+          "borderRadiusTopRight": 8,
+          "borderRadiusBottomRight": 8,
+          "borderRadiusBottomLeft": 8
+        },
+        "children": [
+          {
+            "name": "trigger",
+            "kind": "board",
+            "tokens": {
+              "paddingTop": "spacing.3",
+              "paddingBottom": "spacing.3",
+              "paddingLeft": "spacing.4",
+              "paddingRight": "spacing.4",
+              "columnGap": "spacing.2"
+            },
+            "style": {},
+            "children": [
+              {
+                "name": "label",
+                "kind": "text",
+                "tokens": {
+                  "fill": "color.foreground",
+                  "fontSize": "text.sm",
+                  "fontWeight": "font-weight.medium",
+                  "letterSpacing": "tracking.none"
+                },
+                "style": {
+                  "fill": [
+                    "#1a1c1c"
+                  ],
+                  "fontSize": "14",
+                  "fontWeight": "500",
+                  "letterSpacing": "0"
+                },
+                "children": []
+              },
+              {
+                "name": "chevron",
+                "kind": "path",
+                "tokens": {
+                  "strokeColor": "color.foreground",
+                  "strokeWidth": "border-width.default"
+                },
+                "style": {
+                  "strokeColor": [
+                    "#1a1c1c"
+                  ],
+                  "strokeWidth": 1
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "name": "content",
+            "kind": "board",
+            "tokens": {
+              "paddingLeft": "spacing.4",
+              "paddingRight": "spacing.4",
+              "paddingBottom": "spacing.4"
+            },
+            "style": {},
+            "children": [
+              {
+                "name": "body",
+                "kind": "text",
+                "tokens": {
+                  "fill": "color.muted-foreground",
+                  "fontSize": "text.sm",
+                  "fontWeight": "font-weight.regular",
+                  "letterSpacing": "tracking.none"
+                },
+                "style": {
+                  "fill": [
+                    "#3e4942"
+                  ],
+                  "fontSize": "14",
+                  "fontWeight": "400",
+                  "letterSpacing": "0"
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "name": "divider",
+            "kind": "board",
+            "tokens": {
+              "strokeColor": "color.border",
+              "strokeWidth": "border-width.default"
+            },
+            "style": {
+              "strokeColor": [
+                "#7a8f85"
+              ],
+              "strokeWidth": 1
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "variantProps": {
+        "state": "closed"
+      },
+      "root": {
+        "name": "AccordionItem",
+        "kind": "board",
+        "tokens": {
+          "fill": "color.card",
+          "borderRadiusTopLeft": "radius.md",
+          "borderRadiusTopRight": "radius.md",
+          "borderRadiusBottomRight": "radius.md",
+          "borderRadiusBottomLeft": "radius.md"
+        },
+        "style": {
+          "fill": [
+            "#ffffff"
+          ],
+          "borderRadiusTopLeft": 8,
+          "borderRadiusTopRight": 8,
+          "borderRadiusBottomRight": 8,
+          "borderRadiusBottomLeft": 8
+        },
+        "children": [
+          {
+            "name": "trigger",
+            "kind": "board",
+            "tokens": {
+              "paddingTop": "spacing.3",
+              "paddingBottom": "spacing.3",
+              "paddingLeft": "spacing.4",
+              "paddingRight": "spacing.4",
+              "columnGap": "spacing.2"
+            },
+            "style": {},
+            "children": [
+              {
+                "name": "label",
+                "kind": "text",
+                "tokens": {
+                  "fill": "color.foreground",
+                  "fontSize": "text.sm",
+                  "fontWeight": "font-weight.medium",
+                  "letterSpacing": "tracking.none"
+                },
+                "style": {
+                  "fill": [
+                    "#1a1c1c"
+                  ],
+                  "fontSize": "14",
+                  "fontWeight": "500",
+                  "letterSpacing": "0"
+                },
+                "children": []
+              },
+              {
+                "name": "chevron",
+                "kind": "path",
+                "tokens": {
+                  "strokeColor": "color.foreground",
+                  "strokeWidth": "border-width.default"
+                },
+                "style": {
+                  "strokeColor": [
+                    "#1a1c1c"
+                  ],
+                  "strokeWidth": 1
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "name": "content",
+            "kind": "board",
+            "tokens": {
+              "paddingLeft": "spacing.4",
+              "paddingRight": "spacing.4",
+              "paddingBottom": "spacing.4"
+            },
+            "style": {},
+            "children": [
+              {
+                "name": "body",
+                "kind": "text",
+                "tokens": {
+                  "fill": "color.muted-foreground",
+                  "fontSize": "text.sm",
+                  "fontWeight": "font-weight.regular",
+                  "letterSpacing": "tracking.none"
+                },
+                "style": {
+                  "fill": [
+                    "#3e4942"
+                  ],
+                  "fontSize": "14",
+                  "fontWeight": "400",
+                  "letterSpacing": "0"
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "name": "divider",
+            "kind": "board",
+            "tokens": {
+              "strokeColor": "color.border",
+              "strokeWidth": "border-width.default"
+            },
+            "style": {
+              "strokeColor": [
+                "#7a8f85"
+              ],
+              "strokeWidth": 1
+            },
+            "children": []
+          }
+        ]
+      }
+    }
+  ]
+}

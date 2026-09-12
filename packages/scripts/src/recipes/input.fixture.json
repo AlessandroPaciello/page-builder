@@ -1,0 +1,260 @@
+{
+  "componentName": "Input",
+  "contract": "input@1",
+  "penpotComponentId": "062d2e96-d208-8096-8008-a0a467a00e5a",
+  "axes": [
+    {
+      "name": "state",
+      "values": [
+        "default",
+        "focus",
+        "error",
+        "disabled"
+      ]
+    }
+  ],
+  "cells": [
+    {
+      "variantProps": {
+        "state": "disabled"
+      },
+      "root": {
+        "name": "Input",
+        "kind": "board",
+        "tokens": {
+          "borderRadiusBottomRight": "radius.md",
+          "strokeColor": "color.border",
+          "fill": "color.background",
+          "borderRadiusTopRight": "radius.md",
+          "paddingRight": "spacing.3",
+          "paddingTop": "spacing.2",
+          "strokeWidth": "border-width.default",
+          "paddingLeft": "spacing.3",
+          "opacity": "opacity.disabled",
+          "paddingBottom": "spacing.2",
+          "borderRadiusBottomLeft": "radius.md",
+          "borderRadiusTopLeft": "radius.md"
+        },
+        "style": {
+          "fill": [
+            "#faf4e8"
+          ],
+          "strokeColor": [
+            "#7a8f85"
+          ],
+          "strokeWidth": 1,
+          "borderRadiusTopLeft": 8,
+          "borderRadiusTopRight": 8,
+          "borderRadiusBottomRight": 8,
+          "borderRadiusBottomLeft": 8,
+          "opacity": 0.5
+        },
+        "children": [
+          {
+            "name": "placeholder",
+            "kind": "text",
+            "tokens": {
+              "fill": "color.muted-foreground",
+              "fontSize": "text.sm",
+              "fontWeight": "font-weight.regular",
+              "letterSpacing": "tracking.none"
+            },
+            "style": {
+              "fill": [
+                "#3e4942"
+              ],
+              "fontSize": "14",
+              "fontWeight": "400",
+              "letterSpacing": "0"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "variantProps": {
+        "state": "error"
+      },
+      "root": {
+        "name": "Input",
+        "kind": "board",
+        "tokens": {
+          "borderRadiusBottomRight": "radius.md",
+          "strokeColor": "color.destructive",
+          "fill": "color.background",
+          "borderRadiusTopRight": "radius.md",
+          "paddingRight": "spacing.3",
+          "paddingTop": "spacing.2",
+          "strokeWidth": "border-width.default",
+          "paddingLeft": "spacing.3",
+          "paddingBottom": "spacing.2",
+          "borderRadiusBottomLeft": "radius.md",
+          "borderRadiusTopLeft": "radius.md"
+        },
+        "style": {
+          "fill": [
+            "#faf4e8"
+          ],
+          "strokeColor": [
+            "#ba1a1a"
+          ],
+          "strokeWidth": 1,
+          "borderRadiusTopLeft": 8,
+          "borderRadiusTopRight": 8,
+          "borderRadiusBottomRight": 8,
+          "borderRadiusBottomLeft": 8
+        },
+        "children": [
+          {
+            "name": "placeholder",
+            "kind": "text",
+            "tokens": {
+              "fill": "color.muted-foreground",
+              "fontSize": "text.sm",
+              "fontWeight": "font-weight.regular",
+              "letterSpacing": "tracking.none"
+            },
+            "style": {
+              "fill": [
+                "#3e4942"
+              ],
+              "fontSize": "14",
+              "fontWeight": "400",
+              "letterSpacing": "0"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "variantProps": {
+        "state": "focus"
+      },
+      "root": {
+        "name": "Input",
+        "kind": "board",
+        "tokens": {
+          "borderRadiusBottomRight": "radius.md",
+          "strokeColor": "color.ring",
+          "fill": "color.background",
+          "borderRadiusTopRight": "radius.md",
+          "paddingRight": "spacing.3",
+          "paddingTop": "spacing.2",
+          "strokeWidth": "border-width.default",
+          "paddingLeft": "spacing.3",
+          "paddingBottom": "spacing.2",
+          "shadow": "shadow.ring",
+          "borderRadiusBottomLeft": "radius.md",
+          "borderRadiusTopLeft": "radius.md"
+        },
+        "style": {
+          "fill": [
+            "#faf4e8"
+          ],
+          "strokeColor": [
+            "#006c49"
+          ],
+          "strokeWidth": 1,
+          "borderRadiusTopLeft": 8,
+          "borderRadiusTopRight": 8,
+          "borderRadiusBottomRight": 8,
+          "borderRadiusBottomLeft": 8,
+          "shadow": [
+            {
+              "id": "fbc660ba-15b8-4b2e-96d9-fab8f2eed975",
+              "style": "drop-shadow",
+              "offsetX": 0,
+              "offsetY": 0,
+              "blur": 0,
+              "spread": 3,
+              "hidden": false,
+              "color": {
+                "color": "#006c49",
+                "opacity": 1
+              }
+            }
+          ]
+        },
+        "children": [
+          {
+            "name": "placeholder",
+            "kind": "text",
+            "tokens": {
+              "fill": "color.muted-foreground",
+              "fontSize": "text.sm",
+              "fontWeight": "font-weight.regular",
+              "letterSpacing": "tracking.none"
+            },
+            "style": {
+              "fill": [
+                "#3e4942"
+              ],
+              "fontSize": "14",
+              "fontWeight": "400",
+              "letterSpacing": "0"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "variantProps": {
+        "state": "default"
+      },
+      "root": {
+        "name": "Input",
+        "kind": "board",
+        "tokens": {
+          "borderRadiusBottomRight": "radius.md",
+          "strokeColor": "color.border",
+          "fill": "color.background",
+          "borderRadiusTopRight": "radius.md",
+          "paddingRight": "spacing.3",
+          "paddingTop": "spacing.2",
+          "strokeWidth": "border-width.default",
+          "paddingLeft": "spacing.3",
+          "paddingBottom": "spacing.2",
+          "borderRadiusBottomLeft": "radius.md",
+          "borderRadiusTopLeft": "radius.md"
+        },
+        "style": {
+          "fill": [
+            "#faf4e8"
+          ],
+          "strokeColor": [
+            "#7a8f85"
+          ],
+          "strokeWidth": 1,
+          "borderRadiusTopLeft": 8,
+          "borderRadiusTopRight": 8,
+          "borderRadiusBottomRight": 8,
+          "borderRadiusBottomLeft": 8
+        },
+        "children": [
+          {
+            "name": "placeholder",
+            "kind": "text",
+            "tokens": {
+              "fill": "color.muted-foreground",
+              "fontSize": "text.sm",
+              "fontWeight": "font-weight.regular",
+              "letterSpacing": "tracking.none"
+            },
+            "style": {
+              "fill": [
+                "#3e4942"
+              ],
+              "fontSize": "14",
+              "fontWeight": "400",
+              "letterSpacing": "0"
+            },
+            "children": []
+          }
+        ]
+      }
+    }
+  ]
+}

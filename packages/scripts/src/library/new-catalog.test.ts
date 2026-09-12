@@ -9,13 +9,12 @@ import { generateTheme, type TokenCatalog } from "../theme-generator";
 /**
  * Test sulla NUOVA library (Story 2.4, Task 8, AC #4): la rigenerazione live
  * ha sostituito la fixture con i token semantici shadcn; il generatore non è
- * stato toccato. I test sui nomi `mis` stanno su `legacy-mis-catalog.json`
- * fino alla Story 2.5.
+ * stato toccato. Dalla Story 2.5 è l'unica fixture: la legacy `mis` è stata
+ * cancellata e i test ripuntati (theme-generator.test.ts).
  */
 
 const here = dirname(fileURLToPath(import.meta.url));
 const newFixturePath = resolve(here, "../__fixtures__/penpot-catalog.json");
-const legacyFixturePath = resolve(here, "../__fixtures__/legacy-mis-catalog.json");
 
 function loadFixture(path: string): TokenCatalog {
   return JSON.parse(readFileSync(path, "utf8")) as TokenCatalog;
@@ -33,13 +32,5 @@ describe("generateTheme — nuova library (fixture penpot-catalog.json)", () => 
     const { css, ts } = generateTheme(loadFixture(newFixturePath));
     expect(css).not.toContain("mis-");
     expect(ts).not.toContain("mis-");
-  });
-
-  it("la fixture legacy conserva il vecchio catalogo per i test fino alla 2.5", () => {
-    const legacy = loadFixture(legacyFixturePath);
-    const setNames = legacy.sets.map((set) => set.name);
-    expect(setNames).toContain("mis.color");
-    expect(setNames).toContain("mis.shadow");
-    expect(generateTheme(legacy).css).toContain("--color-mis-border: var(--color-gray-8);");
   });
 });
