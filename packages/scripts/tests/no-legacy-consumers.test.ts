@@ -23,7 +23,9 @@ const LEGACY_TOKEN_PATTERN = /\bmis[-.]/;
 const SOURCE_EXTENSION = /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs|css)$/;
 
 function findLegacyOccurrences(dir: string, acc: Array<{ file: string; line: number; text: string }>): void {
-  if (!existsSync(dir)) return;
+  // Gate fail-closed (lezione retro Epic 1, review 2.4): se la directory
+  // scansionata manca, il test deve fallire loud, non passare a scansione zero.
+  if (!existsSync(dir)) throw new Error(`Directory consumer assente: ${dir} — il gate non può dirsi verde senza scansionare nulla.`);
   for (const entry of readdirSync(dir)) {
     const full = join(dir, entry);
     const stat = statSync(full);

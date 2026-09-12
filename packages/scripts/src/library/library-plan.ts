@@ -146,7 +146,7 @@ function sameValue(a: PenpotTokenValue, b: PenpotTokenValue): boolean {
 }
 
 /** Confronto tollerante sul case per i colori hex (Penpot può restituire lowercase). */
-function sameColorish(a: PenpotTokenValue, b: PenpotTokenValue): boolean {
+export function sameColorish(a: PenpotTokenValue, b: PenpotTokenValue): boolean {
   if (typeof a === "string" && typeof b === "string" && /^#[0-9a-fA-F]{6}$/.test(a) && /^#[0-9a-fA-F]{6}$/.test(b)) {
     return a.toLowerCase() === b.toLowerCase();
   }
@@ -324,7 +324,16 @@ export function planLibrary(input: PlanLibraryInput): LibraryPlanResult {
       }
       for (const axis of contract.axes) {
         const found = component.axesValues[axis.name];
-        if (!found) continue;
+        if (!found) {
+          // Stessa condizione che la regola 4 del verify tratta come errore
+          // (review 2.4): l'additiva la segnala, non la salta in silenzio.
+          differences.push({
+            subject: `container ${containerName}, asse ${axis.name}`,
+            expected: `currentValues per "${axis.name}"`,
+            found: "assente",
+          });
+          continue;
+        }
         const missing = axis.values.filter((value) => !found.includes(value));
         const extra = found.filter((value) => !axis.values.includes(value));
         if (missing.length > 0 || extra.length > 0) {

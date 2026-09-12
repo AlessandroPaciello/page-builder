@@ -80,6 +80,21 @@ const FOREGROUND_PAIRS: readonly [string, string][] = [
   ["color.info-foreground", "color.info"],
 ];
 
+/**
+ * Combinazioni usate DAI DESIGN committati (`designs/*.design.json`) e non
+ * coperte dalle coppie X/X-foreground (decisione della review 2.4, 2° pass):
+ * placeholder dell'Input e body dell'Accordion su background/card, testo su
+ * card, stroke destructive (Input in errore) e ring (focus) su background.
+ * Oggi tutte sopra soglia (verificato 2026-09-12: da 5.9:1 a 17.1:1).
+ */
+const DESIGN_USAGE_PAIRS: readonly ContrastPair[] = [
+  { foreground: "color.muted-foreground", background: "color.background", minRatio: 4.5 },
+  { foreground: "color.muted-foreground", background: "color.card", minRatio: 4.5 },
+  { foreground: "color.foreground", background: "color.card", minRatio: 4.5 },
+  { foreground: "color.destructive", background: "color.background", minRatio: 3 },
+  { foreground: "color.ring", background: "color.card", minRatio: 3 },
+];
+
 const COLOR: TokenType = "color";
 const RADIUS: TokenType = "borderRadius";
 const SPACING: TokenType = "spacing";
@@ -92,7 +107,7 @@ const OPACITY: TokenType = "opacity";
 const SHADOW: TokenType = "shadow";
 
 /**
- * La specifica della library: 61 token semantici + 14 coppie di contrasto.
+ * La specifica della library: 61 token semantici + 19 coppie di contrasto.
  * I token feedback (`success`/`warning`/`info` + foreground) servono a
  * LifecycleBadge e ai toast (decisione di Alessandro, 2026-09-12, UX-DR2).
  */
@@ -130,6 +145,7 @@ export const LIBRARY_SPEC: LibrarySpec = {
   ],
   contrastPairs: [
     ...FOREGROUND_PAIRS.map(([foreground, background]) => ({ foreground, background, minRatio: 4.5 as const })),
+    ...DESIGN_USAGE_PAIRS,
     {
       foreground: "color.warning-foreground",
       background: "color.warning",

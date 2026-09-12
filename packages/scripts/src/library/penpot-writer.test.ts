@@ -89,4 +89,22 @@ describe("operationsToSteps — il codice generato è JS valido", () => {
       expect(() => new AsyncFunction(step.code), step.description).not.toThrow();
     }
   });
+
+  it("il codice delle celle contiene la guardia anti-duplicato del componente (review 2.4)", () => {
+    const cellSteps = bootstrapSteps().filter((step) => step.description.startsWith('createContainer "badge"'));
+    expect(cellSteps.length).toBeGreaterThan(0);
+    for (const step of cellSteps) {
+      expect(step.code).toContain('c.name === spec.boardName');
+      expect(step.code).toContain("esiste già");
+    }
+  });
+
+  it("lo step del container contiene la guardia anti-duplicato del VariantContainer", () => {
+    const containerSteps = bootstrapSteps().filter((step) => step.description.startsWith('createVariantContainer'));
+    expect(containerSteps).toHaveLength(3); // uno per contratto
+    for (const step of containerSteps) {
+      expect(step.code).toContain("isVariantContainer");
+      expect(step.code).toContain("esiste già");
+    }
+  });
 });

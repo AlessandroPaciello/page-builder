@@ -1,7 +1,8 @@
 export interface BoundaryViolation {
   /** Path relativo alla root del package. */
   file: string;
-  line?: number;
+  /** Numero di riga, o `"?"` per le violazioni del backstop raw (senza riga). */
+  line?: number | "?";
   specifier?: string;
   reason?: string;
   text?: string;

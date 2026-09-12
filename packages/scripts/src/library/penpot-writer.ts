@@ -114,14 +114,19 @@ function cellStep(contract: string, containerName: string, cell: {
     align?: string;
     tokens: Readonly<Record<string, string>>;
   }>;
-}, index: number): WriteStep {
+}, index: number, xOffset: number, yOffset: number): WriteStep {
   const cellLabel = Object.entries(cell.variantProps)
     .map(([axis, value]) => `${axis}=${value}`)
     .join("|");
   const boardName = `${containerName} ${cellLabel}`;
+  // Il passo orizzontale segue la larghezza reale della board (review 2.4:
+  // 240 fissi sovrapponevano le celle dell'AccordionItem, larga 340).
+  const boardWidth = cell.parts.find((part) => part.name === "root")?.size?.[0] ?? 240;
+  const step = Math.max(240, boardWidth + 40);
   const spec = {
     boardName,
-    x: 240 * index,
+    x: xOffset + step * index,
+    y: yOffset,
     parts: cell.parts.map((part) => ({
       name: part.name,
       kind: part.kind,
@@ -139,6 +144,11 @@ function cellStep(contract: string, containerName: string, cell: {
     code: `
 ${CELL_RUNTIME}
 const spec = ${literal(spec)};
+// Guardia di ripartenza (review 2.4): se una scrittura precedente è stata
+// interrotta a metà, la cella può esistere già come componente orfano.
+// Rifiutare qui evita duplicati: la pulizia è manuale in Penpot.
+const existing = penpot.library.local.components.find((c) => c.name === spec.boardName);
+if (existing) throw new Error("Componente \\"" + spec.boardName + "\\" esiste già in library.local: scritture parziali di un run precedente? Rimuovilo a mano in Penpot e rilancia.");
 const byName = new Map();
 let board = null;
 for (const part of spec.parts) {
@@ -179,6 +189,12 @@ function containerStep(containerName: string, pluginData: string, cells: Readonl
     description: `createVariantContainer "${containerName}" + plugin data ${pluginData}`,
     code: `
 const entries = ${literal(entries)};
+// Guardia di ripartenza (review 2.4): il container è l'ULTIMO step del
+// contratto — se esiste già, un run precedente è arrivato fino in fondo.
+const existingContainer = penpot.library.local.components.find(
+  (c) => c.name === ${JSON.stringify(containerName)} && c.isVariantContainer && c.isVariantContainer(),
+);
+if (existingContainer) throw new Error("VariantContainer \\"" + ${JSON.stringify(containerName)} + "\\" esiste già: bootstrap/additiva rifiuta di duplicarlo. Rimuovilo a mano in Penpot o usa la modalità additiva.");
 const shapes = entries.map((entry) => {
   const component = penpot.library.local.components.find((c) => c.name === entry.name);
   if (!component) throw new Error("Componente \\"" + entry.name + "\\" non trovato in library.local: l'operazione della cella lo presuppone creato.");
@@ -195,6 +211,9 @@ return { id: container.id, name: container.name, pluginData: container.getShared
 /** Traduce le operazioni del piano in step eseguibili, nell'ordine del piano. */
 export function operationsToSteps(operations: readonly Operation[]): WriteStep[] {
   const steps: WriteStep[] = [];
+  // Le celle di contratti diversi NON si sovrappongono (review 2.4): ogni
+  // contratto occupa la sua fila, con uno scarto verticale per contratto.
+  let yOffset = 0;
   for (const operation of operations) {
     if (operation.kind === "createSet") {
       steps.push(setStep(operation.set));
@@ -202,9 +221,10 @@ export function operationsToSteps(operations: readonly Operation[]): WriteStep[]
       steps.push(tokenStep(operation.set, operation.name, operation.type, operation.value));
     } else {
       for (const [index, cell] of operation.cells.entries()) {
-        steps.push(cellStep(operation.contract, operation.containerName, cell, index));
+        steps.push(cellStep(operation.contract, operation.containerName, cell, index, 0, yOffset));
       }
       steps.push(containerStep(operation.containerName, operation.pluginData, operation.cells));
+      yOffset += 160 + 80;
     }
   }
   return steps;

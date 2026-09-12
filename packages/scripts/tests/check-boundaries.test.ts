@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
 
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -113,6 +114,17 @@ describe("checkBoundaries: rosso", () => {
     expectRed(checkSource('export const target = "@app/domain";\n'), "@app/domain");
   });
 
+  it("il CLI invocato come in CI (`node scripts/check-boundaries.mjs`) scansiona davvero ed esce 0", () => {
+    // Regression review 2.4: se isDirectInvocation regredisce a sempre-falso,
+    // il gate diventa un no-op silenzioso con exit 0 in CI. Il test esegue lo
+    // script ESATTAMENTE come fa `lint` (packages/scripts/package.json).
+    const stdout = execFileSync("node", ["./scripts/check-boundaries.mjs"], {
+      cwd: REAL_PACKAGE_ROOT,
+      encoding: "utf8",
+    });
+    expect(stdout).toContain("✔ Confine scripts rispettato");
+  });
+
   it("un file in src/ con @app/ fuori dai literal (desync) è rosso via backstop raw", () => {
     const report = checkBoundaries({
       packageRoot: fakePackage({
@@ -120,5 +132,24 @@ describe("checkBoundaries: rosso", () => {
       }),
     });
     expect(report.violations.some((violation) => violation.text?.includes("desincronizzato"))).toBe(true);
+  });
+
+  it("import apps/web mascherato da apici misti sulla stessa riga è rosso (review 2.4)", () => {
+    // Regression: il pair-matching dei literal perde l'ultimo literal della
+    // riga se un apice interno spezza la coppia — il backstop raw su apps/
+    // deve prenderlo comunque.
+    const report = checkSource("const a = \"it's\"; import x from 'apps/web';\n");
+    expect(report.violations.length).toBeGreaterThan(0);
+  });
+
+  it("apps/web in una stringa fuori da qualunque literal scannerizzato è rosso via backstop raw", () => {
+    // Apici annidati rompono il pair-matching dei literal: la vista raw
+    // (dopo lo strip dei commenti) deve comunque bloccare apps/.
+    const report = checkBoundaries({
+      packageRoot: fakePackage({
+        "src/index.ts": "const hint = 'usa apps/web per l\\'app';\nexport {};\n",
+      }),
+    });
+    expect(report.violations.length).toBeGreaterThan(0);
   });
 });

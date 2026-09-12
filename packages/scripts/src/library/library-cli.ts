@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 import { COMPONENT_CONTRACTS } from "@app/contracts";
@@ -72,6 +72,12 @@ export function parseArgs(args: readonly string[]): CliArgs {
   if (dryRun && mode === "verify") {
     throw new Error("--dry-run non ha senso su verify (è già sola lettura).");
   }
+  // `--snapshot` è il seam offline della SOLA lettura (review 2.4): pianificare
+  // su un file ma scrivere sul Penpot live aggira il rifiuto del bootstrap
+  // (basta uno snapshot vuoto) e disallinea piano e scritture.
+  if (snapshotPath !== undefined && mode !== "verify" && !dryRun) {
+    throw new Error("--snapshot è valido solo su verify:library oppure insieme a --dry-run.");
+  }
   return { mode, dryRun, snapshotPath };
 }
 
@@ -111,8 +117,8 @@ async function executeSteps(steps: readonly { description: string; code: string 
   }
 }
 
-function runVerify(snapshot: LibrarySnapshot): boolean {
-  const result = verifyLibrary({ contracts: Object.values(COMPONENT_CONTRACTS), spec: LIBRARY_SPEC, snapshot });
+function runVerify(snapshot: LibrarySnapshot, seed: SemanticSeed): boolean {
+  const result = verifyLibrary({ contracts: Object.values(COMPONENT_CONTRACTS), spec: LIBRARY_SPEC, snapshot, seed });
   if (result.ok) {
     console.log(`✔ verifyLibrary: verde (${result.errors.length} errori).`);
     return true;
@@ -128,7 +134,7 @@ export async function main(args: CliArgs = parseArgs(process.argv.slice(2))): Pr
   printSnapshotSummary(snapshot);
 
   if (args.mode === "verify") {
-    return runVerify(snapshot) ? 0 : 1;
+    return runVerify(snapshot, seed) ? 0 : 1;
   }
 
   const mode = args.mode === "bootstrap" ? "bootstrap" : "additive";
@@ -163,24 +169,34 @@ export async function main(args: CliArgs = parseArgs(process.argv.slice(2))): Pr
     return 0;
   }
 
-  if (plan.operations.length === 0) {
+  // La verifica gira SEMPRE (anche a 0 operazioni): l'esito lo decide
+  // verifyLibrary, mai il numero di operazioni. Le differenze segnalate
+  // dall'additiva NON cambiano l'exit code — è la verifica a decidere.
+  if (plan.operations.length > 0) {
+    const steps = operationsToSteps(plan.operations);
+    console.log(`Esecuzione di ${steps.length} step su Penpot…`);
+    await executeSteps(steps);
+  } else {
     console.log("Nessuna operazione da eseguire (idempotente).");
-    return 0;
   }
 
-  const steps = operationsToSteps(plan.operations);
-  console.log(`Esecuzione di ${steps.length} step su Penpot…`);
-  await executeSteps(steps);
-
   const after = await readLibrarySnapshot();
-  return runVerify(after) ? 0 : 1;
+  return runVerify(after, seed) ? 0 : 1;
 }
 
 
 // Esegui `main()` solo da invocazione diretta, mai a un semplice `import`
 // (stessa guardia di extract-component.ts): senza, ogni import del modulo
-// chiamerebbe main() con l'argv del processo ospite.
-const isDirectInvocation = process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
+// chiamerebbe main() con l'argv del processo ospite. Il realpathSync gestisce
+// l'invocazione via symlink (stesso schema del gate check-boundaries.mjs).
+const isDirectInvocation = (() => {
+  if (process.argv[1] === undefined) return false;
+  try {
+    return import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href;
+  } catch {
+    return false;
+  }
+})();
 
 if (isDirectInvocation) {
   main()

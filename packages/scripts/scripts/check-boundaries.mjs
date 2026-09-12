@@ -37,7 +37,7 @@ export function isForbiddenSpecifier(specifier) {
   }
   if (specifier.startsWith("@app/")) return true;
   if (specifier.startsWith("@penpot-ds/ui")) return true;
-  if (specifier === "apps" || specifier.startsWith("apps/") || specifier.startsWith("apps/")) return true;
+  if (specifier === "apps" || specifier.startsWith("apps/")) return true;
   return false;
 }
 
@@ -45,7 +45,12 @@ export function isForbiddenSpecifier(specifier) {
 const STRING_LITERAL = /["'`]([^"'`\n]+)["'`]/g;
 
 /** Backstop anti-desync: `@app/` fuori dai casi ammessi, anche non in forma di import. */
-const FORBIDDEN_RAW = [/@app\/(?!contracts(?![a-zA-Z0-9_-]))/, /@app\/contracts\/\.\./, /@penpot-ds\/ui/];
+const FORBIDDEN_RAW = [
+  /@app\/(?!contracts(?![a-zA-Z0-9_-]))/,
+  /@app\/contracts\/\.\./,
+  /@penpot-ds\/ui/,
+  /(^|[^\w@./-])apps\//,
+];
 
 function stripComments(source) {
   let out = "";

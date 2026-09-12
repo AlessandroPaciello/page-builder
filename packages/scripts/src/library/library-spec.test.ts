@@ -100,12 +100,36 @@ describe("LIBRARY_SPEC — contenuto minimo richiesto", () => {
     expect(byType.get("shadow")).toBe(4);
   });
 
-  it("dichiara 14 coppie di contrasto con le soglie attese", () => {
-    expect(LIBRARY_SPEC.contrastPairs).toHaveLength(14);
+  it("dichiara 19 coppie di contrasto con le soglie attese", () => {
+    expect(LIBRARY_SPEC.contrastPairs).toHaveLength(19);
     const textPairs = LIBRARY_SPEC.contrastPairs.filter((p) => p.minRatio === 4.5);
     const indicatorPairs = LIBRARY_SPEC.contrastPairs.filter((p) => p.minRatio === 3);
-    expect(textPairs).toHaveLength(11);
-    expect(indicatorPairs.map((p) => p.foreground).sort()).toEqual(["color.border", "color.input", "color.ring"]);
+    expect(textPairs).toHaveLength(14);
+    expect(indicatorPairs.map((p) => `${p.foreground} su ${p.background}`).sort()).toEqual([
+      "color.border su color.background",
+      "color.destructive su color.background",
+      "color.input su color.background",
+      "color.ring su color.background",
+      "color.ring su color.card",
+    ]);
+  });
+
+  it("le combinazioni usate dai design sono presidiate (review 2.4, 2° pass)", () => {
+    const designPairs = [
+      { foreground: "color.muted-foreground", background: "color.background" },
+      { foreground: "color.muted-foreground", background: "color.card" },
+      { foreground: "color.foreground", background: "color.card" },
+      { foreground: "color.destructive", background: "color.background" },
+      { color: undefined, background: "color.card", foreground: "color.ring" },
+    ];
+    for (const pair of designPairs) {
+      expect(
+        LIBRARY_SPEC.contrastPairs.some(
+          (declared) => declared.foreground === pair.foreground && declared.background === pair.background,
+        ),
+        `${pair.foreground} su ${pair.background}`,
+      ).toBe(true);
+    }
   });
 
   it("warning è l'unica coppia fillPairOnly", () => {

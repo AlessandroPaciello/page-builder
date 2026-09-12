@@ -1,9 +1,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
+import { COMPONENT_CONTRACTS, type ComponentContract } from "@app/contracts";
 import { describe, expect, it } from "vitest";
-
-import type { ComponentContract } from "@app/contracts";
 
 import { planLibrary, pascalCase, type ComponentDesign, type LibraryPlanResult } from "./library-plan";
 import { LIBRARY_SPEC, type SemanticSeed } from "./library-spec";
@@ -21,39 +20,9 @@ const designs: Record<string, ComponentDesign> = {
   ) as ComponentDesign,
 };
 
-const contracts = [contractFixture("badge"), contractFixture("input"), contractFixture("accordion-item")];
-
-/** Contratti ridotti all'interfaccia (gli import reali da @app/contracts coprono gli stessi valori). */
-function contractFixture(name: "badge" | "input" | "accordion-item"): ComponentContract {
-  if (name === "badge") {
-    return {
-      name: "badge",
-      version: 1,
-      axes: [
-        { name: "variant", type: "option", values: ["default", "secondary", "destructive"], default: "default" },
-        { name: "size", type: "option", values: ["sm", "md"], default: "md" },
-      ],
-      parts: ["root", "label"],
-      fields: {},
-    };
-  }
-  if (name === "input") {
-    return {
-      name: "input",
-      version: 1,
-      axes: [{ name: "state", type: "state", values: ["default", "focus", "error", "disabled"], default: "default" }],
-      parts: ["root", "placeholder"],
-      fields: {},
-    };
-  }
-  return {
-    name: "accordion-item",
-    version: 1,
-    axes: [{ name: "state", type: "behavior", values: ["closed", "open"], default: "closed" }],
-    parts: ["root", "trigger", "label", "chevron", "content", "body", "divider"],
-    fields: {},
-  };
-}
+// Il registry è l'unico elenco (Dev Note): i test usano i contratti reali,
+// NON ricopie degli assi/parts (review 2.4).
+const contracts = Object.values(COMPONENT_CONTRACTS);
 
 function plan(input: Partial<Parameters<typeof planLibrary>[0]> = {}): LibraryPlanResult {
   return planLibrary({
@@ -213,11 +182,13 @@ describe("additiva", () => {
 
   it("con un contratto nuovo nel registry crea solo quel container", () => {
     const snapshot = apply(emptySnapshot(), plan());
-    const newContract = contractFixture("input");
+    // Contratto fittizio costruito a partire da uno reale (review 2.4:
+    // "il registry è l'unico elenco" — il test inietta, non ricopia).
+    const base = COMPONENT_CONTRACTS.input;
     const extended = [
       ...contracts,
       {
-        ...newContract,
+        ...base,
         name: "select",
         version: 1,
         axes: [{ name: "state", type: "state", values: ["default"], default: "default" }],
@@ -278,8 +249,9 @@ describe("additiva", () => {
     expect(result.differences.some((d) => d.subject.includes("Badge") && d.expected.includes("Badge"))).toBe(true);
   });
 
-  it("bootstrap su snapshot non vuoto resta refused anche in modalità additiva con set orfano", () => {
-    // La modalità additiva NON rifiuta mai: anche un set orfano produce solo differenze o operazioni mirate.
+  it("l'additiva non rifiuta mai (anche con un set orfano procede senza refused)", () => {
+    // Nome corretto (review 2.4): il test verifica che l'additiva NON rifiuti
+    // — un set orfano produce solo differenze o operazioni mirate.
     const snapshot: LibrarySnapshot = { ...emptySnapshot(), sets: [setNamed("stray", false)] };
     const result = plan({ mode: "additive", snapshot });
     expect(result.refused).toBeUndefined();

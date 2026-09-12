@@ -145,6 +145,53 @@ describe("verifyLibrary — un caso rosso per regola", () => {
     expect(result.errors.some((e) => e.includes('"badge"') && e.includes('variantError "duplicate"'))).toBe(true);
   });
 
+  it("regola 5: board non mappata alle varianti (variantProps null) è un errore, non un salto", () => {
+    const snapshot = greenSnapshot();
+    const badge = snapshot.components.find((c) => c.name === "Badge")!;
+    badge.cells[0]!.variantProps = null;
+    const result = verify(snapshot);
+    expect(
+      result.errors.some((e) => e.includes('"badge"') && e.includes("non è mappata alle varianti") && e.includes('"root"')),
+    ).toBe(true);
+  });
+
+  it("regola 8: token richiesto relegato in un set inattivo resta un errore", () => {
+    const snapshot = greenSnapshot();
+    const semantic = snapshot.sets.find((set) => set.name === "semantic")!;
+    semantic.active = false;
+    const result = verify(snapshot);
+    // Con il set inattivo l'indice non copre i token: mancano tutti i
+    // richiesti dalla spec (e i binding puntano a token "assenti").
+    expect(result.errors.some((e) => e.includes('Token richiesto dalla spec "color.primary"'))).toBe(true);
+    expect(result.ok).toBe(false);
+  });
+
+  it("regola 8 (seed): un token ripuntato in Penpot è un errore che nomina atteso e trovato", () => {
+    const snapshot = greenSnapshot();
+    const semantic = snapshot.sets.find((set) => set.name === "semantic")!;
+    const primary = semantic.tokens.find((token) => token.name === "color.primary")!;
+    primary.value = "{accent.12}";
+    const result = verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot, seed });
+    expect(
+      result.errors.some((e) => e.includes('"color.primary"') && e.includes("{accent.12}") && e.includes("valore del seed")),
+    ).toBe(true);
+    expect(result.ok).toBe(false);
+  });
+
+  it("regola 8 (seed): hex con case diverso non è una differenza", () => {
+    const snapshot = greenSnapshot();
+    const palette = snapshot.sets.find((set) => set.name === "palette")!;
+    const accent = palette.tokens.find((token) => token.name === "accent.9")!;
+    const hex = accent.value;
+    expect(typeof hex).toBe("string");
+    const hexString = String(hex);
+    const toggled = hexString === hexString.toLowerCase() ? hexString.toUpperCase() : hexString.toLowerCase();
+    accent.value = toggled;
+    const result = verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot, seed });
+    expect(result.errors.some((e) => e.includes("valore del seed"))).toBe(false);
+    expect(result.ok).toBe(true);
+  });
+
   it("regola 6: manca una parte del contratto in una cella", () => {
     const snapshot = greenSnapshot();
     const badge = snapshot.components.find((c) => c.name === "Badge")!;

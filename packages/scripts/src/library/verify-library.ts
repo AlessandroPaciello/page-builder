@@ -3,8 +3,8 @@ import type { ComponentContract } from "@app/contracts";
 import type { TokenCatalog } from "../theme-generator";
 import { generateTheme } from "../theme-generator";
 import { contrastRatio, parseHex } from "./contrast";
-import { pascalCase } from "./library-plan";
-import type { LibrarySpec } from "./library-spec";
+import { pascalCase, sameColorish } from "./library-plan";
+import type { LibrarySpec, SemanticSeed } from "./library-spec";
 import type { LibrarySnapshot, SnapshotLayer } from "./library-snapshot";
 
 /**
@@ -18,6 +18,12 @@ export interface VerifyLibraryInput {
   readonly contracts: readonly ComponentContract[];
   readonly spec: LibrarySpec;
   readonly snapshot: LibrarySnapshot;
+  /**
+   * Seed opzionale (review 2.4, 2° pass): se presente, la regola 8 verifica
+   * ANCHE che i valori dei token semantici coincidano con quelli decisi col
+   * designer. Senza seed la regola copre solo nome e tipo, com'era prima.
+   */
+  readonly seed?: SemanticSeed;
 }
 
 export interface VerifyResult {
@@ -35,6 +41,10 @@ function buildTokenIndex(snapshot: LibrarySnapshot): Map<string, TokenFacts> {
   const index = new Map<string, TokenFacts>();
   for (const set of snapshot.sets) {
     for (const token of set.tokens) {
+      // Solo i set ATTIVI sono la sorgente della pipeline (generateTheme e
+      // generate:theme leggono gli attivi): un token richiesto relegato in un
+      // set inattivo deve restare un errore, non un falso verde.
+      if (!set.active) continue;
       index.set(token.name, { type: token.type, value: token.value, set: set.name });
     }
   }
@@ -78,7 +88,7 @@ function resolveColor(name: string, index: Map<string, TokenFacts>, seen: string
  * container estranei (i segnaposto della Story 2.7) non sono affar suo.
  */
 export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
-  const { contracts, spec, snapshot } = input;
+  const { contracts, spec, snapshot, seed } = input;
   const errors: string[] = [];
   const tokenIndex = buildTokenIndex(snapshot);
   const containers = snapshot.components;
@@ -158,7 +168,14 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
     );
     const foundKeys = new Map<string, number>();
     for (const cell of container.cells) {
-      if (cell.variantProps === null) continue;
+      // Una board non mappata alle varianti non può essere verificata: è un
+      // errore che nomina la board, mai un salto silenzioso (review 2.4).
+      if (cell.variantProps === null) {
+        errors.push(
+          `Contratto "${contract.name}": la board "${cell.root.name}" non è mappata alle varianti (variantProps assente) — non è verificabile come cella.`,
+        );
+        continue;
+      }
       const key = cellKeyOf(contract, cell.variantProps);
       foundKeys.set(key, (foundKeys.get(key) ?? 0) + 1);
       if (cell.variantError !== null) {
@@ -182,7 +199,7 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
 
     // Regola 6: nessuna parte del contratto manca in una cella ("root" È la board della cella).
     for (const cell of container.cells) {
-      if (cell.variantProps === null) continue;
+      if (cell.variantProps === null) continue; // già segnalata dalla regola 5
       const key = cellKeyOf(contract, cell.variantProps);
       const names = new Set<string>();
       walkLayers(cell.root, (layer) => names.add(layer.name));
@@ -197,7 +214,7 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
     // Regola 7: ogni proprietà di stile valorizzata ha un binding, e il
     // binding punta a un token presente nel catalogo.
     for (const cell of container.cells) {
-      if (cell.variantProps === null) continue;
+      if (cell.variantProps === null) continue; // già segnalata dalla regola 5
       const key = cellKeyOf(contract, cell.variantProps);
       walkLayers(cell.root, (layer) => {
         for (const property of Object.keys(layer.style)) {
@@ -218,7 +235,8 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
     }
   }
 
-  // Regola 8: la spec è coperta dal catalogo (nome e tipo).
+  // Regola 8: la spec è coperta dal catalogo (nome e tipo); con il seed,
+  // anche i valori coincidono con quelli decisi col designer (review 2.4).
   for (const required of spec.tokens) {
     const found = tokenIndex.get(required.name);
     if (!found) {
@@ -227,6 +245,22 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
       errors.push(
         `Token "${required.name}": type "${found.type}" ≠ type richiesto dalla spec "${required.type}".`,
       );
+    }
+  }
+  if (seed) {
+    const seedTokens = [...seed.palette, ...seed.semantic];
+    for (const seedToken of seedTokens) {
+      const found = tokenIndex.get(seedToken.name);
+      if (!found) continue; // l'assenza è già segnalata dalla regola 8
+      const valueMatches = sameColorish(
+        seedToken.value,
+        found.value as Parameters<typeof sameColorish>[1],
+      );
+      if (!valueMatches) {
+        errors.push(
+          `Token "${seedToken.name}": valore ${JSON.stringify(found.value)} ≠ valore del seed ${JSON.stringify(seedToken.value)} — il ripuntamento in Penpot è una differenza da riportare (additiva), non un silenzio del verify.`,
+        );
+      }
     }
   }
 

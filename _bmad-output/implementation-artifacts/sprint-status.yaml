@@ -61,7 +61,7 @@ development_status:
   2-1-pipeline-token-penpot-codice: done
   2-2-estrazione-componenti-e-schema-delle-ricette: done
   2-3-package-dei-contratti: done
-  2-4-bootstrap-della-library-penpot-sui-contratti: review
+  2-4-bootstrap-della-library-penpot-sui-contratti: done
   2-5-estrazione-adeguata-ricette-per-parti-e-token: backlog
   2-6-emitter-shadcn-deterministico-e-gate-ci: backlog
   2-7-libreria-componenti-accessibile: backlog

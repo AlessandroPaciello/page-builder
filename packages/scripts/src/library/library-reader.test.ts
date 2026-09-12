@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { resolveMcpEndpoint } from "../mcp-client";
 import { readLibrarySnapshot } from "./library-reader";
 
 function envelope(result: unknown): { content: Array<{ type: string; text: string }>; isError?: boolean } {
@@ -116,5 +117,20 @@ describe("readLibrarySnapshot — timeout", () => {
         timeoutMs: 20,
       }),
     ).rejects.toThrow(/Timeout \(20ms\)/);
+  });
+});
+
+describe("readLibrarySnapshot — mascheratura del token (Task 10)", () => {
+  it("il percorso live non espone mai userToken: gli errori usano displayUrl mascherato", async () => {
+    // Il reader passa da callPenpotTool, i cui messaggi d'errore portano
+    // endpoint.displayUrl (mascherato da maskMcpUrl): il test verifica il
+    // contratto sull'endpoint reale, senza rete (resolveMcpEndpoint è puro).
+    const endpoint = resolveMcpEndpoint({
+      PENPOT_MCP_URL: "http://localhost:9001/mcp?userToken=sekret",
+      PENPOT_MCP_TOKEN: "sekret",
+    });
+    expect(endpoint.url.searchParams.get("userToken")).toBe("sekret");
+    expect(endpoint.displayUrl).toContain("userToken=***");
+    expect(endpoint.displayUrl).not.toContain("sekret");
   });
 });

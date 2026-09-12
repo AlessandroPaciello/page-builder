@@ -101,3 +101,11 @@ Lavoro identificato durante le review e rimandato consapevolmente. Ogni voce ind
 - **`pds-setup` → `cleanup-legacy.py --also-remove _config`**: in un progetto gestito da `npx bmad-method install` cancellerebbe `_bmad/_config/`, `_bmad/core/` e `_bmad/pds/`. È il boilerplate del builder, identico in `bmad-bmb-setup`. Inoltre `_bmad/pds/config.yaml` è committato e contiene `user_name`. Da valutare a livello di framework prima di rilanciare una skill di setup.
 - **Stroke senza stroke esistente** (non verificato, medium se confermato): `applyToken` su `strokeColor`/`strokeWidth` di divider, chevron e root dell'Input, shape nate senza stroke. Per chiarirlo: controllare in "Page Builder DS" che lo stroke sia davvero visibile.
 - **Il gate `scripts` non intercetta import relativi fuori dal package** (`../../apps/web/src/x`, `../../ui/src`): preesistente, il gate prima della 2.4 non li copriva. Da riprendere insieme all'action item della retro Epic 1 sui gate.
+
+## Deferred from: code review of 2-4-bootstrap-della-library-penpot-sui-contratti (2026-09-12, secondo pass)
+
+- **fontFamilies non legato ai token (AC #1)** — limite dell'API Penpot 2.17.2: `applyToken` rifiuta i token `fontFamilies` ("should be a set of strings"). Il font resta una scelta del designer in Penpot; da riaprire quando l'API lo supporta.
+- **`--font-sans: Manrope` senza stack di fallback** — il fallback lo produce la pipeline token (`theme-generator.ts`), che per AC #4 non si tocca in questa story; da valutare in 2.5+.
+- **`pds-setup` lancia `cleanup-legacy.py --also-remove _config`** — in un progetto gestito dall'installer cancellerebbe `_bmad/_config/`, `_bmad/core/` e `_bmad/pds/`; inoltre `_bmad/pds/config.yaml` contiene `user_name`. È boilerplate del builder (identico a `bmad-bmb-setup`): da valutare a livello di framework BMad.
+- **`applyToken` su `strokeColor`/`strokeWidth` di shape senza stroke preesistente** (divider, chevron, root dell'Input) — non verificato (medium se confermato): controllare in "Page Builder DS" che divider e bordo dell'Input abbiano uno stroke visibile.
+- **Il gate `scripts` non intercetta import relativi fuori dal package** (`../../apps/web/src/x`, `../../ui/src`) — preesistente: il gate a `HEAD` non li copriva neanche prima.
