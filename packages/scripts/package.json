@@ -9,8 +9,11 @@
     "bootstrap:library": "node --import tsx src/library/library-cli.ts bootstrap",
     "check-types": "tsc --noEmit",
     "extract:component": "node --import tsx src/extract-component.ts extract",
+    "gates:render": "node --import tsx src/emitter/gates-cli.ts",
     "generate:theme": "node --import tsx src/generate-theme.ts",
     "lint": "node ./scripts/check-boundaries.mjs",
+    "render:check": "node --import tsx src/emitter/render-cli.ts Badge --check && node --import tsx src/emitter/render-cli.ts Input --check && node --import tsx src/emitter/render-cli.ts AccordionItem --check",
+    "render:component": "node --import tsx src/emitter/render-cli.ts",
     "test": "vitest run",
     "validate:recipe": "node --import tsx src/extract-component.ts validate",
     "verify:library": "node --import tsx src/library/library-cli.ts verify"

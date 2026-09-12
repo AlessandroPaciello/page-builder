@@ -76,6 +76,15 @@ jobs:
       - name: Test
         run: pnpm test
 
+      # Gate del regime design→codice (Story 2.6, AC #2): completezza
+      # artefatti, rigenerazione a diff zero (render:check incluso), conformità
+      # al contratto e a11y (suite ui con assert axe) — bloccanti. Il gate
+      # drift gira dentro gates:render ma è bloccante SE E SOLO SE il runner
+      # raggiunge il server MCP Penpot: qui non lo raggiunge → skip
+      # documentato nel log (mai verde finto), riesecuzione manuale/nightly.
+      - name: Render gates (completezza, rigenerazione, conformità, a11y)
+        run: pnpm --filter @penpot-ds/scripts gates:render
+
       # Drift check schema↔migrations (voce 1-3, Story 1.6): un schema.prisma
       # che evolve senza migration committata diventa un gate rosso QUI, non
       # una scoperta al deploy. `migrate diff` non tocca il DB di DATABASE_URL:

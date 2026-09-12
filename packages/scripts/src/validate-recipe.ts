@@ -36,8 +36,8 @@ function zodIssues(label: string, error: { issues: Array<{ path: PropertyKey[]; 
   return error.issues.map((issue) => `${label} ${issue.path.map(String).join(".") || "<root>"}: ${issue.message}`);
 }
 
-/** Serializzazione stabile (chiavi ordinate) per confronti deep-equal senza dipendere dall'ordine delle chiavi. */
-function stableStringify(value: unknown): string {
+/** Serializzazione stabile (chiavi ordinate) per confronti deep-equal senza dipendere dall'ordine delle chiavi. Esportata per i gate a valle (Story 2.6). */
+export function stableStringify(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
   if (value !== null && typeof value === "object") {
     const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : 1));
