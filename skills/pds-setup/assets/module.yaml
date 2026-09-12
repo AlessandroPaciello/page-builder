@@ -1,0 +1,7 @@
+code: pds
+name: "Penpot DS"
+description: "Allinea la library Penpot ai contratti del page builder: bootstrap una tantum e aggiunte successive, con esito deciso dagli script di `packages/scripts`."
+module_version: 1.0.0
+default_selected: false
+module_greeting: >
+  Modulo Penpot DS pronto. Apri il file Penpot, connetti il plugin MCP e lancia [PB] (bootstrap) oppure [PA] (additiva).
