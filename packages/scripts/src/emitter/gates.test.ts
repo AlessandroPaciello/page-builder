@@ -18,13 +18,15 @@ import {
 } from "./artifacts";
 import {
   checkA11y,
+  checkA11yGate,
   checkCompleteness,
   checkConformance,
+  checkDeclaredA11y,
   checkDrift,
   checkRegeneration,
 } from "./gates";
 import { loadJudgment } from "../extract-component";
-import { renderComponent } from "./render-component";
+import { declaredA11yAssertion, renderComponent } from "./render-component";
 
 /**
  * Prova rosso/verde dei cinque gate (Story 2.6, AC #2): per ognuno, un input
@@ -129,6 +131,69 @@ describe("Gate 3 — a11y (esito suite ui)", () => {
     const withoutCode = checkA11y({ exitCode: null });
     expect(withoutCode.ok).toBe(false);
     expect(withoutCode.detail).toContain("non ha prodotto un exit code");
+  });
+});
+
+describe("Gate 3 — a11y dichiarata (role/aria-* del giudizio asseriti nel DOM)", () => {
+  function declaredEntries(existing: Record<string, string>) {
+    return committedEntries().map(({ component, recipe }) => {
+      const path = `${recipe.judgment.domain}/${component}.test.tsx`;
+      return { component, path, a11y: recipe.judgment.a11y, testContent: existing[path] };
+    });
+  }
+
+  it("verde sui test generati committati", () => {
+    expect(checkDeclaredA11y(declaredEntries(readExistingFiles(domainsRoot)))).toEqual({ ok: true, missing: [] });
+  });
+
+  it("rosso se il test committato perde l'asserzione di un aria-* dichiarato (nomina componente, file, attributo)", () => {
+    const existing = readExistingFiles(domainsRoot);
+    const path = "inputs/Input.test.tsx";
+    existing[path] = existing[path]!.replace(declaredA11yAssertion("aria-invalid"), "expect(true).toBe(true);");
+    const result = checkDeclaredA11y(declaredEntries(existing));
+    expect(result.ok).toBe(false);
+    expect(result.missing).toEqual([{ component: "Input", path, attribute: "aria-invalid" }]);
+  });
+
+  it("rosso se il test manca del tutto", () => {
+    const existing = readExistingFiles(domainsRoot);
+    delete existing["layout/AccordionItem.test.tsx"];
+    const result = checkDeclaredA11y(declaredEntries(existing));
+    expect(result.missing.map((m) => m.attribute)).toEqual(["aria-expanded", "aria-controls"]);
+  });
+
+  it("gate composto (checkA11yGate): verde sui committati; rosso con suite verde ma asserzione aria-invalid tolta", () => {
+    const components = committedEntries().map(({ component, recipe }) => ({
+      component,
+      domain: recipe.judgment.domain,
+      a11y: recipe.judgment.a11y,
+    }));
+    const existing = readExistingFiles(domainsRoot);
+    expect(checkA11yGate({ components, existing, suite: { exitCode: 0 } })).toEqual({ ok: true, errors: [] });
+
+    const path = "inputs/Input.test.tsx";
+    const tampered = { ...existing, [path]: existing[path]!.replace(declaredA11yAssertion("aria-invalid"), "") };
+    const result = checkA11yGate({ components, existing: tampered, suite: { exitCode: 0 } });
+    expect(result.ok).toBe(false);
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toContain("Input");
+    expect(result.errors[0]).toContain(path);
+    expect(result.errors[0]).toContain('"aria-invalid"');
+  });
+
+  it("rosso se il giudizio dichiara un role che il test non asserisce; verde se lo asserisce", () => {
+    const entry = {
+      component: "Alert",
+      path: "feedback/Alert.test.tsx",
+      a11y: { role: "alert", ariaAttributes: [] },
+      testContent: "// nessuna asserzione\n",
+    };
+    expect(checkDeclaredA11y([entry]).missing).toEqual([
+      { component: "Alert", path: "feedback/Alert.test.tsx", attribute: "role" },
+    ]);
+    expect(checkDeclaredA11y([{ ...entry, testContent: declaredA11yAssertion("role", "alert") }]).ok).toBe(true);
+    // Un role diverso da quello dichiarato non conta come asserzione.
+    expect(checkDeclaredA11y([{ ...entry, testContent: declaredA11yAssertion("role", "status") }]).ok).toBe(false);
   });
 });
 

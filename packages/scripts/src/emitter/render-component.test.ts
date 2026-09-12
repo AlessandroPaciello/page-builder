@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { ComponentRecipe } from "../recipe-schema";
 import { loadBaseSources, loadBinding, loadCatalog, loadFixture, loadRecipe } from "./artifacts";
 import type { ComponentBinding } from "./binding-shadcn";
-import { isGeneratedFile, renderCheck, renderComponent } from "./render-component";
+import { declaredA11yAssertion, isGeneratedFile, renderCheck, renderComponent } from "./render-component";
 
 /**
  * Test dell'emitter shadcn (Story 2.6): instradamento per TIPO d'asse letto
@@ -130,6 +130,56 @@ describe("renderCheck — confronto byte-per-byte in memoria", () => {
     expect(check.divergences).toContainEqual({ path: "data-display/Badge.tsx", reason: "divergente" });
     expect(check.divergences).toContainEqual({ path: "data-display/Badge.test.tsx", reason: "missing" });
     expect(check.divergences).toHaveLength(2);
+  });
+});
+
+describe("renderComponent — a11y dichiarata nel giudizio", () => {
+  const fileOf = (result: ReturnType<typeof renderCommitted>, suffix: string): string =>
+    result.files.find((file) => file.path.endsWith(suffix))!.content;
+
+  it("role dichiarato → role sulla radice prima di {...props}, e il test lo asserisce nel DOM", () => {
+    const recipe = structuredClone(loadRecipe("Badge")) as ComponentRecipe;
+    recipe.judgment.a11y.role = "alert";
+    const result = renderComponent(loadFixture("Badge"), recipe, loadBinding("Badge"), baseSources.badge!, catalog);
+    const tsx = fileOf(result, "Badge.tsx");
+    expect(tsx).toMatch(/<span data-slot="badge" [^\n]*role="alert" \{\.\.\.props\}>/);
+    const test = fileOf(result, "Badge.test.tsx");
+    expect(test).toContain(declaredA11yAssertion("role", "alert"));
+    expect(test).toContain("function declaredAttribute(");
+  });
+
+  it("senza role né aria-* dichiarati nessun attributo e nessuna asserzione in più (Badge)", () => {
+    const result = renderCommitted("Badge");
+    expect(fileOf(result, "Badge.tsx")).not.toContain("role=");
+    expect(fileOf(result, "Badge.test.tsx")).not.toContain("declaredAttribute");
+  });
+
+  it("aria-* legato a un valore state → il test rende la prop DOM del mapping e asserisce (Input)", () => {
+    const test = fileOf(renderCommitted("Input"), "Input.test.tsx");
+    expect(test).toContain(`it("porta l'attributo dichiarato aria-invalid (state=error)"`);
+    expect(test).toContain("<Input aria-invalid placeholder=");
+    expect(test).toContain(declaredA11yAssertion("aria-invalid"));
+  });
+
+  it("aria-* dell'headless (asse behavior) → il test apre via Trigger e asserisce (AccordionItem)", () => {
+    const test = fileOf(renderCommitted("AccordionItem"), "AccordionItem.test.tsx");
+    for (const attribute of ["aria-expanded", "aria-controls"]) {
+      expect(test).toContain(`it("porta l'attributo dichiarato ${attribute} (dopo l'apertura)"`);
+      expect(test).toContain(declaredA11yAssertion(attribute));
+    }
+  });
+
+  it("role o aria-* malformati nel giudizio → errore nominativo", () => {
+    const withRole = structuredClone(loadRecipe("Badge")) as ComponentRecipe;
+    withRole.judgment.a11y.role = 'alert" onClick="x';
+    expect(() =>
+      renderComponent(loadFixture("Badge"), withRole, loadBinding("Badge"), baseSources.badge!, catalog),
+    ).toThrow(/"Badge".*a11y\.role.*non è un role ARIA valido/);
+    const withAria = structuredClone(loadRecipe("Badge")) as ComponentRecipe;
+    withAria.judgment.a11y.ariaAttributes = ["aria-Bad name"];
+    expect(() =>
+      renderComponent(loadFixture("Badge"), withAria, loadBinding("Badge"), baseSources.badge!, catalog),
+    ).toThrow(/"Badge".*ariaAttributes "aria-Bad name"/);
   });
 });
 

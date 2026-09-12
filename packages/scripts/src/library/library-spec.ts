@@ -1,4 +1,6 @@
 import type { PenpotTokenValue, TokenType } from "../theme-generator";
+import { committedDesigns } from "./designs-loader";
+import type { ComponentDesign } from "./library-plan";
 
 /**
  * Specifica della library, come dati (Story 2.4, Task 2): l'elenco minimo dei
@@ -80,20 +82,62 @@ const FOREGROUND_PAIRS: readonly [string, string][] = [
   ["color.info-foreground", "color.info"],
 ];
 
+/** Sfondo di ripiego quando nessun antenato board ha un `fill`: la pagina. */
+const PAGE_BACKGROUND = "color.background";
+
 /**
- * Combinazioni usate DAI DESIGN committati (`designs/*.design.json`) e non
- * coperte dalle coppie X/X-foreground (decisione della review 2.4, 2° pass):
- * placeholder dell'Input e body dell'Accordion su background/card, testo su
- * card, stroke destructive (Input in errore) e ring (focus) su background.
- * Oggi tutte sopra soglia (verificato 2026-09-12: da 5.9:1 a 17.1:1).
+ * Coppie di contrasto RICAVATE dai design (Story 2.7, problema 6), al posto
+ * della lista a mano delle combinazioni usate dai design. Per ogni cella:
+ * - parte `text` con `fill` → quel colore contro il `fill` del primo antenato
+ *   board che lo ha nella stessa cella (ripiego `color.background`), 4.5:1;
+ * - parte con `strokeColor` → quel colore contro il `fill` del primo antenato
+ *   board che lo ha (ripiego `color.background`), 3:1 (indicatore/bordo).
+ * La catena degli antenati segue `parent` (assente = figlia di `root`);
+ * `root` non ha antenati. Coppie deduplicate su foreground+background
+ * tenendo la soglia più alta, ordinate per foreground, background, soglia.
  */
-const DESIGN_USAGE_PAIRS: readonly ContrastPair[] = [
-  { foreground: "color.muted-foreground", background: "color.background", minRatio: 4.5 },
-  { foreground: "color.muted-foreground", background: "color.card", minRatio: 4.5 },
-  { foreground: "color.foreground", background: "color.card", minRatio: 4.5 },
-  { foreground: "color.destructive", background: "color.background", minRatio: 3 },
-  { foreground: "color.ring", background: "color.card", minRatio: 3 },
-];
+export function deriveDesignContrastPairs(designs: Readonly<Record<string, ComponentDesign>>): ContrastPair[] {
+  const byPair = new Map<string, ContrastPair>();
+  const add = (foreground: string, background: string, minRatio: 4.5 | 3): void => {
+    const key = `${foreground}|${background}`;
+    const existing = byPair.get(key);
+    if (existing === undefined || existing.minRatio < minRatio) byPair.set(key, { foreground, background, minRatio });
+  };
+
+  for (const name of Object.keys(designs).sort()) {
+    const design = designs[name]!;
+    const parentOf = (part: string): string | null => (part === "root" ? null : (design.parts[part]?.parent ?? "root"));
+
+    for (const cellKey of Object.keys(design.cells).sort()) {
+      const cell = design.cells[cellKey]!;
+      const backgroundFor = (part: string): string => {
+        const seen = new Set<string>([part]);
+        for (let ancestor = parentOf(part); ancestor !== null; ancestor = parentOf(ancestor)) {
+          if (seen.has(ancestor)) {
+            throw new Error(`Design "${name}": la catena dei parent della parte "${part}" è ciclica (${[...seen, ancestor].join(" → ")}).`);
+          }
+          seen.add(ancestor);
+          const fill = design.parts[ancestor]?.kind === "board" ? cell[ancestor]?.fill : undefined;
+          if (fill !== undefined) return fill;
+        }
+        return PAGE_BACKGROUND;
+      };
+
+      for (const part of Object.keys(cell).sort()) {
+        const styles = cell[part]!;
+        if (design.parts[part]?.kind === "text" && styles.fill !== undefined) add(styles.fill, backgroundFor(part), 4.5);
+        if (styles.strokeColor !== undefined) add(styles.strokeColor, backgroundFor(part), 3);
+      }
+    }
+  }
+
+  // Confronto per code point, non `localeCompare`: l'ordine non dipende dalla locale ICU.
+  const byCodePoint = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+  return [...byPair.values()].sort(
+    (a, b) =>
+      byCodePoint(a.foreground, b.foreground) || byCodePoint(a.background, b.background) || a.minRatio - b.minRatio,
+  );
+}
 
 const COLOR: TokenType = "color";
 const RADIUS: TokenType = "borderRadius";
@@ -107,7 +151,49 @@ const OPACITY: TokenType = "opacity";
 const SHADOW: TokenType = "shadow";
 
 /**
- * La specifica della library: 61 token semantici + 19 coppie di contrasto.
+ * Coppie del catalogo, indipendenti dai design: X/X-foreground, warning come
+ * fill+foreground, bordi e ring sulla pagina.
+ */
+const CATALOG_PAIRS: readonly ContrastPair[] = [
+  ...FOREGROUND_PAIRS.map(([foreground, background]) => ({ foreground, background, minRatio: 4.5 as const })),
+  {
+    foreground: "color.warning-foreground",
+    background: "color.warning",
+    minRatio: 4.5,
+    fillPairOnly: true,
+  },
+  { foreground: "color.border", background: "color.background", minRatio: 3 },
+  { foreground: "color.input", background: "color.background", minRatio: 3 },
+  { foreground: "color.ring", background: "color.background", minRatio: 3 },
+  /**
+   * Focus ring dell'AccordionItem (su `color.card`): viene dalle classi
+   * strutturali `focus-visible:ring-ring` del binding shadcn, non da un
+   * design — nessun design lega `color.ring` dentro una board `card`, quindi
+   * la derivazione non può ricavarla. Resta qui finché il design non la
+   * esprime (Story 2.7 parte A, da decidere con Alessandro).
+   */
+  { foreground: "color.ring", background: "color.card", minRatio: 3 },
+];
+
+/**
+ * Coppie del catalogo + coppie ricavate dai design. Una coppia ricavata già
+ * presidiata dal catalogo con soglia uguale o più alta non si ripete.
+ */
+export function buildContrastPairs(designs: Readonly<Record<string, ComponentDesign>>): ContrastPair[] {
+  const covered = (pair: ContrastPair): boolean =>
+    CATALOG_PAIRS.some(
+      (declared) =>
+        declared.foreground === pair.foreground &&
+        declared.background === pair.background &&
+        !declared.fillPairOnly &&
+        declared.minRatio >= pair.minRatio,
+    );
+  return [...CATALOG_PAIRS, ...deriveDesignContrastPairs(designs).filter((pair) => !covered(pair))];
+}
+
+/**
+ * La specifica della library: 61 token semantici + le coppie di contrasto
+ * (catalogo + ricavate dai design committati).
  * I token feedback (`success`/`warning`/`info` + foreground) servono a
  * LifecycleBadge e ai toast (decisione di Alessandro, 2026-09-12, UX-DR2).
  */
@@ -143,19 +229,7 @@ export const LIBRARY_SPEC: LibrarySpec = {
     { name: "shadow.lg", type: SHADOW },
     { name: "shadow.ring", type: SHADOW },
   ],
-  contrastPairs: [
-    ...FOREGROUND_PAIRS.map(([foreground, background]) => ({ foreground, background, minRatio: 4.5 as const })),
-    ...DESIGN_USAGE_PAIRS,
-    {
-      foreground: "color.warning-foreground",
-      background: "color.warning",
-      minRatio: 4.5,
-      fillPairOnly: true,
-    },
-    { foreground: "color.border", background: "color.background", minRatio: 3 },
-    { foreground: "color.input", background: "color.background", minRatio: 3 },
-    { foreground: "color.ring", background: "color.background", minRatio: 3 },
-  ],
+  contrastPairs: buildContrastPairs(committedDesigns()),
 };
 
 /** Un token del seed di bootstrap: stessa forma del token Penpot da creare. */

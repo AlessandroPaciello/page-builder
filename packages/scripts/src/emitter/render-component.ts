@@ -634,6 +634,33 @@ function jsxClassNameAttribute(node: PartNode, isRoot: boolean, ctx: EmitterCont
   return value.startsWith(`"`) ? value : `{${value}}`;
 }
 
+/** Un role ARIA è una o più parole minuscole: tutto il resto è un giudizio malformato, non un attributo da emettere. */
+const ARIA_ROLE = /^[a-z]+( [a-z]+)*$/;
+/** `aria-*` dichiarati nel giudizio: nome d'attributo minuscolo. */
+const ARIA_ATTRIBUTE = /^aria-[a-z]+$/;
+
+function declaredRole(ctx: EmitterContext): string | null {
+  const role = ctx.recipe.judgment.a11y.role;
+  if (role === null) return null;
+  if (!ARIA_ROLE.test(role)) {
+    fail(`il giudizio di "${ctx.recipe.componentName}" dichiara a11y.role "${role}", che non è un role ARIA valido.`);
+  }
+  return role;
+}
+
+/**
+ * L'asserzione che il test generato emette per ogni attributo a11y
+ * dichiarato nel giudizio (`role` o `aria-*`): stessa stringa per l'emitter
+ * e per `checkDeclaredA11y`, che prova che l'asserzione c'è nel test
+ * committato (stesso schema dell'assert axe, BH#5 della 2.6).
+ */
+export function declaredA11yAssertion(attribute: string, role: string | null = null): string {
+  if (attribute === "role") {
+    return `expect(declaredAttribute(container, "role")?.getAttribute("role")).toBe("${role ?? ""}");`;
+  }
+  return `expect(declaredAttribute(container, "${attribute}")).not.toBeNull();`;
+}
+
 function renderPartJsx(ctx: EmitterContext, node: PartNode, isRoot: boolean, indent: string): string {
   const boundPart = node.binding;
   if (boundPart.element === null) return "";
@@ -655,7 +682,13 @@ function renderPartJsx(ctx: EmitterContext, node: PartNode, isRoot: boolean, ind
   const elementIndent = boundPart.wrapper !== undefined ? `${indent}  ` : indent;
   const childIndent = `${elementIndent}  `;
   const attributes = [`data-slot="${slot}"`, ...attributeProps, `className=${jsxClassNameAttribute(node, isRoot, ctx)}`];
-  if (isRoot) attributes.push("{...props}");
+  if (isRoot) {
+    // `role` dichiarato nel giudizio: sulla radice, PRIMA di `{...props}`
+    // (il consumer può ancora sovrascriverlo). Il test generato lo asserisce nel DOM.
+    const role = declaredRole(ctx);
+    if (role !== null) attributes.push(`role="${role}"`);
+    attributes.push("{...props}");
+  }
 
   const inner: string[] = [];
   if (content !== null) inner.push(`${childIndent}${content}`);
@@ -903,6 +936,66 @@ function renderTestFile(ctx: EmitterContext): string {
     }
   }
 
+  /**
+   * A11y dichiarata nel giudizio (Story 2.7, problema 1): ogni `role` e ogni
+   * `aria-*` è asserito NEL DOM, perché `aria-expanded`/`aria-controls` li
+   * mette l'headless e `aria-invalid` il consumer — un grep sul `.tsx`
+   * darebbe falsi rossi. Lo stato che porta l'attributo si rende così:
+   * `state` → la prop DOM del suo mapping (`aria-invalid:` → `aria-invalid`),
+   * `behavior` → apertura via Trigger, altrimenti il render di default.
+   */
+  const a11y = ctx.recipe.judgment.a11y;
+  const role = declaredRole(ctx);
+  const declaredCount = (role !== null ? 1 : 0) + a11y.ariaAttributes.length;
+  if (role !== null) {
+    tests.push(`  it("porta il role dichiarato (${role})", () => {
+    const { container } = ${renderCall(`<${componentName} ${jsxArgs()} />`)};
+    ${declaredA11yAssertion("role", role)}
+  });`);
+  }
+  for (const attribute of a11y.ariaAttributes) {
+    if (!ARIA_ATTRIBUTE.test(attribute)) {
+      fail(`il giudizio di "${componentName}" dichiara a11y.ariaAttributes "${attribute}", che non è un attributo aria-* valido.`);
+    }
+    const stateEntry = ctx.contract.axes
+      .filter((axis) => axis.type === "state")
+      .flatMap((axis) =>
+        axis.values
+          .filter((value) => (ctx.binding.axes[axis.name]?.values[value] ?? "").startsWith(`${attribute}:`))
+          .map((value) => `${axis.name}=${value}`),
+      )[0];
+    if (stateEntry !== undefined) {
+      tests.push(`  it("porta l'attributo dichiarato ${attribute} (${stateEntry})", () => {
+    const { container } = ${renderCall(`<${componentName} ${attribute} ${jsxArgs()} />`)};
+    ${declaredA11yAssertion(attribute)}
+  });`);
+    } else if (needsFireEvent) {
+      tests.push(`  it("porta l'attributo dichiarato ${attribute} (dopo l'apertura)", () => {
+    const { container } = ${renderCall(`<${componentName} ${jsxArgs()} />`)};
+    const trigger = container.querySelector('[data-slot="${toKebab(componentName)}-${triggerPart}"]');
+    expect(trigger).toBeTruthy();
+    fireEvent.click(trigger!);
+    ${declaredA11yAssertion(attribute)}
+  });`);
+    } else {
+      tests.push(`  it("porta l'attributo dichiarato ${attribute}", () => {
+    const { container } = ${renderCall(`<${componentName} ${jsxArgs()} />`)};
+    ${declaredA11yAssertion(attribute)}
+  });`);
+    }
+  }
+  const a11yHelper =
+    declaredCount > 0
+      ? `
+function declaredAttribute(container: HTMLElement, attribute: string): Element | null {
+  const root = container.querySelector('[data-slot="${toKebab(componentName)}"]');
+  if (root === null) return null;
+  if (attribute === "role") return root.hasAttribute("role") ? root : null;
+  return root.hasAttribute(attribute) ? root : root.querySelector("[" + attribute + "]");
+}
+`
+      : "";
+
   const imports = [
     `${needsFireEvent ? `import { fireEvent, render } from "@testing-library/react";` : `import { render } from "@testing-library/react";`}`,
     `import { describe, expect, it } from "vitest";`,
@@ -928,7 +1021,7 @@ function renderInRoot(ui: ReactElement) {
   return `${provenanceHeader(ctx)}
 
 ${imports.join("\n")}
-${helper}
+${helper}${a11yHelper}
 describe("${componentName}", () => {
 ${tests.join("\n\n")}
 });

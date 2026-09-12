@@ -77,8 +77,57 @@ describe("defineContract", () => {
       { ...valid, fields: { ...valid.fields, body: { schema: "non-uno-schema", kind: "content" } } },
       /demo-chip.*field "body".*schema Zod/,
     ],
+    [
+      "field title (attributo HTML globale)",
+      { ...valid, fields: { ...valid.fields, title: { schema: z.string(), kind: "content" } } },
+      /demo-chip.*field "title".*attributo HTML globale "title"/,
+    ],
+    [
+      "field id (attributo HTML globale)",
+      { ...valid, fields: { ...valid.fields, id: { schema: z.string(), kind: "content" } } },
+      /demo-chip.*field "id".*attributo HTML globale "id"/,
+    ],
+    [
+      "field tabIndex (attributo HTML globale, confronto case-insensitive)",
+      { ...valid, fields: { ...valid.fields, tabIndex: { schema: z.string(), kind: "content" } } },
+      /demo-chip.*field "tabIndex".*attributo HTML globale "tabindex"/,
+    ],
+    [
+      "field className (prop React dell'attributo class)",
+      { ...valid, fields: { ...valid.fields, className: { schema: z.string(), kind: "content" } } },
+      /demo-chip.*field "className".*attributo HTML globale "classname"/,
+    ],
+    [
+      "field role (emesso dall'emitter sulla radice)",
+      { ...valid, fields: { ...valid.fields, role: { schema: z.string(), kind: "content" } } },
+      /demo-chip.*field "role".*prop riservata/,
+    ],
+    [
+      "field children (prop riservata di React)",
+      { ...valid, fields: { ...valid.fields, children: { schema: z.string(), kind: "content" } } },
+      /demo-chip.*field "children".*prop riservata/,
+    ],
+    [
+      "field onClick (event handler)",
+      { ...valid, fields: { ...valid.fields, onClick: { schema: z.string(), kind: "content" } } },
+      /demo-chip.*field "onClick".*prop riservata/,
+    ],
   ])("rifiuta %s nominando contratto e campo", (_label, def, message) => {
     expect(() => defineContract(def as never)).toThrow(message);
+  });
+
+  it("accetta field che somigliano ma non sono attributi globali né handler (subtitle, placeholder, label, online, one)", () => {
+    const def = {
+      ...valid,
+      fields: {
+        online: { schema: z.string(), kind: "content" },
+        one: { schema: z.string(), kind: "content" },
+        subtitle: { schema: z.string(), kind: "content" },
+        placeholder: { schema: z.string(), kind: "content" },
+        label: { schema: z.string(), kind: "content" },
+      },
+    } as const;
+    expect(() => defineContract(def)).not.toThrow();
   });
 });
 

@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { COMPONENT_CONTRACTS } from "@app/contracts";
 import { describe, expect, it } from "vitest";
 
+import { committedDesigns } from "./designs-loader";
 import type { Operation } from "./library-plan";
 import { planLibrary } from "./library-plan";
 import { LIBRARY_SPEC, type SemanticSeed } from "./library-spec";
@@ -14,13 +15,7 @@ const seed: SemanticSeed = JSON.parse(
   readFileSync(resolve(import.meta.dirname, "semantic-tokens.seed.json"), "utf8"),
 ) as SemanticSeed;
 
-const designs = {
-  badge: JSON.parse(readFileSync(resolve(import.meta.dirname, "designs/badge.design.json"), "utf8")),
-  input: JSON.parse(readFileSync(resolve(import.meta.dirname, "designs/input.design.json"), "utf8")),
-  "accordion-item": JSON.parse(
-    readFileSync(resolve(import.meta.dirname, "designs/accordion-item.design.json"), "utf8"),
-  ),
-};
+const designs = committedDesigns();
 
 const contracts = Object.values(COMPONENT_CONTRACTS);
 
@@ -70,7 +65,7 @@ function verify(snapshot: LibrarySnapshot) {
 }
 
 describe("verifyLibrary — snapshot verde", () => {
-  it("il risultato del bootstrap passa tutte le 10 regole", () => {
+  it("il risultato del bootstrap passa tutte le 11 regole", () => {
     const result = verify(greenSnapshot());
     expect(result.errors).toEqual([]);
     expect(result.ok).toBe(true);
@@ -261,6 +256,33 @@ describe("verifyLibrary — un caso rosso per regola", () => {
     semantic.tokens.find((t) => t.name === "color.border")!.value = "not-a-color";
     const result = verify(snapshot);
     expect(result.errors.some((e) => e.includes("color.border") && e.includes("non risolvibile"))).toBe(true);
+  });
+
+  it("regola 11: container con plugin data di un contratto fuori registry è un errore sul container", () => {
+    const snapshot = greenSnapshot();
+    snapshot.components.push({
+      id: "id-alert",
+      name: "Alert",
+      pluginData: "alert@1",
+      axes: [],
+      axesValues: {},
+      cells: [],
+    });
+    const result = verify(snapshot);
+    expect(result.ok).toBe(false);
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toContain('Container "Alert"');
+    expect(result.errors[0]).toContain('"alert@1"');
+    expect(result.errors[0]).toContain("assente dal registry");
+  });
+
+  it("regola 11: verde quando il contratto del container è nel registry", () => {
+    const snapshot = greenSnapshot();
+    const result = verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot });
+    expect(result.errors.some((e) => e.includes("assente dal registry"))).toBe(false);
+    // Senza il contratto nel registry lo stesso container diventa orfano.
+    const withoutBadge = verifyLibrary({ contracts: contracts.filter((c) => c.name !== "badge"), spec: LIBRARY_SPEC, snapshot });
+    expect(withoutBadge.errors.some((e) => e.includes('Container "Badge"') && e.includes("assente dal registry"))).toBe(true);
   });
 
   it("i container estranei senza plugin data sono ignorati", () => {

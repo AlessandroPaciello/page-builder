@@ -4,7 +4,8 @@ import { join } from "node:path";
 
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 
-import { parseArgs, runRender } from "./render-cli";
+import { committedComponents, loadRecipe } from "./artifacts";
+import { parseArgs, runRender, runRenderAll } from "./render-cli";
 
 /**
  * Test del CLI render:component (Story 2.6, AC #1): parsing fail-loud,
@@ -24,6 +25,12 @@ describe("parseArgs", () => {
       check: false,
       baseDir: "/tmp/bases",
     });
+  });
+
+  it("--all (con --check) sostituisce il nome componente; --all e un nome insieme sono rifiutati", () => {
+    expect(parseArgs(["--", "--all", "--check"])).toEqual({ all: true, check: true, baseDir: undefined });
+    expect(() => parseArgs(["--all", "Badge"])).toThrow(/--all e il nome componente "Badge" sono alternativi/);
+    expect(() => parseArgs(["--all", "--all"])).toThrow(/--all duplicata/);
   });
 
   it("fallisce loud su nome mancante, argomenti ignoti e opzioni duplicate", () => {
@@ -73,6 +80,20 @@ describe("runRender", () => {
     writeFileSync(tsxPath, "export const HandMade = true;\n", "utf8");
     await runRender({ componentName: "Badge", check: false }, { domainsDir: outRoot });
     expect(readFileSync(tsxPath, "utf8")).toBe("export const HandMade = true;\n");
+  });
+
+  it("--all rende ogni componente con ricetta committata; --all --check è a diff zero, e rosso se uno diverge", async () => {
+    await runRenderAll({ all: true, check: false }, { domainsDir: outRoot });
+    for (const component of committedComponents()) {
+      const domain = loadRecipe(component).judgment.domain;
+      expect(readFileSync(join(outRoot, domain, `${component}.tsx`), "utf8")).toContain("@generated");
+    }
+    await runRenderAll({ all: true, check: true }, { domainsDir: outRoot });
+    expect(process.exitCode).toBe(0);
+
+    writeFileSync(join(outRoot, "inputs", "Input.tsx"), "// @generated — manomesso\n", "utf8");
+    await runRenderAll({ all: true, check: true }, { domainsDir: outRoot });
+    expect(process.exitCode).toBe(1);
   });
 
   it("ricetta non conforme → fail-loud prima di qualsiasi scrittura", async () => {

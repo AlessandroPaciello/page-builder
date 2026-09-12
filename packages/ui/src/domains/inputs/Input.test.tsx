@@ -7,6 +7,13 @@ import { describe, expect, it } from "vitest";
 import { axe } from "vitest-axe";
 import { Input } from "./Input";
 
+function declaredAttribute(container: HTMLElement, attribute: string): Element | null {
+  const root = container.querySelector('[data-slot="input"]');
+  if (root === null) return null;
+  if (attribute === "role") return root.hasAttribute("role") ? root : null;
+  return root.hasAttribute(attribute) ? root : root.querySelector("[" + attribute + "]");
+}
+
 describe("Input", () => {
   it("renderizza i campi content", () => {
     const { getByPlaceholderText } = render(<Input placeholder="Segnaposto" />);
@@ -26,5 +33,10 @@ describe("Input", () => {
   it("non ha violazioni axe (state=disabled)", async () => {
     const { container } = render(<Input disabled placeholder="Segnaposto" />);
     expect((await axe(container)).violations).toEqual([]);
+  });
+
+  it("porta l'attributo dichiarato aria-invalid (state=error)", () => {
+    const { container } = render(<Input aria-invalid placeholder="Segnaposto" />);
+    expect(declaredAttribute(container, "aria-invalid")).not.toBeNull();
   });
 });

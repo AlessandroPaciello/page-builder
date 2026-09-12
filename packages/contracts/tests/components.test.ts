@@ -1,9 +1,13 @@
+import { readdirSync } from "node:fs";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
+
 import { describe, expect, it } from "vitest";
 
 import { accordionItem } from "../src/components/accordion-item";
 import { badge } from "../src/components/badge";
 import { input } from "../src/components/input";
-import { contractId, propsSchema } from "../src/contract";
+import { contractId, propsSchema, type ComponentContract } from "../src/contract";
 import { COMPONENT_CONTRACTS } from "../src/registry";
 
 describe("badge@1", () => {
@@ -68,8 +72,25 @@ describe("accordion-item@1", () => {
 });
 
 describe("registry e contractId", () => {
-  it("elenca esattamente i tre contratti sotto il loro nome", () => {
-    expect(COMPONENT_CONTRACTS).toEqual({ badge, input, "accordion-item": accordionItem });
+  it("ogni file in src/components/ è nel registry con chiave = nome, e il registry non ha altro", async () => {
+    const dir = resolve(import.meta.dirname, "../src/components");
+    const files = readdirSync(dir)
+      .filter((entry) => entry.endsWith(".ts"))
+      .sort();
+    expect(files.length).toBeGreaterThan(0);
+    const registered = COMPONENT_CONTRACTS as Readonly<Record<string, ComponentContract>>;
+    for (const file of files) {
+      const name = file.replace(/\.ts$/, "");
+      const module = (await import(/* @vite-ignore */ pathToFileURL(resolve(dir, file)).href)) as Record<string, unknown>;
+      const exported = Object.values(module).filter(
+        (value): value is ComponentContract =>
+          typeof value === "object" && value !== null && "name" in value && "axes" in value,
+      );
+      expect(exported, `src/components/${file}: nessun contratto esportato`).toHaveLength(1);
+      expect(exported[0]!.name, `src/components/${file}: il nome del contratto ≠ nome del file`).toBe(name);
+      expect(registered[name], `src/components/${file}: il contratto "${name}" non è nel registry`).toBe(exported[0]);
+    }
+    expect(Object.keys(COMPONENT_CONTRACTS).sort()).toEqual(files.map((file) => file.replace(/\.ts$/, "")));
     for (const [name, contract] of Object.entries(COMPONENT_CONTRACTS)) expect(contract.name).toBe(name);
   });
 

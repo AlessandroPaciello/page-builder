@@ -4,7 +4,7 @@ import { pathToFileURL } from "node:url";
 
 import { loadJudgment } from "../extract-component";
 import { validateRecipe } from "../validate-recipe";
-import { loadBaseSources, loadBinding, loadCatalog, loadFixture, loadRecipe, readExistingFiles, domainsRoot, basesDir } from "./artifacts";
+import { committedComponents, loadBaseSources, loadBinding, loadCatalog, loadFixture, loadRecipe, readExistingFiles, domainsRoot, basesDir } from "./artifacts";
 import { renderCheck, renderComponent } from "./render-component";
 
 /**
@@ -27,12 +27,33 @@ export interface RenderCliArgs {
   baseDir?: string;
 }
 
-export function parseArgs(args: readonly string[]): RenderCliArgs {
+/** `--all`: tutti i componenti con ricetta committata (`committedComponents`), mai una lista a mano. */
+export interface RenderAllArgs {
+  all: true;
+  check: boolean;
+  baseDir?: string;
+}
+
+const USAGE = "pnpm render:component -- <Nome>|--all [--check] [--base <dir>]";
+
+export function parseArgs(args: readonly string[]): RenderCliArgs | RenderAllArgs {
   // pnpm inoltra il separatore "--" fra script e argomenti: va rimosso, non è un flag.
-  const rest = args.filter((arg) => arg !== "--");
-  const [componentName, ...options] = rest;
-  if (!componentName || componentName.startsWith("--")) {
-    throw new Error(`Nome componente mancante — usare: pnpm render:component -- <Nome> [--check] [--base <dir>].`);
+  const withAll = args.filter((arg) => arg !== "--");
+  const allCount = withAll.filter((arg) => arg === "--all").length;
+  if (allCount > 1) throw new Error("Opzione --all duplicata.");
+  const rest = withAll.filter((arg) => arg !== "--all");
+  let componentName: string | undefined;
+  let options: string[];
+  if (allCount === 1) {
+    if (rest[0] !== undefined && !rest[0].startsWith("--")) {
+      throw new Error(`--all e il nome componente "${rest[0]}" sono alternativi — usare: ${USAGE}.`);
+    }
+    options = rest;
+  } else {
+    [componentName, ...options] = rest;
+    if (!componentName || componentName.startsWith("--")) {
+      throw new Error(`Nome componente mancante — usare: ${USAGE}.`);
+    }
   }
   let check = false;
   let baseDir: string | undefined;
@@ -48,12 +69,36 @@ export function parseArgs(args: readonly string[]): RenderCliArgs {
       baseDir = value;
       index++;
     } else {
-      throw new Error(
-        `Argomento "${arg}" non riconosciuto — usare: pnpm render:component -- <Nome> [--check] [--base <dir>].`,
-      );
+      throw new Error(`Argomento "${arg}" non riconosciuto — usare: ${USAGE}.`);
     }
   }
+  if (componentName === undefined) return { all: true, check, baseDir };
   return { componentName, check, baseDir };
+}
+
+/**
+ * `--all`: rende (o verifica con `--check`) ogni componente con ricetta
+ * committata. In `--check` un componente divergente porta l'exit a 1 ma i
+ * successivi girano comunque, così il log nomina TUTTI i divergenti.
+ */
+export async function runRenderAll(args: RenderAllArgs, options: RenderCliOptions = {}): Promise<void> {
+  const components = committedComponents();
+  const previousExitCode = process.exitCode;
+  const divergent: string[] = [];
+  for (const componentName of components) {
+    process.exitCode = 0;
+    await runRender({ componentName, check: args.check, baseDir: args.baseDir }, options);
+    if (process.exitCode !== 0) divergent.push(componentName);
+  }
+  process.exitCode = previousExitCode;
+  if (divergent.length > 0) {
+    process.exitCode = 1;
+    console.error(
+      `✗ Check fallito: ${divergent.length} di ${components.length} componenti NON a diff zero: ${divergent.join(", ")}.`,
+    );
+    return;
+  }
+  console.log(`${args.check ? "Verificati" : "Resi"} ${components.length} componenti: ${components.join(", ")}.`);
 }
 
 export interface RenderCliOptions {
@@ -125,7 +170,8 @@ export async function runRender(args: RenderCliArgs, options: RenderCliOptions =
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
-  await runRender(args);
+  if ("all" in args) await runRenderAll(args);
+  else await runRender(args);
 }
 
 // Esegui `main()` solo da invocazione diretta, mai a un semplice `import`
