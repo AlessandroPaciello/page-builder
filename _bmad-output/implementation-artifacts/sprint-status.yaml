@@ -61,7 +61,7 @@ development_status:
   2-1-pipeline-token-penpot-codice: done
   2-2-estrazione-componenti-e-schema-delle-ricette: done
   2-3-package-dei-contratti: done
-  2-4-bootstrap-della-library-penpot-sui-contratti: backlog
+  2-4-bootstrap-della-library-penpot-sui-contratti: review
   2-5-estrazione-adeguata-ricette-per-parti-e-token: backlog
   2-6-emitter-shadcn-deterministico-e-gate-ci: backlog
   2-7-libreria-componenti-accessibile: backlog
@@ -119,6 +119,6 @@ action_items:
     owner: "Dev"
     status: open
   - epic: 2
-    action: "Installare BMad Builder e creare il modulo BMad penpot-ds (skill di bootstrap/additiva Penpot) prima di Story 2.4 (correct-course 2026-09-12)"
-    owner: "Alessandro"
-    status: open
+    action: "Installare BMad Builder e creare il modulo BMad penpot-ds (skill di bootstrap/additiva Penpot) per la Story 2.4 (correct-course 2026-09-12). Builder installato il 2026-09-12 (bmb v2.2.2, ca2055c); il modulo (codice pds) si crea nella Story 2.4, Task 6"
+    owner: "Dev (Story 2.4)"
+    status: done

@@ -207,7 +207,7 @@ So that l'app sia deployabile in modo portabile con lo schema sempre applicato p
 
 Si generano token e componenti React accessibili dal catalogo Penpot in modo riproducibile, visibili e testati in Storybook. Il regime è `contratto → fixture → ricetta → emitter` (AD-11, rivisto 2026-09-12): il contratto è del page builder (`@app/contracts`), Penpot disegna valori e aspetto; l'unico passo di giudizio è la ricetta, committata e rivedibile; il codice è funzione pura di fixture+ricetta+binding.
 
-**Prerequisito (non è una story):** BMad Builder installato e modulo BMad `penpot-ds` creato prima della Story 2.4 (action item in `sprint-status.yaml`).
+**Tooling:** BMad Builder installato il 2026-09-12 (`bmb` v2.2.2). Il modulo BMad `penpot-ds` (codice `pds`) si crea **dentro la Story 2.4** (Task 6), perché il dev scrive le sue skill (decisione di Alessandro, 2026-09-12).
 
 ### Story 2.1: Pipeline token Penpot→codice
 

@@ -1,9 +1,18 @@
 {
   "extends": "@app/config/tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["ESNext"],
-    "types": ["node"]
+    "lib": [
+      "ESNext"
+    ],
+    "types": [
+      "node"
+    ]
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "src/**/*.ts",
+    "tests/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

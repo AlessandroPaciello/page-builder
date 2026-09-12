@@ -2,17 +2,21 @@
   "name": "@penpot-ds/scripts",
   "version": "0.0.0",
   "private": true,
-  "description": "Pipeline MCP Penpot→codice: Stage 1 genera i token di @penpot-ds/tokens, Stage 2 estrae per-componente fixture e ricette validate (schema + vocabolario token).",
+  "description": "Pipeline MCP Penpot\u2192codice: Stage 1 genera i token di @penpot-ds/tokens, Stage 2 estrae per-componente fixture e ricette validate (schema + vocabolario token).",
   "type": "module",
   "scripts": {
-    "generate:theme": "node --import tsx src/generate-theme.ts",
-    "extract:component": "node --import tsx src/extract-component.ts extract",
-    "validate:recipe": "node --import tsx src/extract-component.ts validate",
-    "test": "vitest run",
+    "add:library": "node --import tsx src/library/library-cli.ts add",
+    "bootstrap:library": "node --import tsx src/library/library-cli.ts bootstrap",
     "check-types": "tsc --noEmit",
-    "lint": "node ./scripts/check-boundaries.mjs"
+    "extract:component": "node --import tsx src/extract-component.ts extract",
+    "generate:theme": "node --import tsx src/generate-theme.ts",
+    "lint": "node ./scripts/check-boundaries.mjs",
+    "test": "vitest run",
+    "validate:recipe": "node --import tsx src/extract-component.ts validate",
+    "verify:library": "node --import tsx src/library/library-cli.ts verify"
   },
   "dependencies": {
+    "@app/contracts": "workspace:*",
     "@modelcontextprotocol/sdk": "catalog:",
     "@penpot-ds/tokens": "workspace:*",
     "zod": "catalog:"

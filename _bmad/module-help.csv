@@ -1,0 +1,4 @@
+module,skill,display-name,menu-code,description,action,args,phase,preceded-by,followed-by,required,output-location,outputs
+pds,pds-bootstrap,[PB] Bootstrap library,PB,Bootstrap una tantum della library Penpot sui contratti,bootstrap,,anytime,,,false,,library Penpot verificata (`verify:library` verde)
+pds,pds-additive,[PA] Aggiunta additiva,PA,"Aggiunge token e container mancanti alla library esistente, segnalando le differenze senza correggerle",add,,anytime,pds-bootstrap:bootstrap,,false,,library Penpot verificata (`verify:library` verde)
+pds,pds-setup,[SU] Setup,SU,Registra il modulo Penpot DS nel progetto,configure,,anytime,,,false,,

@@ -1,0 +1,134 @@
+{
+  "parts": {
+    "root": {
+      "kind": "board",
+      "size": [
+        110,
+        34
+      ],
+      "dir": "row",
+      "align": "center"
+    },
+    "label": {
+      "kind": "text",
+      "parent": "root",
+      "text": "Badge"
+    }
+  },
+  "cells": {
+    "variant=default|size=sm": {
+      "root": {
+        "fill": "color.primary",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusBottomLeft": "radius.full",
+        "paddingTop": "spacing.1",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.2",
+        "paddingRight": "spacing.2"
+      },
+      "label": {
+        "fill": "color.primary-foreground",
+        "fontSize": "text.xs",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      }
+    },
+    "variant=default|size=md": {
+      "root": {
+        "fill": "color.primary",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusBottomLeft": "radius.full",
+        "paddingTop": "spacing.1",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.3",
+        "paddingRight": "spacing.3"
+      },
+      "label": {
+        "fill": "color.primary-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      }
+    },
+    "variant=secondary|size=sm": {
+      "root": {
+        "fill": "color.secondary",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusBottomLeft": "radius.full",
+        "paddingTop": "spacing.1",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.2",
+        "paddingRight": "spacing.2"
+      },
+      "label": {
+        "fill": "color.secondary-foreground",
+        "fontSize": "text.xs",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      }
+    },
+    "variant=secondary|size=md": {
+      "root": {
+        "fill": "color.secondary",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusBottomLeft": "radius.full",
+        "paddingTop": "spacing.1",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.3",
+        "paddingRight": "spacing.3"
+      },
+      "label": {
+        "fill": "color.secondary-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      }
+    },
+    "variant=destructive|size=sm": {
+      "root": {
+        "fill": "color.destructive",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusBottomLeft": "radius.full",
+        "paddingTop": "spacing.1",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.2",
+        "paddingRight": "spacing.2"
+      },
+      "label": {
+        "fill": "color.destructive-foreground",
+        "fontSize": "text.xs",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      }
+    },
+    "variant=destructive|size=md": {
+      "root": {
+        "fill": "color.destructive",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusBottomLeft": "radius.full",
+        "paddingTop": "spacing.1",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.3",
+        "paddingRight": "spacing.3"
+      },
+      "label": {
+        "fill": "color.destructive-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      }
+    }
+  }
+}

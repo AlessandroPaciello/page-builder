@@ -1,0 +1,8 @@
+document_output_language: Italiano
+output_folder: '{project-root}/_bmad-output'
+pds:
+  name: Penpot DS
+  description: 'Allinea la library Penpot ai contratti del page builder: bootstrap
+    una tantum e aggiunte successive, con esito deciso dagli script di `packages/scripts`.'
+  version: 1.0.0
+  default_selected: false

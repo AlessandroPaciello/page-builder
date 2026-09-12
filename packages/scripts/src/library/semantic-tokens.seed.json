@@ -1,0 +1,108 @@
+{
+  "palette": [
+    { "name": "gray.1", "type": "color", "value": "#FAF4E8" },
+    { "name": "gray.2", "type": "color", "value": "#F9F9F9" },
+    { "name": "gray.8", "type": "color", "value": "#7A8F85" },
+    { "name": "gray.11", "type": "color", "value": "#3E4942" },
+    { "name": "gray.12", "type": "color", "value": "#1A1C1C" },
+    { "name": "white", "type": "color", "value": "#FFFFFF" },
+    { "name": "accent.1", "type": "color", "value": "#E8F5EF" },
+    { "name": "accent.2", "type": "color", "value": "#CCE9DA" },
+    { "name": "accent.9", "type": "color", "value": "#006C49" },
+    { "name": "accent.11", "type": "color", "value": "#004830" },
+    { "name": "accent.12", "type": "color", "value": "#002113" },
+    { "name": "red.9", "type": "color", "value": "#BA1A1A" },
+    { "name": "green.9", "type": "color", "value": "#2E7D32" },
+    { "name": "amber.9", "type": "color", "value": "#8F6C00" },
+    { "name": "blue.9", "type": "color", "value": "#0A4FA0" }
+  ],
+  "semantic": [
+    { "name": "color.background", "type": "color", "value": "{gray.1}" },
+    { "name": "color.foreground", "type": "color", "value": "{gray.12}" },
+    { "name": "color.card", "type": "color", "value": "{white}" },
+    { "name": "color.card-foreground", "type": "color", "value": "{gray.12}" },
+    { "name": "color.popover", "type": "color", "value": "{white}" },
+    { "name": "color.popover-foreground", "type": "color", "value": "{gray.12}" },
+    { "name": "color.primary", "type": "color", "value": "{accent.9}" },
+    { "name": "color.primary-foreground", "type": "color", "value": "{white}" },
+    { "name": "color.secondary", "type": "color", "value": "{accent.1}" },
+    { "name": "color.secondary-foreground", "type": "color", "value": "{accent.11}" },
+    { "name": "color.muted", "type": "color", "value": "{gray.2}" },
+    { "name": "color.muted-foreground", "type": "color", "value": "{gray.11}" },
+    { "name": "color.accent", "type": "color", "value": "{accent.2}" },
+    { "name": "color.accent-foreground", "type": "color", "value": "{accent.12}" },
+    { "name": "color.destructive", "type": "color", "value": "{red.9}" },
+    { "name": "color.destructive-foreground", "type": "color", "value": "{white}" },
+    { "name": "color.border", "type": "color", "value": "{gray.8}" },
+    { "name": "color.input", "type": "color", "value": "{gray.8}" },
+    { "name": "color.ring", "type": "color", "value": "{accent.9}" },
+    { "name": "color.success", "type": "color", "value": "{green.9}" },
+    { "name": "color.success-foreground", "type": "color", "value": "{white}" },
+    { "name": "color.warning", "type": "color", "value": "{amber.9}" },
+    { "name": "color.warning-foreground", "type": "color", "value": "{white}" },
+    { "name": "color.info", "type": "color", "value": "{blue.9}" },
+    { "name": "color.info-foreground", "type": "color", "value": "{white}" },
+    { "name": "radius.sm", "type": "borderRadius", "value": "4" },
+    { "name": "radius.md", "type": "borderRadius", "value": "8" },
+    { "name": "radius.lg", "type": "borderRadius", "value": "12" },
+    { "name": "radius.full", "type": "borderRadius", "value": "9999" },
+    { "name": "spacing.1", "type": "spacing", "value": "4" },
+    { "name": "spacing.2", "type": "spacing", "value": "8" },
+    { "name": "spacing.3", "type": "spacing", "value": "12" },
+    { "name": "spacing.4", "type": "spacing", "value": "16" },
+    { "name": "spacing.5", "type": "spacing", "value": "24" },
+    { "name": "spacing.6", "type": "spacing", "value": "32" },
+    { "name": "spacing.7", "type": "spacing", "value": "40" },
+    { "name": "spacing.8", "type": "spacing", "value": "48" },
+    { "name": "spacing.9", "type": "spacing", "value": "64" },
+    { "name": "text.xs", "type": "fontSizes", "value": "12" },
+    { "name": "text.sm", "type": "fontSizes", "value": "14" },
+    { "name": "text.base", "type": "fontSizes", "value": "16" },
+    { "name": "text.lg", "type": "fontSizes", "value": "18" },
+    { "name": "text.xl", "type": "fontSizes", "value": "20" },
+    { "name": "text.2xl", "type": "fontSizes", "value": "24" },
+    { "name": "text.3xl", "type": "fontSizes", "value": "28" },
+    { "name": "font-weight.regular", "type": "fontWeights", "value": "400" },
+    { "name": "font-weight.medium", "type": "fontWeights", "value": "500" },
+    { "name": "font-weight.semibold", "type": "fontWeights", "value": "600" },
+    { "name": "font-weight.bold", "type": "fontWeights", "value": "700" },
+    { "name": "font.sans", "type": "fontFamilies", "value": ["Manrope"] },
+    { "name": "font.serif", "type": "fontFamilies", "value": ["Noto Serif"] },
+    { "name": "tracking.none", "type": "letterSpacing", "value": "0px" },
+    { "name": "tracking.tight", "type": "letterSpacing", "value": "0.5px" },
+    { "name": "tracking.wide", "type": "letterSpacing", "value": "2px" },
+    { "name": "border-width.default", "type": "borderWidth", "value": "1" },
+    { "name": "border-width.thick", "type": "borderWidth", "value": "2" },
+    { "name": "opacity.disabled", "type": "opacity", "value": "0.5" },
+    {
+      "name": "shadow.sm",
+      "type": "shadow",
+      "value": [
+        { "offsetX": "0", "offsetY": "1", "blur": "3", "spread": "0", "color": "rgba(26,28,28,0.12)", "inset": false }
+      ]
+    },
+    {
+      "name": "shadow.md",
+      "type": "shadow",
+      "value": [
+        { "offsetX": "0", "offsetY": "4", "blur": "12", "spread": "0", "color": "rgba(26,28,28,0.16)", "inset": false },
+        { "offsetX": "0", "offsetY": "1", "blur": "2", "spread": "0", "color": "rgba(26,28,28,0.10)", "inset": false }
+      ]
+    },
+    {
+      "name": "shadow.lg",
+      "type": "shadow",
+      "value": [
+        { "offsetX": "0", "offsetY": "8", "blur": "24", "spread": "0", "color": "rgba(26,28,28,0.20)", "inset": false },
+        { "offsetX": "0", "offsetY": "2", "blur": "4", "spread": "0", "color": "rgba(26,28,28,0.12)", "inset": false }
+      ]
+    },
+    {
+      "name": "shadow.ring",
+      "type": "shadow",
+      "value": [
+        { "offsetX": "0", "offsetY": "0", "blur": "0", "spread": "3", "color": "{color.ring}", "inset": false }
+      ]
+    }
+  ]
+}

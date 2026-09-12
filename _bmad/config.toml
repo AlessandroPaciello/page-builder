@@ -18,11 +18,11 @@ output_folder = "{project-root}/_bmad-output"
 [modules.bmm]
 planning_artifacts = "{project-root}/_bmad-output/planning-artifacts"
 implementation_artifacts = "{project-root}/_bmad-output/implementation-artifacts"
-# Documentazione del progetto attuale (greenfield Next.js). Da popolare con [GPC]/[DP].
-# NOTA: `docs/legacy/` contiene la documentazione della codebase PRECEDENTE
-# (penpot-design-system: Strapi + JHipster) ed è solo riferimento storico —
-# non va usata come grounding per story o decisioni tecniche. Vedi docs/README.md.
 project_knowledge = "{project-root}/docs"
+
+[modules.bmb]
+bmad_builder_output_folder = "{project-root}/skills"
+bmad_builder_reports = "{project-root}/skills/reports"
 
 [agents.bmad-agent-analyst]
 module = "bmm"
@@ -31,14 +31,6 @@ name = "Mary"
 title = "Business Analyst"
 icon = "📊"
 description = "Channels Porter's strategic rigor and Minto's Pyramid Principle, grounds every finding in verifiable evidence, represents every stakeholder voice. Speaks like a treasure hunter narrating the find: thrilled by every clue, precise once the pattern emerges."
-
-[agents.bmad-agent-tech-writer]
-module = "bmm"
-team = "software-development"
-name = "Paige"
-title = "Technical Writer"
-icon = "📚"
-description = "Master of CommonMark, DITA, and OpenAPI; turns complex concepts into accessible structured docs, favors diagrams over walls of text, every word earning its place. Speaks like the patient teacher you wish you'd had, using analogies that make complex things feel simple."
 
 [agents.bmad-agent-pm]
 module = "bmm"
