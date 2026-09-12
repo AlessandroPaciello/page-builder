@@ -8,7 +8,7 @@ Status: ready-for-dev
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
-> ⛔ **Prerequisito bloccante (non è un task di questa story).** BMad Builder installato e modulo BMad `penpot-ds` creato: action item in `sprint-status.yaml` (owner Alessandro) e nota "Prerequisito" in `epics.md#Epic 2`. Al 2026-09-12 **non è soddisfatto**: `_bmad/_config/manifest.yaml` elenca solo `core` e `bmm`, e in `.claude/skills/` non c'è nessuna skill `penpot-ds`. Il Task 0 lo verifica. Se manca, **HALT**, senza improvvisare il modulo a mano.
+> ℹ️ **Modulo `penpot-ds`: si crea in questa story** (decisione di Alessandro, 2026-09-12). BMad Builder è installato (`bmb` v2.2.2, commit `ca2055c`). Il modulo **non esiste ancora**: lo crea il dev nel Task 6, prima scrivendo le due skill con `bmad-workflow-builder` e poi impacchettandole con `bmad-module-builder` (create module). Le risposte al builder sono già scritte nel Task 6, quindi il dev non deve chiederle.
 
 ## Story
 
@@ -18,7 +18,7 @@ so that i componenti disegnati seguano già la linea del contratto invece di ess
 
 ## Acceptance Criteria
 
-1. **Given** i contratti della Story 2.3 (`@app/contracts`), il modulo BMad `penpot-ds` e un file Penpot senza library **When** eseguo la skill di bootstrap **Then** vengono creati:
+1. **Given** i contratti della Story 2.3 (`@app/contracts`), il modulo BMad `penpot-ds` (creato in questa story, Task 6) e un file Penpot senza library **When** eseguo la skill di bootstrap **Then** vengono creati:
    - i token semantici, compresi `shadow`/`ring`;
    - **un VariantContainer per contratto** con gli assi del contratto;
    - **0 `variantError`**;
@@ -31,7 +31,7 @@ so that i componenti disegnati seguano già la linea del contratto invece di ess
 ## Tasks / Subtasks
 
 - [ ] **Task 0: Gate dei prerequisiti (AC: tutti). Va fatto prima di scrivere codice.**
-  - [ ] Verifica che BMad Builder e il modulo `penpot-ds` esistano: una voce in `_bmad/_config/manifest.yaml` (o nella struttura prodotta dal Module Builder) e la registrazione in `module-help.csv`. Se mancano, **HALT** e segnala ad Alessandro. Non creare la struttura del modulo a mano: è la decisione del forge ("modulo BMad custom creato con BMad Builder").
+  - [ ] Verifica che BMad Builder sia installato: `bmb` in `_bmad/_config/manifest.yaml`, skill `bmad-workflow-builder` e `bmad-module-builder` presenti in `.claude/skills/`, cartella di output `bmb.bmad_builder_output_folder = {project-root}/skills` in `_bmad/config.toml`. Se manca, **HALT**. Il modulo `penpot-ds` **non** si crea qui ma nel Task 6, perché il builder impacchetta skill già scritte.
   - [ ] Verifica l'ambiente live: stack Penpot attivo (`docker/penpot`, `http://localhost:9001`), `PENPOT_MCP_TOKEN` impostata, plugin MCP connesso. Usa Node 22 (`nvm use 22.23.1`): con Node 20 il postinstall di `packages/db` fallisce.
   - [ ] Chiedi ad Alessandro (o crea con il suo ok) un **file Penpot nuovo e vuoto** per la library, ad esempio "Page Builder DS", e connettici il plugin. **Non** usare "Nuovo File 4" (il prototipo del forge, che ha già token e container `badge@1`/`input@1`/`accordion-item@1`) né il file della library `mis`: servono entrambi come casi rossi del rifiuto (Task 7).
 - [ ] **Task 1: Spike di persistenza del binding (rischio aperto, deferred-work "hex-match")**
@@ -127,10 +127,17 @@ so that i componenti disegnati seguano già la linea del contratto invece di ess
     
     **Mai** in CI né in build: sono comandi live come `extract:component`, e vanno documentati così.
   - [ ] Offline, `verify:library` può girare su uno snapshot salvato (`--snapshot <path>`). È il seam dei test, e permette alla Story 2.5/2.6 di riusarlo.
-- [ ] **Task 6: Le skill nel modulo `penpot-ds` (AC: #1, #2, #3)**
-  - [ ] Nel modulo creato al prerequisito, scrivi due workflow sottili (con il Workflow Builder se disponibile): **bootstrap** e **additiva**. Il loro compito è guidare e fare domande: conferma del file Penpot connesso, revisione dei valori del seed e dei `design.json` con il designer, lancio del `--dry-run`, conferma, lancio del comando, lettura dell'esito. **Il pass/fail lo decide l'exit code di `verify:library`**. Il prompt non contiene criteri di successo propri (AD-11: "pass/fail sta negli script e negli schemi, mai nel prompt"). Una skill non chiama mai `execute_code` per scrivere al di fuori dei comandi CLI.
+- [ ] **Task 6: Il modulo `penpot-ds` e le sue skill (AC: #1, #2, #3)**
+  - [ ] **6a. Scrivi le skill** con `bmad-workflow-builder` (build a workflow) nella cartella di output del builder, `skills/` alla root del repo: `skills/pds-bootstrap/` e `skills/pds-additive/`, ciascuna con `SKILL.md`. Per il prefisso: il builder usa il codice del modulo nel nome delle skill. Sono due workflow sottili: **bootstrap** e **additiva**. Il loro compito è guidare e fare domande: conferma del file Penpot connesso, revisione dei valori del seed e dei `design.json` con il designer, lancio del `--dry-run`, conferma, lancio del comando, lettura dell'esito. **Il pass/fail lo decide l'exit code di `verify:library`**. Il prompt non contiene criteri di successo propri (AD-11: "pass/fail sta negli script e negli schemi, mai nel prompt"). Una skill non chiama mai `execute_code` per scrivere al di fuori dei comandi CLI.
   - [ ] La skill additiva, per le differenze, **riporta e basta**. Non propone correzioni automatiche: sistemarle è del designer in Penpot o di un cambio esplicito di contratto.
-  - [ ] Registra le due skill nell'help del modulo (`module-help.csv`), così `bmad-help` le trova.
+  - [ ] **6b. Impacchetta il modulo** con `bmad-module-builder` in modalità **create module**, sulla cartella `skills/`. Ci sono due skill, quindi il builder genera una **skill di setup dedicata** (`skills/pds-setup/`, tramite `scripts/scaffold-setup-skill.py`) e non l'approccio standalone. Risposte già decise, da dare senza chiedere ad Alessandro:
+    - **Nome del modulo**: `Penpot DS`. **Codice**: `pds` (il builder vuole 2-4 lettere: `penpot-ds` è il nome concettuale usato nei documenti). **Versione**: `1.0.0`. **Tipo**: standalone, non un'espansione di `bmm`.
+    - **Descrizione**: "Allinea la library Penpot ai contratti del page builder: bootstrap una tantum e aggiunte successive, con esito deciso dagli script di `packages/scripts`."
+    - **Capability** (`module-help.csv`): `[PB] Bootstrap library` → `pds-bootstrap`, phase `anytime`, `required: false`. `[PA] Aggiunta additiva` → `pds-additive`, `after: pds-bootstrap:bootstrap`. `[SU] Setup` → `pds-setup`. `outputs`: "library Penpot verificata (`verify:library` verde)".
+    - **Variabili di config**: nessuna. Endpoint e token vengono da `PENPOT_MCP_URL`/`PENPOT_MCP_TOKEN`, mai dalla config del modulo.
+    - **Dipendenze esterne** (step 5 del builder): server MCP Penpot raggiungibile e plugin connesso. La skill di setup si limita a controllare che siano presenti e rimanda al README (`#penpot-locale-e-server-mcp`), senza installare nulla.
+    - **Greeting**: "Modulo Penpot DS pronto. Apri il file Penpot, connetti il plugin MCP e lancia [PB] (bootstrap) oppure [PA] (additiva)."
+  - [ ] **6c. Valida e registra**: `python3 .claude/skills/bmad-module-builder/scripts/validate-module.py skills/` deve essere verde. Poi esegui `pds-setup` per registrare il modulo (config e voci nell'help di BMad). **Verifica** che `bmad-help` elenchi `[PB]`/`[PA]` e che le skill `pds-*` siano visibili a Claude Code e OpenCode. Se la skill di setup non le copia in `.claude/skills/` e `.agents/skills/`, segui il meccanismo indicato da `assets/setup-skill-template/SKILL.md` o dall'installer (`npx bmad-method install --custom-source ./skills`). Documenta nelle Completion Notes quale meccanismo hai usato. **Non** copiare a mano file nelle cartelle rigenerate dall'installer senza un meccanismo che le reinstalli.
 - [ ] **Task 7: Esecuzione live e prove di rifiuto (AC: #1, #2, #3)**
   - [ ] Sul file nuovo: `bootstrap:library --dry-run`, poi `bootstrap:library`, con `verify:library` verde. Esporta almeno una cella per contratto (`export_shape`) e controlla a occhio che la resa sia sensata. È un controllo cosmetico: non decide l'esito.
   - [ ] **Rosso di AC #2**: `bootstrap:library` su "Nuovo File 4" e sul file della library `mis` deve **rifiutare** con exit 1 e zero scritture. Confronta il numero di set e di componenti prima e dopo.
@@ -165,7 +172,7 @@ so that i componenti disegnati seguano già la linea del contratto invece di ess
     - aggiorna la voce "dark mode" (la nuova library ha i set `palette` + `semantic`, niente themes: la voce resta aperta); aggiungi la voce "testo warning su background 4.44:1, serve un tono più scuro dal designer";
     - chiudi la voce "correzione 5 token tracking nell'UI di Penpot" come **superata**, perché la library `mis` non è più la sorgente;
     - aggiungi solo ciò che rimandi davvero.
-  - [ ] `sprint-status.yaml`: action item "BMad Builder + `penpot-ds`" → `done` quando il Task 0 è passato.
+  - [ ] `sprint-status.yaml`: action item "BMad Builder + `penpot-ds`" → `done` quando il Task 6 è verde (modulo validato e skill visibili).
 
 ## Dev Notes
 
@@ -244,7 +251,10 @@ packages/scripts/
   src/__fixtures__/penpot-catalog.json      # SOSTITUITA dalla nuova library (via --live)
   src/__fixtures__/legacy-mis-catalog.json  # NUOVO: vecchio catalogo, solo per i test fino alla 2.5
 packages/tokens/src/tailwind-theme.css, tokens.generated.ts  # RIGENERATI
-<modulo penpot-ds>/                # skill bootstrap + additiva (percorso deciso dal Module Builder)
+skills/                            # output di BMad Builder (bmb.bmad_builder_output_folder)
+  pds-bootstrap/SKILL.md           # workflow sottile: domande → dry-run → bootstrap:library → verify
+  pds-additive/SKILL.md            # workflow sottile: domande → dry-run → add:library → verify
+  pds-setup/                       # generata da bmad-module-builder (module.yaml, module-help.csv, script)
 ```
 
 - La Structural Seed dello spine prevede `scripts/penpot/`, `recipes/`, `render/` e `gates/`, ma il package reale è piatto in `src/`. `src/library/` è coerente con il codice esistente: il codice possiede la struttura dopo il seed.
@@ -258,7 +268,7 @@ packages/tokens/src/tailwind-theme.css, tokens.generated.ts  # RIGENERATI
 
 ### References
 
-- [Source: _bmad-output/planning-artifacts/epics.md#Story 2.4, #Epic 2 (Prerequisito), #Story 2.5, #Story 2.7]
+- [Source: _bmad-output/planning-artifacts/epics.md#Story 2.4, #Epic 2 (Tooling), #Story 2.5, #Story 2.7]
 - [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-11, #AD-5, #AD-3]: ownership, plugin data, skill bootstrap/additiva, pass/fail negli script.
 - [Source: _bmad-output/specs/spec-page-builder/penpot-pipeline.md#Principio guida, #Stadio 0, #Stadio 1]: nomi shadcn, stessa funzione di nome per variabili e classi.
 - [Source: _bmad-output/specs/spec-page-builder/design-system.md#tokens]: contrasto ≥4.5:1 per il testo e ≥3:1 per gli indicatori.
@@ -283,3 +293,4 @@ packages/tokens/src/tailwind-theme.css, tokens.generated.ts  # RIGENERATI
 ## Change Log
 
 - 2026-09-12: story creata con create-story. Ho analizzato epics (Epic 2), sprint change proposal 2026-09-12, spine (AD-3/5/11), penpot-pipeline, design-system, forge e memlog, story 2.3 (codice di `@app/contracts`), 2.2, deferred-work, pipeline token (`theme-generator`, `penpot-reader`, `generate-theme`, `mcp-client`), gate di `scripts` e test che dipendono dalla fixture `mis`. Ho letto le API Penpot dall'MCP. Il prerequisito BMad Builder/`penpot-ds` risulta non soddisfatto. Status → ready-for-dev.
+- 2026-09-12: valori dei token decisi con Alessandro (palette + semantic, feedback inclusi, sfondo caldo). BMad aggiornato a 6.12.0 con `bmb` installato (`ca2055c`). Su decisione di Alessandro, la creazione del modulo `penpot-ds` (codice `pds`) entra nella story al Task 6, con le risposte al builder già scritte; il Task 0 verifica solo che il builder sia installato.

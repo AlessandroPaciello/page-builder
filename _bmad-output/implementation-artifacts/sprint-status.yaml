@@ -119,6 +119,6 @@ action_items:
     owner: "Dev"
     status: open
   - epic: 2
-    action: "Installare BMad Builder e creare il modulo BMad penpot-ds (skill di bootstrap/additiva Penpot) prima di Story 2.4 (correct-course 2026-09-12)"
-    owner: "Alessandro"
-    status: open
+    action: "Installare BMad Builder e creare il modulo BMad penpot-ds (skill di bootstrap/additiva Penpot) per la Story 2.4 (correct-course 2026-09-12). Builder installato il 2026-09-12 (bmb v2.2.2, ca2055c); il modulo (codice pds) si crea nella Story 2.4, Task 6"
+    owner: "Dev (Story 2.4)"
+    status: in-progress
