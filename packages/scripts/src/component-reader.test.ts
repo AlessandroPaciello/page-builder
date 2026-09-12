@@ -9,7 +9,7 @@ import type { TokenCatalog } from "./theme-generator";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const catalog: TokenCatalog = JSON.parse(
-  readFileSync(resolve(here, "__fixtures__/penpot-catalog.json"), "utf8"),
+  readFileSync(resolve(here, "__fixtures__/legacy-mis-catalog.json"), "utf8"),
 ) as TokenCatalog;
 
 /** Envelope execute_code felice: container Badge con 2 celle + Default. */

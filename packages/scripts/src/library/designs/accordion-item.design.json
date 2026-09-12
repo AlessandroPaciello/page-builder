@@ -1,0 +1,139 @@
+{
+  "parts": {
+    "root": {
+      "kind": "board",
+      "size": [
+        340,
+        160
+      ],
+      "dir": "column",
+      "align": "start"
+    },
+    "trigger": {
+      "kind": "board",
+      "parent": "root",
+      "size": [
+        336,
+        48
+      ],
+      "dir": "row",
+      "align": "center"
+    },
+    "label": {
+      "kind": "text",
+      "parent": "trigger",
+      "text": "Sezione"
+    },
+    "chevron": {
+      "kind": "path",
+      "parent": "trigger"
+    },
+    "content": {
+      "kind": "board",
+      "parent": "root",
+      "size": [
+        336,
+        80
+      ],
+      "dir": "column",
+      "align": "start"
+    },
+    "body": {
+      "kind": "text",
+      "parent": "content",
+      "text": "Contenuto"
+    },
+    "divider": {
+      "kind": "board",
+      "parent": "root",
+      "size": [
+        336,
+        1
+      ]
+    }
+  },
+  "cells": {
+    "state=closed": {
+      "root": {
+        "fill": "color.card",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusBottomLeft": "radius.md"
+      },
+      "trigger": {
+        "paddingTop": "spacing.3",
+        "paddingBottom": "spacing.3",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "columnGap": "spacing.2"
+      },
+      "label": {
+        "fill": "color.foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "chevron": {
+        "strokeColor": "color.foreground",
+        "strokeWidth": "border-width.default"
+      },
+      "content": {
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingBottom": "spacing.4"
+      },
+      "body": {
+        "fill": "color.muted-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.regular",
+        "letterSpacing": "tracking.none"
+      },
+      "divider": {
+        "strokeColor": "color.border",
+        "strokeWidth": "border-width.default"
+      }
+    },
+    "state=open": {
+      "root": {
+        "fill": "color.card",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusBottomLeft": "radius.md"
+      },
+      "trigger": {
+        "paddingTop": "spacing.3",
+        "paddingBottom": "spacing.3",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "columnGap": "spacing.2"
+      },
+      "label": {
+        "fill": "color.foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "chevron": {
+        "strokeColor": "color.foreground",
+        "strokeWidth": "border-width.default"
+      },
+      "content": {
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingBottom": "spacing.4"
+      },
+      "body": {
+        "fill": "color.muted-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.regular",
+        "letterSpacing": "tracking.none"
+      },
+      "divider": {
+        "strokeColor": "color.border",
+        "strokeWidth": "border-width.default"
+      }
+    }
+  }
+}

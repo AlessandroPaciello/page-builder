@@ -392,6 +392,9 @@ importers:
 
   packages/scripts:
     dependencies:
+      '@app/contracts':
+        specifier: workspace:*
+        version: link:../contracts
       '@modelcontextprotocol/sdk':
         specifier: 'catalog:'
         version: 1.30.0(zod@4.4.3)

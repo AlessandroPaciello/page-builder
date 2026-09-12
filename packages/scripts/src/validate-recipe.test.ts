@@ -8,7 +8,8 @@ import { validateRecipe } from "./validate-recipe";
 import type { TokenCatalog } from "./theme-generator";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const fixturePath = resolve(here, "__fixtures__/penpot-catalog.json");
+/** Fixture legacy `mis`: la ricetta Badge valida qui viene sostituita in Story 2.5 (Story 2.4, Task 8). */
+const fixturePath = resolve(here, "__fixtures__/legacy-mis-catalog.json");
 const catalog: TokenCatalog = JSON.parse(readFileSync(fixturePath, "utf8")) as TokenCatalog;
 
 const validRecipe = {

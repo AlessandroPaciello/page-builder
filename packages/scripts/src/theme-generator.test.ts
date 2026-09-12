@@ -7,7 +7,12 @@ import { describe, expect, it } from "vitest";
 import { generateTheme, varName, varSuffix, type TokenCatalog } from "./theme-generator";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const fixturePath = resolve(here, "__fixtures__/penpot-catalog.json");
+/**
+ * Dal Task 8 della Story 2.4 la fixture `penpot-catalog.json` è la NUOVA
+ * library (token semantici shadcn); i test che dipendono dai nomi `mis`
+ * leggono la fixture legacy, conservata solo fino alla Story 2.5.
+ */
+const fixturePath = resolve(here, "__fixtures__/legacy-mis-catalog.json");
 
 function loadFixture(): TokenCatalog {
   return JSON.parse(readFileSync(fixturePath, "utf8")) as TokenCatalog;
@@ -312,7 +317,11 @@ describe("generateTheme — guardie fail-loud (review 2.1)", () => {
   });
 
   it("drift guard: i file generati committati coincidono byte per byte con la rigenerazione dalla fixture", () => {
-    const { css, ts } = generateTheme(loadFixture());
+    // I file generati committati provengono dalla fixture CORRENTE
+    // (penpot-catalog.json, la nuova library dal Task 8 della Story 2.4),
+    // non dalla legacy usata dagli altri test.
+    const currentFixturePath = resolve(here, "__fixtures__/penpot-catalog.json");
+    const { css, ts } = generateTheme(JSON.parse(readFileSync(currentFixturePath, "utf8")) as TokenCatalog);
     const committedCss = readFileSync(resolve(here, "../../tokens/src/tailwind-theme.css"), "utf8");
     const committedTs = readFileSync(resolve(here, "../../tokens/src/tokens.generated.ts"), "utf8");
     expect(css).toBe(committedCss);
