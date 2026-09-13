@@ -14,6 +14,7 @@ import {
   type ComponentFixture,
   type ComponentRecipe,
 } from "./recipe-schema";
+import { layerTreeProblems } from "./style-properties";
 import { fixtureHash, type TokenCatalog } from "./theme-generator";
 import { validateRecipe } from "./validate-recipe";
 
@@ -176,6 +177,12 @@ export function buildRecipe(
       throw new Error(`Cella duplicata "${key}" nella fixture di "${fixture.componentName}" — il prodotto cartesiano non ha duplicati.`);
     }
     seenKeys.add(key);
+    // Registro delle proprietà (Story 2.8): una proprietà non registrata o
+    // bloccata, nello stile o nei binding, ferma l'estrazione — mai uno skip.
+    const problems = layerTreeProblems(cell.root, { component: fixture.componentName, cell: key });
+    if (problems.length > 0) {
+      throw new Error(`Estrazione di "${fixture.componentName}" bloccata dal registro delle proprietà:\n${problems.join("\n")}`);
+    }
     const { bindings, duplicates } = partBindings(cell.root);
     // Un binding su un layer che non è una parte del contratto, o una parte
     // portata da più layer, è un segnale di stop: si segnala, non si corregge.

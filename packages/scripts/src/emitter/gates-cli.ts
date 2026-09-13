@@ -99,11 +99,6 @@ async function main(): Promise<void> {
     const baseSources = loadBaseSources(binding.base, basesDir);
     const rendered = renderComponent(fixture, recipe, binding, baseSources, catalog, { existingFiles: existing });
     regenerationEntries.push({ component, files: rendered.files });
-    for (const skipped of rendered.skippedProperties) {
-      console.log(
-        `  SKIP proprietà "${skipped.property}" (parte "${skipped.part}", cella "${skipped.cell}", token "${skipped.token}"): ${skipped.reason}`,
-      );
-    }
   }
   const regeneration = checkRegeneration(regenerationEntries, existing);
   if (regeneration.ok) {

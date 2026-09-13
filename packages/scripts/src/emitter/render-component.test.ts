@@ -26,6 +26,103 @@ function renderCommitted(componentName: string, existingFiles?: Record<string, s
   return renderComponent(fixture, recipe, binding, base, catalog, { existingFiles });
 }
 
+/** Imposta la stessa proprietà in TUTTE le celle di una parte: proprietà costante, finisce nella base. */
+function setEverywhere(recipe: ComponentRecipe, part: string, property: string, token: string): void {
+  for (const cell of Object.values(recipe.parts[part]!)) cell[property] = token;
+}
+
+function renderWith(componentName: string, mutate: (recipe: ComponentRecipe) => void, withCatalog = catalog) {
+  const recipe = structuredClone(loadRecipe(componentName)) as ComponentRecipe;
+  mutate(recipe);
+  const binding = loadBinding(componentName);
+  return renderComponent(loadFixture(componentName), recipe, binding, baseSources[binding.base]!, withCatalog);
+}
+
+/** Catalogo committato più un token di prova. */
+function catalogWith(name: string, type: "opacity" | "borderWidth", value: string) {
+  const extended = structuredClone(catalog);
+  extended.sets[0]!.tokens.push({ name, type, value });
+  return extended;
+}
+
+describe("renderComponent — registro delle proprietà (Story 2.8)", () => {
+  it("nessuno skip: il risultato non ha più skippedProperties", () => {
+    for (const component of ["Badge", "Input", "AccordionItem"]) {
+      expect("skippedProperties" in renderCommitted(component)).toBe(false);
+    }
+  });
+
+  it("strokeWidth coperta dalla base: 1px coincide con `border` (verde), 2px no (rosso)", () => {
+    expect(() => renderWith("Input", () => {})).not.toThrow();
+    expect(() => renderWith("Input", (recipe) => setEverywhere(recipe, "root", "strokeWidth", "border-width.thick"))).toThrow(
+      /componente "Input", parte "root", cella "state=default", proprietà "strokeWidth", token "border-width\.thick": il token vale 2, la base shadcn esprime 1 \("border"\)/,
+    );
+  });
+
+  it("strokeWidth su una parte per cui la base non esprime un bordo blocca", () => {
+    expect(() => renderWith("Badge", (recipe) => setEverywhere(recipe, "label", "strokeWidth", "border-width.default"))).toThrow(
+      /parte "label".*"strokeWidth".*la base shadcn non esprime "strokeWidth"/,
+    );
+  });
+
+  it("opacity coperta dalla base solo con il prefisso giusto: disabled:opacity-50 sì, opacità di base no", () => {
+    expect(() => renderWith("Input", (recipe) => setEverywhere(recipe, "root", "opacity", "opacity.disabled"))).toThrow(
+      /parte "root".*"opacity".*non esprime "opacity" per questa parte con prefisso ""/,
+    );
+  });
+
+  it("strokeWidth solo su un valore option non default: la base non ha classi per variante, blocca", () => {
+    expect(() =>
+      renderWith("Badge", (recipe) => {
+        for (const [key, cell] of Object.entries(recipe.parts.root!)) {
+          if (key.startsWith("variant=secondary|")) cell.strokeWidth = "border-width.default";
+        }
+      }),
+    ).toThrow(/per un valore d'asse option/);
+  });
+
+  it("opacity con prefisso disabled: 0.5 coincide con disabled:opacity-50 (verde), 0.3 no (rosso)", () => {
+    // Verde: la ricetta committata di Input lega opacity.disabled (0.5) alla sola cella state=disabled.
+    expect(loadRecipe("Input").parts.root!["state=disabled"]!.opacity).toBe("opacity.disabled");
+    expect(() => renderWith("Input", () => {})).not.toThrow();
+    expect(() =>
+      renderWith(
+        "Input",
+        (recipe) => (recipe.parts.root!["state=disabled"]!.opacity = "opacity.test"),
+        catalogWith("opacity.test", "opacity", "0.3"),
+      ),
+    ).toThrow(/il token vale 0\.3, la base shadcn esprime 0\.5 \("disabled:opacity-50"\)/);
+  });
+
+  it("un token opacity con valore non numerico blocca", () => {
+    expect(() =>
+      renderWith(
+        "Input",
+        (recipe) => (recipe.parts.root!["state=disabled"]!.opacity = "opacity.test"),
+        catalogWith("opacity.test", "opacity", "mezzo"),
+      ),
+    ).toThrow(/non è numerico/);
+  });
+
+  it("icona: strokeWidth sul layer path del chevron si ignora per regola, anche se non coincide con la base", () => {
+    const committed = renderCommitted("AccordionItem").files;
+    const result = renderWith("AccordionItem", (recipe) => setEverywhere(recipe, "chevron", "strokeWidth", "border-width.thick"));
+    expect(result.files).toEqual(committed);
+  });
+
+  it("una proprietà non registrata in una cella blocca il render", () => {
+    expect(() => renderWith("Badge", (recipe) => setEverywhere(recipe, "root", "fooBar", "color.primary"))).toThrow(
+      /Proprietà non registrata.*componente "Badge", parte "root".*proprietà "fooBar", token "color\.primary"/,
+    );
+  });
+
+  it("una proprietà bloccata in una cella blocca il render", () => {
+    expect(() => renderWith("Badge", (recipe) => setEverywhere(recipe, "label", "fontFamilies", "font.sans"))).toThrow(
+      /Proprietà bloccata.*parte "label".*"fontFamilies"/,
+    );
+  });
+});
+
 describe("renderComponent — instradamento per tipo d'asse", () => {
   it("Badge (assi option): 4 file @generated con provenienza e varianti cva", () => {
     const result = renderCommitted("Badge");

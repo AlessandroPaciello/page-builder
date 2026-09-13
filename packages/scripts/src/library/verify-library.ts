@@ -1,5 +1,6 @@
 import type { ComponentContract } from "@app/contracts";
 
+import { layerTreeProblems, propertyDefinition } from "../style-properties";
 import type { TokenCatalog } from "../theme-generator";
 import { generateTheme } from "../theme-generator";
 import { contrastRatio, parseHex } from "./contrast";
@@ -228,13 +229,22 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
       }
     }
 
-    // Regola 7: ogni proprietà di stile valorizzata ha un binding, e il
-    // binding punta a un token presente nel catalogo.
+    // Regola 7: ogni proprietà (stile o binding) è nel registro delle
+    // proprietà e non è bloccata; le parole chiave di una lista chiusa sono
+    // ammesse senza token se il valore è in lista; ogni altra proprietà di
+    // stile valorizzata ha un binding, e il binding punta a un token presente
+    // nel catalogo.
     for (const cell of container.cells) {
       if (cell.variantProps === null) continue; // già segnalata dalla regola 5
       const key = cellKeyOf(contract, cell.variantProps);
+      for (const problem of layerTreeProblems(cell.root, { component: contract.name, cell: key })) {
+        errors.push(`Contratto "${contract.name}", cella "${key}": ${problem}`);
+      }
       walkLayers(cell.root, (layer) => {
         for (const property of Object.keys(layer.style)) {
+          const definition = propertyDefinition(property);
+          // Non registrata o parola chiave: già giudicata sopra dal registro.
+          if (definition === undefined || definition.type.kind === "keyword") continue;
           const binding = layer.tokens[property];
           if (!binding) {
             errors.push(

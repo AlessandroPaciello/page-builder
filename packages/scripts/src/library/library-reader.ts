@@ -6,6 +6,7 @@ import {
   type McpCallToolResult,
   type McpEndpoint,
 } from "../mcp-client";
+import { propertiesReadAs, strokeKeywordReads } from "../style-properties";
 import type { LibrarySnapshot, SnapshotToken } from "./library-snapshot";
 
 /**
@@ -42,6 +43,57 @@ export interface ReadLibraryOptions {
  * Penpot 2.17.2 (verificato in Story 2.4), il font resta una scelta del
  * designer in Penpot.
  */
+/**
+ * `styleOf(shape)` con le liste iniettate dal registro delle proprietà
+ * (Story 2.8): nessuna lista scritta a mano qui. Le parole chiave dello
+ * stroke (`strokeStyle`, `strokeAlignment`) si registrano solo se diverse dal
+ * default della lista (`solid`, `inner`), come `opacity` ≠ 1.
+ */
+function buildStyleOfSource(): string {
+  const single = (source: Parameters<typeof propertiesReadAs>[0]): string => {
+    const [property, ...rest] = propertiesReadAs(source);
+    if (property === undefined || rest.length > 0) {
+      throw new Error(`Registro incoerente: la lettura "${source}" deve valere per esattamente una proprietà.`);
+    }
+    return JSON.stringify(property);
+  };
+  return `
+const POSITIVE_NUMBER_PROPS = ${JSON.stringify(propertiesReadAs("positiveNumber"))};
+const TEXT_PROPS = ${JSON.stringify(propertiesReadAs("text"))};
+const STROKE_KEYWORDS = ${JSON.stringify(strokeKeywordReads())};
+function styleOf(shape) {
+  const style = {};
+  const fills = (shape.fills || []).filter((f) => f && f.fillColor);
+  if (fills.length > 0) style[${single("fills")}] = fills.map((f) => f.fillColor);
+  const strokes = (shape.strokes || []).filter((s) => s && s.strokeColor);
+  if (strokes.length > 0) {
+    style[${single("strokeColor")}] = strokes.map((s) => s.strokeColor);
+    const width = strokes.map((s) => s.strokeWidth).find((w) => typeof w === "number" && w > 0);
+    if (width !== undefined) style[${single("strokeWidth")}] = width;
+    for (const keyword of STROKE_KEYWORDS) {
+      const value = strokes.map((s) => s[keyword.prop]).find((v) => typeof v === "string" && v !== keyword.default);
+      if (value !== undefined) style[keyword.prop] = value;
+    }
+  }
+  for (const prop of POSITIVE_NUMBER_PROPS) {
+    const value = shape[prop];
+    if (typeof value === "number" && value > 0) style[prop] = value;
+  }
+  if (shape.type === "text") {
+    for (const prop of TEXT_PROPS) {
+      if (shape[prop]) style[prop] = shape[prop];
+    }
+  }
+  if (typeof shape.opacity === "number" && Math.abs(shape.opacity - 1) > 1e-6) style[${single("opacity")}] = shape.opacity;
+  if (Array.isArray(shape.shadows) && shape.shadows.length > 0) style[${single("shadows")}] = JSON.parse(JSON.stringify(shape.shadows));
+  return style;
+}
+`;
+}
+
+/** Esportato per i test: il sorgente di `styleOf` eseguito in Penpot. */
+export const STYLE_OF_SOURCE = buildStyleOfSource();
+
 const READ_LIBRARY_CODE = `
 function isVariantContainerShape(shape) {
   try {
@@ -50,33 +102,7 @@ function isVariantContainerShape(shape) {
     return false;
   }
 }
-function styleOf(shape) {
-  const style = {};
-  const fills = (shape.fills || []).filter((f) => f && f.fillColor);
-  if (fills.length > 0) style.fill = fills.map((f) => f.fillColor);
-  const strokes = (shape.strokes || []).filter((s) => s && s.strokeColor);
-  if (strokes.length > 0) {
-    style.strokeColor = strokes.map((s) => s.strokeColor);
-    const width = strokes.map((s) => s.strokeWidth).find((w) => typeof w === "number" && w > 0);
-    if (width !== undefined) style.strokeWidth = width;
-  }
-  for (const prop of ["borderRadiusTopLeft", "borderRadiusTopRight", "borderRadiusBottomRight", "borderRadiusBottomLeft"]) {
-    const value = shape[prop];
-    if (typeof value === "number" && value > 0) style[prop] = value;
-  }
-  for (const prop of ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft", "rowGap", "columnGap"]) {
-    const value = shape[prop];
-    if (typeof value === "number" && value > 0) style[prop] = value;
-  }
-  if (shape.type === "text") {
-    if (shape.fontSize) style.fontSize = shape.fontSize;
-    if (shape.fontWeight) style.fontWeight = shape.fontWeight;
-    if (shape.letterSpacing) style.letterSpacing = shape.letterSpacing;
-  }
-  if (typeof shape.opacity === "number" && Math.abs(shape.opacity - 1) > 1e-6) style.opacity = shape.opacity;
-  if (Array.isArray(shape.shadows) && shape.shadows.length > 0) style.shadow = JSON.parse(JSON.stringify(shape.shadows));
-  return style;
-}
+${STYLE_OF_SOURCE}
 function layerTree(shape) {
   return {
     name: shape.name,

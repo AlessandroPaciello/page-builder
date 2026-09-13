@@ -141,12 +141,6 @@ export async function runRender(args: RenderCliArgs, options: RenderCliOptions =
   const existing = readExistingFiles(targetRoot);
   const result = renderComponent(fixture, recipe, binding, baseSources, catalog, { existingFiles: existing });
 
-  for (const skipped of result.skippedProperties) {
-    console.log(
-      `SKIP proprietà "${skipped.property}" (parte "${skipped.part}", cella "${skipped.cell}", token "${skipped.token}"): ${skipped.reason}`,
-    );
-  }
-
   if (args.check) {
     const check = renderCheck(result.files, existing);
     if (!check.equal) {
