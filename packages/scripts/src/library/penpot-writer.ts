@@ -12,7 +12,9 @@ import type { Operation } from "./library-plan";
  *   `penpot.library.local.createComponent([board])` per ogni cella;
  * - `penpotUtils.createVariantContainer([{ shape, properties }...])`, NON la sequenza a basso livello;
  * - `shape.applyToken(token, [prop])`, asincrono: ~100 ms prima di rileggere;
- * - `container.setSharedPluginData("pagebuilder", "contract", contractId)`.
+ * - `container.setSharedPluginData("pagebuilder", "contract", contractId)`;
+ * - `addCell`: `container.appendChild(board)` + `setVariantProperty(pos, value)`
+ *   (indice da `container.variants.properties`), mai `addVariant()`.
  *
  * I valori colore hex vengono scritti IN MAIUSCOLO (convenzione dell'API).
  */
@@ -102,7 +104,7 @@ async function applyPartTokens(shape, part) {
 }
 `;
 
-function cellStep(contract: string, containerName: string, cell: {
+type CellPlanLike = {
   variantProps: Readonly<Record<string, string>>;
   parts: ReadonlyArray<{
     name: string;
@@ -114,17 +116,29 @@ function cellStep(contract: string, containerName: string, cell: {
     align?: string;
     tokens: Readonly<Record<string, string>>;
   }>;
-}, index: number, xOffset: number, yOffset: number): WriteStep {
-  const cellLabel = Object.entries(cell.variantProps)
+};
+
+/** `axis=v|…` nell'ordine dei `variantProps` (ordine contratto). */
+function cellLabelOf(variantProps: Readonly<Record<string, string>>): string {
+  return Object.entries(variantProps)
     .map(([axis, value]) => `${axis}=${value}`)
     .join("|");
-  const boardName = `${containerName} ${cellLabel}`;
+}
+
+/**
+ * Lo spec di una board di cella: nome `"<Container> axis=v|…"`, posizione da
+ * `index`, parti e token del SOLO design. Condiviso da `createContainer` e
+ * `addCell`, così una cella aggiunta nasce identica a una del bootstrap.
+ */
+function cellSpec(containerName: string, cell: CellPlanLike, index: number, xOffset: number, yOffset: number) {
+  const boardName = `${containerName} ${cellLabelOf(cell.variantProps)}`;
   // Il passo orizzontale segue la larghezza reale della board (review 2.4:
   // 240 fissi sovrapponevano le celle dell'AccordionItem, larga 340).
   const boardWidth = cell.parts.find((part) => part.name === "root")?.size?.[0] ?? 240;
   const step = Math.max(240, boardWidth + 40);
-  const spec = {
+  return {
     boardName,
+    variantProps: cell.variantProps,
     x: xOffset + step * index,
     y: yOffset,
     parts: cell.parts.map((part) => ({
@@ -139,11 +153,13 @@ function cellStep(contract: string, containerName: string, cell: {
       tokens: part.tokens,
     })),
   };
-  return {
-    description: `createContainer "${contract}", cella "${cellLabel}"`,
-    code: `
-${CELL_RUNTIME}
-const spec = ${literal(spec)};
+}
+
+/**
+ * Codice runtime condiviso: guardia per nome, board DA ZERO dalle parti del
+ * design, token, `createComponent`. Lascia `board` e `component` in scope.
+ */
+const BUILD_CELL_RUNTIME = `
 // Guardia di ripartenza (review 2.4): se una scrittura precedente è stata
 // interrotta a metà, la cella può esistere già come componente orfano.
 // Rifiutare qui evita duplicati: la pulizia è manuale in Penpot.
@@ -172,15 +188,95 @@ for (const part of spec.parts) {
 }
 await new Promise((resolve) => setTimeout(resolve, 150));
 const component = penpot.library.local.createComponent([board]);
+`;
+
+function cellStep(contract: string, containerName: string, cell: CellPlanLike, index: number, xOffset: number, yOffset: number): WriteStep {
+  const spec = cellSpec(containerName, cell, index, xOffset, yOffset);
+  return {
+    description: `createContainer "${contract}", cella "${cellLabelOf(cell.variantProps)}"`,
+    code: `
+${CELL_RUNTIME}
+const spec = ${literal(spec)};
+${BUILD_CELL_RUNTIME}
 return { componentId: component.id, name: component.name, boardName: spec.boardName };
 `,
   };
 }
 
+/**
+ * `addCell` (Story 2.7 parte B): la cella mancante di un container ESISTENTE.
+ * Meccanismo provato nel test Alert: board costruita come `cellStep` →
+ * `createComponent` → `container.appendChild(board)` → `setVariantProperty`
+ * per asse (indice da `variants.properties`). NON `addVariant()`: duplica una
+ * variante esistente e ne eredita geometria, stili e binding token.
+ * Non tocca celle esistenti né il plugin data.
+ */
+function addCellStep(contract: string, containerName: string, cell: CellPlanLike, index: number): WriteStep {
+  const spec = cellSpec(containerName, cell, index, 0, 0);
+  return {
+    description: `addCell "${contract}", cella "${cellLabelOf(cell.variantProps)}" nel container "${containerName}"`,
+    code: `
+${CELL_RUNTIME}
+const contractName = ${JSON.stringify(contract)};
+const spec = ${literal(spec)};
+function isVariantContainerShape(shape) {
+  try {
+    return typeof shape.isVariantContainer === "function" && shape.isVariantContainer();
+  } catch (error) {
+    return false;
+  }
+}
+function declaredContract(shape) {
+  try {
+    return (shape.getSharedPluginData("pagebuilder", "contract") || "").split("@")[0];
+  } catch (error) {
+    return "";
+  }
+}
+const declaring = (penpotUtils.findShapes((shape) => isVariantContainerShape(shape)) || []).filter(
+  (shape) => declaredContract(shape) === contractName,
+);
+if (declaring.length !== 1) {
+  throw new Error("addCell \\"" + contractName + "\\", cella \\"" + ${JSON.stringify(cellLabelOf(cell.variantProps))} + "\\": attesa UN container che dichiara il contratto via plugin data, trovati " + declaring.length + (declaring.length > 0 ? " (" + declaring.map((c) => "\\"" + c.name + "\\"").join(", ") + ")" : "") + ".");
+}
+const container = declaring[0];
+const properties = Array.from(container.variants.properties);
+const positions = Object.keys(spec.variantProps).map((axis) => {
+  const pos = properties.indexOf(axis);
+  if (pos < 0) throw new Error("addCell \\"" + contractName + "\\": il container \\"" + container.name + "\\" non ha la proprietà di variante \\"" + axis + "\\" (proprietà: " + properties.join(", ") + ").");
+  return { axis, pos, value: spec.variantProps[axis] };
+});
+// Guardia anti-duplicato: una variante con gli stessi variantProps esiste già.
+const same = container.variants.variantComponents().find((variant) => {
+  const props = variant.variantProps || {};
+  return positions.every((p) => props[p.axis] === p.value);
+});
+if (same) {
+  return { skipped: true, reason: "la variante \\"" + spec.boardName + "\\" esiste già nel container \\"" + container.name + "\\"" };
+}
+${BUILD_CELL_RUNTIME}
+// La board nasce all'origine della pagina: la posizione è relativa al container.
+board.x = (container.x || 0) + spec.x;
+board.y = (container.y || 0) + spec.y;
+container.appendChild(board);
+const cellLabel = "addCell \\"" + contractName + "\\", cella \\"" + spec.boardName + "\\", container \\"" + container.name + "\\"";
+const variant = container.variants.variantComponents().find((c) => c.id === component.id);
+if (!variant) throw new Error(cellLabel + ": il componente creato non risulta fra le varianti del container dopo appendChild — cella scritta a metà, rimuovila a mano in Penpot.");
+for (const p of positions) {
+  variant.setVariantProperty(p.pos, p.value);
+}
+// Rilettura: ogni asse deve avere il valore della cella.
+const written = container.variants.variantComponents().find((c) => c.id === component.id);
+const props = (written && written.variantProps) || {};
+const wrong = positions.filter((p) => props[p.axis] !== p.value);
+if (wrong.length > 0) throw new Error(cellLabel + ": dopo setVariantProperty " + wrong.map((p) => p.axis + " = " + JSON.stringify(props[p.axis]) + " (atteso \\"" + p.value + "\\")").join(", ") + " — cella scritta a metà, rimuovila a mano in Penpot.");
+return { componentId: component.id, boardName: spec.boardName, container: container.name };
+`,
+  };
+}
+
 function containerStep(containerName: string, pluginData: string, cells: ReadonlyArray<{ variantProps: Readonly<Record<string, string>> }>): WriteStep {
-  const boardNames = cells.map((cell) =>
-    `${containerName} ${Object.entries(cell.variantProps).map(([axis, value]) => `${axis}=${value}`).join("|")}`,
-  );
+  const boardNames = cells.map((cell) => `${containerName} ${cellLabelOf(cell.variantProps)}`);
   const entries = cells.map((cell, index) => ({
     name: boardNames[index],
     properties: cell.variantProps,
@@ -219,6 +315,8 @@ export function operationsToSteps(operations: readonly Operation[]): WriteStep[]
       steps.push(setStep(operation.set));
     } else if (operation.kind === "createToken") {
       steps.push(tokenStep(operation.set, operation.name, operation.type, operation.value));
+    } else if (operation.kind === "addCell") {
+      steps.push(addCellStep(operation.contract, operation.containerName, operation, operation.index));
     } else {
       for (const [index, cell] of operation.cells.entries()) {
         steps.push(cellStep(operation.contract, operation.containerName, cell, index, 0, yOffset));

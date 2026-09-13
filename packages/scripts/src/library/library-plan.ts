@@ -1,4 +1,4 @@
-import type { ComponentContract } from "@app/contracts";
+import { contractId, type ComponentContract } from "@app/contracts";
 
 import type { PenpotTokenValue, TokenType } from "../theme-generator";
 import type { LibrarySpec, SemanticSeed } from "./library-spec";
@@ -93,6 +93,20 @@ export type Operation =
       readonly pluginData: string;
       readonly axes: ReadonlyArray<{ readonly name: string; readonly values: readonly string[] }>;
       readonly cells: readonly ContainerCellPlan[];
+    }
+  | {
+      /**
+       * Una cella mancante di un container ESISTENTE (Story 2.7 parte B):
+       * additiva, non tocca celle esistenti né il plugin data. `index` è la
+       * posizione della board (celle esistenti + progressivo).
+       */
+      readonly kind: "addCell";
+      readonly contract: string;
+      readonly containerName: string;
+      readonly cellKey: string;
+      readonly variantProps: Readonly<Record<string, string>>;
+      readonly parts: readonly ContainerPartPlan[];
+      readonly index: number;
     };
 
 /** Una divergenza trovata dall'additiva: nomina il soggetto, l'atteso e il trovato. */
@@ -161,38 +175,44 @@ function designFor(contract: ComponentContract, designs: PlanLibraryInput["desig
   return design;
 }
 
+/**
+ * La cella del prodotto cartesiano `values` costruita dal design: condivisa da
+ * `createContainer` (tutte le celle) e `addCell` (solo le mancanti). Un design
+ * senza la cella è un errore che nomina contratto e cella.
+ */
+function cellPlan(contract: ComponentContract, design: ComponentDesign, values: readonly string[]): ContainerCellPlan {
+  const key = cellKey(contract, values);
+  const cellDesign = design.cells[key];
+  if (!cellDesign) {
+    throw new Error(`Design "${contract.name}": manca la cella "${key}" — ogni cella del prodotto cartesiano deve essere coperta.`);
+  }
+  const variantProps: Record<string, string> = {};
+  contract.axes.forEach((axis, index) => {
+    variantProps[axis.name] = values[index]!;
+  });
+  const parts: ContainerPartPlan[] = contract.parts.map((partName) => {
+    const partDesign = design.parts[partName];
+    if (!partDesign) {
+      throw new Error(`Design "${contract.name}": manca la parte "${partName}" (cella "${key}").`);
+    }
+    const styleTokens = cellDesign[partName] ?? {};
+    return {
+      name: partName,
+      kind: partDesign.kind,
+      parent: partDesign.parent ?? null,
+      ...(partDesign.text !== undefined ? { text: partDesign.text } : {}),
+      ...(partDesign.size !== undefined ? { size: partDesign.size } : {}),
+      ...(partDesign.dir !== undefined ? { dir: partDesign.dir } : {}),
+      ...(partDesign.align !== undefined ? { align: partDesign.align } : {}),
+      tokens: styleTokens,
+    };
+  });
+  return { variantProps, parts };
+}
+
 function containerOperation(contract: ComponentContract, designs: PlanLibraryInput["designs"]): Operation {
   const design = designFor(contract, designs);
-
-  const cells: ContainerCellPlan[] = cartesian(contract).map((values) => {
-    const key = cellKey(contract, values);
-    const cellDesign = design.cells[key];
-    if (!cellDesign) {
-      throw new Error(`Design "${contract.name}": manca la cella "${key}" — ogni cella del prodotto cartesiano deve essere coperta.`);
-    }
-    const variantProps: Record<string, string> = {};
-    contract.axes.forEach((axis, index) => {
-      variantProps[axis.name] = values[index]!;
-    });
-    const parts: ContainerPartPlan[] = contract.parts.map((partName) => {
-      const partDesign = design.parts[partName];
-      if (!partDesign) {
-        throw new Error(`Design "${contract.name}": manca la parte "${partName}" (cella "${key}").`);
-      }
-      const styleTokens = cellDesign[partName] ?? {};
-      return {
-        name: partName,
-        kind: partDesign.kind,
-        parent: partDesign.parent ?? null,
-        ...(partDesign.text !== undefined ? { text: partDesign.text } : {}),
-        ...(partDesign.size !== undefined ? { size: partDesign.size } : {}),
-        ...(partDesign.dir !== undefined ? { dir: partDesign.dir } : {}),
-        ...(partDesign.align !== undefined ? { align: partDesign.align } : {}),
-        tokens: styleTokens,
-      };
-    });
-    return { variantProps, parts };
-  });
+  const cells = cartesian(contract).map((values) => cellPlan(contract, design, values));
 
   return {
     kind: "createContainer",
@@ -206,9 +226,10 @@ function containerOperation(contract: ComponentContract, designs: PlanLibraryInp
 
 /**
  * Il piano. Bootstrap: o rifiuta (library non vuota) o produce TUTTO in ordine
- * deterministico. Additiva: crea solo i token mancanti e i container dei
- * contratti senza container legato via plugin data; per ciò che esiste ma
- * diverge produce `differences` e nessuna operazione.
+ * deterministico. Additiva: crea solo i token mancanti, i container dei
+ * contratti senza container legato via plugin data e le celle mancanti
+ * (`addCell`) di un container esistente; per ciò che esiste ma diverge
+ * produce `differences` e nessuna operazione.
  */
 export function planLibrary(input: PlanLibraryInput): LibraryPlanResult {
   const { mode, contracts, seed, designs, snapshot } = input;
@@ -343,6 +364,43 @@ export function planLibrary(input: PlanLibraryInput): LibraryPlanResult {
             found: `valori [${found.join(", ")}]`,
           });
         }
+      }
+    }
+
+    // Celle mancanti (Story 2.7 parte B): solo se ESATTAMENTE un container
+    // dichiara il contratto via plugin data e ha gli assi del contratto in
+    // ordine, con plugin data = contractId — altrimenti le differenze sopra bastano e scrivere sarebbe
+    // ambiguo (quale container? quale posizione d'asse?).
+    const declaring = covered.filter((component) => component.pluginData?.split("@")[0] === contract.name);
+    const target = declaring.length === 1 ? declaring[0]! : null;
+    const expectedAxes = contract.axes.map((axis) => axis.name);
+    const axesInOrder =
+      target !== null &&
+      target.axes.length === expectedAxes.length &&
+      target.axes.every((axis, index) => axis === expectedAxes[index]);
+    // E solo su un container già al `contractId` corrente: con una versione
+    // vecchia la regola 3 è rossa e prima va `bump:contract` (regola A).
+    if (target !== null && axesInOrder && target.pluginData === contractId(contract)) {
+      const present = new Set(
+        target.cells
+          .filter((cell) => cell.variantProps !== null)
+          .map((cell) => expectedAxes.map((axis) => `${axis}=${cell.variantProps![axis]}`).join("|")),
+      );
+      const missing = cartesian(contract).filter((values) => !present.has(cellKey(contract, values)));
+      if (missing.length > 0) {
+        const design = designFor(contract, designs);
+        missing.forEach((values, progressive) => {
+          const cell = cellPlan(contract, design, values);
+          operations.push({
+            kind: "addCell",
+            contract: contract.name,
+            containerName: target.name,
+            cellKey: cellKey(contract, values),
+            variantProps: cell.variantProps,
+            parts: cell.parts,
+            index: target.cells.length + progressive,
+          });
+        });
       }
     }
   }

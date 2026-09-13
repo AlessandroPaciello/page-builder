@@ -166,3 +166,15 @@ Test manuale dopo il merge della 2.6: un componente nuovo (Alert, dominio `feedb
 - source_spec: `_bmad-output/implementation-artifacts/2-7a-niente-verdi-finti.md`
   summary: Le coppie di contrasto del focus ring non si ricavano dai design — `color.ring` su `color.card` (AccordionItem) resta dichiarata a mano in `CATALOG_PAIRS` (`library-spec.ts`), e un ring nuovo di un binding su un altro sfondo non verrebbe misurato.
   evidence: ECH#11 — il ring viene dalle classi strutturali `focus-visible:ring-ring` del binding shadcn, che `deriveDesignContrastPairs` non legge; limite preesistente (i binding non sono mai stati una sorgente di coppie). Decisione di Alessandro: esprimere il focus ring nel design (cella `focus` con `strokeColor`) oppure derivare le coppie anche dalle classi `ring-*` dei binding.
+
+## Deferred from: bmad-build split della Story 2.7 parte B (2026-09-13)
+
+- source_spec: `_bmad-output/implementation-artifacts/2-7b-comandi-di-evoluzione.md`
+  summary: Comando `adopt:variant -- <Comp>` — rileva i valori d'asse presenti in Penpot e assenti dal contratto, stampa il diff e con `--yes` aggiorna contratto (AST TS), `SCHEMA_VERSION` + voce fingerprint (payload condiviso in `packages/contracts/src/`), binding `option` e cella di design ricavata da Penpot (`partBindings`); errore nominativo per assi `state`/`behavior`, proprietà che varia con due assi (funzione estratta da `computePartClasses`) e celle con literal. Per la regola A (decisa 2026-09-13) un'adozione è un cambio compatibile: alza solo `SCHEMA_VERSION`, non `contract.version`.
+  evidence: split deciso da Alessandro al gate di dimensione della parte B (spec a ~2900 token): `addCell` + regola di versionamento vanno prima, perché l'adozione dal contratto verso Penpot passa da `addCell` e la regola decide se l'adozione tocca il plugin data.
+
+## Deferred from: build review of 2-7b-comandi-di-evoluzione (2026-09-13, loop 2)
+
+- source_spec: `_bmad-output/implementation-artifacts/2-7b-comandi-di-evoluzione.md`
+  summary: Nessun comando rimuove le celle di valori d'asse tolti o rinominati (cambio incompatibile): dopo `bump:contract` le celle vecchie restano nel container e `verify:library` (regole 4/5) resta rosso finché il designer non le cancella a mano in Penpot.
+  evidence: BH#5 del loop 2 — la modalità additiva per costruzione non cancella mai; la regola A è documentata in `penpot-pipeline.md` con il passo manuale. Da riprendere se i cambi incompatibili diventano frequenti (es. un `remove:cells` con `--dry-run`/`--yes` e guardia sul contratto corrente), probabilmente insieme alla skill `pds-component` (Story 2.8, voce [PS]).

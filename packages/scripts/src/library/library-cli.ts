@@ -108,9 +108,18 @@ async function executeSteps(steps: readonly { description: string; code: string 
     // L'envelope va validato SEMPRE: un errore di esecuzione arriva come testo
     // non-JSON con `isError` undefined (verificato su Penpot 2.17.2) — senza
     // questa validazione un passo fallito passerebbe per "ok".
-    parseExecuteCodeEnvelope(result, `operazione "${step.description}"`);
-    console.log("ok");
+    const envelope = parseExecuteCodeEnvelope(result, `operazione "${step.description}"`);
+    console.log(stepOutcome(envelope.result));
   }
+}
+
+/** "ok" o "saltato (motivo)": uno step con guardia (`addCell`) può restituire `skipped: true`. */
+export function stepOutcome(result: unknown): string {
+  const outcome = result as { skipped?: unknown; reason?: unknown } | null;
+  if (outcome !== null && typeof outcome === "object" && outcome.skipped === true) {
+    return `saltato (${typeof outcome.reason === "string" ? outcome.reason : "motivo non indicato"})`;
+  }
+  return "ok";
 }
 
 function runVerify(snapshot: LibrarySnapshot, seed: SemanticSeed): boolean {
@@ -160,6 +169,8 @@ export async function main(args: CliArgs = parseArgs(process.argv.slice(2))): Pr
     for (const operation of plan.operations) {
       if (operation.kind === "createSet") console.log(`  - createSet "${operation.set}"`);
       else if (operation.kind === "createToken") console.log(`  - createToken "${operation.name}" → set "${operation.set}"`);
+      else if (operation.kind === "addCell")
+        console.log(`  - addCell "${operation.containerName}" cella "${operation.cellKey}" (contratto "${operation.contract}")`);
       else console.log(`  - createContainer "${operation.containerName}" (${operation.cells.length} celle)`);
     }
     return 0;
