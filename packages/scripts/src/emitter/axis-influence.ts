@@ -9,8 +9,8 @@
  * cva/prefissi, e ognuno dei due chiamanti produce il suo errore nominativo.
  */
 
-/** Chiave cella `asse=valore|…` → valori per asse. Una chiave malformata è un errore che la nomina. */
-function parseCellKey(key: string): Record<string, string> {
+/** Chiave cella `asse=valore|…` → valori per asse. Una chiave malformata è un errore che la nomina. Condivisa con `computePartClasses`. */
+export function parseCellKey(key: string): Record<string, string> {
   const out: Record<string, string> = {};
   for (const segment of key.split("|")) {
     const [name, value] = segment.split("=");

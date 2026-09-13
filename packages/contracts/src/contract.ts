@@ -50,14 +50,16 @@ export const KEBAB_CASE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 const IDENTIFIER = /^[a-z][a-zA-Z0-9]*$/;
 
 /**
- * Attributi HTML globali (lista WHATWG) più `classname`: un field con uno di
- * questi nomi ombreggia l'attributo sull'elemento generato (`title` diventa
- * tooltip, `id` rompe le label, `tabIndex` sposta il focus). Confronto
- * case-insensitive: `tabIndex` e `tabindex` sono lo stesso attributo.
+ * Attributi HTML globali (lista WHATWG) più `classname`: un field o un asse
+ * `option` con uno di questi nomi ombreggia l'attributo sull'elemento
+ * generato (`title` diventa tooltip, `id` rompe le label, `tabIndex` sposta
+ * il focus). Confronto case-insensitive: `tabIndex` e `tabindex` sono lo
+ * stesso attributo.
  */
 const HTML_GLOBAL_ATTRIBUTES: ReadonlySet<string> = new Set([
   "accesskey",
   "autocapitalize",
+  "autocorrect",
   "autofocus",
   "class",
   "classname",
@@ -65,6 +67,7 @@ const HTML_GLOBAL_ATTRIBUTES: ReadonlySet<string> = new Set([
   "dir",
   "draggable",
   "enterkeyhint",
+  "exportparts",
   "hidden",
   "id",
   "inert",
@@ -77,6 +80,7 @@ const HTML_GLOBAL_ATTRIBUTES: ReadonlySet<string> = new Set([
   "itemtype",
   "lang",
   "nonce",
+  "part",
   "popover",
   "slot",
   "spellcheck",
@@ -89,8 +93,10 @@ const HTML_GLOBAL_ATTRIBUTES: ReadonlySet<string> = new Set([
 
 /**
  * Prop riservate di React e `role` (emesso dall'emitter sulla radice prima di
- * `{...props}`): un field con questo nome collide. Confronto case-insensitive;
- * gli event handler `on[A-Z]…` si rifiutano sul nome originale (`online` resta valido).
+ * `{...props}`): un field o un asse `option` con questo nome collide. Gli
+ * ultimi quattro trasformano l'elemento in un controlled component o ne
+ * alterano l'idratazione in silenzio. Confronto case-insensitive; gli event
+ * handler `on[A-Z]…` si rifiutano sul nome originale (`online` resta valido).
  */
 const REACT_RESERVED_PROPS: ReadonlySet<string> = new Set([
   "role",
@@ -98,6 +104,10 @@ const REACT_RESERVED_PROPS: ReadonlySet<string> = new Set([
   "key",
   "ref",
   "dangerouslysetinnerhtml",
+  "value",
+  "defaultvalue",
+  "defaultchecked",
+  "suppresshydrationwarning",
 ]);
 
 function duplicates(items: readonly string[]): string[] {
@@ -126,6 +136,21 @@ export function defineContract<const C extends ComponentContract>(def: C): C {
   for (const name of duplicates(def.axes.map((axis) => axis.name))) fail(`asse "${name}" duplicato`);
   for (const axis of def.axes) {
     if (!IDENTIFIER.test(axis.name)) fail(`asse "${axis.name}" ha un nome non valido (identificatore minuscolo)`);
+    // Solo gli assi `option` diventano prop (`propsSchema`): `state` e
+    // `behavior` non toccano l'elemento, ma un asse option riservato
+    // ombreggia l'attributo/la prop sull'elemento generato, come un field.
+    if (axis.type === "option") {
+      if (REACT_RESERVED_PROPS.has(axis.name.toLowerCase()) || /^on[A-Z]/.test(axis.name)) {
+        fail(
+          `asse "${axis.name}" collide con una prop riservata di React o con il role emesso sulla radice (role, children, key, ref, dangerouslySetInnerHTML, value, on…): rinominalo`,
+        );
+      }
+      if (HTML_GLOBAL_ATTRIBUTES.has(axis.name.toLowerCase())) {
+        fail(
+          `asse "${axis.name}" coincide con l'attributo HTML globale "${axis.name.toLowerCase()}" — ombreggerebbe l'attributo sull'elemento generato: rinominalo`,
+        );
+      }
+    }
     for (const value of duplicates(axis.values)) fail(`asse "${axis.name}", valore "${value}" duplicato`);
     if (!axis.values.includes(axis.default)) {
       fail(`asse "${axis.name}", default "${axis.default}" non è tra i values (${axis.values.join(", ")})`);

@@ -169,6 +169,25 @@ describe("renderComponent — a11y dichiarata nel giudizio", () => {
     }
   });
 
+  it("attributo aria-* con cifre (aria-level) è valido: test generato senza throw", () => {
+    const recipe = structuredClone(loadRecipe("Badge")) as ComponentRecipe;
+    recipe.judgment.a11y.ariaAttributes = ["aria-level"];
+    const result = renderComponent(loadFixture("Badge"), recipe, loadBinding("Badge"), baseSources.badge!, catalog);
+    const test = fileOf(result, "Badge.test.tsx");
+    expect(test).toContain(`it("porta l'attributo dichiarato aria-level"`);
+  });
+
+  it("due valori di stato che mappano lo stesso aria-* → un test per ognuno, non solo il primo", () => {
+    const recipe = structuredClone(loadRecipe("Input")) as ComponentRecipe;
+    const binding = structuredClone(loadBinding("Input")) as ComponentBinding;
+    // Anche `focus` mappa aria-invalid: entrambi gli stati devono essere asseriti.
+    binding.axes.state!.values.focus = "aria-invalid:border-destructive";
+    const result = renderComponent(loadFixture("Input"), recipe, binding, baseSources.input!, catalog);
+    const test = fileOf(result, "Input.test.tsx");
+    expect(test).toContain(`it("porta l'attributo dichiarato aria-invalid (state=error)"`);
+    expect(test).toContain(`it("porta l'attributo dichiarato aria-invalid (state=focus)"`);
+  });
+
   it("role o aria-* malformati nel giudizio → errore nominativo", () => {
     const withRole = structuredClone(loadRecipe("Badge")) as ComponentRecipe;
     withRole.judgment.a11y.role = 'alert" onClick="x';

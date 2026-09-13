@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
 import { contractId, defineContract, propsSchema } from "../src/contract";
+import { fingerprintPayload } from "../src/fingerprint";
 
 const valid = {
   name: "demo-chip",
@@ -112,8 +113,85 @@ describe("defineContract", () => {
       { ...valid, fields: { ...valid.fields, onClick: { schema: z.string(), kind: "content" } } },
       /demo-chip.*field "onClick".*prop riservata/,
     ],
+    [
+      "field ref (prop riservata di React)",
+      { ...valid, fields: { ...valid.fields, ref: { schema: z.string(), kind: "content" } } },
+      /demo-chip.*field "ref".*prop riservata/,
+    ],
+    [
+      "field key (prop riservata di React)",
+      { ...valid, fields: { ...valid.fields, key: { schema: z.string(), kind: "content" } } },
+      /demo-chip.*field "key".*prop riservata/,
+    ],
+    [
+      "field dangerouslySetInnerHTML (prop riservata di React)",
+      { ...valid, fields: { ...valid.fields, dangerouslySetInnerHTML: { schema: z.string(), kind: "content" } } },
+      /demo-chip.*field "dangerouslySetInnerHTML".*prop riservata/,
+    ],
+    [
+      "field value (controlled component in silenzio)",
+      { ...valid, fields: { ...valid.fields, value: { schema: z.string(), kind: "content" } } },
+      /demo-chip.*field "value".*prop riservata/,
+    ],
+    [
+      "field defaultValue (prop riservata di React, confronto case-insensitive)",
+      { ...valid, fields: { ...valid.fields, defaultValue: { schema: z.string(), kind: "content" } } },
+      /demo-chip.*field "defaultValue".*prop riservata/,
+    ],
+    [
+      "field defaultChecked (prop riservata di React)",
+      { ...valid, fields: { ...valid.fields, defaultChecked: { schema: z.string(), kind: "content" } } },
+      /demo-chip.*field "defaultChecked".*prop riservata/,
+    ],
+    [
+      "field suppressHydrationWarning (prop riservata di React)",
+      { ...valid, fields: { ...valid.fields, suppressHydrationWarning: { schema: z.string(), kind: "content" } } },
+      /demo-chip.*field "suppressHydrationWarning".*prop riservata/,
+    ],
+    [
+      "field exportparts (attributo HTML globale)",
+      { ...valid, fields: { ...valid.fields, exportparts: { schema: z.string(), kind: "content" } } },
+      /demo-chip.*field "exportparts".*attributo HTML globale/,
+    ],
+    [
+      "field part (attributo HTML globale)",
+      { ...valid, fields: { ...valid.fields, part: { schema: z.string(), kind: "content" } } },
+      /demo-chip.*field "part".*attributo HTML globale/,
+    ],
+    [
+      "asse option title (attributo HTML globale)",
+      { ...valid, axes: [...valid.axes, { name: "title", type: "option", values: ["a"], default: "a" }] },
+      /demo-chip.*asse "title".*attributo HTML globale "title"/,
+    ],
+    [
+      "asse option role (prop riservata di React)",
+      { ...valid, axes: [...valid.axes, { name: "role", type: "option", values: ["a"], default: "a" }] },
+      /demo-chip.*asse "role".*prop riservata/,
+    ],
+    [
+      "asse option value (controlled component in silenzio)",
+      { ...valid, axes: [...valid.axes, { name: "value", type: "option", values: ["a"], default: "a" }] },
+      /demo-chip.*asse "value".*prop riservata/,
+    ],
+    [
+      "asse option onFocus (event handler)",
+      { ...valid, axes: [...valid.axes, { name: "onFocus", type: "option", values: ["a"], default: "a" }] },
+      /demo-chip.*asse "onFocus".*prop riservata/,
+    ],
   ])("rifiuta %s nominando contratto e campo", (_label, def, message) => {
     expect(() => defineContract(def as never)).toThrow(message);
+  });
+
+  it("accetta assi state/behavior con nomi riservati: non diventano prop", () => {
+    const def = {
+      ...valid,
+      axes: [
+        ...valid.axes,
+        { name: "value", type: "state", values: ["v"], default: "v" },
+        { name: "children", type: "behavior", values: ["b"], default: "b" },
+      ],
+    } as const;
+    expect(() => defineContract(def)).not.toThrow();
   });
 
   it("accetta field che somigliano ma non sono attributi globali né handler (subtitle, placeholder, label, online, one)", () => {
@@ -128,6 +206,15 @@ describe("defineContract", () => {
       },
     } as const;
     expect(() => defineContract(def)).not.toThrow();
+  });
+
+  it("fingerprint: field con schema non rappresentabile → errore che nomina field e contratto", () => {
+    const def = {
+      ...valid,
+      fields: { ...valid.fields, broken: { schema: z.string().transform((s) => s.trim()), kind: "content" } },
+    } as const;
+    const contract = defineContract(def);
+    expect(() => fingerprintPayload([contract], [])).toThrow(/field "broken" di "demo-chip".*non rappresentabile/);
   });
 });
 

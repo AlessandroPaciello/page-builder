@@ -26,9 +26,19 @@ export function canonical(value: unknown): unknown {
   return value;
 }
 
-function fieldsShape(fields: Readonly<Record<string, FieldDef>>) {
+function fieldsShape(fields: Readonly<Record<string, FieldDef>>, owner: string) {
   return Object.fromEntries(
-    Object.entries(fields).map(([name, field]) => [name, { kind: field.kind, schema: z.toJSONSchema(field.schema) }]),
+    Object.entries(fields).map(([name, field]) => {
+      let schema: unknown;
+      try {
+        schema = z.toJSONSchema(field.schema);
+      } catch (cause) {
+        throw new Error(
+          `Fingerprint: il field "${name}" di "${owner}" ha uno schema non rappresentabile come JSON schema (${(cause as Error).message}) — usa schemi dati (string, number, boolean, enum, object, array).`,
+        );
+      }
+      return [name, { kind: field.kind, schema }];
+    }),
   );
 }
 
@@ -48,12 +58,12 @@ export function fingerprintPayload(
         default: axis.default,
       })),
       parts: contract.parts,
-      fields: fieldsShape(contract.fields),
+      fields: fieldsShape(contract.fields, contract.name),
     })),
     sections: sections.map((section) => ({
       name: section.name,
       version: section.version,
-      fields: fieldsShape(section.fields),
+      fields: fieldsShape(section.fields, section.name),
     })),
   };
   return JSON.stringify(canonical(payload));

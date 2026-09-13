@@ -104,9 +104,10 @@ export function checkDeclaredA11y(entries: readonly DeclaredA11yEntry[]): {
 } {
   const missing: Array<{ component: string; path: string; attribute: string }> = [];
   for (const { component, path, a11y, testContent } of entries) {
+    // Un attributo ripetuto nel giudizio non deve duplicare i mancanti.
     const declared: Array<[string, string]> = [
       ...(a11y.role !== null ? [["role", declaredA11yAssertion("role", a11y.role)] as [string, string]] : []),
-      ...a11y.ariaAttributes.map((attribute): [string, string] => [attribute, declaredA11yAssertion(attribute)]),
+      ...[...new Set(a11y.ariaAttributes)].map((attribute): [string, string] => [attribute, declaredA11yAssertion(attribute)]),
     ];
     for (const [attribute, assertion] of declared) {
       if (testContent === undefined || !testContent.includes(assertion)) missing.push({ component, path, attribute });
