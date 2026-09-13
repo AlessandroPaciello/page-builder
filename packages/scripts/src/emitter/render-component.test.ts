@@ -71,7 +71,7 @@ describe("renderComponent — registro delle proprietà (Story 2.8)", () => {
     );
   });
 
-  it("strokeWidth solo su un valore option non default: la base non ha classi per variante, blocca", () => {
+  it("strokeWidth solo su un valore option non default: la base non ha classi per variante, blocca (coveredByBase non guadagna la rimozione)", () => {
     expect(() =>
       renderWith("Badge", (recipe) => {
         for (const [key, cell] of Object.entries(recipe.parts.root!)) {
@@ -79,6 +79,124 @@ describe("renderComponent — registro delle proprietà (Story 2.8)", () => {
         }
       }),
     ).toThrow(/per un valore d'asse option/);
+  });
+
+  it("fill assente da una variante option: bg-primary resta in base cva e la variante emette bg-transparent dal registro", () => {
+    const result = renderWith("Badge", (recipe) => {
+      for (const [key, cell] of Object.entries(recipe.parts.root!)) {
+        if (key.startsWith("variant=secondary|")) delete cell.fill;
+      }
+    });
+    const tsx = result.files.find((file) => file.path === "data-display/Badge.tsx")!.content;
+    // La classe del default resta nella base cva, intatta.
+    expect(tsx).toMatch(/cva\(\s*"inline-flex[^"]*bg-primary/);
+    // La variante senza fill emette la classe di rimozione del registro…
+    expect(tsx).toContain('secondary: "bg-transparent"');
+    // …e destructive, che ha ancora il suo fill, resta invariata.
+    expect(tsx).toContain('destructive: "bg-destructive"');
+    expect(tsx).toContain('sm: "pl-2 pr-2"');
+  });
+
+  it("fill assente dalla variante e dal default (assenza simmetrica): nessuna classe, nessun errore", () => {
+    expect(() =>
+      renderWith("Badge", (recipe) => {
+        for (const cell of Object.values(recipe.parts.root!)) delete cell.fill;
+      }),
+    ).not.toThrow();
+    const result = renderWith("Badge", (recipe) => {
+      for (const cell of Object.values(recipe.parts.root!)) delete cell.fill;
+    });
+    const tsx = result.files.find((file) => file.path === "data-display/Badge.tsx")!.content;
+    expect(tsx).not.toContain("bg-primary");
+    expect(tsx).not.toContain("bg-transparent");
+  });
+
+  it("fill assente da una variante su una parte text (label): la rimozione segue byLayerKind, text-transparent e NON bg-transparent", () => {
+    // Prima della risoluzione per tipo di layer la variante emetteva
+    // `bg-transparent` sulla label: non annullava `text-*` e lo faceva in
+    // silenzio (output infedele).
+    const result = renderWith("Badge", (recipe) => {
+      for (const [key, cell] of Object.entries(recipe.parts.label!)) {
+        if (key.startsWith("variant=secondary|")) delete cell.fill;
+      }
+    });
+    const tsx = result.files.find((file) => file.path === "data-display/Badge.tsx")!.content;
+    // La classe del default resta nella base cva della label, intatta.
+    expect(tsx).toMatch(/badgeLabelVariants = cva\(\s*"[^"]*text-primary-foreground/);
+    expect(tsx).toContain('secondary: "text-transparent"');
+    expect(tsx).not.toContain("bg-transparent");
+  });
+
+  it("fill assente da una variante sulla parte root: rimozione sui layer bg, bg-transparent", () => {
+    const result = renderWith("Badge", (recipe) => {
+      for (const [key, cell] of Object.entries(recipe.parts.root!)) {
+        if (key.startsWith("variant=secondary|")) delete cell.fill;
+      }
+    });
+    const tsx = result.files.find((file) => file.path === "data-display/Badge.tsx")!.content;
+    expect(tsx).toMatch(/cva\(\s*"inline-flex[^"]*bg-primary/);
+    expect(tsx).toContain('secondary: "bg-transparent"');
+  });
+
+  it("strokeWidth assente da una variante option ma presente nel default: coveredByBase resta bloccato (nuova via)", () => {
+    expect(() =>
+      renderWith("Badge", (recipe) => {
+        for (const cell of Object.values(recipe.parts.root!)) cell.strokeWidth = "border-width.default";
+        for (const [key, cell] of Object.entries(recipe.parts.root!)) {
+          if (key.startsWith("variant=secondary|")) delete cell.strokeWidth;
+        }
+      }),
+    ).toThrow(
+      /proprietà "strokeWidth" della parte "root" è assente nella cella "variant=secondary\|size=(sm|md)" ma presente nella cella default.*è coperta dalla base.*componente bloccato/,
+    );
+  });
+
+  it("una proprietà senza classe di rimozione mappata nel registro blocca nominando proprietà, parte e cella", () => {
+    // `shadow` è una utility ma non dichiara `removalClass`: il ramo di
+    // rimozione non può inventarsi una classe, deve bloccare.
+    expect(() =>
+      renderWith("Badge", (recipe) => {
+        for (const cell of Object.values(recipe.parts.root!)) cell.shadow = "shadow.sm";
+        for (const [key, cell] of Object.entries(recipe.parts.root!)) {
+          if (key.startsWith("variant=secondary|")) delete cell.shadow;
+        }
+      }),
+    ).toThrow(
+      /proprietà "shadow" della parte "root" è assente nella cella "variant=secondary\|size=(sm|md)" ma presente nella cella default.*la classe di rimozione non è mappata nel registro/,
+    );
+  });
+
+  it("geometria d'icona assente da una variante ma presente nel default: la regola icona si applica anche al ramo di rimozione (null, non blocco)", () => {
+    // Il layer kind viene dalla fixture: la label di Badge diventa un path
+    // (icona). strokeWidth (ignorata sui path per regola del registro) è
+    // presente nel default e assente da una variante option: senza la regola
+    // icona deriveRemovalClass blocherebbe (coveredByBase); con la regola è
+    // ignorata com'era nel ramo positivo — output identico al render senza.
+    const fixture = structuredClone(loadFixture("Badge"));
+    for (const cell of fixture.cells) for (const layer of cell.root.children) if (layer.name === "label") layer.kind = "path";
+    const binding = loadBinding("Badge");
+    const withIcon = (mutate: (recipe: ComponentRecipe) => void) => {
+      const recipe = structuredClone(loadRecipe("Badge")) as ComponentRecipe;
+      mutate(recipe);
+      return renderComponent(fixture, recipe, binding, baseSources[binding.base]!, catalog);
+    };
+    const expected = withIcon(() => {});
+    const result = withIcon((recipe) => {
+      for (const cell of Object.values(recipe.parts.label!)) cell.strokeWidth = "border-width.default";
+      for (const [key, cell] of Object.entries(recipe.parts.label!)) {
+        if (key.startsWith("variant=secondary|")) delete cell.strokeWidth;
+      }
+    });
+    expect(result.files).toEqual(expected.files);
+  });
+
+  it("rimozione per un asse state (prefix non null) resta non esprimibile: fail-loud", () => {
+    expect(() =>
+      renderWith("Input", (recipe) => {
+        for (const cell of Object.values(recipe.parts.root!)) cell.fill = "color.primary";
+        delete recipe.parts.root!["state=error"]!.fill;
+      }),
+    ).toThrow(/l'emitter non può esprimere la rimozione di una classe per gli assi state\/behavior/);
   });
 
   it("opacity con prefisso disabled: 0.5 coincide con disabled:opacity-50 (verde), 0.3 no (rosso)", () => {

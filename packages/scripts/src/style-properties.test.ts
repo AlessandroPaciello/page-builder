@@ -9,6 +9,7 @@ import {
   propertyProblem,
   radiusCorners,
   registeredProperties,
+  removalClasses,
 } from "./style-properties";
 import { utilityPrefixesFor } from "./token-vocabulary";
 
@@ -141,6 +142,16 @@ describe("registro — completezza rispetto a TYPE_UTILITY_PREFIXES", () => {
 
   it("i quattro angoli radius, nell'ordine del registro", () => {
     expect(radiusCorners()).toEqual(["rounded-tl", "rounded-tr", "rounded-br", "rounded-bl"]);
+  });
+
+  it("classi di rimozione (2.8 parte C): per prefisso utility risolto, solo fill le dichiara", () => {
+    // Chiavi = prefissi utility: `bg` sui layer bg, `text` sui text — la
+    // rimozione annulla la STESSA utility che il default emette.
+    expect(STYLE_PROPERTIES.fill.emitter.removalClass).toEqual({ bg: "bg-transparent", text: "text-transparent" });
+    expect(removalClasses()).toEqual(["bg-transparent", "text-transparent"]);
+    // Le coveredByBase e le bloccate non guadagnano la rimozione.
+    expect(STYLE_PROPERTIES.strokeWidth.emitter.emit).toBe("coveredByBase");
+    expect(STYLE_PROPERTIES.opacity.emitter.emit).toBe("coveredByBase");
   });
 
   it("StyleProperty è derivata dal registro: le proprietà token sì, le parole chiave no", () => {
