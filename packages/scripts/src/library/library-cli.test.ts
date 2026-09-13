@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseArgs } from "./library-cli";
+import { parseArgs, stepOutcome } from "./library-cli";
 
 /**
  * Test del CLI di library (review 2.4): gli errori di parseArgs escono loud,
@@ -51,3 +51,13 @@ describe("parseArgs", () => {
     expect(() => parseArgs(["add", "--snapshot", "/tmp/empty.json"])).toThrow(/solo su verify|insieme a --dry-run/);
   });
 });
+
+describe("stepOutcome", () => {
+  it("\"ok\" per uno step eseguito, \"saltato (motivo)\" per uno step con skipped: true", () => {
+    expect(stepOutcome({ componentId: "c1" })).toBe("ok");
+    expect(stepOutcome(null)).toBe("ok");
+    expect(stepOutcome({ skipped: true, reason: "la variante esiste già" })).toBe("saltato (la variante esiste già)");
+    expect(stepOutcome({ skipped: true })).toBe("saltato (motivo non indicato)");
+  });
+});
+
