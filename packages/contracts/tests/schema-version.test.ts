@@ -2,9 +2,8 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
-import { z } from "zod";
 
-import type { FieldDef } from "../src/contract";
+import { fingerprintPayload } from "../src/fingerprint";
 import { COMPONENT_CONTRACTS, SECTION_DEFINITIONS } from "../src/registry";
 import { SCHEMA_VERSION } from "../src/schema-version";
 
@@ -18,49 +17,14 @@ import { SCHEMA_VERSION } from "../src/schema-version";
  * esattamente ciò che la review deve rifiutare: vorrebbe dire cambiare il
  * vocabolario sotto pagine già salvate con quella versione.
  *
- * Il calcolo sta qui e non in `src/` perché `node:crypto` non deve entrare nei
+ * Il payload sta in `src/fingerprint.ts` (lo usa anche `adopt:variant`); l'hash
+ * si calcola qui e non in `src/` perché `node:crypto` non deve entrare nei
  * contratti, che girano anche nel browser.
  */
 
-function canonical(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(canonical);
-  if (value !== null && typeof value === "object") {
-    return Object.fromEntries(
-      Object.keys(value)
-        .sort()
-        .map((key) => [key, canonical((value as Record<string, unknown>)[key])]),
-    );
-  }
-  return value;
-}
-
-function fieldsShape(fields: Readonly<Record<string, FieldDef>>) {
-  return Object.fromEntries(
-    Object.entries(fields).map(([name, field]) => [name, { kind: field.kind, schema: z.toJSONSchema(field.schema) }]),
-  );
-}
-
 function fingerprint(): string {
-  const payload = {
-    components: Object.values(COMPONENT_CONTRACTS).map((contract) => ({
-      name: contract.name,
-      version: contract.version,
-      axes: contract.axes.map((axis) => ({
-        name: axis.name,
-        type: axis.type,
-        values: axis.values,
-        default: axis.default,
-      })),
-      parts: contract.parts,
-      fields: fieldsShape(contract.fields),
-    })),
-    sections: Object.values(SECTION_DEFINITIONS).map((section) => ({
-      name: section.name,
-      version: section.version,
-      fields: fieldsShape(section.fields),
-    })),
-  };
-  return createHash("sha256").update(JSON.stringify(canonical(payload))).digest("hex");
+  const payload = fingerprintPayload(Object.values(COMPONENT_CONTRACTS), Object.values(SECTION_DEFINITIONS));
+  return createHash("sha256").update(payload).digest("hex");
 }
 
 const recorded = JSON.parse(

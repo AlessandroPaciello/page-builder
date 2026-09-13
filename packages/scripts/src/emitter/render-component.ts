@@ -4,6 +4,7 @@ import type { SnapshotLayer } from "../library/library-snapshot";
 import { cellKeyOf, type ComponentFixture, type ComponentRecipe } from "../recipe-schema";
 import { varSuffix, type TokenCatalog, type TokenType } from "../theme-generator";
 import { buildTokenVocabulary, utilityPrefixesFor, validateClassesAgainstVocabulary } from "../token-vocabulary";
+import { influencingAxes } from "./axis-influence";
 import type { BindingPart, ComponentBinding } from "./binding-shadcn";
 
 /**
@@ -354,20 +355,10 @@ function computePartClasses(ctx: EmitterContext, part: string, skipped: SkippedP
   const properties = [...propertySet].sort();
 
   const assignedAxis = new Map<string, string | null>();
+  // Chiave malformata → errore dell'emitter, com'era prima dell'estrazione.
+  for (const key of Object.keys(partCells)) parseCellKey(key);
   for (const property of properties) {
-    const influencing: string[] = [];
-    for (const axis of ctx.contract.axes) {
-      const others = ctx.contract.axes.filter((candidate) => candidate.name !== axis.name);
-      const groups = new Map<string, Set<string>>();
-      for (const [key, cell] of Object.entries(partCells)) {
-        const values = parseCellKey(key);
-        const othersKey = others.map((candidate) => `${candidate.name}=${values[candidate.name] ?? ""}`).join("|");
-        const group = groups.get(othersKey) ?? new Set<string>();
-        group.add(cell[property] ?? "<assente>");
-        groups.set(othersKey, group);
-      }
-      if ([...groups.values()].some((group) => group.size > 1)) influencing.push(axis.name);
-    }
+    const influencing = influencingAxes(ctx.contract.axes, partCells, property);
     if (influencing.length > 1) {
       fail(
         `proprietà "${property}" della parte "${part}" varia con più assi (${influencing.join(", ")}) — interazione non esprimibile in cva/prefissi: fattorizzare è una decisione di ricetta, non dell'emitter.`,

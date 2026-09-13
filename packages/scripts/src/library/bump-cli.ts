@@ -32,6 +32,11 @@ export interface BumpArgs {
 const USAGE = "uso: pnpm bump:contract -- <Comp> [--dry-run | --yes] [--snapshot <path>]";
 
 export function parseBumpArgs(args: readonly string[]): BumpArgs {
+  return parseComponentArgs(args, USAGE);
+}
+
+/** Parsing condiviso da `bump:contract` e `adopt:variant`: `<Comp> [--dry-run | --yes] [--snapshot <path>]`. */
+export function parseComponentArgs(args: readonly string[], usage: string): BumpArgs {
   const rest = args.filter((arg) => arg !== "--");
   let component: string | undefined;
   let yes = false;
@@ -47,14 +52,14 @@ export function parseBumpArgs(args: readonly string[]): BumpArgs {
       snapshotPath = value;
       index++;
     } else if (arg.startsWith("--")) {
-      throw new Error(`Argomento non riconosciuto: ${arg} — ${USAGE}.`);
+      throw new Error(`Argomento non riconosciuto: ${arg} — ${usage}.`);
     } else if (component === undefined) {
       component = arg;
     } else {
-      throw new Error(`Un solo componente per volta: ricevuti "${component}" e "${arg}" — ${USAGE}.`);
+      throw new Error(`Un solo componente per volta: ricevuti "${component}" e "${arg}" — ${usage}.`);
     }
   }
-  if (component === undefined) throw new Error(`Componente mancante — ${USAGE}.`);
+  if (component === undefined) throw new Error(`Componente mancante — ${usage}.`);
   if (yes && dryRun) throw new Error("--yes e --dry-run sono alternativi: senza --yes non si scrive comunque.");
   // `--snapshot` è il seam offline della SOLA lettura: pianificare su un file
   // e scrivere sul Penpot live disallineerebbe piano e scrittura.

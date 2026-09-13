@@ -13,6 +13,7 @@ export {
   type FieldKind,
   propsSchema,
 } from "./contract";
+export { canonical, fingerprintPayload } from "./fingerprint";
 export { COMPONENT_CONTRACTS, SECTION_DEFINITIONS } from "./registry";
 export { SCHEMA_VERSION } from "./schema-version";
 export {
