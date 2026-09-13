@@ -120,6 +120,24 @@ describe("runRender", () => {
   });
 });
 
+describe("runRender — nessun log SKIP di proprietà (Story 2.8)", () => {
+  it("--all --check sui committati non stampa nessuna riga SKIP", async () => {
+    process.exitCode = 0;
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      await runRenderAll({ all: true, check: true });
+      const printed = [...log.mock.calls, ...err.mock.calls].map((call: unknown[]) => String(call[0]));
+      expect(printed.some((line) => line.includes("SKIP"))).toBe(false);
+      expect(printed.some((line) => line.includes("a diff zero"))).toBe(true);
+      expect(process.exitCode).toBe(0);
+    } finally {
+      log.mockRestore();
+      err.mockRestore();
+    }
+  });
+});
+
 function readdirSafe(dir: string): string[] {
   try {
     return readdirRecursive(dir);

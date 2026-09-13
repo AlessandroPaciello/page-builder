@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { resolveMcpEndpoint } from "../mcp-client";
-import { readLibrarySnapshot } from "./library-reader";
+import { STYLE_OF_SOURCE, readLibrarySnapshot } from "./library-reader";
+
+/** `styleOf` eseguito davvero, come in Penpot, su shape finte. */
+const styleOf = new Function(`${STYLE_OF_SOURCE}\nreturn styleOf;`)() as (shape: unknown) => Record<string, unknown>;
 
 function envelope(result: unknown): { content: Array<{ type: string; text: string }>; isError?: boolean } {
   return { content: [{ type: "text", text: JSON.stringify({ result }) }] };
@@ -60,6 +63,66 @@ describe("readLibrarySnapshot — percorso felice", () => {
     Object.assign(raw.components[0]!.cells[0]!.root.tokens, { shadow: null, opacity: "" });
     const snapshot = await readLibrarySnapshot({ callTool: async () => envelope(raw) });
     expect(snapshot.components[0]!.cells[0]!.root.tokens).toEqual({ fill: "color.primary" });
+  });
+});
+
+describe("styleOf — liste iniettate dal registro delle proprietà (Story 2.8)", () => {
+  const stroke = { strokeColor: "#7a8f85", strokeWidth: 1 };
+
+  it("il codice inviato a Penpot contiene styleOf con le liste del registro", async () => {
+    let code = "";
+    await readLibrarySnapshot({
+      callTool: async (args) => {
+        code = args.arguments.code;
+        return envelope(validSnapshot);
+      },
+    });
+    expect(code).toContain(STYLE_OF_SOURCE);
+    expect(STYLE_OF_SOURCE).toContain('"paddingTop"');
+    expect(STYLE_OF_SOURCE).toContain('"strokeAlignment"');
+  });
+
+  it("strokeStyle e strokeAlignment si registrano solo se diversi da solid/inner", () => {
+    expect(styleOf({ strokes: [{ ...stroke, strokeStyle: "dashed", strokeAlignment: "center" }] })).toEqual({
+      strokeColor: ["#7a8f85"],
+      strokeWidth: 1,
+      strokeStyle: "dashed",
+      strokeAlignment: "center",
+    });
+    expect(styleOf({ strokes: [{ ...stroke, strokeStyle: "solid", strokeAlignment: "inner" }] })).toEqual({
+      strokeColor: ["#7a8f85"],
+      strokeWidth: 1,
+    });
+  });
+
+  it("stesse chiavi, stesso ordine delle fixture committate (byte-identiche)", () => {
+    const style = styleOf({
+      type: "board",
+      fills: [{ fillColor: "#faf4e8" }],
+      strokes: [{ ...stroke, strokeStyle: "solid", strokeAlignment: "inner" }],
+      borderRadiusTopLeft: 8,
+      borderRadiusTopRight: 8,
+      borderRadiusBottomRight: 8,
+      borderRadiusBottomLeft: 8,
+      paddingTop: 0,
+      opacity: 0.5,
+    });
+    expect(Object.keys(style)).toEqual([
+      "fill",
+      "strokeColor",
+      "strokeWidth",
+      "borderRadiusTopLeft",
+      "borderRadiusTopRight",
+      "borderRadiusBottomRight",
+      "borderRadiusBottomLeft",
+      "opacity",
+    ]);
+    // Come prima del registro: letterSpacing "0" è una stringa valorizzata e resta (fixture committate); il font family non si legge.
+    expect(Object.keys(styleOf({ type: "text", fontSize: "14", fontWeight: "400", letterSpacing: "0", fontFamily: "x" }))).toEqual([
+      "fontSize",
+      "fontWeight",
+      "letterSpacing",
+    ]);
   });
 });
 

@@ -1,5 +1,6 @@
 import { contractId, type ComponentContract } from "@app/contracts";
 
+import type { RegisteredProperty, STYLE_PROPERTIES } from "../style-properties";
 import type { PenpotTokenValue, TokenType } from "../theme-generator";
 import type { LibrarySpec, SemanticSeed } from "./library-spec";
 import type { LibrarySnapshot } from "./library-snapshot";
@@ -15,27 +16,13 @@ import type { LibrarySnapshot } from "./library-snapshot";
  * di contratto).
  */
 
-/** Le proprietà di stile che un design può legare a un token (nomi `TokenProperty` di Penpot). */
-export type StyleProperty =
-  | "fill"
-  | "strokeColor"
-  | "strokeWidth"
-  | "borderRadiusTopLeft"
-  | "borderRadiusTopRight"
-  | "borderRadiusBottomRight"
-  | "borderRadiusBottomLeft"
-  | "rowGap"
-  | "columnGap"
-  | "paddingTop"
-  | "paddingRight"
-  | "paddingBottom"
-  | "paddingLeft"
-  | "fontSize"
-  | "fontWeight"
-  | "fontFamilies"
-  | "letterSpacing"
-  | "opacity"
-  | "shadow";
+/**
+ * Le proprietà di stile che un design può legare a un token (nomi
+ * `TokenProperty` di Penpot): quelle del registro unico a tipo token.
+ */
+export type StyleProperty = {
+  [P in RegisteredProperty]: (typeof STYLE_PROPERTIES)[P]["type"]["kind"] extends "token" ? P : never;
+}[RegisteredProperty];
 
 /** Il tipo di shape da creare per una parte: `root` è sempre la board della cella. */
 export type PartKind = "board" | "text" | "path";

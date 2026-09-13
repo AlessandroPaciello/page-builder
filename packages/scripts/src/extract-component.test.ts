@@ -5,7 +5,15 @@ import { fileURLToPath } from "node:url";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { buildRecipe, extract, parseArgs } from "./extract-component";
+import { committedComponents, loadFixture } from "./emitter/artifacts";
+import {
+  buildRecipe,
+  extract,
+  loadCatalogFixture,
+  loadJudgment,
+  parseArgs,
+  recipePathFor,
+} from "./extract-component";
 import type { ComponentJudgment, ComponentFixture } from "./recipe-schema";
 import type { TokenCatalog } from "./theme-generator";
 
@@ -178,6 +186,63 @@ describe("buildRecipe", () => {
       ],
     };
     expect(() => buildRecipe(broken, catalog, badgeJudgment)).toThrow(/due layer chiamati "label"/);
+  });
+
+  describe("registro delle proprietà (Story 2.8)", () => {
+    const withRoot = (patch: (root: ComponentFixture["cells"][number]["root"]) => void): ComponentFixture => {
+      const broken = structuredClone(fixture);
+      patch(broken.cells[0]!.root);
+      return broken;
+    };
+
+    it("tratteggio: strokeStyle dashed nello stile blocca il componente", () => {
+      const broken = withRoot((root) => (root.style.strokeStyle = "dashed"));
+      expect(() => buildRecipe(broken, catalog, badgeJudgment)).toThrow(
+        /Estrazione di "Badge" bloccata[\s\S]*Proprietà bloccata.*componente "Badge", parte "root", cella "variant=default\|size=sm", proprietà "strokeStyle", valore "dashed"/,
+      );
+    });
+
+    it("fuori lista: strokeStyle mixed blocca nominando la lista", () => {
+      const broken = withRoot((root) => (root.style.strokeStyle = "mixed"));
+      expect(() => buildRecipe(broken, catalog, badgeJudgment)).toThrow(/Valore fuori lista.*\[solid, dashed, dotted\]/);
+    });
+
+    it("allineamento: strokeAlignment outer blocca", () => {
+      const broken = withRoot((root) => (root.style.strokeAlignment = "outer"));
+      expect(() => buildRecipe(broken, catalog, badgeJudgment)).toThrow(/Proprietà bloccata.*"strokeAlignment"/);
+    });
+
+    it("non registrata: una proprietà ignota nei binding blocca", () => {
+      const broken = withRoot((root) => (root.children[0]!.tokens.fooBar = "color.primary"));
+      expect(() => buildRecipe(broken, catalog, badgeJudgment)).toThrow(
+        /Proprietà non registrata.*parte "label".*proprietà "fooBar", token "color.primary"/,
+      );
+    });
+
+    it("icona: strokeWidth su un layer path non blocca l'estrazione", () => {
+      const iconCatalog: TokenCatalog = {
+        sets: [...catalog.sets, { name: "border", tokens: [{ name: "border-width.default", type: "borderWidth", value: "1" }] }],
+      };
+      const withIcon = withRoot((root) => {
+        const label = root.children[0]!;
+        label.kind = "path";
+        label.tokens.strokeWidth = "border-width.default";
+        label.style.strokeWidth = 1;
+      });
+      expect(buildRecipe(withIcon, iconCatalog, badgeJudgment).parts.label!["variant=default|size=sm"]).toMatchObject({
+        strokeWidth: "border-width.default",
+      });
+    });
+
+    it("le ricette committate si riottengono byte per byte dalle fixture committate", () => {
+      const committedCatalog = loadCatalogFixture();
+      const recipesDir = resolve(import.meta.dirname, "recipes");
+      for (const component of committedComponents()) {
+        const committedFixture = loadFixture(component);
+        const recipe = buildRecipe(committedFixture, committedCatalog, loadJudgment(committedFixture.contract.split("@")[0]!));
+        expect(`${JSON.stringify(recipe, null, 2)}\n`, component).toBe(readFileSync(recipePathFor(component, recipesDir), "utf8"));
+      }
+    });
   });
 
   it("rifiuta una cella duplicata nel prodotto cartesiano", () => {

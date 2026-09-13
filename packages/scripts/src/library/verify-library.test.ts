@@ -217,6 +217,38 @@ describe("verifyLibrary — un caso rosso per regola", () => {
     expect(result.errors.some((e) => e.includes('"color.nonesisto"') && e.includes("assente dal catalogo"))).toBe(true);
   });
 
+  it("regola 7 (registro): strokeStyle dashed è ammesso senza token ma bloccato", () => {
+    const green = verify(greenSnapshot());
+    expect(green.ok).toBe(true);
+    const snapshot = greenSnapshot();
+    snapshot.components.find((c) => c.name === "Badge")!.cells[0]!.root.style.strokeStyle = "dashed";
+    const result = verify(snapshot);
+    expect(result.errors.some((e) => e.includes('"badge"') && /Proprietà bloccata.*"strokeStyle".*"dashed"/.test(e))).toBe(true);
+    expect(result.errors.some((e) => e.includes('"strokeStyle"') && e.includes("non ha binding"))).toBe(false);
+  });
+
+  it("regola 7 (registro): strokeStyle fuori lista è un errore che elenca i valori ammessi", () => {
+    const snapshot = greenSnapshot();
+    snapshot.components.find((c) => c.name === "Badge")!.cells[0]!.root.style.strokeStyle = "mixed";
+    const result = verify(snapshot);
+    expect(result.errors.some((e) => /Valore fuori lista.*"strokeStyle".*\[solid, dashed, dotted\]/.test(e))).toBe(true);
+  });
+
+  it("regola 7 (registro): strokeAlignment center è bloccato", () => {
+    const snapshot = greenSnapshot();
+    snapshot.components.find((c) => c.name === "Badge")!.cells[0]!.root.style.strokeAlignment = "center";
+    const result = verify(snapshot);
+    expect(result.errors.some((e) => /Proprietà bloccata.*"strokeAlignment".*"center"/.test(e))).toBe(true);
+  });
+
+  it("regola 7 (registro): una proprietà non registrata nei binding è un errore nominativo", () => {
+    const snapshot = greenSnapshot();
+    const label = snapshot.components.find((c) => c.name === "Badge")!.cells[0]!.root.children.find((l) => l.name === "label")!;
+    label.tokens.fooBar = "color.primary";
+    const result = verify(snapshot);
+    expect(result.errors.some((e) => /Proprietà non registrata.*parte "label".*"fooBar"/.test(e))).toBe(true);
+  });
+
   it("regola 8: manca un token richiesto dalla spec", () => {
     const snapshot = greenSnapshot();
     const semantic = snapshot.sets.find((s) => s.name === "semantic")!;

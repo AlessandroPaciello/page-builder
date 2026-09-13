@@ -192,3 +192,16 @@ Sessione di Alessandro con agente forge (`_bmad-output/forge/pipeline-troppo-vin
 ## Deferred from: code review of story 2-7 gruppo 3 (2026-09-13)
 
 - **"Report di PR/CI" da definire:** la promessa "i componenti in attesa devono essere visibili nel report di PR/CI, non solo nel terminale" è ripetuta in cinque artefatti (memlog, forged-idea, proposta, epics, penpot-pipeline) ma nessuno definisce dove vive il report, chi lo produce o come verificarlo. Da fissare nella spec di Story 2.8 (registro delle proprietà e blocco per componente), che è la story chiamata a implementarlo.
+
+- source_spec: none
+  summary: Story 2.8 parte B — valutazione per componente: verify:library e gates:render per voce, componenti in attesa nel report di PR/CI, normalizzazione di maiuscole/spazi/ordine assi, alias dei layer nel binding, cella mancante che blocca il componente con domanda al designer.
+  evidence: split dalla Story 2.8 il 2026-09-13 (bmad-build, controllo multi-goal): consegna mergiabile da sola, si appoggia sul registro della parte A.
+- source_spec: none
+  summary: Story 2.8 parte C — estensione dell'emitter una volta per tutte: una variante senza una proprietà che il default ha (outline senza fill) produce classi per variante invece di stare nella base cva.
+  evidence: split dalla Story 2.8 il 2026-09-13 (bmad-build, controllo multi-goal): consegna mergiabile da sola, si appoggia sul registro della parte A.
+- source_spec: `_bmad-output/implementation-artifacts/2-8a-registro-delle-proprieta.md`
+  summary: (high, non verificato) La regola icona vale solo per `strokeWidth` e solo nell'emitter. Se il chevron di AccordionItem (layer path) ha in Penpot `strokeAlignment` `center` (il default tipico dei path), alla prossima rilettura live `verify:library` e l'estrazione bloccano AccordionItem per geometria d'icona.
+  evidence: `layerTreeProblems` non guarda il tipo di layer e `penpot-writer.ts` non imposta `strokeAlignment`. Si chiude con una rilettura live del chevron (con `PENPOT_MCP_TOKEN` caricato, oggi rifiutata) per vedere il suo `strokeAlignment`. Se è `center`, serve una decisione umana: estendere la regola icona anche a `strokeStyle`/`strokeAlignment` (riga del registro + lettura in `layerTreeProblems`).
+- source_spec: `_bmad-output/implementation-artifacts/2-8a-registro-delle-proprieta.md`
+  summary: (medium, non verificato) Fedeltà inversa: una classe strutturale della base (es. `border`, `disabled:opacity-50`) finisce nel codice anche se il design in Penpot non ha quella proprietà (nessuno stroke, nessuna opacità nella cella).
+  evidence: comportamento delle classi strutturali precedente alla 2.8, emerso nella review (BH). Si verifica confrontando, per ogni classe strutturale del binding, le proprietà presenti nelle celle della ricetta (es. Badge: `border` in base; lo stroke c'è nel design?).

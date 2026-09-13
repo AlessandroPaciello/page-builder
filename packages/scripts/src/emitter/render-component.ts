@@ -2,8 +2,9 @@ import { PLUGIN_DATA_PATTERN, contractByName } from "../component-reader";
 import { toKebab } from "../extract-component";
 import type { SnapshotLayer } from "../library/library-snapshot";
 import { cellKeyOf, type ComponentFixture, type ComponentRecipe } from "../recipe-schema";
+import { lookupProperty, radiusCorners, type EmitRule } from "../style-properties";
 import { varSuffix, type TokenCatalog, type TokenType } from "../theme-generator";
-import { buildTokenVocabulary, utilityPrefixesFor, validateClassesAgainstVocabulary } from "../token-vocabulary";
+import { buildTokenVocabulary, validateClassesAgainstVocabulary } from "../token-vocabulary";
 import { influencingAxes, parseCellKey } from "./axis-influence";
 import type { BindingPart, ComponentBinding } from "./binding-shadcn";
 
@@ -38,85 +39,11 @@ function regenCommandFor(componentName: string): string {
   return `pnpm --filter @penpot-ds/scripts render:component -- ${componentName}`;
 }
 
-/** Tipi di layer Penpot in cui `fill` è colore del testo, non dello sfondo. */
-const TEXT_KINDS = new Set(["text"]);
-/** Tipi di layer Penpot in cui `strokeColor` è stroke vettoriale, non bordo CSS. */
-const STROKE_KINDS = new Set(["path", "vector", "ellipse", "line"]);
-
 /**
- * Tipo token atteso per ogni proprietà delle celle ricetta. Una proprietà
- * legata a un token di altro tipo è un wiring sbagliato: fail-loud
- * nominativo, mai una classe sbagliata in silenzio. `strokeWidth` e
- * `opacity` (tipi senza namespace utility v4, decisione review 2.1) NON
- * producono classi: skip con log, il consumo previsto è `var()` inline.
+ * Prefissi degli angoli radius dal registro delle proprietà (Story 2.8): la
+ * mappatura proprietà → classe non vive più in tabelle locali.
  */
-const PROPERTY_TOKEN_TYPE: Record<string, TokenType> = {
-  fill: "color",
-  strokeColor: "color",
-  paddingTop: "spacing",
-  paddingRight: "spacing",
-  paddingBottom: "spacing",
-  paddingLeft: "spacing",
-  columnGap: "spacing",
-  rowGap: "spacing",
-  fontSize: "fontSizes",
-  fontWeight: "fontWeights",
-  letterSpacing: "letterSpacing",
-  shadow: "shadow",
-  borderRadiusTopLeft: "borderRadius",
-  borderRadiusTopRight: "borderRadius",
-  borderRadiusBottomRight: "borderRadius",
-  borderRadiusBottomLeft: "borderRadius",
-  strokeWidth: "borderWidth",
-  opacity: "opacity",
-};
-
-const RADIUS_PROPS = [
-  "borderRadiusTopLeft",
-  "borderRadiusTopRight",
-  "borderRadiusBottomRight",
-  "borderRadiusBottomLeft",
-] as const;
-
-const RADIUS_CORNER: Record<(typeof RADIUS_PROPS)[number], string> = {
-  borderRadiusTopLeft: "rounded-tl",
-  borderRadiusTopRight: "rounded-tr",
-  borderRadiusBottomRight: "rounded-br",
-  borderRadiusBottomLeft: "rounded-bl",
-};
-
-function utilityPrefixFor(property: string, kind: string): string {
-  switch (property) {
-    case "fill":
-      return TEXT_KINDS.has(kind) ? "text" : "bg";
-    case "strokeColor":
-      return STROKE_KINDS.has(kind) ? "stroke" : "border";
-    case "paddingTop":
-      return "pt";
-    case "paddingRight":
-      return "pr";
-    case "paddingBottom":
-      return "pb";
-    case "paddingLeft":
-      return "pl";
-    case "columnGap":
-      return "gap-x";
-    case "rowGap":
-      return "gap-y";
-    case "fontSize":
-      return "text";
-    case "fontWeight":
-      return "font";
-    case "letterSpacing":
-      return "tracking";
-    case "shadow":
-      return "shadow";
-    default:
-      throw new Error(
-        `Emitter shadcn: proprietà "${property}" non instradabile — estenderla è una decisione esplicita, non silenziosa.`,
-      );
-  }
-}
+const RADIUS_CORNERS = radiusCorners();
 
 export interface RenderedFile {
   /** Percorso relativo alla radice `packages/ui/src/domains/`. */
@@ -126,19 +53,10 @@ export interface RenderedFile {
   action: "write" | "skip";
 }
 
-export interface SkippedProperty {
-  part: string;
-  cell: string;
-  property: string;
-  token: string;
-  reason: string;
-}
-
 export interface RenderResult {
   component: string;
   domain: string;
   files: RenderedFile[];
-  skippedProperties: SkippedProperty[];
 }
 
 export interface RenderOptions {
@@ -202,6 +120,7 @@ interface EmitterContext {
   binding: ComponentBinding;
   contract: NonNullable<ReturnType<typeof contractByName>>;
   tokenTypes: Map<string, TokenType>;
+  tokenValues: Map<string, unknown>;
   vocabulary: Set<string>;
   baseSource: string;
   headlessAlias: string | null;
@@ -230,10 +149,65 @@ function layerKindFor(ctx: EmitterContext, part: string, cellKey: string): strin
   return layer.kind;
 }
 
+/** Valore numerico di un token (segue i riferimenti `{…}`), `null` se non numerico. */
+function numericTokenValue(ctx: EmitterContext, token: string, seen: readonly string[] = []): number | null {
+  if (seen.includes(token)) return null;
+  const raw = ctx.tokenValues.get(token);
+  if (typeof raw === "number") return raw;
+  if (typeof raw !== "string") return null;
+  const ref = /^\{(.+)\}$/.exec(raw.trim());
+  if (ref?.[1] !== undefined) return numericTokenValue(ctx, ref[1], [...seen, token]);
+  const value = Number(raw.trim());
+  return raw.trim().length > 0 && Number.isFinite(value) ? value : null;
+}
+
+/**
+ * Proprietà "coperta dalla base" (decisione di Alessandro, 2026-09-13):
+ * nessuna classe emessa, ma il valore del token deve coincidere con quello
+ * che la base shadcn già esprime per la parte — le classi strutturali del
+ * binding con lo stesso prefisso di stato (`""` per la base, `disabled:` per
+ * lo stato disabled…). `prefix === null` = valore di un asse `option` non
+ * default: la base non ha classi per variante, quindi non lo esprime.
+ */
+function assertCoveredByBase(
+  ctx: EmitterContext,
+  rule: Extract<EmitRule, { emit: "coveredByBase" }>,
+  where: { part: string; cellKey: string; property: string; token: string; prefix: string | null },
+): void {
+  const { part, cellKey, property, token, prefix } = where;
+  const location = `componente "${ctx.recipe.componentName}", parte "${part}", cella "${cellKey}", proprietà "${property}", token "${token}"`;
+  const tokenValue = numericTokenValue(ctx, token);
+  if (tokenValue === null) {
+    fail(`${location}: il valore del token non è numerico — non confrontabile con la base shadcn: componente bloccato.`);
+  }
+  const structural = (ctx.binding.parts[part]?.structural ?? "").split(/\s+/).filter((cls) => cls.length > 0);
+  const expressed =
+    prefix === null
+      ? []
+      : structural
+          .filter((cls) => cls.startsWith(prefix) && !cls.slice(prefix.length).includes(":"))
+          .map((cls) => ({ cls, value: rule.baseValue(cls.slice(prefix.length)) }))
+          .filter((entry): entry is { cls: string; value: number } => entry.value !== null);
+  if (expressed.length === 0) {
+    const scope = prefix === null ? "per un valore d'asse option (nessuna classe per variante)" : `con prefisso "${prefix}"`;
+    fail(
+      `${location}: la base shadcn non esprime "${property}" per questa parte ${scope} (${rule.baseDescription}) — l'emitter non emette classi per questa proprietà: componente bloccato.`,
+    );
+  }
+  const mismatch = expressed.find((entry) => Math.abs(entry.value - tokenValue) > 1e-9);
+  if (mismatch !== undefined) {
+    fail(
+      `${location}: il token vale ${tokenValue}, la base shadcn esprime ${mismatch.value} ("${mismatch.cls}") — l'emitter non emette classi per questa proprietà: componente bloccato.`,
+    );
+  }
+}
+
 /**
  * Deriva la classe Tailwind di una proprietà dal token, con lo stesso suffisso
- * della CSS var (`varSuffix`): variabile e classe non possono divergere.
- * Restituisce `null` per i tipi senza namespace utility v4 (skip con log).
+ * della CSS var (`varSuffix`): variabile e classe non possono divergere. La
+ * mappatura viene dal registro delle proprietà; `null` = nessuna classe per
+ * regola dichiarata (geometria d'icona o valore coperto dalla base), mai uno
+ * skip: una proprietà non registrata, bloccata o non coperta fa fallire.
  */
 function deriveClass(
   ctx: EmitterContext,
@@ -241,13 +215,20 @@ function deriveClass(
   cellKey: string,
   property: string,
   token: string,
-): { className: string | null; skipReason?: string } {
-  const expectedType = PROPERTY_TOKEN_TYPE[property];
-  if (expectedType === undefined) {
+  prefix: string | null,
+): string | null {
+  let definition;
+  try {
+    definition = lookupProperty(property, { component: ctx.recipe.componentName, part, cell: cellKey, token });
+  } catch (cause) {
+    fail((cause as Error).message);
+  }
+  if (definition.type.kind !== "token") {
     fail(
-      `proprietà "${property}" (parte "${part}", cella "${cellKey}") non è instradabile dall'emitter shadcn — estenderla è una decisione esplicita, non silenziosa.`,
+      `proprietà "${property}" (parte "${part}", cella "${cellKey}") è una parola chiave, non un token: l'emitter non ha una mappatura per lei.`,
     );
   }
+  const expectedType = definition.type.tokenType;
   const type = ctx.tokenTypes.get(token);
   if (type === undefined) {
     fail(
@@ -259,27 +240,34 @@ function deriveClass(
       `proprietà "${property}" (parte "${part}", cella "${cellKey}") è legata al token "${token}" (type "${type}"), atteso type "${expectedType}" — wiring sbagliato in ricetta o library.`,
     );
   }
-  if (utilityPrefixesFor(type).length === 0) {
-    return {
-      className: null,
-      skipReason: `il tipo token "${type}" non ha namespace utility Tailwind v4 (decisione review 2.1): nessuna classe emessa, consumo previsto via var(--${type === "opacity" ? "opacity" : "border-width"}-…) inline`,
-    };
+  // Regola dichiarata nel registro: geometria dell'icona, ignorata (AD-11).
+  if (definition.ignoreOnLayerKinds !== undefined && definition.ignoreOnLayerKinds.includes(layerKindFor(ctx, part, cellKey))) {
+    return null;
   }
-  if ((RADIUS_PROPS as readonly string[]).includes(property)) {
-    const radiusProp = RADIUS_PROPS.find((candidate) => candidate === property);
-    if (radiusProp === undefined) fail(`proprietà radius "${property}" non riconosciuta.`);
-    // Le classi corner NON sono nel vocabolario (solo `rounded-*`): la
-    // validazione avviene dopo il collapse in `validateEmitted`.
-    return { className: `${RADIUS_CORNER[radiusProp]}-${varSuffix(token, type)}` };
+  const rule = definition.emitter;
+  switch (rule.emit) {
+    case "coveredByBase":
+      assertCoveredByBase(ctx, rule, { part, cellKey, property, token, prefix });
+      return null;
+    case "radiusCorner":
+      // Le classi corner NON sono nel vocabolario (solo `rounded-*`): la
+      // validazione avviene dopo il collapse in `validateEmitted`.
+      return `${rule.corner}-${varSuffix(token, type)}`;
+    case "utility": {
+      const utility =
+        rule.byLayerKind !== undefined ? (rule.byLayerKind[layerKindFor(ctx, part, cellKey)] ?? rule.prefix) : rule.prefix;
+      const className = `${utility}-${varSuffix(token, type)}`;
+      const validation = validateClassesAgainstVocabulary([className], ctx.vocabulary);
+      if (!validation.valid) {
+        fail(
+          `classe "${className}" (parte "${part}", proprietà "${property}", token "${token}") non è derivabile dal vocabolario token Stadio 1 — estenderlo è una decisione esplicita.`,
+        );
+      }
+      return className;
+    }
+    case "none":
+      fail(`proprietà "${property}" (parte "${part}", cella "${cellKey}") non ha una mappatura nell'emitter shadcn.`);
   }
-  const className = `${utilityPrefixFor(property, layerKindFor(ctx, part, cellKey))}-${varSuffix(token, type)}`;
-  const validation = validateClassesAgainstVocabulary([className], ctx.vocabulary);
-  if (!validation.valid) {
-    fail(
-      `classe "${className}" (parte "${part}", proprietà "${property}", token "${token}") non è derivabile dal vocabolario token Stadio 1 — estenderlo è una decisione esplicita.`,
-    );
-  }
-  return { className };
 }
 
 /**
@@ -289,8 +277,8 @@ function deriveClass(
  * o diverse restano e falliscono la validazione a valle.
  */
 function collapseRadius(classes: string[]): string[] {
-  const corners = classes.filter((cls) => RADIUS_PROPS.some((prop) => cls.startsWith(RADIUS_CORNER[prop])));
-  if (corners.length !== RADIUS_PROPS.length) return classes;
+  const corners = classes.filter((cls) => RADIUS_CORNERS.some((corner) => cls.startsWith(corner)));
+  if (corners.length !== RADIUS_CORNERS.length) return classes;
   const suffixes = new Set(corners.map((cls) => cls.slice(cls.lastIndexOf("-") + 1)));
   if (suffixes.size !== 1) return classes;
   const suffix = [...suffixes][0];
@@ -324,7 +312,7 @@ function componentNameCamel(name: string): string {
  * proprietà costanti → classi base; due assi sulla stessa proprietà =
  * interazione non esprimibile in cva/prefissi → fail-loud nominativo.
  */
-function computePartClasses(ctx: EmitterContext, part: string, skipped: SkippedProperty[]): PartClasses {
+function computePartClasses(ctx: EmitterContext, part: string): PartClasses {
   const partCells = ctx.recipe.parts[part];
   if (partCells === undefined) fail(`parte "${part}" assente dalla ricetta.`);
   const boundPart = ctx.binding.parts[part];
@@ -371,7 +359,12 @@ function computePartClasses(ctx: EmitterContext, part: string, skipped: SkippedP
    * default — altrimenti sarebbe una rimozione, che l'emitter non può
    * esprimere: fail-loud nominativo.
    */
-  const deriveFor = (property: string, cellKey: string): string | null => {
+  /**
+   * `prefix` = il prefisso di stato con cui la classe finirebbe nel codice
+   * (`""` per la base, `null` per un valore option non default): serve al
+   * controllo delle proprietà coperte dalla base.
+   */
+  const deriveFor = (property: string, cellKey: string, prefix: string | null): string | null => {
     const token = partCells[cellKey]?.[property];
     if (token === undefined) {
       if (partCells[defaultKey]?.[property] === undefined) return null;
@@ -379,18 +372,7 @@ function computePartClasses(ctx: EmitterContext, part: string, skipped: SkippedP
         `proprietà "${property}" della parte "${part}" è assente nella cella "${cellKey}" ma presente nella cella default — l'emitter non può esprimere la rimozione di una classe: allinea la ricetta.`,
       );
     }
-    const derived = deriveClass(ctx, part, cellKey, property, token as string);
-    if (derived.className === null) {
-      skipped.push({
-        part,
-        cell: cellKey,
-        property,
-        token,
-        reason: derived.skipReason ?? "tipo token senza utility v4",
-      });
-      return null;
-    }
-    return derived.className;
+    return deriveClass(ctx, part, cellKey, property, token as string, prefix);
   };
 
   const baseDerived: string[] = [];
@@ -399,7 +381,7 @@ function computePartClasses(ctx: EmitterContext, part: string, skipped: SkippedP
 
   for (const property of properties) {
     if (assignedAxis.get(property) === null) {
-      const derived = deriveFor(property, defaultKey);
+      const derived = deriveFor(property, defaultKey, "");
       if (derived !== null) baseDerived.push(derived);
     }
   }
@@ -408,6 +390,10 @@ function computePartClasses(ctx: EmitterContext, part: string, skipped: SkippedP
     const bound = ctx.binding.axes[axis.name];
     if (bound === undefined) fail(`asse "${axis.name}" senza tipo nel binding — fail-loud nominativo.`);
     const assignedProps = properties.filter((property) => assignedAxis.get(property) === axis.name);
+    const prefixFor = (value: string): string | null => {
+      if (value === axis.default) return "";
+      return axis.type === "option" ? null : (bound.values[value] ?? null);
+    };
     const classesFor = (value: string): string[] => {
       const cellKey = cellKeyOf(
         ctx.contract.axes,
@@ -420,7 +406,7 @@ function computePartClasses(ctx: EmitterContext, part: string, skipped: SkippedP
       );
       const classes: string[] = [];
       for (const property of assignedProps) {
-        const derived = deriveFor(property, cellKey);
+        const derived = deriveFor(property, cellKey, prefixFor(value));
         if (derived !== null) classes.push(derived);
       }
       return validateEmitted(ctx, part, classes);
@@ -1157,8 +1143,12 @@ export function renderComponent(
   }
 
   const tokenTypes = new Map<string, TokenType>();
+  const tokenValues = new Map<string, unknown>();
   for (const set of catalog.sets) {
-    for (const token of set.tokens) tokenTypes.set(token.name, token.type);
+    for (const token of set.tokens) {
+      tokenTypes.set(token.name, token.type);
+      tokenValues.set(token.name, token.value);
+    }
   }
 
   const ctx: EmitterContext = {
@@ -1167,6 +1157,7 @@ export function renderComponent(
     binding,
     contract,
     tokenTypes,
+    tokenValues,
     vocabulary: buildTokenVocabulary(catalog),
     baseSource,
     headlessAlias: null,
@@ -1179,10 +1170,9 @@ export function renderComponent(
   if (lucideLine !== null) ctx.lucideImport = `import {${lucideLine[1]}} from "lucide-react";`;
 
   const partTree = buildPartTree(ctx);
-  const skipped: SkippedProperty[] = [];
   const nodes = flattenParts(partTree);
   for (const node of nodes) {
-    node.classes = computePartClasses(ctx, node.name, skipped);
+    node.classes = computePartClasses(ctx, node.name);
   }
   // Le classi delle parti attributo (es. placeholder) confluiscono nell'host
   // con il prefisso del binding (es. `placeholder:`).
@@ -1221,5 +1211,5 @@ export function renderComponent(
     existing[indexPath] !== undefined && !isGeneratedFile(existing[indexPath]) ? "skip" : "write";
   files.push({ path: indexPath, content: renderIndexFile(ctx, existing[indexPath]), action: indexAction });
 
-  return { component: componentName, domain, files, skippedProperties: skipped };
+  return { component: componentName, domain, files };
 }
