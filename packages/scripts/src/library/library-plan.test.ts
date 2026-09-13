@@ -149,6 +149,19 @@ describe("additiva", () => {
         const set = next.sets.find((s) => s.name === op.set);
         if (!set) throw new Error(`set mancante: ${op.set}`);
         set.tokens.push({ name: op.name, type: op.type, value: op.value });
+      } else if (op.kind === "addCell") {
+        const container = next.components.find((c) => c.name === op.containerName);
+        if (!container) throw new Error(`container mancante: ${op.containerName}`);
+        container.cells = [
+          ...container.cells,
+          { variantProps: { ...op.variantProps }, variantError: null, root: { name: "root", kind: "board", tokens: {}, style: {}, children: [] } },
+        ];
+        container.axesValues = Object.fromEntries(
+          Object.entries(container.axesValues).map(([axis, values]) => [
+            axis,
+            values.includes(op.variantProps[axis]!) ? values : [...values, op.variantProps[axis]!],
+          ]),
+        );
       } else {
         next.components.push({
           id: `id-${op.contract}`,
@@ -251,5 +264,89 @@ describe("additiva", () => {
     const snapshot: LibrarySnapshot = { ...emptySnapshot(), sets: [setNamed("stray", false)] };
     const result = plan({ mode: "additive", snapshot });
     expect(result.refused).toBeUndefined();
+  });
+
+  describe("addCell — celle mancanti di un container esistente (Story 2.7 parte B)", () => {
+    const badge = COMPONENT_CONTRACTS.badge;
+    /** Badge con un valore `outline` in più sull'asse `variant`: iniettato, non ricopiato. */
+    const withOutline = {
+      ...badge,
+      axes: badge.axes.map((axis) => (axis.name === "variant" ? { ...axis, values: [...axis.values, "outline"] } : axis)),
+    } as ComponentContract;
+    const extended = contracts.map((c) => (c.name === "badge" ? withOutline : c));
+    const baseDesign = designs.badge!;
+    const outlineCell = (size: string) => ({
+      ...baseDesign.cells[`variant=default|size=${size}`]!,
+      root: { ...baseDesign.cells[`variant=default|size=${size}`]!.root, fill: "color.background" },
+    });
+    const outlineDesigns: Record<string, ComponentDesign> = {
+      ...designs,
+      badge: {
+        ...baseDesign,
+        cells: { ...baseDesign.cells, "variant=outline|size=sm": outlineCell("sm"), "variant=outline|size=md": outlineCell("md") },
+      },
+    };
+
+    it("pianifica un addCell per ogni combinazione mancante, con parti e token del design", () => {
+      const snapshot = apply(emptySnapshot(), plan());
+      const result = plan({ mode: "additive", contracts: extended, designs: outlineDesigns, snapshot });
+      const addCells = result.operations.filter((op) => op.kind === "addCell");
+      expect(result.operations).toHaveLength(2);
+      expect(addCells.map((op) => op.kind === "addCell" && op.cellKey)).toEqual(["variant=outline|size=sm", "variant=outline|size=md"]);
+      const existingCells = snapshot.components.find((c) => c.name === "Badge")!.cells.length;
+      for (const [progressive, op] of addCells.entries()) {
+        if (op.kind !== "addCell") continue;
+        expect(op.contract).toBe("badge");
+        expect(op.containerName).toBe("Badge");
+        expect(op.index).toBe(existingCells + progressive);
+        expect(op.variantProps.variant).toBe("outline");
+        expect(op.parts.map((part) => part.name)).toEqual(["root", "label"]);
+        expect(op.parts[0]!.tokens.fill).toBe("color.background");
+        expect(op.parts[0]!.size).toEqual(baseDesign.parts.root!.size);
+      }
+      // Le differenze esistenti restano: i valori dell'asse divergono.
+      expect(result.differences.some((d) => d.subject.includes("asse variant") && d.expected.includes("outline"))).toBe(true);
+    });
+
+    it("un secondo run sul risultato non pianifica nulla", () => {
+      const snapshot = apply(emptySnapshot(), plan());
+      const first = plan({ mode: "additive", contracts: extended, designs: outlineDesigns, snapshot });
+      const second = plan({ mode: "additive", contracts: extended, designs: outlineDesigns, snapshot: apply(snapshot, first) });
+      expect(second.operations).toEqual([]);
+      expect(second.differences).toEqual([]);
+    });
+
+    it("design senza la cella mancante: errore che nomina contratto e cella", () => {
+      const snapshot = apply(emptySnapshot(), plan());
+      expect(() => plan({ mode: "additive", contracts: extended, designs, snapshot })).toThrow(
+        /Design "badge": manca la cella "variant=outline\|size=sm"/,
+      );
+    });
+
+    it("nessun addCell su un container a una versione vecchia del contratto (badge@1 vs badge@2): resta la differenza", () => {
+      const snapshot = apply(emptySnapshot(), plan());
+      const bumped = extended.map((c) => (c.name === "badge" ? ({ ...c, version: 2 } as ComponentContract) : c));
+      const result = plan({ mode: "additive", contracts: bumped, designs: outlineDesigns, snapshot });
+      expect(result.operations.filter((op) => op.kind === "addCell")).toEqual([]);
+      expect(result.differences.some((d) => d.expected.includes('"badge@2"') && d.found.includes('"badge@1"'))).toBe(true);
+    });
+
+    it("nessun addCell senza container dichiarante, con due dichiaranti o con assi fuori ordine", () => {
+      const noPlugin = apply(emptySnapshot(), plan());
+      noPlugin.components.find((c) => c.name === "Badge")!.pluginData = null;
+      expect(plan({ mode: "additive", contracts: extended, designs: outlineDesigns, snapshot: noPlugin }).operations).toEqual([]);
+
+      const twice = apply(emptySnapshot(), plan());
+      const original = twice.components.find((c) => c.name === "Badge")!;
+      twice.components.push({ ...original, id: "dup", name: "BadgeCopy" });
+      expect(plan({ mode: "additive", contracts: extended, designs: outlineDesigns, snapshot: twice }).operations).toEqual([]);
+
+      const reversed = apply(emptySnapshot(), plan());
+      const rev = reversed.components.find((c) => c.name === "Badge")!;
+      rev.axes = [...rev.axes].reverse();
+      const result = plan({ mode: "additive", contracts: extended, designs: outlineDesigns, snapshot: reversed });
+      expect(result.operations).toEqual([]);
+      expect(result.differences.some((d) => d.expected.startsWith("assi"))).toBe(true);
+    });
   });
 });

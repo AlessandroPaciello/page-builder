@@ -29,7 +29,7 @@ function greenSnapshot(): LibrarySnapshot {
       snapshot.sets.push({ name: op.set, active: true, tokens: [] });
     } else if (op.kind === "createToken") {
       snapshot.sets.find((set) => set.name === op.set)!.tokens.push({ name: op.name, type: op.type, value: op.value });
-    } else {
+    } else if (op.kind === "createContainer") {
       snapshot.components.push({
         id: `id-${op.contract}`,
         name: op.containerName,
