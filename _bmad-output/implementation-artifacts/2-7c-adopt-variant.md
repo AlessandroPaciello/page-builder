@@ -66,6 +66,8 @@ context:
 
 ## Spec Change Log
 
+Nessun cambiamento di spec: il documento è quello approvata.
+
 ## Review Triage Log
 
 **Loop 1 — 2026-09-13, 3 layer (blind-hunter, edge-case-hunter, verification-gap):**
@@ -138,3 +140,27 @@ Review a 4 layer (blind-hunter, edge-case-hunter, verification-gap, acceptance-a
 - [acceptance-auditor] File richiesti dalle task assenti dal diff (`fingerprint.ts`, `axis-influence.ts`, `penpot-pipeline.md`, script `package.json`) — **false**: effetto del chunking; tutti presenti nei gruppi 2-3 del diff completo della storia.
 - [acceptance-auditor] Test di `planAdoption` leggono file committati invece di directory temporanee — low: sola lettura, mai scritture; il fix ristruttura l'harness dei test per zero guadagno comportamentale.
 - [acceptance-auditor] Il piano abortisce l'intero run invece del solo contratto quando manca una cella — adjudicato nel loop 1 della review 2.7b (BH#8+ECH#10).
+
+## Review Findings (code review extra — gruppo 3 artifact BMAD, 2026-09-13)
+
+Review a 4 layer sul diff `ceb07ad...HEAD` limitato a `_bmad-output` (spec epiche, sprint-status, epics, correct-course, penpot-pipeline). Verificato sui file reali.
+
+- [x] [Review][Decision] Regola A contraddice il principio guida — `penpot-pipeline.md:28` affida al **designer** la rimozione a mano delle celle di valori rimossi/rinominati; la stessa doc (riga 9) stabilisce che "il designer torna in Penpot solo per scelte di design vere, mai per esigenze della pipeline", e la pulizia post-bump è un'esigenza di pipeline. Serve la decisione: chi rimuove (designer avvisato, sviluppatore, o il comando `remove:cells` rinviato in deferred-work).
+- [x] [Review][Patch] `epic-2-context.md` è un correct-course indietro — righe 18-20 hanno ancora la numerazione 2026-09-12 (2.8 skill / 2.9 libreria / 2.10 Storybook) e la riga 33 dice regola A "ancora da decidere", mentre `epics.md` (2.8 registro / 2.9 skill / 2.10 libreria / 2.11 Storybook) e la regola A "decisa, opzione A" fanno autorità; le righe 59-60 citano i numeri vecchi ("voce [PC] di 2.8", "skill a 2.8", "story senza args a 2.10", "gate CSF3 a 2.10").
+- [x] [Review][Patch] Overlap nel routing [PS] di Story 2.9 (`epics.md:340`) — "cella richiesta dal contratto ma assente dal container → `addCell`" e "cella che il design usa e il contratto non ha, **o mancante dal container** → blocco e domanda al designer": lo stesso stato ha due esiti opposti. Fix: togliere "o mancante dal container" dal secondo ramo.
+- [x] [Review][Patch] Nome della sessione forge incoerente — `design-system.md:57` cita il forge "pipeline **meno** vincolante"; ogni altro artefatto (directory, memlog, proposta, deferred-work) lo chiama "pipeline **troppo** vincolante".
+- [x] [Review][Patch] `sprint-status.yaml` commento sotto-statistico — "6 patch applicate" conta solo il gruppo 1; la review completa ne ha applicate 16 (6 gruppo 1 + 10 gruppo 2).
+- [x] [Review][Patch] `Spec Change Log` vuoto in `2-7c-adopt-variant.md` — heading senza contenuto; una riga esplicita ("nessun cambiamento: spec approvata così") evita l'ambiguità di una sezione dimenticata.
+- [x] [Review][Patch] Doppio register dello split 2.7 senza nota di supersessione — `deferred-work.md:158/179`: la prima voce definisce parte B = `addCell` + `adopt:variant` + regola versioni, la seconda la ridefinisce senza dire che corregge la prima. Fix: una riga di nota sulla seconda voce.
+
+### Rejected (appendice)
+
+- [blind-hunter] CAP-5 (memlog) vs CAP-15 (design-system, epics) per l'href dai dati commerce — low: il memlog è log di sessione; i documenti normativi concordano su CAP-15.
+- [blind-hunter+acceptance-auditor] `penpot-pipeline.md` descrive in presente lo stato target (registro, gate per componente) mentre il codice è ancora globale — low: la doc è normativa (la "legge" che la 2.8 implementa); lo stato as-built è nello sprint-status (2.8 backlog) e il divario è registrato nel memlog.
+- [blind-hunter] Premessa "due parti" nella proposta di cambio non corrispondente alla realtà a tre parti — low: la proposta è un atto storico del correct-course, non normativa; l'adeguamento è avvenuto nella parte C a valle.
+- [blind-hunter] Riferimenti di riga divergenti per lo stesso limite dell'emitter (376-383 / 356-377 / 385-392) — low: le ancore sono storiche e destinate a driftare per natura; rincorrerle è churn.
+- [blind-hunter] Deviazione AC frozen (test su file committati) chiusa come "low, rifiutato" senza emendamento — adjudicata due volte (loop 2-7b e review gruppo 1): sola lettura, fix = ristrutturare l'harness per zero guadagno.
+- [blind-hunter] Baseline "quarto/quinto/tre" incoerente in 2-7a — low: la matrice dice "Quinto design aggiunto" dove Alert sarebbe il quarto; cosmetico in una story done.
+- [edge-case-hunter] Footer di `forge-report.html` auto-riferito — low: artifact di sessione, nessun consumatore indicizzato.
+- [edge-case-hunter] Matrice 2-7b "Design senza la cella" in tensione con la colonna Error Handling — adjudicato nel loop 1 della 2.7b (BH#8+ECH#10): il comportamento implementato (errore globale nominativo) è quello registrato nel triage log; l'eventuale emendamento della matrice spetta ad Alessandro.
+- [edge-case-hunter] Sovrapposizione/wording tra righe delle matrici 2-7c (Adozione, Literal) e `penpot-pipeline.md` — low cosmetico.
