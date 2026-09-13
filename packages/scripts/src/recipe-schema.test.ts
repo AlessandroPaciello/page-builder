@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FixtureSchema, JudgmentSchema, RecipeSchema } from "./recipe-schema";
+import { FixtureSchema, JudgmentSchema, RecipeSchema, partBindings, resolvePartAliases } from "./recipe-schema";
 
 /**
  * Badge-like: cella con albero layer root + label (stessa forma letta dallo
@@ -374,5 +374,43 @@ describe("RecipeSchema — literal e malformazioni", () => {
   it("rifiuta provenienza senza penpotComponentId", () => {
     const { penpotComponentId: _omitted, ...broken } = badgeRecipe;
     expect(RecipeSchema.safeParse(broken).success).toBe(false);
+  });
+});
+
+describe("alias dei layer nel binding (Story 2.8 parte B)", () => {
+  const contract = { name: "badge", parts: ["root", "label"] };
+  const root = {
+    name: "Badge",
+    kind: "board",
+    tokens: { fill: "color.primary" },
+    style: {},
+    children: [{ name: "Label Text", kind: "text", tokens: { fill: "color.primary-foreground" }, style: {}, children: [] }],
+  };
+
+  it("partBindings lega il layer `Label Text` alla parte `label` tramite l'alias", () => {
+    expect([...partBindings(root).bindings.keys()]).toEqual(["root", "Label Text"]);
+    const { bindings } = partBindings(root, { "Label Text": "label" });
+    expect(bindings.get("label")).toEqual({ fill: "color.primary-foreground" });
+    expect(bindings.has("Label Text")).toBe(false);
+  });
+
+  it("resolvePartAliases: mappa layer → parte, senza errori sul caso valido", () => {
+    expect(resolvePartAliases({ parts: { root: {}, label: { aliases: ["Label Text"] } } }, contract)).toEqual({
+      aliases: { "Label Text": "label" },
+      errors: [],
+    });
+    expect(resolvePartAliases(undefined, contract)).toEqual({ aliases: {}, errors: [] });
+  });
+
+  it("alias verso una parte inesistente, duplicato o uguale a un'altra parte → errore nominativo", () => {
+    const missing = resolvePartAliases({ parts: { icon: { aliases: ["Icon"] } } }, contract);
+    expect(missing.errors[0]).toMatch(/alias "Icon" punta alla parte "icon", che il contratto non ha/);
+    const duplicate = resolvePartAliases(
+      { parts: { root: { aliases: ["Testo"] }, label: { aliases: ["Testo"] } } },
+      contract,
+    );
+    expect(duplicate.errors[0]).toMatch(/alias "Testo" è dichiarato due volte \(parti "root" e "label"\)/);
+    const ambiguous = resolvePartAliases({ parts: { root: { aliases: ["label"] } } }, contract);
+    expect(ambiguous.errors[0]).toMatch(/alias "label" della parte "root" è il nome di un'altra parte/);
   });
 });

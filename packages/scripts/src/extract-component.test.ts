@@ -11,6 +11,7 @@ import {
   extract,
   loadCatalogFixture,
   loadJudgment,
+  loadPartAliases,
   parseArgs,
   recipePathFor,
 } from "./extract-component";
@@ -353,5 +354,83 @@ describe("extract — end-to-end (review loop 1, BH#10: gate-before-write osserv
     const result = runGate(writtenFixture, writtenRecipe, catalog, judgment);
     expect(result.errors).toEqual([]);
     expect(result.valid).toBe(true);
+  });
+});
+
+describe("extract — alias dei layer e byte-identità (Story 2.8 parte B)", () => {
+  it("dalle fixture committate l'estrazione riproduce fixture e ricetta committate byte per byte", async () => {
+    for (const component of committedComponents()) {
+      const fixture = loadFixture(component);
+      const snapshot = {
+        sets: [],
+        componentCount: 1,
+        components: [
+          {
+            id: fixture.penpotComponentId,
+            name: fixture.componentName,
+            pluginData: fixture.contract,
+            axes: fixture.axes.map((axis) => axis.name),
+            axesValues: Object.fromEntries(fixture.axes.map((axis) => [axis.name, axis.values])),
+            cells: fixture.cells.map((cell) => ({ variantProps: cell.variantProps, variantError: null, root: cell.root })),
+          },
+        ],
+      };
+      const snapshotPath = join(tempDir(`snapshot-${component}-`), "snap.json");
+      writeFileSync(snapshotPath, JSON.stringify(snapshot), "utf8");
+      const outDir = tempDir(`extract-${component}-`);
+      const log = console.log;
+      console.log = () => {};
+      try {
+        const { fixturePath, recipePath } = await extract(component, { snapshotPath, recipesDir: outDir });
+        expect(readFileSync(fixturePath, "utf8")).toBe(readFileSync(resolve(here, "recipes", fixturePath.split("/").pop()!), "utf8"));
+        expect(readFileSync(recipePath, "utf8")).toBe(readFileSync(resolve(here, "recipes", recipePath.split("/").pop()!), "utf8"));
+      } finally {
+        console.log = log;
+      }
+    }
+  });
+
+  it("layer `Label Text` + alias `label` nel binding → stessa ricetta; alias verso una parte inesistente → errore", async () => {
+    const renamed = badgeSnapshot();
+    for (const cell of renamed.components[0]!.cells) cell.root.children[0]!.name = "Label Text";
+    const snapshotPath = join(tempDir("snapshot-alias-"), "snap.json");
+    writeFileSync(snapshotPath, JSON.stringify(renamed), "utf8");
+    const plainPath = join(tempDir("snapshot-plain-"), "snap.json");
+    writeFileSync(plainPath, JSON.stringify(badgeSnapshot()), "utf8");
+
+    const binding = JSON.parse(readFileSync(resolve(here, "emitter/bindings/badge.binding.json"), "utf8"));
+    const log = console.log;
+    console.log = () => {};
+    try {
+      // Senza alias il layer rinominato non è una parte: l'estrazione si ferma.
+      await expect(extract("Badge", { snapshotPath, recipesDir: tempDir("extract-noalias-") })).rejects.toThrow(/"Label Text".*non è una parte/);
+
+      const bindingsDir = tempDir("bindings-alias-");
+      binding.parts.label.aliases = ["Label Text"];
+      writeFileSync(join(bindingsDir, "badge.binding.json"), JSON.stringify(binding), "utf8");
+      const withAlias = await extract("Badge", { snapshotPath, recipesDir: tempDir("extract-alias-"), bindingsDir });
+      const plain = await extract("Badge", { snapshotPath: plainPath, recipesDir: tempDir("extract-plain-") });
+      expect(readFileSync(withAlias.recipePath, "utf8")).toBe(readFileSync(plain.recipePath, "utf8"));
+
+      const badDir = tempDir("bindings-bad-");
+      binding.parts.icon = { ...binding.parts.label, aliases: ["Icon"] };
+      writeFileSync(join(badDir, "badge.binding.json"), JSON.stringify(binding), "utf8");
+      await expect(extract("Badge", { snapshotPath, recipesDir: tempDir("extract-bad-"), bindingsDir: badDir })).rejects.toThrow(
+        /alias "Icon" punta alla parte "icon"/,
+      );
+    } finally {
+      console.log = log;
+    }
+  });
+});
+
+describe("loadPartAliases — contratto sconosciuto", () => {
+  it("un binding che dichiara un contratto inesistente è un errore nominativo, non «nessun alias»", () => {
+    const dir = tempDir("bindings-unknown-");
+    const binding = JSON.parse(readFileSync(resolve(here, "emitter/bindings/badge.binding.json"), "utf8"));
+    binding.contract = "fantasma@1";
+    writeFileSync(join(dir, "badge.binding.json"), JSON.stringify(binding), "utf8");
+    expect(() => loadPartAliases("Badge", dir)).toThrow(/"fantasma@1", che non esiste in @app\/contracts/);
+    expect(loadPartAliases("Badge")).toEqual({});
   });
 });

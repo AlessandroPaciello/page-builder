@@ -148,9 +148,12 @@ describe("planAdoption — adozione", () => {
 
   it("dopo l'adozione le regole 4 e 5 di verify:library sono verdi sullo stesso snapshot", () => {
     const before = verifyLibrary({ contracts: [badge], spec: { tokens: [], contrastPairs: [] }, snapshot: badgeWithOutline() });
-    expect(before.errors.some((message) => message.includes("in più [outline]"))).toBe(true);
+    // Story 2.8 parte B: una variante non adottata mette il componente "in attesa", non rosso.
+    expect(before.pending.some((message) => message.includes("in più [outline]"))).toBe(true);
+    const badgeProblems = before.components.find((verdict) => verdict.component === "Badge")?.problems ?? [];
+    expect(badgeProblems.find((problem) => problem.message.includes("in più [outline]"))?.severity).toBe("pending");
     const after = verifyLibrary({ contracts: [adopt!.adopted], spec: { tokens: [], contrastPairs: [] }, snapshot: badgeWithOutline() });
-    const rules45 = after.errors.filter((message) => /valori del contratto|manca la cella|cella ".*" in più|proprietà di variante/.test(message));
+    const rules45 = [...after.errors, ...after.pending].filter((message) => /valori del contratto|manca la cella|cella ".*" in più|proprietà di variante/.test(message));
     expect(rules45).toEqual([]);
   });
 
@@ -254,15 +257,53 @@ describe("planAdoption — casi rifiutati (nessun file)", () => {
     expectError(plan(badge, snapshot), 'cella "variant=outline|size=sm"', 'manca la parte "label"');
   });
 
-  it("cella nuova senza una proprietà della cella default → errore con cella, parte e proprietà", () => {
+  it("cella nuova senza una proprietà del default senza rimozione mappata (fontWeight) → errore nominativo", () => {
+    // fontWeight non dichiara `removalClass` nel registro: se l'adopt
+    // scrivesse i cinque file, `render:component` fallirebbe dopo.
     const snapshot = badgeWithOutline((cell) => {
-      if (cell.variantProps!.size !== "sm") return cell;
+      if (cell.variantProps!.variant !== "outline") return cell;
       const label = cell.root.children[0]!;
       const { fontWeight: _t, ...tokens } = label.tokens;
       const { fontWeight: _s, ...style } = label.style;
       return { ...cell, root: { ...cell.root, children: [{ ...label, tokens, style }] } };
     });
-    expectError(plan(badge, snapshot), 'cella "variant=outline|size=sm"', 'parte "label"', 'proprietà "fontWeight"');
+    expectError(
+      plan(badge, snapshot),
+      'cella "variant=outline|size=sm"',
+      'parte "label"',
+      'proprietà "fontWeight"',
+      "la classe di rimozione non è mappata nel registro",
+    );
+  });
+
+  it("cella nuova senza una proprietà del default CON rimozione mappata (fill) → adottata, la cella scritta nel design non la ha", () => {
+    const snapshot = badgeWithOutline((cell) => {
+      if (cell.variantProps!.variant !== "outline") return cell;
+      const { fill: _f, ...tokens } = cell.root.tokens;
+      const { fill: _s, ...style } = cell.root.style;
+      return { ...cell, root: { ...cell.root, tokens, style } };
+    });
+    const result = plan(badge, snapshot);
+    expect(result.kind).toBe("adopt");
+    if (result.kind === "adopt") {
+      const design = JSON.parse(result.files.find((file) => file.label === "design")!.after) as ComponentDesign;
+      expect(design.cells["variant=outline|size=sm"]!.root!.fill).toBeUndefined();
+      expect(design.cells["variant=outline|size=md"]!.root!.fill).toBeUndefined();
+      // La parte label, che non omette nulla, conserva i suoi token.
+      expect(design.cells["variant=outline|size=sm"]!.label!.fill).toBeDefined();
+    }
+  });
+
+  it("cella nuova senza una proprietà CON rimozione mappata solo su parte del prodotto cartesiano → errore due assi (variant, size)", () => {
+    // fill ha la rimozione mappata, ma assente solo da outline/sm e presente
+    // altrove varia con due assi: resta non esprimibile (compoundVariants).
+    const snapshot = badgeWithOutline((cell) => {
+      if (cell.variantProps!.variant !== "outline" || cell.variantProps!.size !== "sm") return cell;
+      const { fill: _f, ...tokens } = cell.root.tokens;
+      const { fill: _s, ...style } = cell.root.style;
+      return { ...cell, root: { ...cell.root, tokens, style } };
+    });
+    expectError(plan(badge, snapshot), 'proprietà "fill"', 'parte "root"', "(variant, size)");
   });
 
   it("registry con un contratto cambiato senza bump → errore", () => {

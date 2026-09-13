@@ -2,7 +2,7 @@ import { mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { loadJudgment } from "../extract-component";
+import { loadJudgment, loadPartAliases } from "../extract-component";
 import { validateRecipe } from "../validate-recipe";
 import { committedComponents, loadBaseSources, loadBinding, loadCatalog, loadFixture, loadRecipe, readExistingFiles, domainsRoot, basesDir } from "./artifacts";
 import { renderCheck, renderComponent } from "./render-component";
@@ -130,7 +130,7 @@ export async function runRender(args: RenderCliArgs, options: RenderCliOptions =
 
   // Gate conformità PRIMA del rendering: da una ricetta non conforme
   // l'emitter produrrebbe classi sbagliate in silenzio.
-  const validation = validateRecipe(fixture, recipe, catalog, judgment);
+  const validation = validateRecipe(fixture, recipe, catalog, judgment, loadPartAliases(args.componentName));
   if (!validation.valid) {
     throw new Error(
       `La ricetta di "${args.componentName}" non è conforme al contratto:\n${validation.errors.join("\n")}`,

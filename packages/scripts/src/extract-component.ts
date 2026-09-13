@@ -3,6 +3,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { componentFixtureFromSnapshot, contractByName } from "./component-reader";
+import { BindingSchema } from "./emitter/binding-shadcn";
 import { parseLibrarySnapshot, readLibrarySnapshot } from "./library/library-reader";
 import type { LibrarySnapshot } from "./library/library-snapshot";
 import {
@@ -10,6 +11,7 @@ import {
   JudgmentSchema,
   cellKeyOf,
   partBindings,
+  resolvePartAliases,
   type ComponentJudgment,
   type ComponentFixture,
   type ComponentRecipe,
@@ -78,6 +80,39 @@ export function loadJudgment(contractName: string): ComponentJudgment {
     throw new Error(`File di giudizio malformato per il contratto "${contractName}" (${path}):\n${issues.join("\n")}`);
   }
   return parsed.data;
+}
+
+const bindingsDir = resolve(here, "emitter/bindings");
+
+/**
+ * Alias `layer → parte` dal binding committato del componente (Story 2.8
+ * parte B). Nessun binding (prima estrazione di un componente nuovo) =
+ * nessun alias. Un alias duplicato o verso una parte che il contratto non
+ * ha lancia con l'errore nominativo: l'estrazione non indovina.
+ */
+export function loadPartAliases(componentName: string, dir: string = bindingsDir): Record<string, string> {
+  const path = resolve(dir, `${toKebab(componentName)}.binding.json`);
+  if (!existsSync(path)) return {};
+  let json: unknown;
+  try {
+    json = JSON.parse(readFileSync(path, "utf8"));
+  } catch (error) {
+    throw new Error(`Il file "${path}" non è JSON leggibile: ${(error as Error).message}`);
+  }
+  const parsed = BindingSchema.safeParse(json);
+  if (!parsed.success) {
+    const issues = parsed.error.issues.map((issue) => `${issue.path.map(String).join(".") || "<root>"}: ${issue.message}`);
+    throw new Error(`Binding malformato per "${componentName}" (${path}):\n${issues.join("\n")}`);
+  }
+  const contract = contractByName(parsed.data.contract.split("@")[0]!);
+  if (contract === undefined) {
+    throw new Error(
+      `Il binding di "${componentName}" (${path}) dichiara il contratto "${parsed.data.contract}", che non esiste in @app/contracts — gli alias dei layer non si possono verificare.`,
+    );
+  }
+  const { aliases, errors } = resolvePartAliases(parsed.data, contract);
+  if (errors.length > 0) throw new Error(errors.join("\n"));
+  return aliases;
 }
 
 /** Nome file kebab-case: "LifecycleBadge" → "lifecycle-badge". Esportato per l'emitter (data-slot, nomi file). */
@@ -158,6 +193,8 @@ export function buildRecipe(
   fixture: ComponentFixture,
   catalog: TokenCatalog,
   judgment: ComponentJudgment,
+  /** Alias `layer → parte` dal binding (Story 2.8 parte B): la ricetta resta per parti del contratto. */
+  aliases: Readonly<Record<string, string>> = {},
 ): ComponentRecipe {
   const contractName = fixture.contract.split("@")[0]!;
   const contract = contractByName(contractName);
@@ -183,7 +220,7 @@ export function buildRecipe(
     if (problems.length > 0) {
       throw new Error(`Estrazione di "${fixture.componentName}" bloccata dal registro delle proprietà:\n${problems.join("\n")}`);
     }
-    const { bindings, duplicates } = partBindings(cell.root);
+    const { bindings, duplicates } = partBindings(cell.root, aliases);
     // Un binding su un layer che non è una parte del contratto, o una parte
     // portata da più layer, è un segnale di stop: si segnala, non si corregge.
     if (duplicates.length > 0) {
@@ -220,6 +257,8 @@ export interface ExtractOptions {
   snapshotPath?: string;
   /** Destinazione degli artefatti; default `src/recipes`. Seam per i test end-to-end. */
   recipesDir?: string;
+  /** Directory dei binding (alias dei layer); default `src/emitter/bindings`. Seam per i test. */
+  bindingsDir?: string;
 }
 
 export async function extract(
@@ -234,10 +273,11 @@ export async function extract(
   const fixture = componentFixtureFromSnapshot(componentName, snapshot);
   const contractName = fixture.contract.split("@")[0]!;
   const judgment = loadJudgment(contractName);
-  const recipe = buildRecipe(fixture, catalog, judgment);
+  const aliases = loadPartAliases(fixture.componentName, options.bindingsDir);
+  const recipe = buildRecipe(fixture, catalog, judgment, aliases);
 
   // Gate PRIMA di qualsiasi scrittura: un fallimento lascia zero artefatti.
-  const result = validateRecipe(fixture, recipe, catalog, judgment);
+  const result = validateRecipe(fixture, recipe, catalog, judgment, aliases);
   if (!result.valid) {
     throw new Error(`La ricetta assemblata per "${fixture.componentName}" non è conforme:\n${result.errors.join("\n")}`);
   }
@@ -311,7 +351,7 @@ function validate(componentName: string): void {
   }
 
   const judgment = loadJudgment(fixture.contract.split("@")[0]!);
-  const result = validateRecipe(fixtureJson, recipeJson, catalog, judgment);
+  const result = validateRecipe(fixtureJson, recipeJson, catalog, judgment, loadPartAliases(componentName));
   if (result.valid) {
     console.log(`Ricetta "${componentName}" VALIDA: conformance al contratto ${fixture.contract} ok, tutti i token risolti al catalogo Stadio 1.`);
   } else {

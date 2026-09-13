@@ -1,8 +1,8 @@
 import { PLUGIN_DATA_PATTERN, contractByName } from "../component-reader";
 import { toKebab } from "../extract-component";
 import type { SnapshotLayer } from "../library/library-snapshot";
-import { cellKeyOf, type ComponentFixture, type ComponentRecipe } from "../recipe-schema";
-import { lookupProperty, radiusCorners, type EmitRule } from "../style-properties";
+import { cellKeyOf, resolvePartAliases, type ComponentFixture, type ComponentRecipe } from "../recipe-schema";
+import { lookupProperty, radiusCorners, removalClasses, type EmitRule } from "../style-properties";
 import { varSuffix, type TokenCatalog, type TokenType } from "../theme-generator";
 import { buildTokenVocabulary, validateClassesAgainstVocabulary } from "../token-vocabulary";
 import { influencingAxes, parseCellKey } from "./axis-influence";
@@ -44,6 +44,15 @@ function regenCommandFor(componentName: string): string {
  * mappatura proprietà → classe non vive più in tabelle locali.
  */
 const RADIUS_CORNERS = radiusCorners();
+
+/**
+ * Classi di rimozione del registro (es. `bg-transparent`, Story 2.8 parte
+ * C): non derivano dal vocabolario token (`transparent` non è un token) ma
+ * sono dichiarate dal registro, quindi la validazione le accetta come le
+ * classi strutturali. Derivare la whitelist da qui (una volta per tutte)
+ * evita di duplicarla.
+ */
+const REMOVAL_CLASSES = new Set(removalClasses());
 
 export interface RenderedFile {
   /** Percorso relativo alla radice `packages/ui/src/domains/`. */
@@ -127,10 +136,21 @@ interface EmitterContext {
   lucideImport: string | null;
 }
 
-function findLayerByName(layer: SnapshotLayer, part: string): SnapshotLayer | null {
-  if (layer.name === part) return layer;
+/**
+ * Alias `layer → parte` dichiarati nel binding (Story 2.8 parte B), validati
+ * col contratto: un alias duplicato o verso una parte inesistente ferma il
+ * rendering con l'errore nominativo di `resolvePartAliases`.
+ */
+function bindingAliases(ctx: EmitterContext): Record<string, string> {
+  const { aliases, errors } = resolvePartAliases(ctx.binding, ctx.contract);
+  if (errors.length > 0) fail(errors.join("\n"));
+  return aliases;
+}
+
+function findLayerByName(layer: SnapshotLayer, part: string, aliases: Readonly<Record<string, string>> = {}): SnapshotLayer | null {
+  if (layer.name === part || (Object.hasOwn(aliases, layer.name) && aliases[layer.name] === part)) return layer;
   for (const child of layer.children) {
-    const found = findLayerByName(child, part);
+    const found = findLayerByName(child, part, aliases);
     if (found !== null) return found;
   }
   return null;
@@ -140,7 +160,7 @@ function layerKindFor(ctx: EmitterContext, part: string, cellKey: string): strin
   const cell = ctx.fixture.cells.find((candidate) => cellKeyOf(ctx.contract.axes, candidate.variantProps) === cellKey);
   if (cell === undefined) fail(`cella "${cellKey}" non trovata nella fixture di "${ctx.fixture.componentName}".`);
   if (part === "root") return cell.root.kind;
-  const layer = findLayerByName(cell.root, part);
+  const layer = findLayerByName(cell.root, part, bindingAliases(ctx));
   if (layer === null) {
     fail(
       `parte "${part}" non trovata come layer nella cella "${cellKey}" della fixture — il binding mappa una parte che il design non ha.`,
@@ -200,6 +220,50 @@ function assertCoveredByBase(
       `${location}: il token vale ${tokenValue}, la base shadcn esprime ${mismatch.value} ("${mismatch.cls}") — l'emitter non emette classi per questa proprietà: componente bloccato.`,
     );
   }
+}
+
+/**
+ * Classe di rimozione per variante (Story 2.8 parte C): la proprietà è
+ * assente da una cella option non default ma presente nel default — la
+ * variante emette la classe fissa dichiarata dalla riga del registro
+ * (`removalClass`, es. `bg-transparent` per il fill sui layer bg,
+ * `text-transparent` sui text), che annulla l'effetto della classe del
+ * default rimasta nella base cva. La risoluzione per tipo di layer è la
+ * STESSA logica del ramo positivo (`byLayerKind[kind] ?? default`): la classe
+ * rimuove l'utility che il default emette davvero. La classe NON deriva dal
+ * vocabolario token (`transparent` non è un token): sbloccarla è una riga
+ * del registro, non un valore inventato. Le coveredByBase non guadagnano la
+ * rimozione: la base non ha classi per variante, il componente blocca.
+ */
+function deriveRemovalClass(ctx: EmitterContext, part: string, cellKey: string, property: string): string | null {
+  const location = `proprietà "${property}" della parte "${part}" è assente nella cella "${cellKey}" ma presente nella cella default`;
+  let definition;
+  try {
+    definition = lookupProperty(property, { component: ctx.recipe.componentName, part, cell: cellKey });
+  } catch (cause) {
+    fail((cause as Error).message);
+  }
+  // Regola dichiarata nel registro: geometria dell'icona, ignorata (AD-11) —
+  // come nel ramo positivo di `deriveClass`.
+  if (definition.ignoreOnLayerKinds !== undefined && definition.ignoreOnLayerKinds.includes(layerKindFor(ctx, part, cellKey))) {
+    return null;
+  }
+  const rule = definition.emitter;
+  if (rule.emit === "utility" && rule.removalClass !== undefined) {
+    if (typeof rule.removalClass === "string") return rule.removalClass;
+    // Stessa risoluzione del ramo positivo: il prefisso effettivo per questo
+    // tipo di layer decide la classe di rimozione.
+    const resolved = rule.byLayerKind !== undefined ? (rule.byLayerKind[layerKindFor(ctx, part, cellKey)] ?? rule.prefix) : rule.prefix;
+    return rule.removalClass[resolved] ?? null;
+  }
+  if (rule.emit === "coveredByBase") {
+    fail(
+      `${location} — è coperta dalla base (${rule.baseDescription}) e la base non ha classi per un valore d'asse option: l'emitter non emette classi per questa proprietà: componente bloccato.`,
+    );
+  }
+  fail(
+    `${location} — la classe di rimozione non è mappata nel registro delle proprietà: sbloccarla è una riga del registro (style-properties.ts) + test rosso/verde.`,
+  );
 }
 
 /**
@@ -289,7 +353,13 @@ function collapseRadius(classes: string[]): string[] {
 
 function validateEmitted(ctx: EmitterContext, part: string, classes: readonly string[]): string[] {
   const collapsed = collapseRadius([...classes]);
-  const validation = validateClassesAgainstVocabulary(collapsed, ctx.vocabulary);
+  // Le classi di rimozione vengono dal registro (una riga + mappatura + test
+  // rosso/verde), non dal vocabolario token: fuori da quel canale restano
+  // invalide come qualunque classe non derivabile.
+  const validation = validateClassesAgainstVocabulary(
+    collapsed.filter((cls) => !REMOVAL_CLASSES.has(cls)),
+    ctx.vocabulary,
+  );
   if (!validation.valid) {
     fail(
       `classi ${validation.invalidClasses.map((cls) => `"${cls}"`).join(", ")} (parte "${part}") non derivabili dal vocabolario token Stadio 1 — estenderlo è una decisione esplicita.`,
@@ -354,10 +424,15 @@ function computePartClasses(ctx: EmitterContext, part: string): PartClasses {
   }
 
   /**
-   * Assenza di una proprietà da una cella: per un asse è esprimibile (nessuna
-   * classe per quel valore) SOLO se la proprietà è assente anche dalla cella
-   * default — altrimenti sarebbe una rimozione, che l'emitter non può
-   * esprimere: fail-loud nominativo.
+   * Assenza di una proprietà da una cella: se la proprietà è assente anche
+   * dalla cella default, nessuna classe da nessuna parte (assenza simmetrica).
+   * Se invece il default la ha, la variante di un asse `option`
+   * (`prefix === null`) emette la classe di rimozione dichiarata dal registro
+   * (`deriveRemovalClass`, Story 2.8 parte C): la classe del default resta
+   * nella base cva e la variante annulla il suo effetto — `null` se la regola
+   * icona la dichiara geometria ignorata. Un solo asse per proprietà, come
+   * oggi; per gli assi `state`/`behavior` la rimozione resta non esprimibile:
+   * fail-loud nominativo.
    */
   /**
    * `prefix` = il prefisso di stato con cui la classe finirebbe nel codice
@@ -368,8 +443,9 @@ function computePartClasses(ctx: EmitterContext, part: string): PartClasses {
     const token = partCells[cellKey]?.[property];
     if (token === undefined) {
       if (partCells[defaultKey]?.[property] === undefined) return null;
+      if (prefix === null) return deriveRemovalClass(ctx, part, cellKey, property);
       fail(
-        `proprietà "${property}" della parte "${part}" è assente nella cella "${cellKey}" ma presente nella cella default — l'emitter non può esprimere la rimozione di una classe: allinea la ricetta.`,
+        `proprietà "${property}" della parte "${part}" è assente nella cella "${cellKey}" ma presente nella cella default — l'emitter non può esprimere la rimozione di una classe per gli assi state/behavior (solo le varianti option la guadagnano): allinea la ricetta.`,
       );
     }
     return deriveClass(ctx, part, cellKey, property, token as string, prefix);

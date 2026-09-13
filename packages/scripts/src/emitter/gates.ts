@@ -116,39 +116,14 @@ export function checkDeclaredA11y(entries: readonly DeclaredA11yEntry[]): {
   return { ok: missing.length === 0, missing };
 }
 
-/**
- * Gate 3 composto: esito della suite ui (`checkA11y`) + a11y dichiarata
- * (`checkDeclaredA11y` sui test committati). Restituisce gli errori già
- * nominativi (componente, file, attributo) che il CLI stampa.
- */
-export function checkA11yGate(options: {
-  components: ReadonlyArray<{ component: string; domain: string; a11y: DeclaredA11yEntry["a11y"] }>;
-  existing: Record<string, string>;
-  suite: A11ySuiteResult;
-}): { ok: boolean; errors: string[] } {
-  const errors: string[] = [];
-  const suite = checkA11y(options.suite);
-  if (!suite.ok) errors.push(`Gate a11y: ${suite.detail}`);
-  const declared = checkDeclaredA11y(
-    options.components.map(({ component, domain, a11y }) => {
-      const path = `${domain}/${component}.test.tsx`;
-      return { component, path, a11y, testContent: options.existing[path] };
-    }),
-  );
-  for (const missing of declared.missing) {
-    errors.push(
-      `Gate a11y — ${missing.component}: ${missing.path} non asserisce nel DOM l'attributo dichiarato "${missing.attribute}" (rigenera con render:component).`,
-    );
-  }
-  return { ok: errors.length === 0, errors };
-}
-
 export interface ConformanceEntry {
   component: string;
   fixture: unknown;
   recipe: unknown;
   catalog: Parameters<typeof validateRecipe>[2];
   judgment: unknown;
+  /** Alias `layer → parte` dal binding (Story 2.8 parte B). */
+  aliases?: Readonly<Record<string, string>>;
 }
 
 /** Gate 4 — Conformità al contratto: riuso `validateRecipe` (assi/valori/parti, token, ricetta↔fixture, giudizio) — senza duplicare. */
@@ -158,7 +133,7 @@ export function checkConformance(entries: readonly ConformanceEntry[]): {
 } {
   const failures: Array<{ component: string; errors: string[] }> = [];
   for (const entry of entries) {
-    const result = validateRecipe(entry.fixture, entry.recipe, entry.catalog, entry.judgment);
+    const result = validateRecipe(entry.fixture, entry.recipe, entry.catalog, entry.judgment, entry.aliases);
     if (!result.valid) failures.push({ component: entry.component, errors: result.errors });
   }
   return { ok: failures.length === 0, failures };
@@ -173,6 +148,8 @@ export interface DriftResult {
   status: "ok" | "drift" | "skipped";
   /** Per `drift`: i componenti da riestrarre, nominati. */
   drifted?: string[];
+  /** Per `drift`: una riga per componente (Story 2.8 parte B: il report è per componente). */
+  details?: Array<{ component: string; detail: string }>;
   /** Per `skipped`: il motivo documentato (Penpot irraggiungibile). Mai un verde finto. */
   reason?: string;
 }
@@ -200,20 +177,24 @@ export async function checkDrift(options: {
     };
   }
   const drifted: string[] = [];
+  const details: Array<{ component: string; detail: string }> = [];
   for (const { component, committedFixture } of options.components) {
     let liveFixture: ComponentFixture;
     try {
       liveFixture = componentFixtureFromSnapshot(component, live);
     } catch (error) {
-      drifted.push(`${component} (estrazione live fallita: ${error instanceof Error ? error.message : String(error)})`);
+      const cause = `estrazione live fallita: ${error instanceof Error ? error.message : String(error)}`;
+      drifted.push(`${component} (${cause})`);
+      details.push({ component, detail: `Gate drift: ${cause}` });
       continue;
     }
     if (stableStringify(liveFixture) !== stableStringify(committedFixture)) {
       drifted.push(component);
+      details.push({ component, detail: `Gate drift: la fixture committata diverge da Penpot live — riestrarre con extract:component -- ${component}.` });
     }
   }
   if (drifted.length > 0) {
-    return { status: "drift", drifted, reason: `riestrarre con extract:component: ${drifted.join(", ")}` };
+    return { status: "drift", drifted, details, reason: `riestrarre con extract:component: ${drifted.join(", ")}` };
   }
   return { status: "ok" };
 }

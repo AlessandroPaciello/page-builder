@@ -16,6 +16,7 @@ import ts from "typescript";
 import { BindingSchema, type ComponentBinding } from "../emitter/binding-shadcn";
 import { influencingAxes } from "../emitter/axis-influence";
 import { partBindings } from "../recipe-schema";
+import { propertyDefinition } from "../style-properties";
 import { cartesian, type ComponentDesign } from "./library-plan";
 import type { LibrarySnapshot, SnapshotCell, SnapshotLayer } from "./library-snapshot";
 
@@ -351,9 +352,10 @@ export function planAdoption(
 
   const defaultKey = keyOf(adopted.axes, Object.fromEntries(adopted.axes.map((axis) => [axis.name, axis.default])))!;
   const defaultCells = cellsByKey.get(defaultKey) ?? [];
-  // Il confronto col default protegge contro le rimozioni di classe: senza
-  // la cella default (o con più di una) la protezione non può girare, quindi
-  // non si adotta in silenzio.
+  // La cella default deve esistere ed essere unica: è il riferimento da cui
+  // `adopt-cli` copia le celle nuove, e il punto di confronto per le
+  // proprietà che una variante può omettere (rimozione per variante, Story
+  // 2.8 parte C). Senza di essa (o con più di una) non si adotta in silenzio.
   if (defaultCells.length === 0) {
     errors.push(`Contratto "${name}": manca in Penpot la cella default "${defaultKey}" — il confronto con il default non è affidabile.`);
   } else if (defaultCells.length > 1) {
@@ -399,13 +401,26 @@ export function planAdoption(
       }
     }
     const { bindings, duplicates } = partBindings(cell.root);
-    // Una proprietà presente nella cella default e assente qui è una
-    // rimozione di classe, che l'emitter non esprime (deriveFor).
+    // Una proprietà presente nella cella default e assente da una cella di un
+    // asse option non default è esprimibile SOLO se la riga del registro
+    // dichiara una classe di rimozione (Story 2.8 parte C): la variante
+    // emette quella classe, la classe del default resta nella base cva. Per
+    // le proprietà senza rimozione mappata (fontWeight, shadow, padding…)
+    // l'emitter non sa rimuovere nulla: l'adopt le rifiuta, altrimenti i
+    // cinque file si scrivono e poi `render:component` fallisce. Adopt e
+    // emitter dicono la stessa cosa.
     for (const [part, tokens] of defaultBindings) {
       for (const property of Object.keys(tokens)) {
-        if (bindings.get(part)?.[property] === undefined) {
+        if (bindings.get(part)?.[property] !== undefined) continue;
+        const definition = propertyDefinition(property);
+        const removal = definition?.emitter;
+        if (
+          definition === undefined ||
+          removal?.emit !== "utility" ||
+          removal.removalClass === undefined
+        ) {
           errors.push(
-            `Contratto "${name}", cella "${key}", parte "${part}": manca la proprietà "${property}" presente nella cella default "${defaultKey}" — l'emitter non può esprimere la rimozione di una classe.`,
+            `Contratto "${name}", cella "${key}", parte "${part}": manca la proprietà "${property}" presente nella cella default "${defaultKey}" — la classe di rimozione non è mappata nel registro: l'emitter non può esprimere la rimozione.`,
           );
         }
       }

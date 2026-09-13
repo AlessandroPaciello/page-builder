@@ -83,6 +83,8 @@ export function validateRecipe(
   recipe: unknown,
   catalog: TokenCatalog,
   judgment: unknown,
+  /** Alias `layer → parte` dal binding (Story 2.8 parte B); nessun alias = nomi di layer = parti. */
+  aliases: Readonly<Record<string, string>> = {},
 ): RecipeValidationResult {
   const errors: string[] = [];
 
@@ -200,7 +202,7 @@ export function validateRecipe(
       } catch {
         continue; // già segnalata sopra (cella malformata)
       }
-      const { bindings, duplicates } = partBindings(cell.root);
+      const { bindings, duplicates } = partBindings(cell.root, aliases);
       if (duplicates.length > 0) {
         errors.push(
           `fixture cella "${key}": due layer chiamati "${duplicates.join(", ")}" hanno binding token — ambiguo quale sia la parte: rinomina i layer in Penpot.`,

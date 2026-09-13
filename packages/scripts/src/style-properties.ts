@@ -47,8 +47,26 @@ export type PropertyState = { readonly state: "supported" } | { readonly state: 
 
 /** Mappatura dell'emitter shadcn. */
 export type EmitRule =
-  /** Classe `<prefisso>-<suffisso token>`; il prefisso può dipendere dal tipo di layer. */
-  | { readonly emit: "utility"; readonly prefix: string; readonly byLayerKind?: Readonly<Record<string, string>> }
+  /**
+   * Classe `<prefisso>-<suffisso token>`; il prefisso può dipendere dal tipo
+   * di layer. `removalClass` (Story 2.8 parte C) è la classe fissa di
+   * rimozione per variante: quando la proprietà è assente da una cella option
+   * non default ma presente nel default, la variante emette quella classe al
+   * posto del token. `string` = una classe per ogni tipo di layer; object =
+   * chiavi PREFISSI utility (`bg`, `text`…): l'emitter risolve il prefisso
+   * con la STESSA logica del ramo positivo (`byLayerKind[kind] ?? prefix`) e
+   * cerca la classe per quel prefisso — la rimozione annulla la STESSA
+   * utility che il default emette (es. `fill`: `bg-transparent` sui layer
+   * bg, `text-transparent` sui text). NON deriva dal vocabolario token
+   * (`transparent` non è un token): è dichiarata qui, una volta per tutte —
+   * sbloccarla è una riga del registro.
+   */
+  | {
+      readonly emit: "utility";
+      readonly prefix: string;
+      readonly byLayerKind?: Readonly<Record<string, string>>;
+      readonly removalClass?: string | Readonly<Record<string, string>>;
+    }
   /** Angolo del radius (`rounded-tl-<sfx>`…), collassato in `rounded-<sfx>` se i quattro angoli coincidono. */
   | { readonly emit: "radiusCorner"; readonly corner: string }
   /**
@@ -101,7 +119,12 @@ export const STYLE_PROPERTIES = {
     read: { source: "fills" },
     type: token("color"),
     status: SUPPORTED,
-    emitter: { emit: "utility", prefix: "bg", byLayerKind: { text: "text" } },
+    // Rimozione per PREFISSO utility risolto (Story 2.8 parte C): l'emitter
+    // risolve `byLayerKind[kind] ?? prefix` come nel ramo positivo e cerca
+    // qui. `bg-transparent` annulla `bg-*` sui layer bg, `text-transparent`
+    // annulla `text-*` sui text. `transparent` non è un token: le classi sono
+    // strutturali, dichiarate qui e NON derivate dal vocabolario.
+    emitter: { emit: "utility", prefix: "bg", byLayerKind: { text: "text" }, removalClass: { bg: "bg-transparent", text: "text-transparent" } },
   },
   strokeColor: {
     read: { source: "strokeColor" },
@@ -340,7 +363,21 @@ interface LayerLike {
  * volta sola.
  */
 export function layerTreeProblems(root: LayerLike, where: { component?: string; cell?: string }): string[] {
-  const problems: string[] = [];
+  return layerTreeIssues(root, where).map((issue) => issue.message);
+}
+
+/**
+ * Come `layerTreeProblems`, ma dice anche se il problema è una proprietà
+ * BLOCCATA (registrata, stato `blocked`): è ciò che mette un componente "in
+ * attesa" in `verify:library` (Story 2.8 parte B), mentre non registrata e
+ * valore fuori lista restano rossi.
+ */
+export function layerTreeIssues(
+  root: LayerLike,
+  where: { component?: string; cell?: string },
+  aliases: Readonly<Record<string, string>> = {},
+): Array<{ blocked: boolean; message: string }> {
+  const issues: Array<{ blocked: boolean; message: string }> = [];
   const visit = (layer: LayerLike, part: string): void => {
     const properties = [...new Set([...Object.keys(layer.style), ...Object.keys(layer.tokens)])];
     for (const property of properties) {
@@ -350,12 +387,17 @@ export function layerTreeProblems(root: LayerLike, where: { component?: string; 
         ...(Object.hasOwn(layer.style, property) ? { value: layer.style[property] } : {}),
         ...(Object.hasOwn(layer.tokens, property) ? { token: layer.tokens[property] } : {}),
       });
-      if (problem !== null) problems.push(problem);
+      if (problem === null) continue;
+      // Bloccata = l'unico ramo di `propertyProblem` raggiunto a registro
+      // noto e valore in lista: la riga esiste e il suo stato è `blocked`.
+      const definition = propertyDefinition(property);
+      const blocked = definition !== undefined && definition.status.state === "blocked" && problem.startsWith("Proprietà bloccata");
+      issues.push({ blocked, message: problem });
     }
-    for (const child of layer.children) visit(child, child.name);
+    for (const child of layer.children) visit(child, Object.hasOwn(aliases, child.name) ? aliases[child.name]! : child.name);
   };
   visit(root, "root");
-  return problems;
+  return issues;
 }
 
 /** Proprietà che il reader legge con una data regola, nell'ordine del registro. */
@@ -379,5 +421,20 @@ export function radiusCorners(): string[] {
   return registeredProperties().flatMap((property) => {
     const emitter: EmitRule = STYLE_PROPERTIES[property].emitter;
     return emitter.emit === "radiusCorner" ? [emitter.corner] : [];
+  });
+}
+
+/**
+ * Classi fisse di rimozione dichiarate dal registro (Story 2.8 parte C),
+ * nell'ordine del registro: una variante option senza una proprietà che il
+ * default ha emette la classe della sua riga (per tipo di layer se la riga lo
+ * dichiara così). Vivono SOLO qui — la validazione dell'emitter le accetta
+ * perché vengono dal registro, non dal vocabolario token.
+ */
+export function removalClasses(): string[] {
+  return registeredProperties().flatMap((property) => {
+    const emitter: EmitRule = STYLE_PROPERTIES[property].emitter;
+    if (emitter.emit !== "utility" || emitter.removalClass === undefined) return [];
+    return typeof emitter.removalClass === "string" ? [emitter.removalClass] : Object.values(emitter.removalClass);
   });
 }

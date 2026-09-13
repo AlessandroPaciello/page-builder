@@ -4,6 +4,7 @@ import { pascalCase } from "./library/library-plan";
 import { readLibrarySnapshot, type ReadLibraryOptions } from "./library/library-reader";
 import type { LibrarySnapshot } from "./library/library-snapshot";
 import { FixtureSchema, type ComponentFixture } from "./recipe-schema";
+import { normalizeVariants } from "./variant-normalize";
 
 /**
  * Component reader Penpot (Story 2.5): l'estrazione NON deriva più i binding
@@ -127,6 +128,18 @@ export function componentFixtureFromSnapshot(componentName: string, snapshot: Li
     );
   }
 
+  // Normalizzazione unica (Story 2.8 parte B): maiuscole, spazi e ordine
+  // degli assi di Penpot verso il contratto, per nome. Una collisione
+  // (due valori che normalizzati coincidono) ferma l'estrazione.
+  const normalized = normalizeVariants(container.name, contract, {
+    axes: container.axes,
+    axesValues: container.axesValues,
+    cells: container.cells.map((cell) => cell.variantProps),
+  });
+  if (normalized.collisions.length > 0) {
+    throw new Error(normalized.collisions.join("\n"));
+  }
+
   for (const cell of container.cells) {
     if (cell.variantProps === null) {
       throw new Error(
@@ -144,8 +157,8 @@ export function componentFixtureFromSnapshot(componentName: string, snapshot: Li
     componentName: container.name,
     contract: container.pluginData,
     penpotComponentId: container.id,
-    axes: container.axes.map((name) => ({ name, values: container.axesValues[name] ?? [] })),
-    cells: container.cells.map((cell) => ({ variantProps: { ...cell.variantProps }, root: cell.root })),
+    axes: normalized.axes.map((name) => ({ name, values: normalized.axesValues[name] ?? [] })),
+    cells: container.cells.map((cell, index) => ({ variantProps: { ...normalized.cells[index] }, root: cell.root })),
   };
 
   const parsed = FixtureSchema.safeParse(fixture);

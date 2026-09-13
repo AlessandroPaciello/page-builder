@@ -85,21 +85,45 @@ export function loadBinding(componentName: string, dir: string = bindingsDir): C
  * deterministico.
  */
 export function committedComponents(dir: string = recipesDir): string[] {
-  const components: string[] = [];
-  for (const entry of readdirSync(dir)) {
-    if (!entry.endsWith(".recipe.json")) continue;
-    const path = resolve(dir, entry);
-    const parsed = RecipeSchema.safeParse(parseJsonFile(path));
-    if (!parsed.success) {
-      const issues = parsed.error.issues.map((issue) => `${issue.path.map(String).join(".") || "<root>"}: ${issue.message}`);
-      throw new Error(`Ricetta malformata (${path}):\n${issues.join("\n")}`);
-    }
-    components.push(parsed.data.componentName);
-  }
+  const { components, malformed } = scanCommittedComponents(dir);
+  const [first] = malformed;
+  if (first !== undefined) throw new Error(first.error);
   if (components.length === 0) {
     throw new Error(`Nessuna ricetta committata in ${dir} — i gate non hanno componenti da coprire.`);
   }
-  return components.sort();
+  return components;
+}
+
+/** Esito della scansione delle ricette: i componenti validi e le ricette malformate, per file. */
+export interface CommittedScan {
+  components: string[];
+  malformed: Array<{ file: string; error: string }>;
+}
+
+/**
+ * Come `committedComponents`, ma una ricetta malformata non ferma la
+ * scansione (Story 2.8 parte B): diventa una voce rossa col nome del file
+ * nei report per componente, e gli altri componenti restano valutati.
+ */
+export function scanCommittedComponents(dir: string = recipesDir): CommittedScan {
+  const components: string[] = [];
+  const malformed: Array<{ file: string; error: string }> = [];
+  for (const entry of readdirSync(dir).sort()) {
+    if (!entry.endsWith(".recipe.json")) continue;
+    const path = resolve(dir, entry);
+    try {
+      const parsed = RecipeSchema.safeParse(parseJsonFile(path));
+      if (!parsed.success) {
+        const issues = parsed.error.issues.map((issue) => `${issue.path.map(String).join(".") || "<root>"}: ${issue.message}`);
+        malformed.push({ file: entry, error: `Ricetta malformata (${path}):\n${issues.join("\n")}` });
+        continue;
+      }
+      components.push(parsed.data.componentName);
+    } catch (error) {
+      malformed.push({ file: entry, error: (error as Error).message });
+    }
+  }
+  return { components: components.sort(), malformed };
 }
 
 /** Sorgenti della base shadcn committata: nome file → contenuto. Input dell'emitter, mai del CLI a runtime. */

@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-07-26
-last_updated: 2026-09-13 (walkthrough 2.8 → done)
+last_updated: "2026-09-13 (bmad-build 2.8 parte C — estensione dell'emitter una volta per tutte: done; story 2.8 → done, 1 loop di review con 4 patch byLayerKind/adopt-check/regola icona/commento)"
 project: page-builder
 project_key: NOKEY
 tracking_system: file-system

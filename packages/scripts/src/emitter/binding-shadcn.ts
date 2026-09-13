@@ -37,6 +37,14 @@ export const BindingPartSchema = z
     attribute: z.string().optional(),
     /** Prefisso di classe della parte sull'host (es. `placeholder:`). */
     classPrefix: z.string().default(""),
+    /**
+     * Alias dei layer (Story 2.8 parte B): nomi di layer in Penpot che sono
+     * QUESTA parte (es. `["Label Text"]` per `label`). L'alias vive solo nel
+     * binding, mai come rinomina in Penpot: il designer non torna nel file
+     * per un'esigenza della pipeline. Un alias duplicato o verso una parte
+     * che il contratto non ha è un errore nominativo (`resolvePartAliases`).
+     */
+    aliases: z.array(z.string().min(1)).optional(),
   })
   .refine((part) => part.attribute === undefined || part.contentField !== undefined, {
     message:
