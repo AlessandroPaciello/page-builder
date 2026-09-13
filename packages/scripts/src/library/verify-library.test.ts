@@ -299,3 +299,27 @@ describe("verifyLibrary — un caso rosso per regola", () => {
     expect(result.ok).toBe(true);
   });
 });
+
+describe("verifyLibrary — copertura design↔registry (code review 2.7)", () => {
+  it("contratto senza design → errore nominativo prima delle regole su Penpot", () => {
+    const result = verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot: emptySnapshot(), designs: {} });
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes("i contratti [accordion-item, badge, input] non hanno un design"))).toBe(true);
+  });
+
+  it("design senza contratto → errore nominativo", () => {
+    const result = verifyLibrary({
+      contracts,
+      spec: LIBRARY_SPEC,
+      snapshot: emptySnapshot(),
+      designs: { ...designs, fantasma: { parts: {}, cells: {} } as never },
+    });
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((e) => e.includes("i design [fantasma] non hanno un contratto"))).toBe(true);
+  });
+
+  it("design allineati al registry → nessun errore di copertura", () => {
+    const result = verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot: emptySnapshot(), designs });
+    expect(result.errors.some((e) => e.includes("Copertura design↔registry"))).toBe(false);
+  });
+});

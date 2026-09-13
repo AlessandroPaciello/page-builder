@@ -16,7 +16,7 @@ import ts from "typescript";
 import { BindingSchema, type ComponentBinding } from "../emitter/binding-shadcn";
 import { influencingAxes } from "../emitter/axis-influence";
 import { partBindings } from "../recipe-schema";
-import type { ComponentDesign } from "./library-plan";
+import { cartesian, type ComponentDesign } from "./library-plan";
 import type { LibrarySnapshot, SnapshotCell, SnapshotLayer } from "./library-snapshot";
 
 /**
@@ -93,14 +93,6 @@ const DEFAULT_REGISTRY: AdoptionRegistry = {
 
 export function sha256(text: string): string {
   return createHash("sha256").update(text).digest("hex");
-}
-
-function cartesian(axes: readonly Axis[]): Record<string, string>[] {
-  let out: Record<string, string>[] = [{}];
-  for (const axis of axes) {
-    out = out.flatMap((prefix) => axis.values.map((value) => ({ ...prefix, [axis.name]: value })));
-  }
-  return out;
 }
 
 function keyOf(axes: readonly Axis[], variantProps: Readonly<Record<string, string>>): string | null {
@@ -350,12 +342,23 @@ export function planAdoption(
   }
   const isNew = (props: Record<string, string>): boolean =>
     added.some(({ axis, values }) => values.includes(props[axis] ?? ""));
+  const propsOf = (axes: readonly Axis[], values: readonly string[]): Record<string, string> =>
+    Object.fromEntries(axes.map((axis, index) => [axis.name, values[index]!]));
   const newKeys = cartesian(adopted.axes)
+    .map((values) => propsOf(adopted.axes, values))
     .filter(isNew)
     .map((props) => keyOf(adopted.axes, props)!);
 
   const defaultKey = keyOf(adopted.axes, Object.fromEntries(adopted.axes.map((axis) => [axis.name, axis.default])))!;
   const defaultCells = cellsByKey.get(defaultKey) ?? [];
+  // Il confronto col default protegge contro le rimozioni di classe: senza
+  // la cella default (o con più di una) la protezione non può girare, quindi
+  // non si adotta in silenzio.
+  if (defaultCells.length === 0) {
+    errors.push(`Contratto "${name}": manca in Penpot la cella default "${defaultKey}" — il confronto con il default non è affidabile.`);
+  } else if (defaultCells.length > 1) {
+    errors.push(`Contratto "${name}": la cella default "${defaultKey}" compare ${defaultCells.length} volte in Penpot — il confronto con il default non è affidabile.`);
+  }
   const defaultBindings = defaultCells.length === 1 ? partBindings(defaultCells[0]!.root).bindings : new Map<string, Record<string, string>>();
 
   const newCells = new Map<string, Record<string, Record<string, string>>>();
@@ -611,7 +614,13 @@ export function writeAdoption(files: readonly AdoptionFile[], io: WriteIo = DEFA
       written.push(tmp);
     }
   } catch (cause) {
-    for (const tmp of written) io.rmSync(tmp);
+    for (const tmp of written) {
+      try {
+        io.rmSync(tmp);
+      } catch {
+        // La pulizia non è indispensabile: vince l'errore originale.
+      }
+    }
     throw new Error(`Scrittura interrotta prima di toccare i file: ${(cause as Error).message}`);
   }
   const replaced: string[] = [];
@@ -619,7 +628,13 @@ export function writeAdoption(files: readonly AdoptionFile[], io: WriteIo = DEFA
     try {
       io.renameSync(tmp, file.path);
     } catch (cause) {
-      for (const rest of pending.slice(index)) io.rmSync(rest.tmp);
+      for (const rest of pending.slice(index)) {
+        try {
+          io.rmSync(rest.tmp);
+        } catch {
+          // La pulizia non è indispensabile: vince l'errore originale.
+        }
+      }
       const unchanged = pending.slice(index).map((entry) => entry.file.path);
       throw new Error(
         `Scrittura interrotta a metà: ${(cause as Error).message}. File già sostituiti: [${replaced.join(", ")}]; file invariati: [${unchanged.join(", ")}] — ripristina i sostituiti con git (git checkout -- <file>) e rilancia.`,

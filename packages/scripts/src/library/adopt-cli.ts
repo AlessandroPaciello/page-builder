@@ -1,6 +1,6 @@
-import { readFileSync, realpathSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 
 import { COMPONENT_CONTRACTS, SECTION_DEFINITIONS, type ComponentContract } from "@app/contracts";
 
@@ -9,6 +9,7 @@ import { bindingsDir } from "../emitter/artifacts";
 import { planAdoption, writeAdoption, type AdoptionRegistry, type AdoptionSources, type SourceFile } from "./adopt-variant";
 import { parseComponentArgs, resolveContract, type BumpArgs } from "./bump-cli";
 import { designsDir } from "./designs-loader";
+import { isDirectInvocation as isDirectInvocationModule } from "./direct-invocation";
 import type { ComponentDesign } from "./library-plan";
 import { readLibrarySnapshot, type CallToolFn } from "./library-reader";
 import type { LibrarySnapshot } from "./library-snapshot";
@@ -93,10 +94,8 @@ export async function main(args: BumpArgs = parseAdoptArgs(process.argv.slice(2)
     sections: Object.values(SECTION_DEFINITIONS),
   };
 
-  const snapshot: LibrarySnapshot = args.snapshotPath
-    ? (JSON.parse(readFileSync(args.snapshotPath, "utf8")) as LibrarySnapshot)
-    : await readLibrarySnapshot(deps.callTool ? { callTool: deps.callTool } : {});
-
+  // I cinque file sorgente prima di Penpot: un file mancante deve fallire
+  // senza nemmeno una chiamata di rete (read-only, ma inutile).
   const sources: AdoptionSources = {
     contract: readSource(resolve(paths.contractsSrcDir, "components", `${contract.name}.ts`)),
     schemaVersion: readSource(resolve(paths.contractsSrcDir, "schema-version.ts")),
@@ -104,12 +103,37 @@ export async function main(args: BumpArgs = parseAdoptArgs(process.argv.slice(2)
     binding: readSource(resolve(paths.bindingsDir, `${contract.name}.binding.json`)),
     design: readSource(resolve(paths.designsDir, `${contract.name}.design.json`)),
   };
-  const binding = BindingSchema.safeParse(JSON.parse(sources.binding.text));
+  let bindingRaw: unknown;
+  try {
+    bindingRaw = JSON.parse(sources.binding.text);
+  } catch (cause) {
+    console.error(`✖ Binding "${sources.binding.path}" non è JSON leggibile: ${(cause as Error).message}`);
+    return 1;
+  }
+  const binding = BindingSchema.safeParse(bindingRaw);
   if (!binding.success) {
     console.error(`✖ Binding malformato (${sources.binding.path}): ${binding.error.issues.map((issue) => issue.message).join("; ")}`);
     return 1;
   }
-  const design = JSON.parse(sources.design.text) as ComponentDesign;
+  let design: ComponentDesign;
+  try {
+    design = JSON.parse(sources.design.text) as ComponentDesign;
+  } catch (cause) {
+    console.error(`✖ Design "${sources.design.path}" non è JSON leggibile: ${(cause as Error).message}`);
+    return 1;
+  }
+
+  let snapshot: LibrarySnapshot;
+  if (args.snapshotPath) {
+    try {
+      snapshot = JSON.parse(readFileSync(args.snapshotPath, "utf8")) as LibrarySnapshot;
+    } catch (cause) {
+      console.error(`✖ Snapshot "${args.snapshotPath}" non leggibile: ${(cause as Error).message}`);
+      return 1;
+    }
+  } else {
+    snapshot = await readLibrarySnapshot(deps.callTool ? { callTool: deps.callTool } : {});
+  }
 
   const plan = planAdoption(contract, snapshot, design, binding.data, sources, registry);
   if (plan.kind === "error") {
@@ -144,14 +168,7 @@ export async function main(args: BumpArgs = parseAdoptArgs(process.argv.slice(2)
   return 0;
 }
 
-const isDirectInvocation = (() => {
-  if (process.argv[1] === undefined) return false;
-  try {
-    return import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href;
-  } catch {
-    return false;
-  }
-})();
+const isDirectInvocation = isDirectInvocationModule(import.meta.url);
 
 if (isDirectInvocation) {
   main()

@@ -1,10 +1,10 @@
-import { readFileSync, realpathSync } from "node:fs";
-import { pathToFileURL } from "node:url";
+import { readFileSync } from "node:fs";
 
 import { COMPONENT_CONTRACTS, type ComponentContract } from "@app/contracts";
 
 import { callPenpotTool, parseExecuteCodeEnvelope, resolveMcpEndpoint, type McpCallToolResult } from "../mcp-client";
 import { bumpStep, planBump } from "./bump-contract";
+import { isDirectInvocation as isDirectInvocationModule } from "./direct-invocation";
 import { pascalCase } from "./library-plan";
 import { readLibrarySnapshot, type CallToolFn } from "./library-reader";
 import type { LibrarySnapshot } from "./library-snapshot";
@@ -85,9 +85,17 @@ export interface BumpDeps {
 export async function main(args: BumpArgs = parseBumpArgs(process.argv.slice(2)), deps: BumpDeps = {}): Promise<number> {
   const contract = resolveContract(args.component, deps.contracts ?? Object.values(COMPONENT_CONTRACTS));
   const read = (): Promise<LibrarySnapshot> => readLibrarySnapshot(deps.callTool ? { callTool: deps.callTool } : {});
-  const snapshot: LibrarySnapshot = args.snapshotPath
-    ? (JSON.parse(readFileSync(args.snapshotPath, "utf8")) as LibrarySnapshot)
-    : await read();
+  let snapshot: LibrarySnapshot;
+  if (args.snapshotPath) {
+    try {
+      snapshot = JSON.parse(readFileSync(args.snapshotPath, "utf8")) as LibrarySnapshot;
+    } catch (cause) {
+      console.error(`✖ Snapshot "${args.snapshotPath}" non leggibile: ${(cause as Error).message}`);
+      return 1;
+    }
+  } else {
+    snapshot = await read();
+  }
 
   const plan = planBump(contract, snapshot);
   if (plan.kind === "error") {
@@ -125,14 +133,7 @@ export async function main(args: BumpArgs = parseBumpArgs(process.argv.slice(2))
   return 0;
 }
 
-const isDirectInvocation = (() => {
-  if (process.argv[1] === undefined) return false;
-  try {
-    return import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href;
-  } catch {
-    return false;
-  }
-})();
+const isDirectInvocation = isDirectInvocationModule(import.meta.url);
 
 if (isDirectInvocation) {
   main()

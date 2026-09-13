@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
@@ -87,6 +87,36 @@ describe("adopt-cli", () => {
 
   it("formatDiff: solo le righe cambiate", () => {
     expect(formatDiff("a\nb\nc\n", "a\nB\nc\n")).toBe("@@ riga 2\n- b\n+ B");
+  });
+
+  it("snapshot malformato (--snapshot) → exit 1 nominativo, non SyntaxError grezzo", async () => {
+    const paths = tempPaths();
+    const snapshotPath = join(paths.designsDir, "..", "snapshot.json");
+    writeFileSync(snapshotPath, "{ non è json");
+    expect(await main({ component: "Badge", yes: false, snapshotPath }, { paths })).toBe(1);
+    expect(err.mock.calls.map((call: unknown[]) => String(call[0])).join("\n")).toContain(`Snapshot "${snapshotPath}" non leggibile`);
+  });
+
+  it("binding malformato (JSON non leggibile) → exit 1 nominativo col percorso", async () => {
+    const paths = tempPaths();
+    writeFileSync(join(paths.bindingsDir, "badge.binding.json"), "{ non è json");
+    expect(await main({ component: "Badge", yes: false, snapshotPath: join(paths.designsDir, "..", "snapshot.json") }, { paths })).toBe(1);
+    expect(err.mock.calls.map((call: unknown[]) => String(call[0])).join("\n")).toContain(`Binding "${join(paths.bindingsDir, "badge.binding.json")}" non è JSON leggibile`);
+  });
+
+  it("design malformato (JSON non leggibile) → exit 1 nominativo col percorso", async () => {
+    const paths = tempPaths();
+    writeFileSync(join(paths.designsDir, "badge.design.json"), "{ non è json");
+    expect(await main({ component: "Badge", yes: false, snapshotPath: join(paths.designsDir, "..", "snapshot.json") }, { paths })).toBe(1);
+    expect(err.mock.calls.map((call: unknown[]) => String(call[0])).join("\n")).toContain(`Design "${join(paths.designsDir, "badge.design.json")}" non è JSON leggibile`);
+  });
+
+  it("file sorgente mancante → errore prima di qualunque lettura di Penpot", async () => {
+    const paths = tempPaths();
+    rmSync(join(paths.bindingsDir, "badge.binding.json"));
+    const callTool = vi.fn();
+    await expect(main({ component: "Badge", yes: false }, { paths, callTool })).rejects.toThrow(/File non leggibile.*badge\.binding\.json/);
+    expect(callTool).not.toHaveBeenCalled();
   });
 
   it("senza --yes: stampa il diff dei cinque file, exit 0, nessuna scrittura (--snapshot)", async () => {

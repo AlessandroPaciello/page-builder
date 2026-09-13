@@ -146,10 +146,14 @@ function cellKey(contract: ComponentContract, values: readonly string[]): string
   return contract.axes.map((axis, index) => `${axis.name}=${values[index]}`).join("|");
 }
 
-/** Prodotto cartesiano completo dei valori degli assi, in ordine contratto. */
-function cartesian(contract: ComponentContract): string[][] {
+/**
+ * Prodotto cartesiano completo dei valori degli assi, in ordine contratto.
+ * Condivisa da `library-plan`, `verify-library` e `adopt-variant`: una sola
+ * definizione perché le tre non possono divergere (stessa matrice di celle).
+ */
+export function cartesian(axes: readonly { readonly values: readonly string[] }[]): string[][] {
   let out: string[][] = [[]];
-  for (const axis of contract.axes) {
+  for (const axis of axes) {
     out = out.flatMap((prefix) => axis.values.map((value) => [...prefix, value]));
   }
   return out;
@@ -212,7 +216,7 @@ function cellPlan(contract: ComponentContract, design: ComponentDesign, values: 
 
 function containerOperation(contract: ComponentContract, designs: PlanLibraryInput["designs"]): Operation {
   const design = designFor(contract, designs);
-  const cells = cartesian(contract).map((values) => cellPlan(contract, design, values));
+  const cells = cartesian(contract.axes).map((values) => cellPlan(contract, design, values));
 
   return {
     kind: "createContainer",
@@ -386,7 +390,7 @@ export function planLibrary(input: PlanLibraryInput): LibraryPlanResult {
           .filter((cell) => cell.variantProps !== null)
           .map((cell) => expectedAxes.map((axis) => `${axis}=${cell.variantProps![axis]}`).join("|")),
       );
-      const missing = cartesian(contract).filter((values) => !present.has(cellKey(contract, values)));
+      const missing = cartesian(contract.axes).filter((values) => !present.has(cellKey(contract, values)));
       if (missing.length > 0) {
         const design = designFor(contract, designs);
         missing.forEach((values, progressive) => {

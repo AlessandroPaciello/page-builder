@@ -296,6 +296,22 @@ describe("planAdoption — casi rifiutati (nessun file)", () => {
     expectError(plan(badge, snapshot), 'cella "variant=outline|size=sm"', 'variantError "dup"');
   });
 
+  it("cella default mancante in Penpot → errore nominativo, non confronto in silenzio", () => {
+    const snapshot = badgeWithOutline();
+    snapshot.components[0]!.cells = snapshot.components[0]!.cells.filter(
+      (cell) => !(cell.variantProps!.variant === "default" && cell.variantProps!.size === "md"),
+    );
+    expectError(plan(badge, snapshot), 'manca in Penpot la cella default "variant=default|size=md"');
+  });
+
+  it("cella default duplicata in Penpot → errore nominativo", () => {
+    const snapshot = badgeWithOutline();
+    const cells = snapshot.components[0]!.cells;
+    const defaultCell = cells.find((cell) => cell.variantProps!.variant === "default" && cell.variantProps!.size === "md")!;
+    cells.push(structuredClone(defaultCell));
+    expectError(plan(badge, snapshot), 'la cella default "variant=default|size=md" compare 2 volte');
+  });
+
   it("parte ambigua: due layer con binding e lo stesso nome → errore", () => {
     const snapshot = badgeWithOutline((cell) =>
       cell.variantProps!.size === "sm" ? { ...cell, root: { ...cell.root, children: [...cell.root.children, cell.root.children[0]!] } } : cell,

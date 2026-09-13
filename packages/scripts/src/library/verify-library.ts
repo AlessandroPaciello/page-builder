@@ -3,7 +3,8 @@ import type { ComponentContract } from "@app/contracts";
 import type { TokenCatalog } from "../theme-generator";
 import { generateTheme } from "../theme-generator";
 import { contrastRatio, parseHex } from "./contrast";
-import { pascalCase, sameColorish } from "./library-plan";
+import { designCoverage } from "./designs-loader";
+import { cartesian, pascalCase, sameColorish, type ComponentDesign } from "./library-plan";
 import type { LibrarySpec, SemanticSeed } from "./library-spec";
 import type { LibrarySnapshot, SnapshotLayer } from "./library-snapshot";
 
@@ -24,6 +25,13 @@ export interface VerifyLibraryInput {
    * designer. Senza seed la regola copre solo nome e tipo, com'era prima.
    */
   readonly seed?: SemanticSeed;
+  /**
+   * Design committati (code review 2.7 gruppo 1): se presenti, la copertura
+   * design↔registry viene verificata PRIMA delle regole su Penpot — un
+   * design senza contratto o un contratto senza design è rosso qui, non
+   * solo in silenzio nel loader.
+   */
+  readonly designs?: Readonly<Record<string, ComponentDesign>>;
 }
 
 export interface VerifyResult {
@@ -56,14 +64,6 @@ function walkLayers(root: SnapshotLayer, visit: (layer: SnapshotLayer) => void):
   for (const child of root.children) walkLayers(child, visit);
 }
 
-function cartesian(contract: ComponentContract): string[][] {
-  let out: string[][] = [[]];
-  for (const axis of contract.axes) {
-    out = out.flatMap((prefix) => axis.values.map((value) => [...prefix, value]));
-  }
-  return out;
-}
-
 function cellKeyOf(contract: ComponentContract, variantProps: Record<string, string>): string {
   return contract.axes.map((axis) => `${axis.name}=${variantProps[axis.name] ?? "?"}`).join("|");
 }
@@ -89,6 +89,23 @@ function resolveColor(name: string, index: Map<string, TokenFacts>, seen: string
  */
 export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
   const { contracts, spec, snapshot, seed } = input;
+  if (input.designs !== undefined) {
+    const coverage = designCoverage(input.designs, contracts);
+    if (!coverage.ok) {
+      const errors: string[] = [];
+      if (coverage.contractsWithoutDesign.length > 0) {
+        errors.push(
+          `Copertura design↔registry: i contratti [${coverage.contractsWithoutDesign.join(", ")}] non hanno un design committato — committa designs/<contratto>.design.json.`,
+        );
+      }
+      if (coverage.designsWithoutContract.length > 0) {
+        errors.push(
+          `Copertura design↔registry: i design [${coverage.designsWithoutContract.join(", ")}] non hanno un contratto nel registry — aggiungi il contratto o rimuovi il design.`,
+        );
+      }
+      return { ok: false, errors };
+    }
+  }
   const errors: string[] = [];
   const tokenIndex = buildTokenIndex(snapshot);
   const containers = snapshot.components;
@@ -163,7 +180,7 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
     }
 
     // Regola 5: celle = prodotto cartesiano completo; nessun variantError.
-    const expectedKeys = cartesian(contract).map((values) =>
+    const expectedKeys = cartesian(contract.axes).map((values) =>
       contract.axes.map((axis, index) => `${axis.name}=${values[index]}`).join("|"),
     );
     const foundKeys = new Map<string, number>();
