@@ -1,5 +1,5 @@
 # generated: 2026-07-26
-# last_updated: 2026-09-12 (correct-course: Epic 2 da 8 a 10 story)
+# last_updated: 2026-09-13 (correct-course: nuova Story 2.8 registro/blocco, Epic 2 da 10 a 11 story)
 # project: page-builder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -65,9 +65,10 @@ development_status:
   2-5-estrazione-adeguata-ricette-per-parti-e-token: done
   2-6-emitter-shadcn-deterministico-e-gate-ci: done
   2-7-pipeline-pronta-per-piu-componenti: review
-  2-8-skill-pds-component: backlog
-  2-9-libreria-componenti-accessibile: backlog
-  2-10-storybook-del-design-system: backlog
+  2-8-registro-delle-proprieta-e-blocco-per-componente: backlog
+  2-9-skill-pds-component: backlog
+  2-10-libreria-componenti-accessibile: backlog
+  2-11-storybook-del-design-system: backlog
   epic-2-retrospective: optional
 
   epic-3: backlog
@@ -117,7 +118,7 @@ action_items:
     owner: "Dev"
     status: open
   - epic: 1
-    action: "Rivalutare la robustezza del dropdown-menu scritto a mano (focus trap, portal, ARIA) quando Story 2.9 genera il primo primitivo reale via Radix (ex 2.4, poi 2.7)"
+    action: "Rivalutare la robustezza del dropdown-menu scritto a mano (focus trap, portal, ARIA) quando Story 2.10 genera il primo primitivo reale via Radix (ex 2.4, poi 2.7, poi 2.9)"
     owner: "Dev"
     status: open
   - epic: 2

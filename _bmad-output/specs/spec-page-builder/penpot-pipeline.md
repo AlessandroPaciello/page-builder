@@ -1,10 +1,12 @@
 # Pipeline Penpot → codice
 
-Companion di [SPEC.md](./SPEC.md). Descrive **cosa** fa la pipeline design→codice e le regole di aderenza. Il transport verso Penpot **è un server MCP**, confermato in AD-11. Il contratto di ogni componente (assi, valori, tipo di asse, parti) è del page builder e vive in `@app/contracts`; **Penpot è la sorgente di valori e aspetto** — disegna gli assi del contratto, non li decide. La generazione è data-driven; i valori sono fedeli al design; il **comportamento accessibile non è disegnabile in Penpot** e arriva da una base headless dichiarata (AD-11). *(Rivisto dal correct-course 2026-09-12.)*
+Companion di [SPEC.md](./SPEC.md). Descrive **cosa** fa la pipeline design→codice e le regole di aderenza. Il transport verso Penpot **è un server MCP**, confermato in AD-11. Il contratto di ogni componente (assi, valori, tipo di asse, parti) è del page builder e vive in `@app/contracts`; **Penpot è la sorgente di valori e aspetto** — disegna gli assi del contratto, non li decide. La generazione è data-driven; i valori sono fedeli al design; il **comportamento accessibile non è disegnabile in Penpot** e arriva da una base headless dichiarata (AD-11). *(Rivisto dai correct-course 2026-09-12 e 2026-09-13.)*
 
 ## Principio guida
 
 Questo è un progetto di **design system**: la coerenza coi token e i componenti esistenti viene prima della creazione di nuovi elementi. Penpot è la single source of truth dei valori. Aderenza stretta: usare **esattamente** i valori del design; non inventare valori mancanti (in assenza, default neutri — mai colori casuali). I nomi di token/componenti Penpot restano allineati 1:1 a quelli in codice, così la mappatura non diverge.
+
+**Il designer di riferimento è non tecnico**: lavora in Penpot da solo e consegna il file finito o quasi. Far passare la pipeline (ricetta, binding, emitter) è compito dello **sviluppatore**; il designer torna in Penpot solo per scelte di design vere (es. un colore senza token), mai per esigenze della pipeline.
 
 - Token semantici con nomi alla shadcn (`primary`, `muted`, `destructive`, `border`, `ring`…) e anatomia dei componenti allineata agli assi del contratto; valori e stile restano del designer. *(Supera la decisione del 2026-09-05 "contratto CSS Penpot-native, non nomi shadcn".)*
 - Ogni VariantContainer porta `pagebuilder/contract = nome@versione` (SharedPluginData): fonte primaria del legame componente→contratto; il nome del container è il controllo incrociato.
@@ -81,7 +83,7 @@ Istantanea firmata del design al momento dell'estrazione. Committata: il suo dif
 
 L'agent decide la fattorizzazione per parti e i requisiti a11y. Vincoli:
 
-- la ricetta è una **mappa di parti a profondità 1**; ogni cella è `proprietà → token` (es. `fill: destructive`, `padding: spacing.2`) per parte × valore d'asse — nessuna classe di una libreria;
+- la ricetta è una **mappa di parti a profondità 1**; ogni cella è `proprietà → token` (es. `fill: destructive`, `padding: spacing.2`) per parte × valore d'asse — nessuna classe di una libreria; ogni **valore** (colore, misura, spessore, opacità, ombra) ha un token; gli stili a **parola chiave** di una lista chiusa (es. tratteggio `solid`/`dashed`/`dotted`) sono ammessi senza token;
 - ogni token referenziato esiste nel catalogo dello Stadio 1 — un valore literal **non passa la validazione**. È l'attuazione di "never assume missing values": un test, non una raccomandazione;
 - una parte annidata con assi propri fa **fallire lo schema**: la composizione (più item, sezioni) è una definizione di sezione, non una ricetta;
 - la **geometria delle icone** (path) è ignorata — l'icona in codice viene dalla libreria icone;
@@ -93,6 +95,14 @@ L'agent decide la fattorizzazione per parti e i requisiti a11y. Vincoli:
 Un emitter per libreria; **una sola libreria per installazione**, scelta a build time. La **tabella di binding** per componente e per libreria (committata) dichiara: componente base, parti della ricetta → parti della libreria, headless, valori d'asse → API della libreria.
 
 L'**emitter shadcn** (riferimento) non genera componenti React da zero: parte da `npx shadcn add <comp>` (struttura, parti Radix, comportamento, a11y) e instrada gli assi per tipo — `option` → varianti `cva`; `state` → prefissi `focus-visible:`/`aria-invalid:`/`disabled:`; `behavior` → `data-[state=…]:`. Deriva le classi dalla stessa funzione di nome dello Stadio 1, poi test e story. Emette `@generated` con la provenienza (`penpotComponentId` + `fixtureHash`). Stesso input → stesso output, byte per byte.
+
+### Registro delle proprietà e fedeltà
+
+Le proprietà di stile Penpot che la pipeline conosce vivono in un **registro unico**, letto da reader, `verify:library` ed emitter: per ognuna, la lettura, il tipo (token o lista di parole chiave), lo stato (**supportata** o **bloccata**) e la mappatura dell'emitter. Solo due stati: **nessuno skip** — una proprietà o genera codice fedele o blocca il componente; una proprietà Penpot assente dal registro blocca anch'essa. Sbloccarne una = una riga del registro + la mappatura + un test rosso/verde (le proprietà oggi "silenziose" — spessore, opacità, tratteggio, allineamento dello stroke — **bloccano** finché un componente reale non le richiede). Il refactor che introduce il registro lascia l'output attuale identico byte per byte.
+
+Quando l'emitter non sa esprimere un design valido fatto con i token, si estende l'emitter **una volta per tutte** — non per componente né a mano sul generato (primo caso: una variante senza una proprietà che il default ha, come l'outline senza fill: la proprietà assente entra nelle classi per variante, non nella base `cva`). Condizione: adeguarsi deve restare semplice per lo sviluppatore. Una proprietà che varia con due assi resta non esprimibile finché l'emitter non guadagna le `compoundVariants` (stesso principio).
+
+**Mai generare in silenzio una versione infedele.** Ciò che non è esprimibile blocca **solo quel componente**, con un messaggio che nomina il problema; gli altri proseguono. Attriti di organizzazione del file: maiuscole, spazi e ordine degli assi sono normalizzati dalla pipeline; un layer con un nome diverso dalla parte è un **alias nel binding** (a cura dello sviluppatore); una cella mancante blocca il componente e chiede al designer — mai inventata. Una variante aggiunta in Penpot blocca solo quel componente, che resta all'ultima versione buona, finché lo sviluppatore non la adotta (skill `pds-component` / `adopt:variant`); i componenti in attesa sono visibili nel report di PR/CI, non solo nel terminale.
 
 ### Confine contratto / fixture / ricetta / emitter — la regola
 
@@ -139,6 +149,8 @@ Cinque gate, **bloccanti in CI** (salvo la condizione sul drift).
 | Drift della fixture | `hash(fixture committata) == hash(Penpot live)`; se diverge, segnala **quale** componente riestrarre. Bloccante in CI **se e solo se** il runner raggiunge il server MCP Penpot; altrimenti manuale/nightly con decisione documentata |
 
 Ogni gate ha una propria prova rosso/verde (un input che lo viola lo fa fallire), non solo un canary manuale.
+
+I gate valutano **per componente**: un componente fuori regola rende rossa solo la sua voce, e i componenti in attesa (variante non ancora adottata, proprietà bloccata) restano visibili nel report — la CI non è più tutto-o-niente.
 
 Lato library, `verify:library` resta in sola lettura: una versione del contratto diversa dal plugin data del container la rende rossa (regola 3). Si risolve con la regola A dello Stadio 0 (`bump:contract` dopo un cambio incompatibile), mai modificando a mano il plugin data.
 
