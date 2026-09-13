@@ -352,3 +352,21 @@ describe("renderComponent — fail-loud nominativi", () => {
     ).toThrow(/base shadcn "badge" non trovata/);
   });
 });
+
+describe("renderComponent — alias dei layer (Story 2.8 parte B)", () => {
+  function aliased(aliases: string[]) {
+    const fixture = structuredClone(loadFixture("Badge"));
+    for (const cell of fixture.cells) for (const layer of cell.root.children) if (layer.name === "label") layer.name = "Label Text";
+    const binding = structuredClone(loadBinding("Badge")) as ComponentBinding;
+    binding.parts.label!.aliases = aliases;
+    return renderComponent(fixture, loadRecipe("Badge"), binding, baseSources[binding.base]!, catalog);
+  }
+
+  it("layer `Label Text` + `parts.label.aliases: [\"Label Text\"]` rende identico al render senza alias", () => {
+    expect(aliased(["Label Text"]).files).toEqual(renderCommitted("Badge").files);
+  });
+
+  it("alias che è il nome di un'altra parte → errore nominativo di resolvePartAliases", () => {
+    expect(() => aliased(["root"])).toThrow(/alias "root" della parte "label" è il nome di un'altra parte/);
+  });
+});

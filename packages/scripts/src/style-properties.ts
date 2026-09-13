@@ -340,7 +340,21 @@ interface LayerLike {
  * volta sola.
  */
 export function layerTreeProblems(root: LayerLike, where: { component?: string; cell?: string }): string[] {
-  const problems: string[] = [];
+  return layerTreeIssues(root, where).map((issue) => issue.message);
+}
+
+/**
+ * Come `layerTreeProblems`, ma dice anche se il problema è una proprietà
+ * BLOCCATA (registrata, stato `blocked`): è ciò che mette un componente "in
+ * attesa" in `verify:library` (Story 2.8 parte B), mentre non registrata e
+ * valore fuori lista restano rossi.
+ */
+export function layerTreeIssues(
+  root: LayerLike,
+  where: { component?: string; cell?: string },
+  aliases: Readonly<Record<string, string>> = {},
+): Array<{ blocked: boolean; message: string }> {
+  const issues: Array<{ blocked: boolean; message: string }> = [];
   const visit = (layer: LayerLike, part: string): void => {
     const properties = [...new Set([...Object.keys(layer.style), ...Object.keys(layer.tokens)])];
     for (const property of properties) {
@@ -350,12 +364,17 @@ export function layerTreeProblems(root: LayerLike, where: { component?: string; 
         ...(Object.hasOwn(layer.style, property) ? { value: layer.style[property] } : {}),
         ...(Object.hasOwn(layer.tokens, property) ? { token: layer.tokens[property] } : {}),
       });
-      if (problem !== null) problems.push(problem);
+      if (problem === null) continue;
+      // Bloccata = l'unico ramo di `propertyProblem` raggiunto a registro
+      // noto e valore in lista: la riga esiste e il suo stato è `blocked`.
+      const definition = propertyDefinition(property);
+      const blocked = definition !== undefined && definition.status.state === "blocked" && problem.startsWith("Proprietà bloccata");
+      issues.push({ blocked, message: problem });
     }
-    for (const child of layer.children) visit(child, child.name);
+    for (const child of layer.children) visit(child, Object.hasOwn(aliases, child.name) ? aliases[child.name]! : child.name);
   };
   visit(root, "root");
-  return problems;
+  return issues;
 }
 
 /** Proprietà che il reader legge con una data regola, nell'ordine del registro. */

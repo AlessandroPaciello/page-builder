@@ -145,3 +145,25 @@ describe("componentFixtureFromSnapshot", () => {
     expect(() => componentFixtureFromSnapshot("Badge", snapshot)).toThrow(/FixtureSchema[\s\S]*values/);
   });
 });
+
+describe("componentFixtureFromSnapshot — normalizzazione di assi e valori (Story 2.8 parte B)", () => {
+  it("maiuscole, spazi e ordine degli assi: la fixture è identica a quella del container già allineato", () => {
+    const aligned = componentFixtureFromSnapshot("Badge", snapshotWith(badgeContainer()));
+    const messy = badgeContainer();
+    messy.axes = ["Size", "variant"];
+    messy.axesValues = { Size: [" SM ", "md"], variant: ["default", "secondary", "destructive"] };
+    for (const cell of messy.cells) {
+      const { size, variant } = cell.variantProps!;
+      cell.variantProps = { Size: size === "sm" ? " SM " : size!, variant: variant! };
+    }
+    const fixture = componentFixtureFromSnapshot("Badge", snapshotWith(messy));
+    expect(fixture.axes).toEqual(aligned.axes);
+    expect(fixture.cells.map((cell) => cell.variantProps)).toEqual(aligned.cells.map((cell) => cell.variantProps));
+  });
+
+  it("collisione (`SM` e `sm`) → errore nominativo, nessuna fixture", () => {
+    const container = badgeContainer();
+    container.axesValues = { ...container.axesValues, size: ["SM", "sm", "md"] };
+    expect(() => componentFixtureFromSnapshot("Badge", snapshotWith(container))).toThrow(/asse "size".*"SM", "sm".*collisione/);
+  });
+});

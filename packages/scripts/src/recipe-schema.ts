@@ -166,7 +166,10 @@ export function cellKeyOf(
  * duplicata qui). `duplicates` elenca i nomi di parte portati da PIÙ layer
  * con binding: è ambiguo quale sia la parte — si segnala, non si corregge.
  */
-export function partBindings(root: SnapshotLayer): {
+export function partBindings(
+  root: SnapshotLayer,
+  aliases: Readonly<Record<string, string>> = {},
+): {
   bindings: Map<string, Record<string, string>>;
   duplicates: string[];
 } {
@@ -177,8 +180,57 @@ export function partBindings(root: SnapshotLayer): {
       if (bindings.has(partName)) duplicates.add(partName);
       else bindings.set(partName, { ...layer.tokens });
     }
-    for (const child of layer.children) visit(child, child.name);
+    for (const child of layer.children) visit(child, partOfLayer(child.name, aliases));
   };
   visit(root, "root");
   return { bindings, duplicates: [...duplicates] };
+}
+
+/** Parte di un layer: l'alias del binding se c'è, altrimenti il nome del layer. */
+export function partOfLayer(layerName: string, aliases: Readonly<Record<string, string>>): string {
+  return Object.hasOwn(aliases, layerName) ? aliases[layerName]! : layerName;
+}
+
+/** Forma minima di un binding per gli alias (evita la dipendenza da `emitter/`). */
+export interface AliasSource {
+  readonly parts: Readonly<Record<string, { readonly aliases?: readonly string[] }>>;
+}
+
+/**
+ * Alias dei layer dal binding (Story 2.8 parte B) → mappa `layer → parte`,
+ * con gli errori nominativi: alias su una parte che il contratto non ha,
+ * lo stesso nome di layer usato da due parti (o due volte), un alias che
+ * coincide col nome di un'altra parte del contratto (ambiguo).
+ */
+export function resolvePartAliases(
+  binding: AliasSource | undefined,
+  contract: { readonly name: string; readonly parts: readonly string[] },
+): { aliases: Record<string, string>; errors: string[] } {
+  const aliases: Record<string, string> = {};
+  const errors: string[] = [];
+  if (binding === undefined) return { aliases, errors };
+  for (const [part, definition] of Object.entries(binding.parts)) {
+    for (const layer of definition.aliases ?? []) {
+      if (!contract.parts.includes(part)) {
+        errors.push(
+          `Contratto "${contract.name}": l'alias "${layer}" punta alla parte "${part}", che il contratto non ha (parti: [${contract.parts.join(", ")}]) — correggi il binding.`,
+        );
+        continue;
+      }
+      if (contract.parts.includes(layer) && layer !== part) {
+        errors.push(
+          `Contratto "${contract.name}": l'alias "${layer}" della parte "${part}" è il nome di un'altra parte del contratto — ambiguo: correggi il binding.`,
+        );
+        continue;
+      }
+      if (Object.hasOwn(aliases, layer)) {
+        errors.push(
+          `Contratto "${contract.name}": l'alias "${layer}" è dichiarato due volte (parti "${aliases[layer]}" e "${part}") — alias duplicato: correggi il binding.`,
+        );
+        continue;
+      }
+      aliases[layer] = part;
+    }
+  }
+  return { aliases, errors };
 }

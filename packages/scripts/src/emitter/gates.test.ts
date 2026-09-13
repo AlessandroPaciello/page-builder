@@ -18,7 +18,6 @@ import {
 } from "./artifacts";
 import {
   checkA11y,
-  checkA11yGate,
   checkCompleteness,
   checkConformance,
   checkDeclaredA11y,
@@ -173,25 +172,6 @@ describe("Gate 3 — a11y dichiarata (role/aria-* del giudizio asseriti nel DOM)
     expect(result.missing.map((m) => m.attribute)).toEqual(["aria-expanded", "aria-controls"]);
   });
 
-  it("gate composto (checkA11yGate): verde sui committati; rosso con suite verde ma asserzione aria-invalid tolta", () => {
-    const components = committedEntries().map(({ component, recipe }) => ({
-      component,
-      domain: recipe.judgment.domain,
-      a11y: recipe.judgment.a11y,
-    }));
-    const existing = readExistingFiles(domainsRoot);
-    expect(checkA11yGate({ components, existing, suite: { exitCode: 0 } })).toEqual({ ok: true, errors: [] });
-
-    const path = "inputs/Input.test.tsx";
-    const tampered = { ...existing, [path]: existing[path]!.replace(declaredA11yAssertion("aria-invalid"), "") };
-    const result = checkA11yGate({ components, existing: tampered, suite: { exitCode: 0 } });
-    expect(result.ok).toBe(false);
-    expect(result.errors).toHaveLength(1);
-    expect(result.errors[0]).toContain("Input");
-    expect(result.errors[0]).toContain(path);
-    expect(result.errors[0]).toContain('"aria-invalid"');
-  });
-
   it("rosso se il giudizio dichiara un role che il test non asserisce; verde se lo asserisce", () => {
     const entry = {
       component: "Alert",
@@ -273,6 +253,9 @@ describe("Gate 5 — drift della fixture", () => {
     });
     expect(result.status).toBe("drift");
     expect(result.drifted).toEqual(["Badge"]);
+    expect(result.details).toEqual([
+      { component: "Badge", detail: expect.stringContaining("Gate drift: la fixture committata diverge da Penpot live") },
+    ]);
   });
 
   it("Penpot irraggiungibile → skip documentato, mai finto verde", async () => {

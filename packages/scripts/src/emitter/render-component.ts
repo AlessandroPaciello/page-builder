@@ -1,7 +1,7 @@
 import { PLUGIN_DATA_PATTERN, contractByName } from "../component-reader";
 import { toKebab } from "../extract-component";
 import type { SnapshotLayer } from "../library/library-snapshot";
-import { cellKeyOf, type ComponentFixture, type ComponentRecipe } from "../recipe-schema";
+import { cellKeyOf, resolvePartAliases, type ComponentFixture, type ComponentRecipe } from "../recipe-schema";
 import { lookupProperty, radiusCorners, type EmitRule } from "../style-properties";
 import { varSuffix, type TokenCatalog, type TokenType } from "../theme-generator";
 import { buildTokenVocabulary, validateClassesAgainstVocabulary } from "../token-vocabulary";
@@ -127,10 +127,21 @@ interface EmitterContext {
   lucideImport: string | null;
 }
 
-function findLayerByName(layer: SnapshotLayer, part: string): SnapshotLayer | null {
-  if (layer.name === part) return layer;
+/**
+ * Alias `layer → parte` dichiarati nel binding (Story 2.8 parte B), validati
+ * col contratto: un alias duplicato o verso una parte inesistente ferma il
+ * rendering con l'errore nominativo di `resolvePartAliases`.
+ */
+function bindingAliases(ctx: EmitterContext): Record<string, string> {
+  const { aliases, errors } = resolvePartAliases(ctx.binding, ctx.contract);
+  if (errors.length > 0) fail(errors.join("\n"));
+  return aliases;
+}
+
+function findLayerByName(layer: SnapshotLayer, part: string, aliases: Readonly<Record<string, string>> = {}): SnapshotLayer | null {
+  if (layer.name === part || (Object.hasOwn(aliases, layer.name) && aliases[layer.name] === part)) return layer;
   for (const child of layer.children) {
-    const found = findLayerByName(child, part);
+    const found = findLayerByName(child, part, aliases);
     if (found !== null) return found;
   }
   return null;
@@ -140,7 +151,7 @@ function layerKindFor(ctx: EmitterContext, part: string, cellKey: string): strin
   const cell = ctx.fixture.cells.find((candidate) => cellKeyOf(ctx.contract.axes, candidate.variantProps) === cellKey);
   if (cell === undefined) fail(`cella "${cellKey}" non trovata nella fixture di "${ctx.fixture.componentName}".`);
   if (part === "root") return cell.root.kind;
-  const layer = findLayerByName(cell.root, part);
+  const layer = findLayerByName(cell.root, part, bindingAliases(ctx));
   if (layer === null) {
     fail(
       `parte "${part}" non trovata come layer nella cella "${cellKey}" della fixture — il binding mappa una parte che il design non ha.`,

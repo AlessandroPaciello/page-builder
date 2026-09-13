@@ -148,9 +148,12 @@ describe("planAdoption — adozione", () => {
 
   it("dopo l'adozione le regole 4 e 5 di verify:library sono verdi sullo stesso snapshot", () => {
     const before = verifyLibrary({ contracts: [badge], spec: { tokens: [], contrastPairs: [] }, snapshot: badgeWithOutline() });
-    expect(before.errors.some((message) => message.includes("in più [outline]"))).toBe(true);
+    // Story 2.8 parte B: una variante non adottata mette il componente "in attesa", non rosso.
+    expect(before.pending.some((message) => message.includes("in più [outline]"))).toBe(true);
+    const badgeProblems = before.components.find((verdict) => verdict.component === "Badge")?.problems ?? [];
+    expect(badgeProblems.find((problem) => problem.message.includes("in più [outline]"))?.severity).toBe("pending");
     const after = verifyLibrary({ contracts: [adopt!.adopted], spec: { tokens: [], contrastPairs: [] }, snapshot: badgeWithOutline() });
-    const rules45 = after.errors.filter((message) => /valori del contratto|manca la cella|cella ".*" in più|proprietà di variante/.test(message));
+    const rules45 = [...after.errors, ...after.pending].filter((message) => /valori del contratto|manca la cella|cella ".*" in più|proprietà di variante/.test(message));
     expect(rules45).toEqual([]);
   });
 

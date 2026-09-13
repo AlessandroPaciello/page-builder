@@ -1,23 +1,36 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 import { COMPONENT_CONTRACTS } from "@app/contracts";
 
+import { publishReport } from "../component-report";
+import { bindingsDir, scanCommittedComponents } from "../emitter/artifacts";
+import { BindingSchema } from "../emitter/binding-shadcn";
 import { callPenpotTool, parseExecuteCodeEnvelope, resolveMcpEndpoint } from "../mcp-client";
+import type { AliasSource } from "../recipe-schema";
+import { stableStringify } from "../validate-recipe";
 import { committedDesigns } from "./designs-loader";
 import { isDirectInvocation as isDirectInvocationModule } from "./direct-invocation";
 import { planLibrary, type ComponentDesign } from "./library-plan";
-import { readLibrarySnapshot } from "./library-reader";
+import { parseLibrarySnapshot, readLibrarySnapshot } from "./library-reader";
 import { LIBRARY_SPEC, type SemanticSeed } from "./library-spec";
 import type { LibrarySnapshot } from "./library-snapshot";
 import { operationsToSteps } from "./penpot-writer";
-import { verifyLibrary } from "./verify-library";
+import { verifyLibrary, verifyReport } from "./verify-library";
 
 /**
  * Entry CLI della library (Story 2.4, Task 5):
  *
  *   bootstrap:library [--dry-run]   bootstrap una tantum su file nuovo: rifiuta se non vuota
  *   add:library      [--dry-run]    additiva: crea solo ciò che manca, segnala le differenze
- *   verify:library                  sola lettura: snapshot → verifyLibrary → exit code
+ *   verify:library                  sola lettura: snapshot → verifyLibrary → report per componente → exit code
+ *   verify:library --write-snapshot <path>
+ *                                   lettura LIVE salvata su file (lo snapshot committato
+ *                                   `src/library/library.snapshot.json`), poi la verifica
+ *
+ * Esito per componente (Story 2.8 parte B): `ok` / `rosso` / `in attesa`,
+ * stampato nel terminale e, se esiste `$GITHUB_STEP_SUMMARY`, in Markdown
+ * nel riepilogo del job. Exit 1 solo con almeno una voce rossa.
  *
  * Opzione `--snapshot <path>`: legge lo snapshot da file invece che live
  * (offline, seam dei test). I comandi sono LIVE come `extract:component`:
@@ -38,6 +51,8 @@ export interface CliArgs {
   mode: "bootstrap" | "add" | "verify";
   dryRun: boolean;
   snapshotPath?: string;
+  /** Solo verify: salva la lettura live su file (snapshot committato, decisione 3). */
+  writeSnapshotPath?: string;
 }
 
 export function parseArgs(args: readonly string[]): CliArgs {
@@ -50,6 +65,7 @@ export function parseArgs(args: readonly string[]): CliArgs {
   }
   let dryRun = false;
   let snapshotPath: string | undefined;
+  let writeSnapshotPath: string | undefined;
   for (let index = 0; index < rest.length; index++) {
     const arg = rest[index];
     if (arg === "--dry-run") {
@@ -61,8 +77,15 @@ export function parseArgs(args: readonly string[]): CliArgs {
       }
       snapshotPath = value;
       index++;
+    } else if (arg === "--write-snapshot") {
+      const value = rest[index + 1];
+      if (!value || value.startsWith("--")) {
+        throw new Error("Opzione --write-snapshot richiede un percorso file.");
+      }
+      writeSnapshotPath = value;
+      index++;
     } else {
-      throw new Error(`Argomento non riconosciuto: ${arg} — usare [--dry-run] [--snapshot <path>].`);
+      throw new Error(`Argomento non riconosciuto: ${arg} — usare [--dry-run] [--snapshot <path>] [--write-snapshot <path>].`);
     }
   }
   if (dryRun && mode === "verify") {
@@ -74,7 +97,15 @@ export function parseArgs(args: readonly string[]): CliArgs {
   if (snapshotPath !== undefined && mode !== "verify" && !dryRun) {
     throw new Error("--snapshot è valido solo su verify:library oppure insieme a --dry-run.");
   }
-  return { mode, dryRun, snapshotPath };
+  // `--write-snapshot` salva una lettura LIVE: con `--snapshot` salverebbe
+  // una copia di un file, non Penpot (decisione 3: lo scrive lo sviluppatore dal vivo).
+  if (writeSnapshotPath !== undefined && mode !== "verify") {
+    throw new Error("--write-snapshot è valido solo su verify:library.");
+  }
+  if (writeSnapshotPath !== undefined && snapshotPath !== undefined) {
+    throw new Error("--write-snapshot e --snapshot sono alternativi: --write-snapshot salva una lettura live di Penpot.");
+  }
+  return writeSnapshotPath === undefined ? { mode, dryRun, snapshotPath } : { mode, dryRun, snapshotPath, writeSnapshotPath };
 }
 
 function loadSeed(): SemanticSeed {
@@ -83,9 +114,59 @@ function loadSeed(): SemanticSeed {
 
 async function loadSnapshot(args: CliArgs): Promise<LibrarySnapshot> {
   if (args.snapshotPath) {
-    return JSON.parse(readFileSync(args.snapshotPath, "utf8")) as LibrarySnapshot;
+    // Validato alla fonte: uno snapshot committato malformato è un errore che nomina il campo.
+    return parseLibrarySnapshot(JSON.parse(readFileSync(args.snapshotPath, "utf8")));
   }
   return readLibrarySnapshot();
+}
+
+/**
+ * Serializzazione deterministica dello snapshot committato: chiavi ordinate
+ * (la stessa `stableStringify` dei gate), poi indentata per diff leggibili
+ * fra due letture live.
+ */
+export function serializeSnapshot(snapshot: LibrarySnapshot): string {
+  return `${JSON.stringify(JSON.parse(stableStringify(snapshot)), null, 2)}\n`;
+}
+
+/** Scrive lo snapshot con tmp + rename: un fallimento non lascia un file a metà. */
+export function writeSnapshotFile(path: string, snapshot: LibrarySnapshot): void {
+  const tmp = `${path}.tmp`;
+  writeFileSync(tmp, serializeSnapshot(snapshot), "utf8");
+  renameSync(tmp, path);
+}
+
+/**
+ * Binding committati per contratto (alias dei layer, Story 2.8 parte B):
+ * `emitter/bindings/<contratto>.binding.json`, se esiste. Un binding
+ * malformato non ferma la verifica: è un errore che nomina il file, per il
+ * contratto (voce rossa in `verifyLibrary`).
+ */
+export function loadCommittedBindings(
+  contractNames: readonly string[],
+  dir: string = bindingsDir,
+): { bindings: Record<string, AliasSource>; errors: Record<string, string> } {
+  const bindings: Record<string, AliasSource> = {};
+  const errors: Record<string, string> = {};
+  for (const name of contractNames) {
+    const path = resolve(dir, `${name}.binding.json`);
+    if (!existsSync(path)) continue;
+    let json: unknown;
+    try {
+      json = JSON.parse(readFileSync(path, "utf8"));
+    } catch (error) {
+      errors[name] = `Binding non leggibile (${path}): ${(error as Error).message}`;
+      continue;
+    }
+    const parsed = BindingSchema.safeParse(json);
+    if (!parsed.success) {
+      const issues = parsed.error.issues.map((issue) => `${issue.path.map(String).join(".") || "<root>"}: ${issue.message}`);
+      errors[name] = `Binding malformato (${path}): ${issues.join("; ")}`;
+      continue;
+    }
+    bindings[name] = parsed.data;
+  }
+  return { bindings, errors };
 }
 
 function printSnapshotSummary(snapshot: LibrarySnapshot): void {
@@ -122,21 +203,32 @@ export function stepOutcome(result: unknown): string {
   return "ok";
 }
 
-function runVerify(snapshot: LibrarySnapshot, seed: SemanticSeed): boolean {
+/**
+ * Verifica → report per componente (terminale + `$GITHUB_STEP_SUMMARY`) →
+ * exit code (decisione 1). `fromFile`: lo snapshot viene da un file
+ * committato, quindi un componente committato assente è "snapshot da
+ * aggiornare".
+ */
+export function runVerify(
+  snapshot: LibrarySnapshot,
+  seed: SemanticSeed,
+  options: { fromFile?: boolean; env?: NodeJS.ProcessEnv; print?: (text: string) => void } = {},
+): number {
+  const contracts = Object.values(COMPONENT_CONTRACTS);
+  const { bindings, errors: bindingErrors } = loadCommittedBindings(contracts.map((contract) => contract.name));
+  // Una ricetta committata malformata è una voce rossa col nome del file, non un crash.
+  const scan = options.fromFile ? scanCommittedComponents() : undefined;
   const result = verifyLibrary({
-    contracts: Object.values(COMPONENT_CONTRACTS),
+    contracts,
     spec: LIBRARY_SPEC,
     snapshot,
     seed,
     designs: DESIGNS,
+    bindings,
+    bindingErrors,
+    ...(scan ? { committedComponents: scan.components, malformedRecipes: scan.malformed } : {}),
   });
-  if (result.ok) {
-    console.log(`✔ verifyLibrary: verde (${result.errors.length} errori).`);
-    return true;
-  }
-  console.error(`✖ verifyLibrary: ${result.errors.length} errori:`);
-  for (const error of result.errors) console.error(`  - ${error}`);
-  return false;
+  return publishReport(verifyReport(result), options.env, options.print);
 }
 
 export async function main(args: CliArgs = parseArgs(process.argv.slice(2))): Promise<number> {
@@ -145,7 +237,11 @@ export async function main(args: CliArgs = parseArgs(process.argv.slice(2))): Pr
   printSnapshotSummary(snapshot);
 
   if (args.mode === "verify") {
-    return runVerify(snapshot, seed) ? 0 : 1;
+    if (args.writeSnapshotPath !== undefined) {
+      writeSnapshotFile(args.writeSnapshotPath, snapshot);
+      console.log(`Snapshot live scritto: ${args.writeSnapshotPath}`);
+    }
+    return runVerify(snapshot, seed, { fromFile: args.snapshotPath !== undefined });
   }
 
   const mode = args.mode === "bootstrap" ? "bootstrap" : "additive";
@@ -194,7 +290,7 @@ export async function main(args: CliArgs = parseArgs(process.argv.slice(2))): Pr
   }
 
   const after = await readLibrarySnapshot();
-  return runVerify(after, seed) ? 0 : 1;
+  return runVerify(after, seed);
 }
 
 

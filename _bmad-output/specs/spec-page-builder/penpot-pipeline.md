@@ -159,6 +159,27 @@ Ogni gate ha una propria prova rosso/verde (un input che lo viola lo fa fallire)
 
 I gate valutano **per componente**: un componente fuori regola rende rossa solo la sua voce, e i componenti in attesa (variante non ancora adottata, proprietà bloccata) restano visibili nel report — la CI non è più tutto-o-niente.
 
+### Esito per componente e report (Story 2.8 parte B)
+
+`verify:library` e `gates:render` producono **una voce per componente** con uno di tre stati e i problemi nominativi sotto (`packages/scripts/src/component-report.ts`):
+
+- **ok** — nessun problema;
+- **rosso** — almeno un problema che va corretto (artefatto rotto, gate violato, collisione di normalizzazione, alias invalido, regole 1–3, 6, 7 non bloccata, cella duplicata o in più senza valore nuovo);
+- **in attesa** — solo problemi che aspettano una decisione: **valore d'asse in Penpot non adottato** (rimando a `pnpm adopt:variant -- <Comp>`; le celle di quel valore sono in attesa anche loro), **proprietà bloccata dal registro**, **cella mancante** (o valore del contratto assente in Penpot): una **domanda al designer**, mai una cella inventata; se il design committato prevede la cella, il messaggio rimanda a `pnpm add:library` (`addCell`).
+
+Le regole globali di `verify:library` (8 copertura spec, 9 tema, 10 contrasto, e la copertura design↔registry) sono righe **globali**, fuori dalle voci; in `gates:render` è globale la suite ui (vitest-axe), mentre l'a11y dichiarata, conformità, completezza, rigenerazione e drift sono per componente. In `gates:render` il caricamento e il rendering di ogni componente sono isolati: un artefatto che lancia rende rossa la sua voce e gli altri vengono comunque valutati. Un gate drift saltato (Penpot irraggiungibile) è una **nota** del report col motivo.
+
+**Exit code** (decisione 1 di Alessandro, 2026-09-13): 1 solo se almeno una voce (di componente o globale) è rossa; con voci `ok`/`in attesa` l'exit è 0.
+
+**Formato e posizione del report** (decisione 2): nel terminale una tabella in testo (voce, esito, problemi indentati); in CI la stessa tabella in Markdown appesa a `$GITHUB_STEP_SUMMARY` quando la variabile esiste (pagina di riepilogo del job), senza permessi nuovi nel workflow.
+
+**Snapshot committato** (decisione 3): `packages/scripts/src/library/library.snapshot.json` si scrive dal vivo con `pnpm verify:library --write-snapshot src/library/library.snapshot.json` (lo lancia lo sviluppatore, token Penpot da `.env`; alternativo a `--snapshot`). In CI `verify:library --snapshot src/library/library.snapshot.json` gira offline e alimenta il report; un componente committato (con ricetta) assente dallo snapshot è una voce rossa "snapshot da aggiornare".
+
+### Attriti del file Penpot (Story 2.8 parte B)
+
+- **Normalizzazione unica** (`packages/scripts/src/variant-normalize.ts`), applicata nel reader (`componentFixtureFromSnapshot`) e all'ingresso di `verifyLibrary`: nomi e valori d'asse si confrontano col contratto dopo trim, spazi interni compressi e senza maiuscole (`Size`/` SM ` → `size`/`sm`), **per nome e non per posizione** (l'ordine degli assi di Penpot non conta: la fixture li porta nell'ordine del contratto, e la regola 4 confronta gli assi come insieme). Un nome o valore senza corrispondenza resta intatto (quindi "valore in più"); due valori diversi che normalizzati coincidono (`SM` e `sm`) sono una **collisione**: errore nominativo, voce rossa, estrazione ferma. `addCell` resta com'è (richiede ancora gli assi nello stesso ordine).
+- **Alias dei layer nel binding**: `parts.<parte>.aliases: ["Label Text"]` in `emitter/bindings/<comp>.binding.json` lega un layer con un nome diverso alla parte, per `partBindings` (estrazione e `validateRecipe`), la regola 6 di `verify:library` e l'emitter. La ricetta resta per parti del contratto, identica. Un alias verso una parte che il contratto non ha, lo stesso layer dichiarato due volte o un alias uguale al nome di un'altra parte sono errori nominativi (voce rossa). Nessuna rinomina in Penpot: l'alias vive solo nel binding.
+
 Lato library, `verify:library` resta in sola lettura: una versione del contratto diversa dal plugin data del container la rende rossa (regola 3). Si risolve con la regola A dello Stadio 0 (`bump:contract` dopo un cambio incompatibile), mai modificando a mano il plugin data.
 
 ## Convenzione @generated

@@ -64,11 +64,171 @@ function verify(snapshot: LibrarySnapshot) {
   return verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot });
 }
 
+function status(result: ReturnType<typeof verify>, component: string) {
+  return result.components.find((verdict) => verdict.component === component)?.status;
+}
+
 describe("verifyLibrary — snapshot verde", () => {
   it("il risultato del bootstrap passa tutte le 11 regole", () => {
     const result = verify(greenSnapshot());
     expect(result.errors).toEqual([]);
+    expect(result.pending).toEqual([]);
     expect(result.ok).toBe(true);
+  });
+
+  it("una voce ok per ogni contratto e le regole globali come righe globali", () => {
+    const result = verify(greenSnapshot());
+    expect(result.components.map((v) => [v.component, v.status])).toEqual(
+      contracts.map((contract) => [contract.name.split("-").map((w) => w[0]!.toUpperCase() + w.slice(1)).join(""), "ok"]),
+    );
+    expect(result.global.map((v) => v.component)).toEqual(["regola 8 — copertura spec", "regola 9 — tema", "regola 10 — contrasto"]);
+  });
+});
+
+describe("verifyLibrary — esito per componente (Story 2.8 parte B)", () => {
+  it("un rosso: solo la voce Badge è rossa, gli altri componenti sono valutati e ok", () => {
+    const snapshot = greenSnapshot();
+    snapshot.components.find((c) => c.name === "Badge")!.pluginData = "badge@9";
+    const result = verify(snapshot);
+    expect(result.ok).toBe(false);
+    expect(status(result, "Badge")).toBe("red");
+    expect(status(result, "Input")).toBe("ok");
+    expect(status(result, "AccordionItem")).toBe("ok");
+    const badge = result.components.find((v) => v.component === "Badge")!;
+    expect(badge.problems.some((p) => p.message.includes('atteso "badge@1"'))).toBe(true);
+  });
+
+  it("variante non adottata (variant=info in Penpot) → Badge in attesa con rimando ad adopt:variant, exit ok", () => {
+    const snapshot = greenSnapshot();
+    const badge = snapshot.components.find((c) => c.name === "Badge")!;
+    badge.axesValues.variant = [...badge.axesValues.variant!, "info"];
+    const template = badge.cells.find((cell) => cell.variantProps?.variant === "default")!;
+    for (const size of ["sm", "md"]) {
+      badge.cells.push({ ...template, variantProps: { variant: "info", size } });
+    }
+    const result = verify(snapshot);
+    expect(result.ok).toBe(true);
+    expect(status(result, "Badge")).toBe("pending");
+    expect(result.pending.some((e) => e.includes("in più [info]") && e.includes("pnpm adopt:variant -- Badge"))).toBe(true);
+    expect(result.pending.some((e) => e.includes('cella "variant=info|size=sm"') && e.includes("non adottato"))).toBe(true);
+    expect(result.errors).toEqual([]);
+  });
+
+  it("maiuscole e spazi: asse `Size` e valore ` SM ` sono normalizzati, nessun errore", () => {
+    const snapshot = greenSnapshot();
+    const badge = snapshot.components.find((c) => c.name === "Badge")!;
+    badge.axes = ["variant", "Size"];
+    badge.axesValues = { variant: badge.axesValues.variant!, Size: [" SM ", "md"] };
+    for (const cell of badge.cells) {
+      const { size, ...rest } = cell.variantProps!;
+      cell.variantProps = { ...rest, Size: size === "sm" ? " SM " : size! };
+    }
+    const result = verify(snapshot);
+    expect(result.errors).toEqual([]);
+    expect(result.pending).toEqual([]);
+  });
+
+  it("ordine degli assi diverso dal contratto → nessun errore di regola 4", () => {
+    const snapshot = greenSnapshot();
+    const badge = snapshot.components.find((c) => c.name === "Badge")!;
+    badge.axes = [...badge.axes].reverse();
+    const result = verify(snapshot);
+    expect(result.errors).toEqual([]);
+  });
+
+  it("collisione: `SM` e `sm` sullo stesso asse → voce rossa che nomina i due valori", () => {
+    const snapshot = greenSnapshot();
+    const badge = snapshot.components.find((c) => c.name === "Badge")!;
+    badge.axesValues.size = ["SM", "sm", "md"];
+    const result = verify(snapshot);
+    expect(status(result, "Badge")).toBe("red");
+    expect(result.errors.some((e) => e.includes('asse "size"') && e.includes('"SM", "sm"') && e.includes("collisione"))).toBe(true);
+    expect(status(result, "Input")).toBe("ok");
+  });
+
+  it("alias: il layer `Label Text` con alias `label` nel binding soddisfa la regola 6", () => {
+    const snapshot = greenSnapshot();
+    const badge = snapshot.components.find((c) => c.name === "Badge")!;
+    for (const cell of badge.cells) {
+      for (const layer of cell.root.children) if (layer.name === "label") layer.name = "Label Text";
+    }
+    expect(verify(snapshot).errors.some((e) => e.includes('manca la parte "label"'))).toBe(true);
+    const withAlias = verifyLibrary({
+      contracts,
+      spec: LIBRARY_SPEC,
+      snapshot,
+      bindings: { badge: { parts: { root: {}, label: { aliases: ["Label Text"] } } } },
+    });
+    expect(withAlias.errors).toEqual([]);
+  });
+
+  it("alias verso una parte inesistente → voce rossa nominativa", () => {
+    const result = verifyLibrary({
+      contracts,
+      spec: LIBRARY_SPEC,
+      snapshot: greenSnapshot(),
+      bindings: { badge: { parts: { icon: { aliases: ["Icon"] } } } },
+    });
+    expect(status(result, "Badge")).toBe("red");
+    expect(result.errors.some((e) => e.includes('l\'alias "Icon" punta alla parte "icon"'))).toBe(true);
+  });
+
+  it("cella mancante con assi fuori ordine o contratto non corrente: niente rimando ad add:library, dice cosa richiede addCell", () => {
+    const snapshot = greenSnapshot();
+    const badge = snapshot.components.find((c) => c.name === "Badge")!;
+    badge.cells = badge.cells.filter((cell) => cell.variantProps?.size !== "sm");
+    badge.axes = [...badge.axes].reverse();
+    const reversed = verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot, designs });
+    const question = reversed.pending.find((e) => e.includes("manca la cella"))!;
+    expect(question).not.toContain("pnpm add:library la crea");
+    expect(question).toMatch(/addCell richiede gli assi del container nell'ordine del contratto \[variant, size\]/);
+
+    badge.axes = [...badge.axes].reverse();
+    badge.pluginData = "badge@2";
+    const stale = verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot, designs });
+    const staleQuestion = stale.pending.find((e) => e.includes("manca la cella"))!;
+    expect(staleQuestion).not.toContain("pnpm add:library la crea");
+    expect(staleQuestion).toContain("il contratto alla versione corrente");
+  });
+
+  it("cella di un valore non adottato su un asse non option → nessun rimando ad adopt:variant", () => {
+    const contract = contracts.find((c) => c.axes.some((axis) => axis.type !== "option"))!;
+    const axis = contract.axes.find((a) => a.type !== "option")!;
+    const name = contract.name.split("-").map((w) => w[0]!.toUpperCase() + w.slice(1)).join("");
+    const snapshot = greenSnapshot();
+    const container = snapshot.components.find((c) => c.name === name)!;
+    container.axesValues[axis.name] = [...container.axesValues[axis.name]!, "nuovo"];
+    const template = container.cells[0]!;
+    container.cells.push({ ...template, variantProps: { ...template.variantProps!, [axis.name]: "nuovo" } });
+    const result = verify(snapshot);
+    const cellMessage = result.pending.find((e) => e.includes("di un valore non adottato"))!;
+    expect(cellMessage).toContain("adopt:variant non lo adotta");
+    expect(cellMessage).not.toContain("pnpm adopt:variant");
+  });
+
+  it("binding non caricabile e ricetta malformata → voci rosse (componente e file), nessun crash", () => {
+    const result = verifyLibrary({
+      contracts,
+      spec: LIBRARY_SPEC,
+      snapshot: greenSnapshot(),
+      bindingErrors: { badge: "Binding malformato (/x/badge.binding.json): parts: Required" },
+      malformedRecipes: [{ file: "rotta.recipe.json", error: "Ricetta malformata (test)" }],
+    });
+    expect(status(result, "Badge")).toBe("red");
+    expect(result.errors).toContain("Binding malformato (/x/badge.binding.json): parts: Required");
+    expect(status(result, "rotta.recipe.json")).toBe("red");
+    expect(status(result, "Input")).toBe("ok");
+  });
+
+  it("snapshot committato: un componente committato assente dallo snapshot è rosso (\"snapshot da aggiornare\")", () => {
+    const snapshot = greenSnapshot();
+    snapshot.components = snapshot.components.filter((c) => c.name !== "Input");
+    const result = verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot, committedComponents: ["Badge", "Input"] });
+    expect(status(result, "Input")).toBe("red");
+    expect(result.errors.some((e) => e.includes('"Input"') && e.includes("snapshot da aggiornare"))).toBe(true);
+    expect(status(result, "Badge")).toBe("ok");
+    const fresh = verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot: greenSnapshot(), committedComponents: ["Badge", "Input"] });
+    expect(fresh.ok).toBe(true);
   });
 });
 
@@ -117,20 +277,32 @@ describe("verifyLibrary — un caso rosso per regola", () => {
     expect(result.errors.some((e) => e.includes('"badge"') && e.includes("proprietà di variante"))).toBe(true);
   });
 
-  it("regola 4: valori di un asse ≠ values del contratto", () => {
+  it("regola 4: valori del contratto assenti in Penpot → in attesa (non rosso), nominati", () => {
     const snapshot = greenSnapshot();
     const badge = snapshot.components.find((c) => c.name === "Badge")!;
     badge.axesValues.variant = ["default", "secondary"];
     const result = verify(snapshot);
-    expect(result.errors.some((e) => e.includes('asse "variant"') && e.includes("mancanti [destructive]"))).toBe(true);
+    expect(result.pending.some((e) => e.includes('asse "variant"') && e.includes("[destructive] assenti in Penpot"))).toBe(true);
+    expect(result.errors).toEqual([]);
+    expect(status(result, "Badge")).toBe("pending");
   });
 
-  it("regola 5: manca una cella del prodotto cartesiano", () => {
+  it("regola 5: cella mancante → in attesa con domanda al designer, mai inventata; rimando ad add:library se il design la prevede", () => {
     const snapshot = greenSnapshot();
     const badge = snapshot.components.find((c) => c.name === "Badge")!;
     badge.cells = badge.cells.filter((cell) => cell.variantProps?.size !== "sm");
-    const result = verify(snapshot);
-    expect(result.errors.some((e) => e.includes('"badge"') && e.includes("manca la cella"))).toBe(true);
+    const cellsBefore = badge.cells.length;
+    const withoutDesign = verify(snapshot);
+    const question = withoutDesign.pending.find((e) => e.includes('"badge"') && e.includes("manca la cella"));
+    expect(question).toContain("domanda al designer");
+    expect(question).not.toContain("add:library");
+    expect(withoutDesign.ok).toBe(true);
+    expect(status(withoutDesign, "Badge")).toBe("pending");
+    // Il design committato prevede la cella: rimando ad add:library (addCell).
+    const withDesign = verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot, designs });
+    expect(withDesign.pending.some((e) => e.includes("manca la cella") && e.includes("pnpm add:library"))).toBe(true);
+    // Nessuna cella inventata: lo snapshot resta com'è.
+    expect(badge.cells).toHaveLength(cellsBefore);
   });
 
   it("regola 5: variantError non nullo", () => {
@@ -223,8 +395,11 @@ describe("verifyLibrary — un caso rosso per regola", () => {
     const snapshot = greenSnapshot();
     snapshot.components.find((c) => c.name === "Badge")!.cells[0]!.root.style.strokeStyle = "dashed";
     const result = verify(snapshot);
-    expect(result.errors.some((e) => e.includes('"badge"') && /Proprietà bloccata.*"strokeStyle".*"dashed"/.test(e))).toBe(true);
-    expect(result.errors.some((e) => e.includes('"strokeStyle"') && e.includes("non ha binding"))).toBe(false);
+    // Proprietà bloccata dal registro → componente in attesa, gli altri restano ok.
+    expect(result.pending.some((e) => e.includes('"badge"') && /Proprietà bloccata.*"strokeStyle".*"dashed"/.test(e))).toBe(true);
+    expect(result.errors.some((e) => e.includes('"strokeStyle"'))).toBe(false);
+    expect(status(result, "Badge")).toBe("pending");
+    expect(status(result, "Input")).toBe("ok");
   });
 
   it("regola 7 (registro): strokeStyle fuori lista è un errore che elenca i valori ammessi", () => {
@@ -238,7 +413,7 @@ describe("verifyLibrary — un caso rosso per regola", () => {
     const snapshot = greenSnapshot();
     snapshot.components.find((c) => c.name === "Badge")!.cells[0]!.root.style.strokeAlignment = "center";
     const result = verify(snapshot);
-    expect(result.errors.some((e) => /Proprietà bloccata.*"strokeAlignment".*"center"/.test(e))).toBe(true);
+    expect(result.pending.some((e) => /Proprietà bloccata.*"strokeAlignment".*"center"/.test(e))).toBe(true);
   });
 
   it("regola 7 (registro): una proprietà non registrata nei binding è un errore nominativo", () => {

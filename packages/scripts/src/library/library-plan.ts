@@ -146,8 +146,21 @@ export function cartesian(axes: readonly { readonly values: readonly string[] }[
   return out;
 }
 
+/** Forma canonica a chiavi ordinate: l'ordine delle chiavi di Penpot o dello snapshot committato non è una differenza. */
+function canonical(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(
+      Object.keys(value)
+        .sort()
+        .map((key) => [key, canonical((value as Record<string, unknown>)[key])]),
+    );
+  }
+  return value;
+}
+
 function sameValue(a: PenpotTokenValue, b: PenpotTokenValue): boolean {
-  return JSON.stringify(a) === JSON.stringify(b);
+  return JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
 }
 
 /** Confronto tollerante sul case per i colori hex (Penpot può restituire lowercase). */
