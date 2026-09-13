@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forge — Pipeline e libertà del designer</title>
+<style>
+  :root { --ink:#2b2118; --paper:#f6f0e4; --muted:#7a6a58; --seal:#8f1d1d; --line:#d9cdb8; --ok:#2f6b3a; --warn:#9a6a12; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.55 Georgia, "Times New Roman", serif; padding-block:40px; padding-inline:16px; }
+  main { max-width:820px; margin:0 auto; }
+  header { display:flex; gap:28px; align-items:center; flex-wrap:wrap; border-bottom:2px solid var(--ink); padding-bottom:20px; }
+  header svg { flex:0 0 150px; max-width:100%; }
+  h1 { font-size:2rem; margin:0 0 6px; }
+  .sub { color:var(--muted); margin:0; }
+  h2 { font-size:1.15rem; text-transform:uppercase; letter-spacing:.08em; margin:34px 0 10px; border-bottom:1px solid var(--line); padding-bottom:4px; }
+  ul { padding-left:1.2em; margin:0; } li { margin:6px 0; }
+  .lock li::marker { content:"🔒 "; } .kill li::marker { content:"✕ "; color:var(--seal); } .crack li::marker { content:"⚠ "; color:var(--warn); }
+  code { font-family:ui-monospace, Menlo, monospace; font-size:.88em; background:#ece3d2; padding:1px 4px; border-radius:3px; }
+  .cast { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:12px; }
+  .card { border:1px solid var(--line); border-radius:8px; padding:10px 12px; background:#fbf7ef; }
+  .card b { display:block; } .card span { color:var(--muted); font-size:.92em; }
+  footer { margin-top:40px; color:var(--muted); font-size:.85em; border-top:1px solid var(--line); padding-top:10px; }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <svg viewBox="0 0 160 160" role="img" aria-label="Sigillo HARDENED">
+    <defs><path id="arc" d="M80,80 m-56,0 a56,56 0 1,1 112,0 a56,56 0 1,1 -112,0"/></defs>
+    <path d="M80 6 C104 4 126 18 140 36 C156 58 158 86 148 108 C138 132 116 152 88 155 C60 158 34 146 20 124 C4 100 4 70 16 46 C28 22 54 8 80 6Z" fill="#8f1d1d"/>
+    <circle cx="80" cy="80" r="62" fill="none" stroke="#f3d9c9" stroke-width="2" opacity=".6"/>
+    <circle cx="80" cy="80" r="44" fill="none" stroke="#f3d9c9" stroke-width="1.5" opacity=".5"/>
+    <text fill="#f7e4d6" font-family="Georgia,serif" font-size="11" letter-spacing="3"><textPath href="#arc">PAGE-BUILDER · FORGE · 2026-09-13 ·</textPath></text>
+    <text x="80" y="86" text-anchor="middle" fill="#fff4ea" font-family="Georgia,serif" font-weight="bold" font-size="17" letter-spacing="1.5">HARDENED</text>
+  </svg>
+  <div>
+    <h1>Pipeline Penpot → codice: meno vincoli per il designer</h1>
+    <p class="sub">Sessione forge di Alessandro · obiettivo: chiarire, testare, migliorare · esito <b>HARDENED</b></p>
+  </div>
+</header>
+
+<h2>Esito</h2>
+<p>La tesi "troppo vincolante" regge, ma non come pensavamo all'inizio. Il problema non era la severità delle singole regole: era il fallimento <b>tutto o niente</b>, che scarica <b>sul designer</b> il costo di adattare il design a lavoro finito. La soluzione tiene ferma la regola dei token e il contratto del page builder. Cambia chi paga (lo sviluppatore, non il designer), quanto si blocca (solo il componente) e come si blocca (con un messaggio, mai in silenzio).</p>
+
+<h2>Decisioni chiuse</h2>
+<ul class="lock">
+  <li>Designer di riferimento: non tecnico, senza skill, consegna a lavoro finito o quasi.</li>
+  <li>Penpot resta la fonte del design; adeguare la pipeline è compito dello sviluppatore.</li>
+  <li>Ogni <i>valore</i> ha un token; gli stili a parola chiave di una lista chiusa (tratteggio) sono ammessi.</li>
+  <li>Quello che non rientra blocca solo quel componente, con un messaggio; mai una versione infedele generata in silenzio.</li>
+  <li>Si estende l'emitter una volta per tutte (primo caso: outline senza fill), a patto che per lo sviluppatore resti semplice.</li>
+  <li>Registro unico delle proprietà Penpot: supportata o bloccata, nessuno skip.</li>
+  <li>Maiuscole e ordine degli assi normalizzati; layer rinominati tramite alias; cella mancante = domanda al designer.</li>
+  <li>Variante nuova: il componente resta in attesa (opzione c), ben visibile nel report di PR/CI, finché lo sviluppatore non la adotta.</li>
+  <li>Primitive rigide, composizioni elastiche: il tag cliccabile è un link che prende l'<code>href</code> dai dati; la X del filtro attivo è una composizione, caso di prova per le sezioni della Story 3.4.</li>
+</ul>
+
+<h2>Scartato</h2>
+<ul class="kill">
+  <li><b>Adozione automatica delle varianti</b>: sarebbe Penpot a decidere il vocabolario che le pagine salvano, e un refuso diventerebbe una migrazione dati.</li>
+  <li><b>Variante generata ma nascosta</b>: un secondo vocabolario per risparmiare minuti.</li>
+  <li><b>Skip con log</b> per le proprietà non esprimibili: producono verdi finti.</li>
+  <li><b>Asse <code>removable</code> / parti opzionali nel Badge</b>: la presenza della X la deciderebbe l'editor e non i dati, e servirebbe inventare lo stile nelle celle senza X.</li>
+</ul>
+
+<h2>Punti deboli sopravvissuti</h2>
+<ul class="crack">
+  <li>Oggi spessore, opacità, tratteggio e allineamento del tracciato <b>spariscono in silenzio</b>: il fix minimo (bloccare) è prioritario.</li>
+  <li><code>gates:render</code> e <code>verify:library</code> sono globali: l'isolamento per componente in CI va ancora progettato.</li>
+  <li>Il caso 1 (variante esistente modificata) è rimandato, ma il fix "rimozione di una proprietà" serve comunque alle varianti nuove.</li>
+  <li>Gli alias dei layer sono un piccolo debito: ogni nuova rinomina è un nuovo blocco.</li>
+  <li><code>applyToken</code> sulle ombre in Penpot 2.17 non verificato dal vivo.</li>
+</ul>
+
+<h2>Chi ha messo alla prova l'idea</h2>
+<div class="cast">
+  <div class="card"><b>🎨 Sally — UX Designer</b><span>"Per A basta un buon errore; B ha bisogno che la pipeline accolga il disordine."</span></div>
+  <div class="card"><b>🏗️ Winston — Architetto</b><span>"L'adozione automatica è una migrazione dati fatta a sorpresa."</span></div>
+  <div class="card"><b>📋 John — Product Manager</b><span>"Martedì in produzione vanno 37 componenti o 0?"</span></div>
+  <div class="card"><b>💻 Amelia — Sviluppatrice</b><span>"Solo due stati: o genera, o blocca."</span></div>
+  <div class="card"><b>😤 Grumbal — L'avversario</b><span>"Allentare i vincoli senza fedeltà ti dà una bugia verde."</span></div>
+  <div class="card"><b>🖌️ Chiara — designer freelance (generata)</b><span>"Non so cos'è un contratto. Non voglio perdere il mio lavoro."</span></div>
+</div>
+
+<footer>Memlog: <code>.memlog.md</code> · Distillato: <code>forged-idea.md</code></footer>
+</main>
+</body>
+</html>
