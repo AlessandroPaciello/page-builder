@@ -139,6 +139,7 @@ function cellSpec(containerName: string, cell: CellPlanLike, index: number, xOff
   return {
     boardName,
     variantProps: cell.variantProps,
+    step,
     x: xOffset + step * index,
     y: yOffset,
     parts: cell.parts.map((part) => ({
@@ -255,10 +256,17 @@ if (same) {
   return { skipped: true, reason: "la variante \\"" + spec.boardName + "\\" esiste già nel container \\"" + container.name + "\\"" };
 }
 ${BUILD_CELL_RUNTIME}
-// La board nasce all'origine della pagina: la posizione è relativa al container.
-board.x = (container.x || 0) + spec.x;
-board.y = (container.y || 0) + spec.y;
+// Posizione (prova live 2026-09-13): dopo la cella più a destra, sulla sua
+// stessa riga, col passo del bootstrap; il container si allarga per
+// contenerla col suo margine. Senza celle, dall'angolo del container.
+const cellsInContainer = (container.children || []).filter((child) => child.id !== board.id);
+const last = cellsInContainer.reduce((right, child) => (right === null || child.x > right.x ? child : right), null);
+board.x = last ? last.x + spec.step : (container.x || 0) + spec.x;
+board.y = last ? last.y : (container.y || 0) + spec.y;
 container.appendChild(board);
+const margin = last ? Math.max(0, Math.min(...cellsInContainer.map((child) => child.x)) - container.x) : 0;
+const neededWidth = board.x + board.width + margin - container.x;
+if (neededWidth > container.width) container.resize(neededWidth, container.height);
 const cellLabel = "addCell \\"" + contractName + "\\", cella \\"" + spec.boardName + "\\", container \\"" + container.name + "\\"";
 const variant = container.variants.variantComponents().find((c) => c.id === component.id);
 if (!variant) throw new Error(cellLabel + ": il componente creato non risulta fra le varianti del container dopo appendChild — cella scritta a metà, rimuovila a mano in Penpot.");

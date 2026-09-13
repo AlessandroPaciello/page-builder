@@ -123,3 +123,9 @@ Routing loop 2: nessun `intent_gap`/`bad_spec`. `patch` → **applicate e verifi
 
 **Manual checks:**
 - Prova live su "Page Builder DS" SOLO dopo OK esplicito di Alessandro, su un container di prova poi rimosso: `addCell` crea la cella (aspetto del solo design) e il secondo run non duplica; `bump:contract --yes` porta la regola 3 a verde.
+
+**Prova live — 2026-09-13 (OK di Alessandro).** Contratto sintetico `probe` (assi e design di Badge), container "Probe" creato con `probe@1` a 2 valori di `variant`, poi rimosso; piano, step e transport sono quelli dei CLI.
+- ✔ `addCell` con `destructive`: 2 celle scritte, `variantProps` riletti corretti (il rischio aperto su `setVariantProperty` dopo `appendChild` è chiuso), token del solo design, nessuno stroke ereditato; `verify:library` verde; secondo run vuoto.
+- ✔ `bump:contract` `probe@1 → probe@2`: regola 3 rossa prima, verde dopo; downgrade a `probe@1` rifiutato con messaggio nominativo.
+- ✖ → **fix** — posizione: con il container a (0, 1500), largo 890 e celle a y 1530 (margine 30, passo 240), le celle nuove finivano a x 960/1200, y 1500, fuori dal container, che non si allargava; `verify:library` non controlla la geometria. Causa: `addCellStep` posizionava da `container.x + passo × index`. Fix: cella dopo la più a destra, sulla stessa riga, col passo del bootstrap; il container si allarga fino alla cella più il margine. Test rosso/verde con la geometria letta live (senza fix: `expected 1440 to be 990`); prova live ripetuta dopo il fix: celle a x 990/1230, y 1530, container largo 1370 (= 1230 + 110 + 30), `verify:library` verde, secondo run vuoto. Verifica post-fix: scripts 352 (22 file), `check-types`/`lint` verdi.
+- Pulizia: nessuno shape né componente "Probe" rimasto; `verify:library` sulla library reale verde (3 container, 0 errori) prima e dopo.

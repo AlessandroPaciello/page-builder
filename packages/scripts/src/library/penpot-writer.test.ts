@@ -124,6 +124,8 @@ describe("addCell — il codice generato eseguito su un container finto", () => 
     name: string;
     x: number;
     y: number;
+    width: number;
+    height: number;
     fills: unknown[];
     children: FakeShape[];
     tokens: Record<string, string>;
@@ -140,6 +142,8 @@ describe("addCell — il codice generato eseguito su un container finto", () => 
       name: "",
       x: 0,
       y: 0,
+      width: 100,
+      height: 100,
       fills: [{ fillColor: "#FFFFFF" }],
       children: [],
       tokens: {},
@@ -151,6 +155,8 @@ describe("addCell — il codice generato eseguito su un container finto", () => 
       },
       resize(w, h) {
         this.size = [w, h];
+        this.width = w;
+        this.height = h;
       },
       async applyToken(token, props) {
         for (const prop of props) this.tokens[prop] = token.name;
@@ -171,6 +177,10 @@ describe("addCell — il codice generato eseguito su un container finto", () => 
     variants: Array<Record<string, string>>;
     x?: number;
     y?: number;
+    width?: number;
+    height?: number;
+    /** Board delle celle già nel container (posizione assoluta e larghezza). */
+    cells?: Array<{ x: number; y: number; width: number }>;
   }
 
   /** `registerOnAppend: false` = appendChild non registra la variante; `setWorks: false` = setVariantProperty non fa nulla. */
@@ -189,11 +199,22 @@ describe("addCell — il codice generato eseguito su un container finto", () => 
       });
       const variants = spec.variants.map((props, v) => makeVariant(`v${index}-${v}`, props));
       const appended: FakeShape[] = [];
+      const children: Array<{ id: string; x: number; y: number; width: number }> = (spec.cells ?? []).map((cell, c) => ({
+        id: `cell${index}-${c}`,
+        ...cell,
+      }));
       return {
         name: spec.name,
         x: spec.x ?? 0,
         y: spec.y ?? 0,
+        width: spec.width ?? 0,
+        height: spec.height ?? 0,
+        children,
         appended,
+        resize(w: number, h: number) {
+          this.width = w;
+          this.height = h;
+        },
         isVariantContainer: () => true,
         getSharedPluginData: (namespace: string, key: string) =>
           namespace === "pagebuilder" && key === "contract" ? spec.pluginData : "",
@@ -273,6 +294,21 @@ describe("addCell — il codice generato eseguito su un container finto", () => 
       { id: "new-0", pos: 0, value: "outline" },
       { id: "new-0", pos: 1, value: "sm" },
     ]);
+  });
+
+  it("posiziona la cella dopo la più a destra, sulla sua riga, e allarga il container (prova live 2026-09-13)", async () => {
+    // Geometria letta dal container di prova in Penpot: 4 celle larghe 110,
+    // margine 30, passo 240; prima del fix la cella finiva a y = 1500, fuori.
+    const cells = [750, 510, 270, 30].map((x) => ({ x, y: 1530, width: 110 }));
+    const env = fakePenpot([badgeContainer({ x: 0, y: 1500, width: 890, height: 94, cells })]);
+    const [step] = operationsToSteps([outlineOperation()]);
+    await run(step!.code, env);
+    const board = env.containers[0]!.appended[0]!;
+    const stepX = Math.max(240, designs.badge!.parts.root!.size![0] + 40);
+    expect(board.x).toBe(750 + stepX);
+    expect(board.y).toBe(1530);
+    expect(env.containers[0]!.width).toBe(board.x + board.width + 30);
+    expect(env.containers[0]!.height).toBe(94);
   });
 
   it("indici di setVariantProperty corretti anche con assi in ordine diverso nel container", async () => {
