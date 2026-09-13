@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "add:library": "node --import tsx src/library/library-cli.ts add",
+    "adopt:variant": "node --import tsx src/library/adopt-cli.ts",
     "bootstrap:library": "node --import tsx src/library/library-cli.ts bootstrap",
     "bump:contract": "node --import tsx src/library/bump-cli.ts",
     "check-types": "tsc --noEmit",

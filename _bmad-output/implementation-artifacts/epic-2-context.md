@@ -15,9 +15,10 @@ Costruire il design system del page builder come output riproducibile della pipe
 - Story 2.5: Estrazione adeguata — ricette per parti e token, validate contro il contratto
 - Story 2.6: Emitter shadcn deterministico e gate CI
 - Story 2.7: Pipeline pronta per più componenti
-- Story 2.8: Skill `pds-component` — creare e sincronizzare i componenti
-- Story 2.9: Libreria componenti accessibile
-- Story 2.10: Storybook del design system
+- Story 2.8: Registro delle proprietà e blocco per componente
+- Story 2.9: Skill `pds-component` — creare e sincronizzare i componenti
+- Story 2.10: Libreria componenti accessibile
+- Story 2.11: Storybook del design system
 
 ## Requirements & Constraints
 
@@ -30,7 +31,7 @@ Costruire il design system del page builder come output riproducibile della pipe
 - **Validazioni del contratto:** un field che si chiama come un attributo HTML globale (es. `title`) è rifiutato. `verify:library` segnala i container che dichiarano un contratto inesistente e ricava le coppie di contrasto testo/sfondo dai design, non da una lista.
 - **Scritture su Penpot:** bootstrap una tantum (rifiuta se la library esiste; crea token semantici inclusi shadow/ring e un VariantContainer per contratto, con plugin data `pagebuilder/contract = nome@versione`). Poi solo additiva: crea ciò che manca (contratti nuovi e **celle** mancanti di un container esistente, con guardia anti-duplicato) e segnala le differenze indicando dove si risolvono. Mai scritture su Penpot o sui contratti fuori dai comandi CLI; nessuna sincronizzazione ricorrente codice→Penpot.
 - **Varianti nate in Penpot:** la pipeline le **rileva** (verify rosso, estrazione ferma senza scrivere) ma non le adotta da sola. Adottarle è una decisione esplicita di chi sviluppa, perché aggiunge un valore di prop e alza `schemaVersion`. I passi che seguono (contratto, `SCHEMA_VERSION` + fingerprint, binding, design) li fa un comando e non il prompt. Una variante non esprimibile (una proprietà che varia su due assi, assi `state`/`behavior` senza mapping 1:1) fallisce con un errore che la nomina.
-- **Versione del contratto in Penpot:** la regola per alzare `nome@versione` di un contratto già presente in Penpot è ancora da decidere (la decisione spetta ad Alessandro). Va documentata nella spec della pipeline, insieme al comando o al vincolo che la applica.
+- **Versione del contratto in Penpot:** regola A, decisa da Alessandro il 2026-09-13 (opzione A): il bump del plugin data `nome@versione` avviene solo dopo l'aggiornamento del contratto, con `bump:contract`; il plugin data non canonico è un errore di downgrade fuorviante, non una versione da accettare.
 - **Aderenza ai valori:** si usano esattamente i valori del design, senza inventare quelli mancanti; i token semantici hanno nomi alla shadcn.
 - **Componenti custom:** quelli senza headless e con logica propria (Table con sorting, Carousel) e quelli complessi hanno contratto completo e un segnaposto in Penpot; l'adapter è scritto a mano, senza `@generated`, e la pipeline lo ignora.
 - **Storybook:** story in CSF3 valido con le props in `args`, più un gate smoke che esegue le story generate (una story che rende il componente senza props dà test rosso).
@@ -56,7 +57,7 @@ Costruire il design system del page builder come output riproducibile della pipe
 
 ## Cross-Story Dependencies
 
-- **Sequenza interna:** 2.1 viene prima di tutto (le ricette si validano sul vocabolario token). 2.3 viene prima di 2.4 e 2.5; 2.2 definisce lo schema ricette usato da 2.5. 2.6 si valida su Badge, Input e AccordionItem. 2.7 ripara ed estende la pipeline di 2.4–2.6 (emitter, `verify:library`, `add:library`, nuovi comandi `addCell`/`adopt:variant`). 2.8 dipende da 2.7 e richiama `pds-additive`. 2.9 crea ogni componente con la voce [PC] di 2.8 (prima contratto e container Penpot, poi estrazione e render). 2.10 aggrega le story di 2.9 e aggiunge all'emitter il gate CSF3.
-- **Test di riferimento:** i problemi emersi dal test end-to-end su Alert (register in `deferred-work.md`) sono assegnati: quasi tutti a 2.7, la skill a 2.8, le story senza `args` a 2.10.
+- **Sequenza interna:** 2.1 viene prima di tutto (le ricette si validano sul vocabolario token). 2.3 viene prima di 2.4 e 2.5; 2.2 definisce lo schema ricette usato da 2.5. 2.6 si valida su Badge, Input e AccordionItem. 2.7 ripara ed estende la pipeline di 2.4–2.6 (emitter, `verify:library`, `add:library`, nuovi comandi `addCell`/`adopt:variant`). 2.8 (registro delle proprietà e blocco per componente) dipende da 2.7. 2.9 (skill `pds-component`) dipende da 2.7 e 2.8 e richiama `pds-additive`: crea ogni componente con la voce [PC] (prima contratto e container Penpot, poi estrazione e render). 2.10 aggrega le story di 2.9 e aggiunge all'emitter il gate CSF3; Storybook è 2.11.
+- **Test di riferimento:** i problemi emersi dal test end-to-end su Alert (register in `deferred-work.md`) sono assegnati: quasi tutti a 2.7, la skill a 2.9, le story senza `args` a 2.11.
 - **Da Epic 1:** monorepo pnpm+Turborepo e infrastruttura di build/test; dominio e dati non vengono toccati.
 - **Verso Epic 3:** consuma `@app/contracts` (schemi, classifier, definizioni di sezione), la scala TS dei token (per il ponte token→controlli Puck) e `ui/domains`.

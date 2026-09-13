@@ -155,6 +155,17 @@ describe("Gate 3 — a11y dichiarata (role/aria-* del giudizio asseriti nel DOM)
     expect(result.missing).toEqual([{ component: "Input", path, attribute: "aria-invalid" }]);
   });
 
+  it("attributo dichiarato due volte nel giudizio → un solo mancante, non duplicati", () => {
+    const existing = readExistingFiles(domainsRoot);
+    delete existing["inputs/Input.test.tsx"];
+    const entries = declaredEntries(existing).map((entry) =>
+      entry.component === "Input" ? { ...entry, a11y: { ...entry.a11y, ariaAttributes: ["aria-invalid", "aria-invalid"] } } : entry,
+    );
+    const result = checkDeclaredA11y(entries);
+    expect(result.ok).toBe(false);
+    expect(result.missing).toEqual([{ component: "Input", path: "inputs/Input.test.tsx", attribute: "aria-invalid" }]);
+  });
+
   it("rosso se il test manca del tutto", () => {
     const existing = readExistingFiles(domainsRoot);
     delete existing["layout/AccordionItem.test.tsx"];

@@ -2,7 +2,7 @@ import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync }
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { committedComponents, loadRecipe } from "./artifacts";
 import { parseArgs, runRender, runRenderAll } from "./render-cli";
@@ -102,6 +102,20 @@ describe("runRender", () => {
     await expect(
       runRender({ componentName: "Badge", check: false, baseDir: "/tmp/inesistente" }, { domainsDir: outRoot }),
     ).rejects.toThrow(/Base shadcn "badge" non trovata/);
+    expect(readdirSafe(outRoot)).toHaveLength(0);
+  });
+
+  it("--all con un componente che lancia → il loop continua, il log nomina TUTTI, exit 1", async () => {
+    // Base inesistente: TUTTI i componenti lanziano; il messaggio deve
+    // nominarli tutti (nessun abort al primo).
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    await runRenderAll({ all: true, check: false, baseDir: "/tmp/inesistente" }, { domainsDir: outRoot });
+    const printed = err.mock.calls.map((call: unknown[]) => String(call[0])).join("\n");
+    for (const component of committedComponents()) {
+      expect(printed).toContain(`${component}:`);
+    }
+    expect(process.exitCode).toBe(1);
     expect(readdirSafe(outRoot)).toHaveLength(0);
   });
 });

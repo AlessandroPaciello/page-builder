@@ -79,23 +79,35 @@ export function parseArgs(args: readonly string[]): RenderCliArgs | RenderAllArg
 /**
  * `--all`: rende (o verifica con `--check`) ogni componente con ricetta
  * committata. In `--check` un componente divergente porta l'exit a 1 ma i
- * successivi girano comunque, così il log nomina TUTTI i divergenti.
+ * successivi girano comunque, così il log nomina TUTTI i divergenti. Un
+ * componente che lancia (ricetta non conforme, base assente) non ferma il
+ * loop: il suo errore nominativo entra nell'elenco finale.
  */
 export async function runRenderAll(args: RenderAllArgs, options: RenderCliOptions = {}): Promise<void> {
   const components = committedComponents();
   const previousExitCode = process.exitCode;
   const divergent: string[] = [];
-  for (const componentName of components) {
-    process.exitCode = 0;
-    await runRender({ componentName, check: args.check, baseDir: args.baseDir }, options);
-    if (process.exitCode !== 0) divergent.push(componentName);
+  const failed: string[] = [];
+  try {
+    for (const componentName of components) {
+      process.exitCode = 0;
+      try {
+        await runRender({ componentName, check: args.check, baseDir: args.baseDir }, options);
+      } catch (cause) {
+        failed.push(`${componentName}: ${(cause as Error).message}`);
+        continue;
+      }
+      if (process.exitCode !== 0) divergent.push(componentName);
+    }
+  } finally {
+    process.exitCode = previousExitCode;
   }
-  process.exitCode = previousExitCode;
-  if (divergent.length > 0) {
+  if (failed.length > 0 || divergent.length > 0) {
     process.exitCode = 1;
-    console.error(
-      `✗ Check fallito: ${divergent.length} di ${components.length} componenti NON a diff zero: ${divergent.join(", ")}.`,
-    );
+    const parts: string[] = [];
+    if (failed.length > 0) parts.push(`${failed.length} di ${components.length} componenti in errore: ${failed.join(" | ")}`);
+    if (divergent.length > 0) parts.push(`${divergent.length} di ${components.length} componenti NON a diff zero: ${divergent.join(", ")}`);
+    console.error(`✗ Check fallito: ${parts.join(" — ")}.`);
     return;
   }
   console.log(`${args.check ? "Verificati" : "Resi"} ${components.length} componenti: ${components.join(", ")}.`);

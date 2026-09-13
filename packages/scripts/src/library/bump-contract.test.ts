@@ -201,5 +201,13 @@ describe("bump-cli", () => {
       expect(await main({ component: "badge", yes: false, snapshotPath: path }, { contracts })).toBe(0);
       expect(console.log).toHaveBeenCalledWith(expect.stringContaining("badge@1 → badge@2"));
     });
+
+    it("--snapshot malformato → exit 1 nominativo, non SyntaxError grezzo", async () => {
+      const dir = mkdtempSync(join(tmpdir(), "bump-"));
+      const path = join(dir, "snapshot.json");
+      writeFileSync(path, "{ non è json");
+      expect(await main({ component: "badge", yes: false, snapshotPath: path }, { contracts })).toBe(1);
+      expect(console.error).toHaveBeenCalledWith(expect.stringContaining(`Snapshot "${path}" non leggibile`));
+    });
   });
 });

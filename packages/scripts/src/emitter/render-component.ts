@@ -4,6 +4,7 @@ import type { SnapshotLayer } from "../library/library-snapshot";
 import { cellKeyOf, type ComponentFixture, type ComponentRecipe } from "../recipe-schema";
 import { varSuffix, type TokenCatalog, type TokenType } from "../theme-generator";
 import { buildTokenVocabulary, utilityPrefixesFor, validateClassesAgainstVocabulary } from "../token-vocabulary";
+import { influencingAxes, parseCellKey } from "./axis-influence";
 import type { BindingPart, ComponentBinding } from "./binding-shadcn";
 
 /**
@@ -150,16 +151,6 @@ export interface RenderOptions {
 
 function fail(detail: string): never {
   throw new Error(`Emitter shadcn: ${detail}`);
-}
-
-function parseCellKey(key: string): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const segment of key.split("|")) {
-    const [name, value] = segment.split("=");
-    if (name === undefined || value === undefined) fail(`chiave cella "${key}" malformata.`);
-    out[name] = value;
-  }
-  return out;
 }
 
 /** Il contenuto è un file generato? Prima riga con il marker `@generated`. */
@@ -354,20 +345,18 @@ function computePartClasses(ctx: EmitterContext, part: string, skipped: SkippedP
   const properties = [...propertySet].sort();
 
   const assignedAxis = new Map<string, string | null>();
-  for (const property of properties) {
-    const influencing: string[] = [];
-    for (const axis of ctx.contract.axes) {
-      const others = ctx.contract.axes.filter((candidate) => candidate.name !== axis.name);
-      const groups = new Map<string, Set<string>>();
-      for (const [key, cell] of Object.entries(partCells)) {
-        const values = parseCellKey(key);
-        const othersKey = others.map((candidate) => `${candidate.name}=${values[candidate.name] ?? ""}`).join("|");
-        const group = groups.get(othersKey) ?? new Set<string>();
-        group.add(cell[property] ?? "<assente>");
-        groups.set(othersKey, group);
-      }
-      if ([...groups.values()].some((group) => group.size > 1)) influencing.push(axis.name);
+  // Chiave malformata → errore dell'emitter, com'era prima dell'estrazione:
+  // il parser è quello condiviso con `influencingAxes`, il prefisso resta
+  // quello dell'emitter.
+  for (const key of Object.keys(partCells)) {
+    try {
+      parseCellKey(key);
+    } catch (cause) {
+      fail((cause as Error).message);
     }
+  }
+  for (const property of properties) {
+    const influencing = influencingAxes(ctx.contract.axes, partCells, property);
     if (influencing.length > 1) {
       fail(
         `proprietà "${property}" della parte "${part}" varia con più assi (${influencing.join(", ")}) — interazione non esprimibile in cva/prefissi: fattorizzare è una decisione di ricetta, non dell'emitter.`,
@@ -637,7 +626,8 @@ function jsxClassNameAttribute(node: PartNode, isRoot: boolean, ctx: EmitterCont
 /** Un role ARIA è una o più parole minuscole: tutto il resto è un giudizio malformato, non un attributo da emettere. */
 const ARIA_ROLE = /^[a-z]+( [a-z]+)*$/;
 /** `aria-*` dichiarati nel giudizio: nome d'attributo minuscolo. */
-const ARIA_ATTRIBUTE = /^aria-[a-z]+$/;
+// I nomi ARIA legittimi contengono anche cifre (aria-level, aria-valuenow, aria-posinset).
+const ARIA_ATTRIBUTE = /^aria-[a-z0-9]+$/;
 
 function declaredRole(ctx: EmitterContext): string | null {
   const role = ctx.recipe.judgment.a11y.role;
@@ -957,18 +947,22 @@ function renderTestFile(ctx: EmitterContext): string {
     if (!ARIA_ATTRIBUTE.test(attribute)) {
       fail(`il giudizio di "${componentName}" dichiara a11y.ariaAttributes "${attribute}", che non è un attributo aria-* valido.`);
     }
-    const stateEntry = ctx.contract.axes
+    // Ogni valore di stato che mappa l'attributo ottiene il suo test: uno
+    // solo lascerebbe le altre dichiarazioni asserite solo a metà.
+    const stateEntries = ctx.contract.axes
       .filter((axis) => axis.type === "state")
       .flatMap((axis) =>
         axis.values
           .filter((value) => (ctx.binding.axes[axis.name]?.values[value] ?? "").startsWith(`${attribute}:`))
           .map((value) => `${axis.name}=${value}`),
-      )[0];
-    if (stateEntry !== undefined) {
-      tests.push(`  it("porta l'attributo dichiarato ${attribute} (${stateEntry})", () => {
+      );
+    if (stateEntries.length > 0) {
+      for (const stateEntry of stateEntries) {
+        tests.push(`  it("porta l'attributo dichiarato ${attribute} (${stateEntry})", () => {
     const { container } = ${renderCall(`<${componentName} ${attribute} ${jsxArgs()} />`)};
     ${declaredA11yAssertion(attribute)}
   });`);
+      }
     } else if (needsFireEvent) {
       tests.push(`  it("porta l'attributo dichiarato ${attribute} (dopo l'apertura)", () => {
     const { container } = ${renderCall(`<${componentName} ${jsxArgs()} />`)};

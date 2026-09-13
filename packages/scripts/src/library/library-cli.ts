@@ -1,10 +1,10 @@
-import { readFileSync, realpathSync } from "node:fs";
-import { pathToFileURL } from "node:url";
+import { readFileSync } from "node:fs";
 
 import { COMPONENT_CONTRACTS } from "@app/contracts";
 
 import { callPenpotTool, parseExecuteCodeEnvelope, resolveMcpEndpoint } from "../mcp-client";
 import { committedDesigns } from "./designs-loader";
+import { isDirectInvocation as isDirectInvocationModule } from "./direct-invocation";
 import { planLibrary, type ComponentDesign } from "./library-plan";
 import { readLibrarySnapshot } from "./library-reader";
 import { LIBRARY_SPEC, type SemanticSeed } from "./library-spec";
@@ -123,7 +123,13 @@ export function stepOutcome(result: unknown): string {
 }
 
 function runVerify(snapshot: LibrarySnapshot, seed: SemanticSeed): boolean {
-  const result = verifyLibrary({ contracts: Object.values(COMPONENT_CONTRACTS), spec: LIBRARY_SPEC, snapshot, seed });
+  const result = verifyLibrary({
+    contracts: Object.values(COMPONENT_CONTRACTS),
+    spec: LIBRARY_SPEC,
+    snapshot,
+    seed,
+    designs: DESIGNS,
+  });
   if (result.ok) {
     console.log(`✔ verifyLibrary: verde (${result.errors.length} errori).`);
     return true;
@@ -196,14 +202,7 @@ export async function main(args: CliArgs = parseArgs(process.argv.slice(2))): Pr
 // (stessa guardia di extract-component.ts): senza, ogni import del modulo
 // chiamerebbe main() con l'argv del processo ospite. Il realpathSync gestisce
 // l'invocazione via symlink (stesso schema del gate check-boundaries.mjs).
-const isDirectInvocation = (() => {
-  if (process.argv[1] === undefined) return false;
-  try {
-    return import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href;
-  } catch {
-    return false;
-  }
-})();
+const isDirectInvocation = isDirectInvocationModule(import.meta.url);
 
 if (isDirectInvocation) {
   main()

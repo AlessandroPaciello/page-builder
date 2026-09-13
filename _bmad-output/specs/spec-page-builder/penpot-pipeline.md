@@ -25,10 +25,27 @@ Il contratto nasce in codice (`@app/contracts`). La library Penpot si allinea al
 - **cambio compatibile** (valori d'asse, parti o field aggiunti) → si alza solo `SCHEMA_VERSION` (+ voce del fingerprint); `contract.version` e il plugin data restano invariati, e le celle nuove arrivano in Penpot con `addCell`;
 - **cambio incompatibile** (rimozioni, rinomine di valori o field) → si alza `contract.version` (oltre a `SCHEMA_VERSION`), poi `pnpm bump:contract -- <Comp>` porta il plugin data del container al `contractId` corrente. Senza `--yes` stampa `atteso` vs `trovato` (es. `badge@1 → badge@2`) e non scrive (exit 0); con `--yes` scrive con guardia sul valore letto e rilegge Penpot (exit 1 se il valore non è quello atteso). Rifiuta un downgrade (versione in Penpot ≥ di quella del contratto) e i casi con zero o più container dichiaranti. Non tocca contratti, `SCHEMA_VERSION` né fingerprint;
 - **ordine con un cambio incompatibile**: prima `bump:contract`, poi `add:library` — `addCell` gira solo su un container il cui plugin data è già il `contractId` corrente;
-- **celle di valori rimossi o rinominati**: l'additiva non cancella mai, quindi le rimuove a mano in Penpot il designer (non esiste ancora un comando); finché restano, `verify:library` resta rosso (regole 4/5) anche dopo il bump;
+- **celle di valori rimossi o rinominati**: l'additiva non cancella mai, quindi le rimuove a mano in Penpot lo **sviluppatore** (non esiste ancora un comando); il designer riceve solo l'avviso, la pulizia post-bump è un'esigenza della pipeline, non una scelta di design; finché restano, `verify:library` resta rosso (regole 4/5) anche dopo il bump;
 - **rinomina del contratto** = contratto nuovo, non un bump: il container col nome vecchio resta orfano (regola 11 di `verify:library`) finché non viene rimosso in Penpot.
 
 **Adozione di una variante nata in Penpot.** Se il designer aggiunge in Penpot un valore d'asse che il contratto non ha, la pipeline lo **rileva** (`verify:library` rosso, estrazione ferma senza scrivere) ma non lo adotta da sola: una variante è un nuovo valore di prop per l'editor e un bump di `schemaVersion` (AD-6), quindi entra nel contratto solo con una **decisione esplicita** di chi sviluppa. Presa la decisione, i passi derivati (contratto, `schemaVersion`, binding, design) sono meccanici e affidati a un comando, non al prompt. Il contratto resta del page builder: l'adozione è una decisione in codice, non una sincronizzazione Penpot→codice.
+
+Il comando è `pnpm adopt:variant -- <Comp>` (`--dry-run` / `--yes`; `--snapshot <path>` solo in lettura, come `bump:contract`). Legge Penpot e non lo scrive mai. Rileva i valori in più sugli assi `option` del container con lo stesso criterio della regola 4 di `verify:library`, stampa il diff dei cinque file e con `--yes` li scrive. Per la regola A è un cambio compatibile:
+- **contratto** (`packages/contracts/src/components/<nome>.ts`): il valore va in coda all'array `values` dell'asse, modificato e riletto con l'AST TypeScript; il default resta invariato;
+- **`SCHEMA_VERSION`** N→N+1 e una **voce N+1** in `contracts.fingerprint.json`, con l'hash calcolato sullo stesso payload del test (`fingerprintPayload` di `@app/contracts`); le voci esistenti non si riscrivono;
+- **binding**: `axes.<asse>.values` acquista `valore: "valore"`;
+- **design**: le celle nuove, con i token letti dalle celle Penpot (`partBindings`).
+
+`contract.version`, il plugin data, il giudizio, la ricetta e la fixture restano invariati: dopo l'adozione girano `extract:component`, `render:component`, `gates:render` e `verify:library`. Tutti i contenuti si calcolano e si validano prima della prima scrittura, poi ogni file si scrive con tmp + rename. Senza `--yes` non scrive (exit 0); senza valori in più risponde "nulla da adottare" (exit 0). Rifiuta con exit 1 e senza scrivere, con un errore che nomina contratto, asse, valore, cella o layer:
+- valore in più su un asse `state`/`behavior` (nessun mapping 1:1 con una prop);
+- valore che non rispetta `/^[a-z][a-z0-9-]*$/` (es. `Outline`, `out line`);
+- una proprietà di una parte che dopo l'adozione varia con più assi (stesso controllo dell'emitter, `influencingAxes`);
+- un literal (proprietà di stile senza binding) in una cella nuova;
+- una cella del prodotto cartesiano nuovo assente o duplicata in Penpot;
+- zero o più container dichiaranti, plugin data ≠ `contractId`, assi in ordine diverso dal contratto;
+- `SCHEMA_VERSION` non unica, fingerprint incoerente (voce corrente assente, voci oltre la corrente, contratti già cambiati senza bump), cella o valore già presenti nel design o nel binding.
+
+I valori mancanti in Penpot non si rimuovono: è l'altro senso, che copre `addCell`.
 
 Nessuna sincronizzazione ricorrente codice→Penpot (due sorgenti, conflitto irrisolvibile). Le skill guidano e fanno domande; **pass/fail sta negli script e negli schemi**, mai nel prompt.
 

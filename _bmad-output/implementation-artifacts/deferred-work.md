@@ -178,6 +178,7 @@ Sessione di Alessandro con agente forge (`_bmad-output/forge/pipeline-troppo-vin
 
 ## Deferred from: bmad-build split della Story 2.7 parte B (2026-09-13)
 
+<!-- Corregge la voce "split della Story 2.7" (2026-09-13) qui sopra: la parte B è `addCell` + regola A (bump plugin data), non `adopt:variant`, che è diventata la parte C. -->
 - source_spec: `_bmad-output/implementation-artifacts/2-7b-comandi-di-evoluzione.md`
   summary: Comando `adopt:variant -- <Comp>` — rileva i valori d'asse presenti in Penpot e assenti dal contratto, stampa il diff e con `--yes` aggiorna contratto (AST TS), `SCHEMA_VERSION` + voce fingerprint (payload condiviso in `packages/contracts/src/`), binding `option` e cella di design ricavata da Penpot (`partBindings`); errore nominativo per assi `state`/`behavior`, proprietà che varia con due assi (funzione estratta da `computePartClasses`) e celle con literal. Per la regola A (decisa 2026-09-13) un'adozione è un cambio compatibile: alza solo `SCHEMA_VERSION`, non `contract.version`.
   evidence: split deciso da Alessandro al gate di dimensione della parte B (spec a ~2900 token): `addCell` + regola di versionamento vanno prima, perché l'adozione dal contratto verso Penpot passa da `addCell` e la regola decide se l'adozione tocca il plugin data.
@@ -187,3 +188,7 @@ Sessione di Alessandro con agente forge (`_bmad-output/forge/pipeline-troppo-vin
 - source_spec: `_bmad-output/implementation-artifacts/2-7b-comandi-di-evoluzione.md`
   summary: Nessun comando rimuove le celle di valori d'asse tolti o rinominati (cambio incompatibile): dopo `bump:contract` le celle vecchie restano nel container e `verify:library` (regole 4/5) resta rosso finché il designer non le cancella a mano in Penpot.
   evidence: BH#5 del loop 2 — la modalità additiva per costruzione non cancella mai; la regola A è documentata in `penpot-pipeline.md` con il passo manuale. Da riprendere se i cambi incompatibili diventano frequenti (es. un `remove:cells` con `--dry-run`/`--yes` e guardia sul contratto corrente), probabilmente insieme alla skill `pds-component` (Story 2.9, voce [PS]).
+
+## Deferred from: code review of story 2-7 gruppo 3 (2026-09-13)
+
+- **"Report di PR/CI" da definire:** la promessa "i componenti in attesa devono essere visibili nel report di PR/CI, non solo nel terminale" è ripetuta in cinque artefatti (memlog, forged-idea, proposta, epics, penpot-pipeline) ma nessuno definisce dove vive il report, chi lo produce o come verificarlo. Da fissare nella spec di Story 2.8 (registro delle proprietà e blocco per componente), che è la story chiamata a implementarlo.
