@@ -116,3 +116,39 @@ Routing loop 1: nessun `intent_gap`/`bad_spec`. `patch` (BH#1+ECH#1, BH#4+ECH#4,
 - `pnpm --filter @penpot-ds/ui run test` -- expected: verde con le nuove asserzioni a11y.
 - `pnpm check-types && pnpm lint && pnpm build` -- expected: verdi.
 - `pnpm --filter @penpot-ds/scripts run render:check` e `gates:render` -- expected: diff zero, 5/5 gate verdi (drift skip documentato se Penpot irraggiungibile).
+
+## Review Findings (code review extra — gruppo 2 emitter/* + contracts + ui, 2026-09-13)
+
+Review a 4 layer sul diff `ceb07ad...HEAD` limitato a `packages/contracts`, `packages/ui`, `packages/scripts/src/emitter`, `validate-recipe.test.ts`. Verificato sul codice reale.
+
+- [x] [Review][Decision] Field `value`/`defaultValue`/`defaultChecked`/`suppressHydrationWarning` non riservati — `contract.ts:144-151`: un field "value" passa `{...props}` e rende l'elemento un controlled component in silenzio. Estendere la lista riservata è una scelta di design (un futuro contratto Slider avrebbe legittimamente un field "value").
+- [x] [Review][Patch] Assi `option` senza guardia sui nomi riservati — `contract.ts:130-136`: gli assi option diventano prop in `propsSchema` ma il nome non è controllato contro `HTML_GLOBAL_ATTRIBUTES`/`REACT_RESERVED_PROPS`: un asse "title" ombreggia l'attributo, esattamente il danno che la guardia sui field impedisce.
+- [x] [Review][Patch] `runRenderAll` interrompe il loop alla prima eccezione — `render-cli.ts:88-93`: una ricetta non conforme fa `throw` e i componenti successivi non vengono mai resi/verificati (il log non nomina tutti i problemi); `process.exitCode` resta a metà strada. Fix: try/catch per componente, aggregazione nel messaggio nominativo, restore in `finally`.
+- [x] [Review][Patch] `ARIA_ATTRIBUTE` rifiuta attributi aria-* con cifre — `render-component.ts`: `/^aria-[a-z]+$/` respinge `aria-level`, `aria-valuenow`, `aria-posinset` (legittimi per il JudgmentSchema): falso rosso su input valido. Fix: `/^aria-[a-z0-9]+$/`.
+- [x] [Review][Patch] `stateEntry` prende solo il primo stato che mappa l'attributo — `render-component.ts:974-980`: con due valori di stato che mappano lo stesso `aria-*`, solo il primo genera test, gli altri in silenzio. Fix: loop su tutte le voci.
+- [x] [Review][Patch] `parseCellKey` duplicato dopo l'estrazione — `render-component.ts:156` conserva la copia locale mentre `axis-influence.ts:13` è la versione condivisa: due sorgenti di verità che possono divergere. Fix: import della versione condivisa.
+- [x] [Review][Patch] `HTML_GLOBAL_ATTRIBUTES` incompleta — mancano `exportparts`, `part`, `autocorrect` (globali WHATWG): la doc comment dichiara "lista WHATWG". Fix: aggiungerli.
+- [x] [Review][Patch] Test dei reserved props incompleto — `contract.test.ts`: `ref`, `key`, `dangerouslySetInnerHTML` sono nel set ma senza test (solo role, children, onClick).
+- [x] [Review][Patch] Fingerprint con schema non rappresentabile → errore grezzo — `fingerprint.ts`: `z.toJSONSchema` su uno schema con transform o ricorsivo lancia l'errore interno di zod, non nominativo, a module load. Fix: try/catch con errore che nomina il field.
+- [x] [Review][Patch] Attributi aria-* duplicati nel giudizio non deduplicati — `gates.ts:599-609`: la stessa voce due volte produce errori duplicati nel gate. Fix: `[...new Set(...)]`.
+
+### Rejected (appendice)
+
+- [edge-case-hunter] `ARIA_ROLE` rifiuta i ruoli DPUB `doc-*` — **false**: la regex `/^[a-z]+(-[a-z]+)*( [a-z]+(-[a-z]+)*)*$/` accetta i trattini.
+- [edge-case-hunter] role dichiarato ma radice assente dal test generato → suite rossa e gate verde — **false**: la suite committata girerebbe rossa in CI (loud), non un verde finto.
+- [edge-case-hunter] `needsFireEvent` senza trigger part — **false**: la guardia è `triggerPart !== null && hasHeadlessRoot` (render-component.ts:879); negli altri rami l'eventuale asserzione mancata rende la suite rossa, non verde.
+- [blind-hunter] `checkDeclaredA11y` passa con l'asserzione solo in un commento — **false**: i test sono interamente generati dall'emitter, che non emette commenti con le stringhe di asserzione.
+- [blind-hunter] Helper `declaredAttribute` duplicato e pronto a driftare nei test committati — **false**: il gate rigenerazione (`render:check --all`) ricontrolla i file committati contro l'output dell'emitter.
+- [blind-hunter] Commento "una quarta ricetta entra per costruzione" senza quarta ricetta nel diff — **false**: è una garanzia di future-proofing del test derivato, non lavoro mancante.
+- [blind-hunter] `influencingAxes` con `partCells` vuoto — **false**: nessuna cella → nessuna proprietà che varia → nessun asse influente, semantica corretta.
+- [blind-hunter] Estrazione `axis-influence` fuori perimetro parte A — **false**: il file è estratto nella parte C della stessa story 2.7; il diff copre tutta la storia.
+- [acceptance-auditor] File dei task 2-5 assenti dal diff — **false**: effetto del chunking, presenti nel gruppo 1.
+- [acceptance-auditor] Section field non controllati contro i nomi riservati — **false**: le sezioni non emettono prop su elementi nel pipeline attuale (arrivano con 3.2); stato non dimostrato.
+- [blind-hunter] `failedFiles: []` mai popolato in `gates-cli.ts` — low: popolarlo richiede il parsing dell'output vitest (più di una correzione diretta); il dettaglio del gate resta nominativo via `spawnError`/exit.
+- [blind-hunter+edge-case-hunter] Edge di `parseCellKey` (segmento duplicato, valore con `=`, asse mancante) senza test — low: input sono design committati validati a monte; fuori portata pratica.
+- [blind-hunter] `runRenderAll` senza guardia su lista vuota / `--all --base` non testato — low cosmetico.
+- [edge-case-hunter] `.replace` del test gates robusto solo a occorrenza singola — low: il file committato ha l'asserzione una volta sola, lo scenario è corretto.
+- [blind-hunter] ricetta senza fixture/judgment → ENOENT grezzo in un test — low: il fallimento in CI nomina comunque il percorso.
+- [blind-hunter] `components.test.ts` importerà qualunque futuro helper `.ts` — low: ipotetico.
+- [blind-hunter] Formattazione messaggi gate incoerente (`Gate a11y:` vs `Gate a11y —`) — low cosmetico.
+- [blind-hunter] Test di copertura per `ref`/`key`/`dangerouslySetInnerHTML` → riclassificato patch.
