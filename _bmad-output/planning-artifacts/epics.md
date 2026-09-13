@@ -298,7 +298,7 @@ So that il codice sia riproducibile e il drift design↔codice sia un test rosso
 
 As a sviluppatore,
 I want che la pipeline regga un catalogo di componenti che cresce e un design che evolve,
-So that la libreria dei sei domini (2.9) si generi senza verdi finti né passaggi a mano fuori dai comandi (FR2, NFR1, AD-11).
+So that la libreria dei sei domini (2.10) si generi senza verdi finti né passaggi a mano fuori dai comandi (FR2, NFR1, AD-11).
 
 **Acceptance Criteria:**
 
@@ -312,7 +312,24 @@ So that la libreria dei sei domini (2.9) si generi senza verdi finti né passagg
 **And** la regola per alzare la versione di un contratto già presente in Penpot (`nome@versione`) è decisa e documentata in `penpot-pipeline.md`, con il comando o il vincolo che la applica
 **And** ogni controllo nuovo ha una propria prova rosso/verde.
 
-### Story 2.8: Skill `pds-component` — creare e sincronizzare i componenti
+### Story 2.8: Registro delle proprietà e blocco per componente
+
+As a designer/sviluppatore,
+I want le proprietà di stile Penpot in un registro unico e che ciò che la pipeline non sa esprimere blocchi solo il componente interessato,
+So that nessuna fedeltà vada persa in silenzio e un componente fuori regola non renda rossa la CI per tutti (FR2, NFR5, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** il registro unico delle proprietà Penpot (lettura, tipo token o lista di parole chiave, stato supportata/bloccata, mappatura emitter) letto da reader, `verify:library` ed emitter
+**When** estraggo e rendo i componenti committati
+**Then** nessuna proprietà viene saltata in silenzio: una proprietà non espressibile blocca il solo componente con messaggio nominativo, e le proprietà oggi "silenziose" (spessore, opacità, tratteggio, allineamento dello stroke) bloccano; il reader legge `strokeStyle` come parola chiave di lista chiusa (`solid`/`dashed`/`dotted`) e i valori fuori lista bloccano
+**And** il refactor lascia l'output attuale identico byte per byte (Badge/Input/AccordionItem byte-identici, `render:check` a diff zero) e la copertura di test di `scripts` non scende
+**And** una variante senza una proprietà che il default ha (es. outline senza fill) è esprimibile: la proprietà assente produce classi per variante, non nella base `cva` — l'emitter è stato esteso **una volta per tutte**, non per componente
+**And** maiuscole, spazi e ordine degli assi sono normalizzati dalla pipeline; un layer con nome diverso dalla parte si lega via alias nel binding; una cella mancante blocca il componente con una domanda al designer, mai inventata
+**And** `verify:library` e `gates:render` valutano **per componente**: un componente fuori regola rende rossa solo la sua voce, e i componenti in attesa (variante non adottata, proprietà bloccata) sono visibili nel report di PR/CI, non solo nel terminale
+**And** ogni controllo nuovo ha una propria prova rosso/verde.
+
+### Story 2.9: Skill `pds-component` — creare e sincronizzare i componenti
 
 As a sviluppatore,
 I want una skill che mi guidi nel ciclo di vita di un componente, dalla creazione all'allineamento con Penpot,
@@ -323,12 +340,12 @@ So that aggiungere o aggiornare un componente non richieda di conoscere a memori
 **Given** la pipeline della Story 2.7
 **When** invoco la voce **[PC] Crea componente** per un componente assente dal registry e da Penpot
 **Then** la skill chiede assi, parti, dominio, a11y e l'aspetto delle celle, scrive contratto e design, crea il container richiamando `pds-additive`, poi guida giudizio, binding, base shadcn, estrazione, render, barrel e gate
-**And** la voce **[PS] Sincronizza componente** legge lo stato con `verify:library` e `gates:render` e sceglie il percorso: drift → riestrazione e render con diff; valore d'asse in più da Penpot → `adopt:variant`; cella mancante → `addCell`; proprietà senza token → indicazione al designer
+**And** la voce **[PS] Sincronizza componente** legge lo stato **per componente** con `verify:library` e `gates:render` e sceglie il percorso: drift → riestrazione e render con diff; valore d'asse in più da Penpot → `adopt:variant`; cella richiesta dal contratto ma assente dal container → `addCell`; cella che il design usa e il contratto non ha, o mancante dal container → blocco del componente e domanda al designer (mai inventata); proprietà bloccata dal registro → indicazione dello sblocco (una riga del registro + mappatura + test rosso/verde) e decisione umana; componente in attesa → visibile nel report, nessuna correzione da parte della skill
 **And** la skill si ferma solo sulle decisioni umane, non scrive mai su Penpot né sui contratti fuori dai comandi CLI, e l'esito è sempre l'exit code degli script, mai il prompt
 **And** `pds-additive` al passo 3, dopo aver riportato una differenza, indica la voce che la risolve; le due voci sono registrate nel `module-help.csv` di `pds-setup`
 **And** la skill è costruita con `bmad-workflow-builder` e verificata eseguendo i due percorsi su un componente reale.
 
-### Story 2.9: Libreria componenti accessibile
+### Story 2.10: Libreria componenti accessibile
 
 As a sviluppatore,
 I want una libreria di componenti organizzata per dominio e conforme alla a11y baseline,
@@ -336,13 +353,13 @@ So that l'editor e le composizioni possano costruirci sopra (FR3, NFR1).
 
 **Acceptance Criteria:**
 
-**Given** i token generati, i contratti, l'emitter della Story 2.6 e la pipeline della Story 2.7
-**When** genero i componenti per i sei domini (data-display, inputs, feedback, layout, navigation, overlays) in `packages/ui/src/domains`, ciascuno creato con la voce [PC] di `pds-component` (Story 2.8): prima il contratto e il container Penpot, poi estrazione e render
+**Given** i token generati, i contratti, l'emitter della Story 2.6, la pipeline della Story 2.7 e il registro delle proprietà della Story 2.8
+**When** genero i componenti per i sei domini (data-display, inputs, feedback, layout, navigation, overlays) in `packages/ui/src/domains`, ciascuno creato con la voce [PC] di `pds-component` (Story 2.9): prima il contratto e il container Penpot, poi estrazione e render
 **Then** ogni componente interattivo ha focus visibile WCAG AA, stato comunicato da testo+colore e ARIA corretto, con il comportamento fornito dall'headless Radix dichiarato nel binding
 **And** i test axe passano su tutti i componenti e i componenti in `domains/` non importano da `editor/`, verificato da **lint bloccante**
 **And** i componenti senza headless disponibile e con logica propria (Table con sorting, Carousel) e i componenti complessi hanno un contratto completo e un segnaposto in Penpot; l'adapter è scritto a mano, senza marker `@generated`, e la pipeline li ignora.
 
-### Story 2.10: Storybook del design system
+### Story 2.11: Storybook del design system
 
 As a sviluppatore,
 I want uno Storybook che aggrega le storie dei componenti con addon di accessibilità,
@@ -411,7 +428,8 @@ So that hero e sezioni siano fedeli al disegno e rigide nell'editor (FR4, AD-5, 
 **Given** una sezione in Penpot composta solo da istanze di componenti della library + layout
 **When** la estraggo e scrivo la ricetta di sezione (slot riferiti per id Penpot, `allow`, `max`)
 **Then** la definizione (albero di Box/Flex/componenti + props + slot) vive in `@app/contracts` ed è esposta in Puck per nome; una forma sciolta fa fallire l'estrazione nominando l'elemento; uno slot che punta a un nodo sparito fa fallire la validazione
-**And** in editor la struttura è bloccata e il contenuto modificabile; gli slot accettano solo i blocchi dell'`allow` fino a `max` (`resolvePermissions`); i testi del mockup diventano default dei campi content.
+**And** in editor la struttura è bloccata e il contenuto modificabile; gli slot accettano solo i blocchi dell'`allow` fino a `max` (`resolvePermissions`); i testi del mockup diventano default dei campi content
+**And** il primo estratto di sezione comprende una composizione di designer — il blocco "Filtro attivo" (Badge + icona-link affiancati) — come prova che una sezione dà al designer la stessa libertà decisa per i componenti: la X del filtro non è una parte opzionale del Badge ma un link accanto ad esso (`href` verso la ricerca senza il filtro), e nessuna parte del Badge è opzionale.
 
 ### Story 3.5: Composizioni dell'editor
 
