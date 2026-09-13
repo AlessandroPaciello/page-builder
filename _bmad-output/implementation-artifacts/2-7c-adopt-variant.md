@@ -103,3 +103,38 @@ Routing loop 1: nessun `intent_gap`/`bad_spec`, nessun `defer`. `patch` → **ap
 
 **Manual checks:**
 - Nessuna prova live necessaria: il comando legge Penpot e non lo scrive. Un `--dry-run` sulla library reale deve rispondere "nulla da adottare".
+
+## Review Findings (code review extra — gruppo 1 library/*, 2026-09-13)
+
+Review a 4 layer (blind-hunter, edge-case-hunter, verification-gap, acceptance-auditor) sul diff `ceb07ad...HEAD` limitato a `packages/scripts/src/library/`. Verdetto per ogni finding dopo verifica su codice reale.
+
+- [x] [Review][Patch] `defaultBindings` silenziosamente vuoto se la cella default manca o è duplicata — `adopt-variant.ts:359`: con `defaultCells.length !== 1` la mappa default è vuota senza alcun errore, e il controllo "proprietà presente nella cella default e assente qui" (la guardia contro la rimozione di classe) viene saltato in silenzio. Fix: errore nominativo sul modello di quelli esistenti.
+- [x] [Review][Patch] `designCoverage` mai invocata fuori dai test — `designs-loader.ts:66`: il doc comment (riga 13) dichiara che "la copertura design↔registry la verifica designCoverage", ma nessun entry point di produzione la chiama: un design senza contratto passa in silenzio in `DESIGNS`. Fix: invocarla in `verify:library`.
+- [x] [Review][Patch] Errori grezzi sui file di input del CLI — `bump-cli.ts:89`, `adopt-cli.ts:97/107/112`: `JSON.parse`/`readFileSync` su snapshot, binding e design non protetti — un file malformato o assente produce SyntaxError/ENOENT senza il nome del file, invece dell'errore nominativo `✖ ...` usato altrove.
+- [x] [Review][Patch] Pulizia tmp senza try/catch in `writeAdoption` — `adopt-variant.ts:614/622`: se `rmSync` fallisce durante la pulizia, l'errore della pulizia maschera l'errore originale e il messaggio nominativo "Scrittura interrotta..." non viene mai emesso.
+- [x] [Review][Patch] Duplicazione `cartesian` e `isDirectInvocation` — `adopt-variant.ts` e `library-plan.ts` reimplementano `cartesian`; `bump-cli.ts:128` e `adopt-cli.ts:147` duplicano la stessa IIFE: due sorgenti di verità che possono divergere.
+- [x] [Review][Patch] adopt-cli legge Penpot prima di verificare i cinque file — `adopt-cli.ts:96-106`: lo snapshot viene letto (chiamata di rete, read-only) prima dei cinque file sorgente; un file mancante produce l'errore solo dopo la chiamata. Fix: leggere i file prima.
+
+### Rejected (appendice)
+
+- [blind-hunter] Script `adopt:variant`/`bump:contract` mancanti dal `package.json` — **false**: presenti in `packages/scripts/package.json:8-11`.
+- [blind-hunter+edge-case-hunter] `--dry-run` accettato e ignorato — **false**: la semantica documentata (sola stampa, zero scrittura) è esattamente il percorso senza `--yes` (bump-cli.ts:105-107); la combo `--yes --dry-run` è rifiutata con messaggio nominativo (bump-cli.ts:63).
+- [blind-hunter+edge-case-hunter] `addCellStep` non allarga l'altezza del container — **false**: la cella nuova va sulla stessa riga dell'ultima cella, stesso design → stessa altezza; solo un container ridotto a mano in Penpot può traboccare, stato non dimostrato.
+- [edge-case-hunter] `rmSync` maschera l'errore — il finding è reale ma sul codice attuale (senza try/catch), non sulla guardia citata; riclassificato come patch.
+- [edge-case-hunter] Regola 11 con pluginData stringa vuota — **false**: il codice salta solo `=== null` (verify-library.ts:243); un pluginData vuoto produce l'errore orfano, che è loud e corretto per un container senza dichiarazione valida.
+- [edge-case-hunter] `designs-loader` lancia ENOENT grezzo all'import — **false**: il catch rilancia `Nessun design committato in ${dir}`, nominativo.
+- [edge-case-hunter] Errore `setVariantProperty` a metà scrittura senza guida — **false**: entrambi i messaggi contengono già "cella scritta a metà, rimuovila a mano in Penpot".
+- [edge-case-hunter] Varianti con proprietà extra oltre gli assi trattate come esistenti — **false**: stato raggiungibile solo con edit manuali in Penpot e comunque loud a valle (regola 4 di `verify:library`).
+- [blind-hunter] Espressività calcolata saltando celle rotte (duplicati/variantError) — rifiutato già nel loop 1 della review 2.7c (BH#4): `verify:library` è rosso in quel caso e il render fallisce forte a valle; la guardia aggiunge complessità.
+- [blind-hunter] Test che fissa l'hash della voce 1 fragile — adjudicato nella review 2.7c (BH#9): la voce 1 è append-only, il valore fisso è la prova.
+- [blind-hunter] Test `contrastPairs` tautologico — intenzionalità documentata nelle Design Notes 2.7a: l'invariante pinna la derivazione contro edit manuali di `LIBRARY_SPEC`.
+- [blind-hunter] `formatDiff` a hunk unico — rifiutato nella review 2.7c (BH#12): il diff resta corretto, solo verboso.
+- [blind-hunter] Tmp orfani dopo crash del processo — rifiutato nella review 2.7c (BH#14).
+- [blind-hunter] Identificatori incoerenti nei messaggi `addCellStep` (board name vs cell key) — low cosmetico.
+- [blind-hunter] Dead code `?? ""` in regola 11 (`split` non ritorna mai array vuoto) — low cosmetico.
+- [blind-hunter] `addCell.index` quasi senza significato — low: usato solo come posizione di fallback, nessun danno mostrato.
+- [blind-hunter] Import `readFileSync` inutilizzato in `library-cli.ts` — **false**: usato a riga 81 per il seed semantico.
+- [blind-hunter] Nessuna documentazione del nuovo flusso adopt → extract → render → gates → verify — **false**: `penpot-pipeline.md` è aggiornato nel diff completo della storia (gruppo 3, +45 righe); il finding nasce dal chunking.
+- [acceptance-auditor] File richiesti dalle task assenti dal diff (`fingerprint.ts`, `axis-influence.ts`, `penpot-pipeline.md`, script `package.json`) — **false**: effetto del chunking; tutti presenti nei gruppi 2-3 del diff completo della storia.
+- [acceptance-auditor] Test di `planAdoption` leggono file committati invece di directory temporanee — low: sola lettura, mai scritture; il fix ristruttura l'harness dei test per zero guadagno comportamentale.
+- [acceptance-auditor] Il piano abortisce l'intero run invece del solo contratto quando manca una cella — adjudicato nel loop 1 della review 2.7b (BH#8+ECH#10).

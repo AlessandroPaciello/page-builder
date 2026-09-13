@@ -1,5 +1,5 @@
 # generated: 2026-07-26
-# last_updated: 2026-09-13 (correct-course: nuova Story 2.8 registro/blocco, Epic 2 da 10 a 11 story)
+# last_updated: 2026-09-13 (code review 2.7: 6 patch applicate e verificate; story → done) (correct-course: nuova Story 2.8 registro/blocco, Epic 2 da 10 a 11 story)
 # project: page-builder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -64,7 +64,7 @@ development_status:
   2-4-bootstrap-della-library-penpot-sui-contratti: done
   2-5-estrazione-adeguata-ricette-per-parti-e-token: done
   2-6-emitter-shadcn-deterministico-e-gate-ci: done
-  2-7-pipeline-pronta-per-piu-componenti: review
+  2-7-pipeline-pronta-per-piu-componenti: done
   2-8-registro-delle-proprieta-e-blocco-per-componente: backlog
   2-9-skill-pds-component: backlog
   2-10-libreria-componenti-accessibile: backlog
