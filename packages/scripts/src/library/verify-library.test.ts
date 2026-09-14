@@ -468,9 +468,10 @@ describe("verifyLibrary — un caso rosso per regola", () => {
   it("regola 11: container con plugin data di un contratto fuori registry è un errore sul container", () => {
     const snapshot = greenSnapshot();
     snapshot.components.push({
-      id: "id-alert",
-      name: "Alert",
-      pluginData: "alert@1",
+      // "ghost": un nome che non sarà mai un contratto reale (aggiungere un componente non rompe il test).
+      id: "id-ghost",
+      name: "Ghost",
+      pluginData: "ghost@1",
       axes: [],
       axesValues: {},
       cells: [],
@@ -478,8 +479,8 @@ describe("verifyLibrary — un caso rosso per regola", () => {
     const result = verify(snapshot);
     expect(result.ok).toBe(false);
     expect(result.errors).toHaveLength(1);
-    expect(result.errors[0]).toContain('Container "Alert"');
-    expect(result.errors[0]).toContain('"alert@1"');
+    expect(result.errors[0]).toContain('Container "Ghost"');
+    expect(result.errors[0]).toContain('"ghost@1"');
     expect(result.errors[0]).toContain("assente dal registry");
   });
 
@@ -511,7 +512,10 @@ describe("verifyLibrary — copertura design↔registry (code review 2.7)", () =
   it("contratto senza design → errore nominativo prima delle regole su Penpot", () => {
     const result = verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot: emptySnapshot(), designs: {} });
     expect(result.ok).toBe(false);
-    expect(result.errors.some((e) => e.includes("i contratti [accordion-item, badge, input] non hanno un design"))).toBe(true);
+    // I nomi vengono dal registry, non da una lista a mano: un contratto nuovo non rompe il test.
+    const coverage = result.errors.find((e) => e.includes("non hanno un design committato"));
+    expect(coverage).toBeDefined();
+    for (const contract of contracts) expect(coverage).toContain(contract.name);
   });
 
   it("design senza contratto → errore nominativo", () => {
@@ -528,5 +532,108 @@ describe("verifyLibrary — copertura design↔registry (code review 2.7)", () =
   it("design allineati al registry → nessun errore di copertura", () => {
     const result = verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot: emptySnapshot(), designs });
     expect(result.errors.some((e) => e.includes("Copertura design↔registry"))).toBe(false);
+  });
+});
+
+describe("verifyLibrary — kind per problema (Story 2.9)", () => {
+  function kinds(result: ReturnType<typeof verifyLibrary>, component: string): string[] {
+    return result.components.find((verdict) => verdict.component === component)?.problems.map((p) => p.kind) ?? [];
+  }
+
+  it("verde: lo snapshot del bootstrap non ha nessun problema, quindi nessun kind", () => {
+    const result = verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot: greenSnapshot(), designs });
+    expect(result.components.flatMap((v) => v.problems)).toEqual([]);
+    expect(result.global.flatMap((v) => v.problems)).toEqual([]);
+  });
+
+  it("contract-version: plugin data a una versione diversa dal contratto (regola 3)", () => {
+    const snapshot = greenSnapshot();
+    snapshot.components.find((c) => c.name === "Badge")!.pluginData = "badge@2";
+    expect(kinds(verify(snapshot), "Badge")).toContain("contract-version");
+    expect(kinds(verify(greenSnapshot()), "Badge")).toEqual([]);
+  });
+
+  it("variant-not-adopted: valore option in più e le sue celle", () => {
+    const snapshot = greenSnapshot();
+    const badge = snapshot.components.find((c) => c.name === "Badge")!;
+    badge.axesValues.variant = [...badge.axesValues.variant!, "info"];
+    const template = badge.cells.find((cell) => cell.variantProps?.variant === "default")!;
+    for (const size of ["sm", "md"]) badge.cells.push({ ...template, variantProps: { variant: "info", size } });
+    const found = kinds(verify(snapshot), "Badge");
+    expect(found.length).toBeGreaterThan(0);
+    expect(new Set(found)).toEqual(new Set(["variant-not-adopted"]));
+  });
+
+  it("variant-not-adoptable: valore in più su un asse state/behavior e la sua cella", () => {
+    const contract = contracts.find((c) => c.axes.some((axis) => axis.type !== "option"))!;
+    const axis = contract.axes.find((a) => a.type !== "option")!;
+    const name = contract.name.split("-").map((w) => w[0]!.toUpperCase() + w.slice(1)).join("");
+    const snapshot = greenSnapshot();
+    const container = snapshot.components.find((c) => c.name === name)!;
+    container.axesValues[axis.name] = [...container.axesValues[axis.name]!, "nuovo"];
+    const template = container.cells[0]!;
+    container.cells.push({ ...template, variantProps: { ...template.variantProps!, [axis.name]: "nuovo" } });
+    const found = kinds(verify(snapshot), name);
+    expect(found.length).toBeGreaterThan(0);
+    expect(new Set(found)).toEqual(new Set(["variant-not-adoptable"]));
+  });
+
+  function withoutSmCells(): LibrarySnapshot {
+    const snapshot = greenSnapshot();
+    const badge = snapshot.components.find((c) => c.name === "Badge")!;
+    badge.cells = badge.cells.filter((cell) => cell.variantProps?.size !== "sm");
+    return snapshot;
+  }
+
+  it("missing-cell: cella assente in Penpot, prevista dal design e creabile con addCell", () => {
+    const result = verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot: withoutSmCells(), designs });
+    expect(new Set(kinds(result, "Badge"))).toEqual(new Set(["missing-cell"]));
+  });
+
+  it("missing-cell-blocked: la stessa cella con gli assi fuori ordine (addCell non gira)", () => {
+    const snapshot = withoutSmCells();
+    const badge = snapshot.components.find((c) => c.name === "Badge")!;
+    badge.axes = [...badge.axes].reverse();
+    const result = verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot, designs });
+    expect(kinds(result, "Badge")).toContain("missing-cell-blocked");
+    expect(kinds(result, "Badge")).not.toContain("missing-cell");
+  });
+
+  it("missing-cell-undesigned: la cella manca anche dal design → domanda al designer", () => {
+    const result = verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot: withoutSmCells() });
+    expect(new Set(kinds(result, "Badge"))).toEqual(new Set(["missing-cell-undesigned"]));
+  });
+
+  it("cell-not-in-contract: una cella fuori dal prodotto cartesiano del contratto", () => {
+    const snapshot = greenSnapshot();
+    const badge = snapshot.components.find((c) => c.name === "Badge")!;
+    const template = badge.cells[0]!;
+    badge.cells.push({ ...template, variantProps: { variant: "default" } });
+    expect(kinds(verify(snapshot), "Badge")).toEqual(["cell-not-in-contract"]);
+  });
+
+  it("blocked-property: proprietà bloccata dal registro (strokeStyle dashed)", () => {
+    const snapshot = greenSnapshot();
+    snapshot.components.find((c) => c.name === "Badge")!.cells[0]!.root.style.strokeStyle = "dashed";
+    expect(kinds(verify(snapshot), "Badge")).toEqual(["blocked-property"]);
+  });
+
+  it("snapshot-stale: componente committato assente dallo snapshot da file", () => {
+    const snapshot = greenSnapshot();
+    snapshot.components = snapshot.components.filter((c) => c.name !== "Input");
+    const result = verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot, committedComponents: ["Badge", "Input"] });
+    expect(kinds(result, "Input")).toContain("snapshot-stale");
+    expect(kinds(result, "Badge")).toEqual([]);
+  });
+
+  it("other: un rosso senza percorso proprio (variantError) e le righe globali", () => {
+    const snapshot = greenSnapshot();
+    snapshot.components.find((c) => c.name === "Badge")!.cells[0]!.variantError = "duplicate";
+    expect(kinds(verify(snapshot), "Badge")).toEqual(["other"]);
+    const noTokens = greenSnapshot();
+    noTokens.sets = [];
+    const globalKinds = verify(noTokens).global.flatMap((v) => v.problems.map((p) => p.kind));
+    expect(globalKinds.length).toBeGreaterThan(0);
+    expect(new Set(globalKinds)).toEqual(new Set(["other"]));
   });
 });

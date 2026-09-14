@@ -53,6 +53,8 @@ export interface CliArgs {
   snapshotPath?: string;
   /** Solo verify: salva la lettura live su file (snapshot committato, decisione 3). */
   writeSnapshotPath?: string;
+  /** Solo verify: `--json <path>` scrive anche il report JSON con `kind` per problema (Story 2.9). */
+  jsonPath?: string;
 }
 
 export function parseArgs(args: readonly string[]): CliArgs {
@@ -66,6 +68,7 @@ export function parseArgs(args: readonly string[]): CliArgs {
   let dryRun = false;
   let snapshotPath: string | undefined;
   let writeSnapshotPath: string | undefined;
+  let jsonPath: string | undefined;
   for (let index = 0; index < rest.length; index++) {
     const arg = rest[index];
     if (arg === "--dry-run") {
@@ -84,8 +87,17 @@ export function parseArgs(args: readonly string[]): CliArgs {
       }
       writeSnapshotPath = value;
       index++;
+    } else if (arg === "--json") {
+      const value = rest[index + 1];
+      if (!value || value.startsWith("--")) {
+        throw new Error("Opzione --json richiede un percorso file.");
+      }
+      jsonPath = value;
+      index++;
     } else {
-      throw new Error(`Argomento non riconosciuto: ${arg} — usare [--dry-run] [--snapshot <path>] [--write-snapshot <path>].`);
+      throw new Error(
+        `Argomento non riconosciuto: ${arg} — usare [--dry-run] [--snapshot <path>] [--write-snapshot <path>] [--json <path>].`,
+      );
     }
   }
   if (dryRun && mode === "verify") {
@@ -105,7 +117,16 @@ export function parseArgs(args: readonly string[]): CliArgs {
   if (writeSnapshotPath !== undefined && snapshotPath !== undefined) {
     throw new Error("--write-snapshot e --snapshot sono alternativi: --write-snapshot salva una lettura live di Penpot.");
   }
-  return writeSnapshotPath === undefined ? { mode, dryRun, snapshotPath } : { mode, dryRun, snapshotPath, writeSnapshotPath };
+  if (jsonPath !== undefined && mode !== "verify") {
+    throw new Error("--json è valido solo su verify:library.");
+  }
+  return {
+    mode,
+    dryRun,
+    snapshotPath,
+    ...(writeSnapshotPath === undefined ? {} : { writeSnapshotPath }),
+    ...(jsonPath === undefined ? {} : { jsonPath }),
+  };
 }
 
 function loadSeed(): SemanticSeed {
@@ -212,7 +233,7 @@ export function stepOutcome(result: unknown): string {
 export function runVerify(
   snapshot: LibrarySnapshot,
   seed: SemanticSeed,
-  options: { fromFile?: boolean; env?: NodeJS.ProcessEnv; print?: (text: string) => void } = {},
+  options: { fromFile?: boolean; env?: NodeJS.ProcessEnv; print?: (text: string) => void; jsonPath?: string } = {},
 ): number {
   const contracts = Object.values(COMPONENT_CONTRACTS);
   const { bindings, errors: bindingErrors } = loadCommittedBindings(contracts.map((contract) => contract.name));
@@ -228,7 +249,7 @@ export function runVerify(
     bindingErrors,
     ...(scan ? { committedComponents: scan.components, malformedRecipes: scan.malformed } : {}),
   });
-  return publishReport(verifyReport(result), options.env, options.print);
+  return publishReport(verifyReport(result), options.env, options.print, options.jsonPath);
 }
 
 export async function main(args: CliArgs = parseArgs(process.argv.slice(2))): Promise<number> {
@@ -241,7 +262,10 @@ export async function main(args: CliArgs = parseArgs(process.argv.slice(2))): Pr
       writeSnapshotFile(args.writeSnapshotPath, snapshot);
       console.log(`Snapshot live scritto: ${args.writeSnapshotPath}`);
     }
-    return runVerify(snapshot, seed, { fromFile: args.snapshotPath !== undefined });
+    return runVerify(snapshot, seed, {
+      fromFile: args.snapshotPath !== undefined,
+      ...(args.jsonPath === undefined ? {} : { jsonPath: args.jsonPath }),
+    });
   }
 
   const mode = args.mode === "bootstrap" ? "bootstrap" : "additive";

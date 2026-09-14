@@ -205,3 +205,9 @@ Sessione di Alessandro con agente forge (`_bmad-output/forge/pipeline-troppo-vin
 - source_spec: `_bmad-output/implementation-artifacts/2-8a-registro-delle-proprieta.md`
   summary: (medium, non verificato) Fedeltà inversa: una classe strutturale della base (es. `border`, `disabled:opacity-50`) finisce nel codice anche se il design in Penpot non ha quella proprietà (nessuno stroke, nessuna opacità nella cella).
   evidence: comportamento delle classi strutturali precedente alla 2.8, emerso nella review (BH). Si verifica confrontando, per ogni classe strutturale del binding, le proprietà presenti nelle celle della ricetta (es. Badge: `border` in base; lo stroke c'è nel design?).
+
+## Deferred from: verifica live Story 2.9 [PS] su Alert (2026-09-14)
+
+- source_spec: `_bmad-output/implementation-artifacts/2-9-skill-pds-component.md`
+  summary: la regola 10 di `verify:library` (contrasto) misura le coppie ricavate dal design committato (`designs/*.design.json`) e non i valori live di Penpot, e nessun comando aggiorna il design committato dopo un drift — un contrasto peggiorato in Penpot passa con tutti i gate verdi.
+  evidence: nel giro 2 di [PS] su Alert il token `color.muted-foreground` è finito sulla root della cella `status=warning`: heading 1.93:1 e description 1.82:1 su `#3e4942`, mentre `verify:library` e `gates:render` erano verdi (verde finto). Dopo il riallineamento `alert.design.json` resta con `description` `warning` = `color.card-foreground` mentre Penpot e la fixture hanno `color.muted-foreground`. Rimandato da Alessandro (opzione a) come **prerequisito della Story 2.10**, che moltiplica i componenti.

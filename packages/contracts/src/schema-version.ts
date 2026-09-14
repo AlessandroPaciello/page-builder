@@ -3,4 +3,4 @@
  * salvati la portano con sé. Ogni cambio di contratto o di sezione è un bump
  * esplicito, con una nuova voce in `tests/contracts.fingerprint.json`.
  */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;

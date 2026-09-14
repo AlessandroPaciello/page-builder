@@ -157,8 +157,14 @@ export function componentFixtureFromSnapshot(componentName: string, snapshot: Li
     componentName: container.name,
     contract: container.pluginData,
     penpotComponentId: container.id,
-    axes: normalized.axes.map((name) => ({ name, values: normalized.axesValues[name] ?? [] })),
-    cells: container.cells.map((cell, index) => ({ variantProps: { ...normalized.cells[index] }, root: cell.root })),
+    axes: normalized.axes.map((name) => ({ name, values: canonicalValues(contract, name, normalized.axesValues[name] ?? []) })),
+    // Ordine canonico (Story 2.9): Penpot non garantisce l'ordine dei figli
+    // del container (l'aggiunta di un container l'ha invertito), e una fixture
+    // che dipende da quell'ordine fa un drift finto. Le celle seguono il
+    // prodotto cartesiano del contratto: assi e valori nell'ordine dichiarato.
+    cells: container.cells
+      .map((cell, index) => ({ variantProps: { ...normalized.cells[index] }, root: cell.root }))
+      .sort((left, right) => compareCells(contract, left.variantProps, right.variantProps)),
   };
 
   const parsed = FixtureSchema.safeParse(fixture);
@@ -167,6 +173,43 @@ export function componentFixtureFromSnapshot(componentName: string, snapshot: Li
     throw new Error(`La fixture derivata dallo snapshot non passa FixtureSchema:\n${issues.join("\n")}`);
   }
   return parsed.data;
+}
+
+type ContractAxes = { readonly axes: readonly { readonly name: string; readonly values: readonly string[] }[] };
+
+/**
+ * Ordine canonico di due valori d'asse: per posizione fra quelli dichiarati
+ * dal contratto. Un valore che il contratto non ha (variante non ancora
+ * adottata) va dopo quelli noti, in ordine alfabetico: l'ordinamento non
+ * fallisce mai, la segnalazione resta a verify/validate.
+ */
+function compareValues(declared: readonly string[], a: string, b: string): number {
+  if (a === b) return 0;
+  const rankA = declared.indexOf(a);
+  const rankB = declared.indexOf(b);
+  if (rankA !== -1 && rankB !== -1) return rankA - rankB;
+  if (rankA !== -1) return -1;
+  if (rankB !== -1) return 1;
+  return a < b ? -1 : 1;
+}
+
+/** Valori di un asse della fixture nell'ordine del contratto (non in quello di Penpot). */
+function canonicalValues(contract: ContractAxes, axisName: string, values: readonly string[]): string[] {
+  const declared = contract.axes.find((axis) => axis.name === axisName)?.values ?? [];
+  return [...values].sort((a, b) => compareValues(declared, a, b));
+}
+
+/** Ordine canonico di due celle: asse per asse nell'ordine del contratto, valore per valore come `compareValues`. */
+function compareCells(
+  contract: ContractAxes,
+  left: Readonly<Record<string, string>>,
+  right: Readonly<Record<string, string>>,
+): number {
+  for (const axis of contract.axes) {
+    const order = compareValues(axis.values, left[axis.name] ?? "", right[axis.name] ?? "");
+    if (order !== 0) return order;
+  }
+  return 0;
 }
 
 /** Estrazione live: legge lo snapshot da Penpot via MCP, poi `componentFixtureFromSnapshot`. */

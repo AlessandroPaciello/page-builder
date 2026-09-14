@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-07-26
-last_updated: "2026-09-13 (bmad-build 2.8 parte C — estensione dell'emitter una volta per tutte: done; story 2.8 → done, 1 loop di review con 4 patch byLayerKind/adopt-check/regola icona/commento)"
+last_updated: "2026-09-13 (bmad-build 2.9 — skill pds-component: spec approvata, story → in-progress)"
 project: page-builder
 project_key: NOKEY
 tracking_system: file-system
@@ -66,7 +66,7 @@ development_status:
   2-6-emitter-shadcn-deterministico-e-gate-ci: done
   2-7-pipeline-pronta-per-piu-componenti: done
   2-8-registro-delle-proprieta-e-blocco-per-componente: done
-  2-9-skill-pds-component: backlog
+  2-9-skill-pds-component: in-progress
   2-10-libreria-componenti-accessibile: backlog
   2-11-storybook-del-design-system: backlog
   epic-2-retrospective: optional

@@ -4,4 +4,4 @@ description: "Allinea la library Penpot ai contratti del page builder: bootstrap
 module_version: 1.0.0
 default_selected: false
 module_greeting: >
-  Modulo Penpot DS pronto. Apri il file Penpot, connetti il plugin MCP e lancia [PB] (bootstrap) oppure [PA] (additiva).
+  Modulo Penpot DS pronto. Apri il file Penpot, connetti il plugin MCP e lancia [PB] (bootstrap), [PA] (additiva), [PC] (crea componente) oppure [PS] (sincronizza componente).

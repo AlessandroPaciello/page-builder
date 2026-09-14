@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { COMPONENT_CONTRACTS, fingerprintPayload, SECTION_DEFINITIONS, type ComponentContract } from "@app/contracts";
+import { COMPONENT_CONTRACTS, fingerprintPayload, SCHEMA_VERSION, SECTION_DEFINITIONS, type ComponentContract } from "@app/contracts";
 import { describe, expect, it, vi } from "vitest";
 
 import { BindingSchema } from "../emitter/binding-shadcn";
@@ -95,6 +95,9 @@ function expectError(result: AdoptionPlan, ...fragments: string[]): void {
 
 const badge = COMPONENT_CONTRACTS.badge as ComponentContract;
 const sha256 = (text: string) => createHash("sha256").update(text).digest("hex");
+/** Versione corrente e successiva, dal sorgente: i test reggono ogni bump futuro del catalogo. */
+const CURRENT = SCHEMA_VERSION;
+const NEXT = SCHEMA_VERSION + 1;
 
 describe("planAdoption — adozione", () => {
   const result = plan(badge, badgeWithOutline());
@@ -104,7 +107,7 @@ describe("planAdoption — adozione", () => {
   it("piano adopt con i cinque file, SCHEMA_VERSION N→N+1, default e contract.version invariati", () => {
     expect(result.kind).toBe("adopt");
     expect(adopt!.added).toEqual([{ axis: "variant", values: ["outline"] }]);
-    expect(adopt!.schemaVersion).toEqual({ from: 1, to: 2 });
+    expect(adopt!.schemaVersion).toEqual({ from: CURRENT, to: NEXT });
     expect(adopt!.files.map((entry) => entry.label)).toEqual(["contratto", "SCHEMA_VERSION", "fingerprint", "binding", "design"]);
     expect(adopt!.adopted.axes[0]!.values).toEqual(["default", "secondary", "destructive", "outline"]);
     expect(adopt!.adopted.axes[0]!.default).toBe("default");
@@ -122,13 +125,15 @@ describe("planAdoption — adozione", () => {
   });
 
   it("SCHEMA_VERSION e fingerprint: voce 1 identica, voce 2 = sha256 del payload col contratto adottato", () => {
-    expect(file("SCHEMA_VERSION").after).toContain("export const SCHEMA_VERSION = 2;");
+    expect(file("SCHEMA_VERSION").after).toContain(`export const SCHEMA_VERSION = ${NEXT};`);
     const before = JSON.parse(file("fingerprint").before) as Record<string, string>;
     const after = JSON.parse(file("fingerprint").after) as Record<string, string>;
-    expect(after["1"]).toBe(before["1"]);
+    // Le voci esistenti (1…corrente) restano identiche; si aggiunge solo la successiva.
+    for (const [version, hash] of Object.entries(before)) expect(after[version]).toBe(hash);
+    expect(Object.keys(after)).toEqual([...Object.keys(before), String(NEXT)]);
     const components = Object.values(COMPONENT_CONTRACTS).map((c) => (c.name === "badge" ? adopt!.adopted : c));
-    expect(after["2"]).toBe(sha256(fingerprintPayload(components, Object.values(SECTION_DEFINITIONS))));
-    expect(adopt!.hash).toBe(after["2"]);
+    expect(after[String(NEXT)]).toBe(sha256(fingerprintPayload(components, Object.values(SECTION_DEFINITIONS))));
+    expect(adopt!.hash).toBe(after[String(NEXT)]);
   });
 
   it("binding: outline → \"outline\", e passa BindingSchema", () => {
@@ -238,7 +243,7 @@ describe("planAdoption — casi rifiutati (nessun file)", () => {
 
   it("SCHEMA_VERSION non unica → errore, nessun file calcolato", () => {
     const sources = readSources("badge");
-    const broken = { ...sources, schemaVersion: { ...sources.schemaVersion, text: `${sources.schemaVersion.text}export const SCHEMA_VERSION = 3;\n` } };
+    const broken = { ...sources, schemaVersion: { ...sources.schemaVersion, text: `${sources.schemaVersion.text}export const SCHEMA_VERSION = ${NEXT};\n` } };
     const result = plan(badge, badgeWithOutline(), broken);
     expectError(result, "trovate 2");
     expect("files" in result).toBe(false);
@@ -246,7 +251,7 @@ describe("planAdoption — casi rifiutati (nessun file)", () => {
 
   it("fingerprint già oltre la versione corrente → errore, non si riscrive una voce", () => {
     const sources = readSources("badge");
-    const broken = { ...sources, fingerprint: { ...sources.fingerprint, text: JSON.stringify({ ...JSON.parse(sources.fingerprint.text), "2": "x" }) } };
+    const broken = { ...sources, fingerprint: { ...sources.fingerprint, text: JSON.stringify({ ...JSON.parse(sources.fingerprint.text), [String(NEXT)]: "x" }) } };
     expectError(plan(badge, badgeWithOutline(), broken), "oltre la SCHEMA_VERSION corrente");
   });
 
@@ -321,7 +326,7 @@ describe("planAdoption — casi rifiutati (nessun file)", () => {
   it("fingerprint senza la voce della versione corrente → errore", () => {
     const sources = readSources("badge");
     const broken = { ...sources, fingerprint: { ...sources.fingerprint, text: "{}" } };
-    expectError(plan(badge, badgeWithOutline(), broken), 'manca la voce "1"');
+    expectError(plan(badge, badgeWithOutline(), broken), `manca la voce "${CURRENT}"`);
   });
 
   it("cella nuova duplicata in Penpot → errore", () => {

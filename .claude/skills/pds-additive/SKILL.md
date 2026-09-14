@@ -22,7 +22,7 @@ Il compito di questa skill è guidare e fare domande, in quest'ordine:
 
 1. **File Penpot connesso.** Chiedi conferma che il file Penpot aperto sia la library esistente e che il plugin MCP sia connesso (token in `PENPOT_MCP_TOKEN`).
 2. **Dry-run.** Lancia `pnpm --filter @penpot-ds/scripts add:library -- --dry-run` dalla root del progetto e mostra il piano: le operazioni di creazione previste e le differenze trovate.
-3. **Differenze: riportare e basta.** Per ogni differenza riporta soggetto, atteso e trovato, così come lo script li nomina. Non proporre correzioni automatiche: sistemarle è del designer in Penpot o di un cambio esplicito di contratto.
+3. **Differenze: riportare e indicare dove si risolvono.** Per ogni differenza riporta soggetto, atteso e trovato così come lo script li nomina, poi indica la voce che la risolve: **[PS] Sincronizza componente** della skill `pds-component`, che sceglie il percorso in base al `kind` del problema in `verify:library --json` (cella mancante, valore d'asse in più, blocco, domanda al designer). Non proporre correzioni automatiche: sistemarle è del designer in Penpot, di un cambio esplicito di contratto o di [PS].
 4. **Esecuzione.** Con la conferma del designer, lancia `pnpm --filter @penpot-ds/scripts add:library`: crea solo ciò che manca, le differenze restano tali.
 5. **Esito.** Lancia `pnpm --filter @penpot-ds/scripts verify:library` e riporta l'exit code. Verde: aggiunta riuscita. Rosso: riporta gli errori — la correzione sta nel designer o nel seed, non in una rettifica a mano.
 

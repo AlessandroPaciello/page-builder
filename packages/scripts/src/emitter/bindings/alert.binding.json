@@ -1,0 +1,40 @@
+{
+  "componentName": "Alert",
+  "contract": "alert@1",
+  "base": "alert",
+  "headless": null,
+  "parts": {
+    "root": {
+      "library": "Alert",
+      "element": "div",
+      "parent": null,
+      "structural": "relative grid w-full grid-cols-[0_1fr] items-start gap-y-0.5 has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-[>svg]:gap-x-3 [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current"
+    },
+    "heading": {
+      "library": "AlertTitle",
+      "element": "div",
+      "parent": "root",
+      "structural": "col-start-2 line-clamp-1 min-h-4",
+      "contentField": "heading"
+    },
+    "description": {
+      "library": "AlertDescription",
+      "element": "div",
+      "parent": "root",
+      "structural": "col-start-2 grid justify-items-start gap-1 [&_p]:leading-relaxed",
+      "contentField": "description"
+    }
+  },
+  "axes": {
+    "status": {
+      "type": "option",
+      "prop": "status",
+      "values": {
+        "info": "info",
+        "success": "success",
+        "warning": "warning",
+        "error": "error"
+      }
+    }
+  }
+}

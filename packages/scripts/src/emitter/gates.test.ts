@@ -254,7 +254,11 @@ describe("Gate 5 — drift della fixture", () => {
     expect(result.status).toBe("drift");
     expect(result.drifted).toEqual(["Badge"]);
     expect(result.details).toEqual([
-      { component: "Badge", detail: expect.stringContaining("Gate drift: la fixture committata diverge da Penpot live") },
+      {
+        component: "Badge",
+        detail: expect.stringContaining("Gate drift: la fixture committata diverge da Penpot live"),
+        diverged: true,
+      },
     ]);
   });
 

@@ -1,6 +1,6 @@
 import type { ComponentContract } from "@app/contracts";
 
-import { VerdictCollector, type ComponentReport, type ComponentVerdict } from "../component-report";
+import { VerdictCollector, type ComponentReport, type ComponentVerdict, type ProblemKind } from "../component-report";
 import { partOfLayer, resolvePartAliases, type AliasSource } from "../recipe-schema";
 import { layerTreeIssues, propertyDefinition } from "../style-properties";
 import type { TokenCatalog } from "../theme-generator";
@@ -147,8 +147,9 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
 
   for (const contract of contracts) {
     const containerName = pascalCase(contract.name);
-    const red = (message: string): void => verdicts.red(containerName, message);
-    const pending = (message: string): void => verdicts.pending(containerName, message);
+    // Ogni problema ha il suo `kind` (Story 2.9): senza, rosso = `other`, in attesa = `pending`.
+    const red = (message: string, kind: ProblemKind = "other"): void => verdicts.red(containerName, message, kind);
+    const pending = (message: string, kind: ProblemKind = "pending"): void => verdicts.pending(containerName, message, kind);
     const expectedPluginData = `${contract.name}@${contract.version}`;
     const declaring = containers.filter(
       (container) => (container.pluginData ?? "").split("@")[0] === contract.name,
@@ -186,6 +187,7 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
     if (raw.pluginData !== expectedPluginData) {
       red(
         `Contratto "${contract.name}": plugin data pagebuilder/contract = ${raw.pluginData === null ? "assente" : `"${raw.pluginData}"`}, atteso "${expectedPluginData}".`,
+        "contract-version",
       );
     }
 
@@ -237,11 +239,13 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
               ? `se la variante va adottata: pnpm adopt:variant -- ${containerName}`
               : `asse "${axis.type}": adopt:variant non lo adotta, da discutere col designer`
           }.`,
+          adoptable ? "variant-not-adopted" : "variant-not-adoptable",
         );
       }
       if (missing.length > 0) {
         pending(
           `Contratto "${contract.name}", asse "${axis.name}": valori del contratto [${missing.join(", ")}] assenti in Penpot (valori trovati [${found.join(", ")}]) — le celle relative mancano: vedi le domande al designer sotto.`,
+          "missing-cell",
         );
       }
     }
@@ -291,7 +295,9 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
       if (!foundKeys.has(key)) {
         // Cella mancante: una domanda al designer, mai una cella inventata.
         let designHint = "";
+        let kind: ProblemKind = "missing-cell-undesigned";
         if (design?.cells[key] !== undefined) {
+          kind = addCellBlockers.length === 0 ? "missing-cell" : "missing-cell-blocked";
           designHint =
             addCellBlockers.length === 0
               ? ` Il design committato la prevede: pnpm add:library la crea (addCell).`
@@ -299,6 +305,7 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
         }
         pending(
           `Contratto "${contract.name}": manca la cella "${key}" in Penpot — domanda al designer: questa combinazione va disegnata?${designHint}`,
+          kind,
         );
       } else if (foundKeys.get(key)! > 1) {
         red(`Contratto "${contract.name}": la cella "${key}" compare ${foundKeys.get(key)} volte — duplicato.`);
@@ -313,9 +320,13 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
               ? `in attesa dell'adozione (pnpm adopt:variant -- ${containerName})`
               : `valore di un asse state/behavior: adopt:variant non lo adotta, da discutere col designer`
           }.`,
+          extraValueKeys.get(key) ? "variant-not-adopted" : "variant-not-adoptable",
         );
       } else {
-        red(`Contratto "${contract.name}": cella "${key}" in più — non fa parte del prodotto cartesiano del contratto.`);
+        red(
+          `Contratto "${contract.name}": cella "${key}" in più — non fa parte del prodotto cartesiano del contratto.`,
+          "cell-not-in-contract",
+        );
       }
     }
 
@@ -345,7 +356,7 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
       const key = cellKeyOf(contract, cell.variantProps);
       for (const issue of layerTreeIssues(cell.root, { component: contract.name, cell: key }, aliases)) {
         const message = `Contratto "${contract.name}", cella "${key}": ${issue.message}`;
-        if (issue.blocked) pending(message);
+        if (issue.blocked) pending(message, "blocked-property");
         else red(message);
       }
       walkLayers(cell.root, (layer) => {
@@ -377,6 +388,7 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
       verdicts.red(
         component,
         `Componente committato "${component}" assente dallo snapshot della library — snapshot da aggiornare: pnpm verify:library --write-snapshot src/library/library.snapshot.json (lettura live).`,
+        "snapshot-stale",
       );
     }
   }

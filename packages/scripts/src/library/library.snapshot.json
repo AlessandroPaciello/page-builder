@@ -1,5 +1,5 @@
 {
-  "componentCount": 3,
+  "componentCount": 4,
   "components": [
     {
       "axes": [
@@ -858,6 +858,304 @@
       "id": "062d2e96-d208-8096-8008-a0a47165506d",
       "name": "AccordionItem",
       "pluginData": "accordion-item@1"
+    },
+    {
+      "axes": [
+        "status"
+      ],
+      "axesValues": {
+        "status": [
+          "info",
+          "success",
+          "warning",
+          "error"
+        ]
+      },
+      "cells": [
+        {
+          "root": {
+            "children": [
+              {
+                "children": [],
+                "kind": "text",
+                "name": "heading",
+                "style": {
+                  "fill": [
+                    "#ba1a1a"
+                  ],
+                  "fontSize": "14",
+                  "fontWeight": "600",
+                  "letterSpacing": "0"
+                },
+                "tokens": {
+                  "fill": "color.destructive",
+                  "fontSize": "text.sm",
+                  "fontWeight": "font-weight.semibold",
+                  "letterSpacing": "tracking.none"
+                }
+              },
+              {
+                "children": [],
+                "kind": "text",
+                "name": "description",
+                "style": {
+                  "fill": [
+                    "#1a1c1c"
+                  ],
+                  "fontSize": "14",
+                  "fontWeight": "400",
+                  "letterSpacing": "0"
+                },
+                "tokens": {
+                  "fill": "color.card-foreground",
+                  "fontSize": "text.sm",
+                  "fontWeight": "font-weight.regular",
+                  "letterSpacing": "tracking.none"
+                }
+              }
+            ],
+            "kind": "board",
+            "name": "Alert",
+            "style": {
+              "borderRadiusBottomLeft": 12,
+              "borderRadiusBottomRight": 12,
+              "borderRadiusTopLeft": 12,
+              "borderRadiusTopRight": 12,
+              "fill": [
+                "#ffffff"
+              ]
+            },
+            "tokens": {
+              "borderRadiusBottomLeft": "radius.lg",
+              "borderRadiusBottomRight": "radius.lg",
+              "borderRadiusTopLeft": "radius.lg",
+              "borderRadiusTopRight": "radius.lg",
+              "fill": "color.card",
+              "paddingBottom": "spacing.4",
+              "paddingLeft": "spacing.4",
+              "paddingRight": "spacing.4",
+              "paddingTop": "spacing.4"
+            }
+          },
+          "variantError": null,
+          "variantProps": {
+            "status": "error"
+          }
+        },
+        {
+          "root": {
+            "children": [
+              {
+                "children": [],
+                "kind": "text",
+                "name": "heading",
+                "style": {
+                  "fill": [
+                    "#8f6c00"
+                  ],
+                  "fontSize": "14",
+                  "fontWeight": "600",
+                  "letterSpacing": "0"
+                },
+                "tokens": {
+                  "fill": "color.warning",
+                  "fontSize": "text.sm",
+                  "fontWeight": "font-weight.semibold",
+                  "letterSpacing": "tracking.none"
+                }
+              },
+              {
+                "children": [],
+                "kind": "text",
+                "name": "description",
+                "style": {
+                  "fill": [
+                    "#1a1c1c"
+                  ],
+                  "fontSize": "14",
+                  "fontWeight": "400",
+                  "letterSpacing": "0"
+                },
+                "tokens": {
+                  "fill": "color.card-foreground",
+                  "fontSize": "text.sm",
+                  "fontWeight": "font-weight.regular",
+                  "letterSpacing": "tracking.none"
+                }
+              }
+            ],
+            "kind": "board",
+            "name": "Alert",
+            "style": {
+              "borderRadiusBottomLeft": 12,
+              "borderRadiusBottomRight": 12,
+              "borderRadiusTopLeft": 12,
+              "borderRadiusTopRight": 12,
+              "fill": [
+                "#ffffff"
+              ]
+            },
+            "tokens": {
+              "borderRadiusBottomLeft": "radius.lg",
+              "borderRadiusBottomRight": "radius.lg",
+              "borderRadiusTopLeft": "radius.lg",
+              "borderRadiusTopRight": "radius.lg",
+              "fill": "color.card",
+              "paddingBottom": "spacing.4",
+              "paddingLeft": "spacing.4",
+              "paddingRight": "spacing.4",
+              "paddingTop": "spacing.4"
+            }
+          },
+          "variantError": null,
+          "variantProps": {
+            "status": "warning"
+          }
+        },
+        {
+          "root": {
+            "children": [
+              {
+                "children": [],
+                "kind": "text",
+                "name": "heading",
+                "style": {
+                  "fill": [
+                    "#2e7d32"
+                  ],
+                  "fontSize": "14",
+                  "fontWeight": "600",
+                  "letterSpacing": "0"
+                },
+                "tokens": {
+                  "fill": "color.success",
+                  "fontSize": "text.sm",
+                  "fontWeight": "font-weight.semibold",
+                  "letterSpacing": "tracking.none"
+                }
+              },
+              {
+                "children": [],
+                "kind": "text",
+                "name": "description",
+                "style": {
+                  "fill": [
+                    "#1a1c1c"
+                  ],
+                  "fontSize": "14",
+                  "fontWeight": "400",
+                  "letterSpacing": "0"
+                },
+                "tokens": {
+                  "fill": "color.card-foreground",
+                  "fontSize": "text.sm",
+                  "fontWeight": "font-weight.regular",
+                  "letterSpacing": "tracking.none"
+                }
+              }
+            ],
+            "kind": "board",
+            "name": "Alert",
+            "style": {
+              "borderRadiusBottomLeft": 12,
+              "borderRadiusBottomRight": 12,
+              "borderRadiusTopLeft": 12,
+              "borderRadiusTopRight": 12,
+              "fill": [
+                "#ffffff"
+              ]
+            },
+            "tokens": {
+              "borderRadiusBottomLeft": "radius.lg",
+              "borderRadiusBottomRight": "radius.lg",
+              "borderRadiusTopLeft": "radius.lg",
+              "borderRadiusTopRight": "radius.lg",
+              "fill": "color.card",
+              "paddingBottom": "spacing.4",
+              "paddingLeft": "spacing.4",
+              "paddingRight": "spacing.4",
+              "paddingTop": "spacing.4"
+            }
+          },
+          "variantError": null,
+          "variantProps": {
+            "status": "success"
+          }
+        },
+        {
+          "root": {
+            "children": [
+              {
+                "children": [],
+                "kind": "text",
+                "name": "heading",
+                "style": {
+                  "fill": [
+                    "#0a4fa0"
+                  ],
+                  "fontSize": "14",
+                  "fontWeight": "600",
+                  "letterSpacing": "0"
+                },
+                "tokens": {
+                  "fill": "color.info",
+                  "fontSize": "text.sm",
+                  "fontWeight": "font-weight.semibold",
+                  "letterSpacing": "tracking.none"
+                }
+              },
+              {
+                "children": [],
+                "kind": "text",
+                "name": "description",
+                "style": {
+                  "fill": [
+                    "#1a1c1c"
+                  ],
+                  "fontSize": "14",
+                  "fontWeight": "400",
+                  "letterSpacing": "0"
+                },
+                "tokens": {
+                  "fill": "color.card-foreground",
+                  "fontSize": "text.sm",
+                  "fontWeight": "font-weight.regular",
+                  "letterSpacing": "tracking.none"
+                }
+              }
+            ],
+            "kind": "board",
+            "name": "Alert",
+            "style": {
+              "borderRadiusBottomLeft": 12,
+              "borderRadiusBottomRight": 12,
+              "borderRadiusTopLeft": 12,
+              "borderRadiusTopRight": 12,
+              "fill": [
+                "#ffffff"
+              ]
+            },
+            "tokens": {
+              "borderRadiusBottomLeft": "radius.lg",
+              "borderRadiusBottomRight": "radius.lg",
+              "borderRadiusTopLeft": "radius.lg",
+              "borderRadiusTopRight": "radius.lg",
+              "fill": "color.card",
+              "paddingBottom": "spacing.4",
+              "paddingLeft": "spacing.4",
+              "paddingRight": "spacing.4",
+              "paddingTop": "spacing.4"
+            }
+          },
+          "variantError": null,
+          "variantProps": {
+            "status": "info"
+          }
+        }
+      ],
+      "id": "c4c28b86-5861-80d2-8008-a2705f0d9e7a",
+      "name": "Alert",
+      "pluginData": "alert@1"
     }
   ],
   "sets": [

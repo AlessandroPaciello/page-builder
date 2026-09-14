@@ -149,3 +149,40 @@ describe("loadCommittedBindings", () => {
     }
   });
 });
+
+describe("verify:library --json (Story 2.9)", () => {
+  it("parseArgs: --json <path> solo su verify, con un percorso", () => {
+    expect(parseArgs(["verify", "--snapshot", "/tmp/s.json", "--json", "/tmp/r.json"])).toEqual({
+      mode: "verify",
+      dryRun: false,
+      snapshotPath: "/tmp/s.json",
+      jsonPath: "/tmp/r.json",
+    });
+    expect(() => parseArgs(["verify", "--json"])).toThrow(/richiede un percorso/);
+    expect(() => parseArgs(["add", "--dry-run", "--json", "/tmp/r.json"])).toThrow(/solo su verify/);
+  });
+
+  it("runVerify con jsonPath: stesso output ed exit code di prima, JSON con un kind per ogni problema", () => {
+    const dir = mkdtempSync(join(tmpdir(), "verify-json-"));
+    try {
+      const seed = JSON.parse(readFileSync(new URL("./semantic-tokens.seed.json", import.meta.url), "utf8"));
+      const empty = { sets: [], componentCount: 0, components: [] };
+      const plain: string[] = [];
+      const withJson: string[] = [];
+      const jsonPath = join(dir, "verify.json");
+      const plainCode = runVerify(empty, seed, { fromFile: true, env: {}, print: (text) => plain.push(text) });
+      const jsonCode = runVerify(empty, seed, { fromFile: true, env: {}, print: (text) => withJson.push(text), jsonPath });
+      expect(withJson).toEqual(plain);
+      expect(jsonCode).toBe(plainCode);
+      const json = JSON.parse(readFileSync(jsonPath, "utf8"));
+      expect(json.exitCode).toBe(plainCode);
+      const problems = [...json.components, ...json.global].flatMap((v: { problems: Array<{ kind: string }> }) => v.problems);
+      expect(problems.length).toBeGreaterThan(0);
+      for (const problem of problems) expect(typeof problem.kind).toBe("string");
+      const badge = json.components.find((v: { component: string }) => v.component === "Badge");
+      expect(badge.problems.map((p: { kind: string }) => p.kind)).toContain("snapshot-stale");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
