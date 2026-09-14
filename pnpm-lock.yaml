@@ -30,6 +30,9 @@ catalogs:
     '@radix-ui/react-accordion':
       specifier: ^1.2.20
       version: 1.2.20
+    '@tailwindcss/node':
+      specifier: ^4.3.2
+      version: 4.3.3
     '@tailwindcss/postcss':
       specifier: ^4.3.2
       version: 4.3.3
@@ -450,6 +453,9 @@ importers:
 
   packages/ui:
     dependencies:
+      '@penpot-ds/tokens':
+        specifier: workspace:*
+        version: link:../tokens
       '@radix-ui/react-accordion':
         specifier: 'catalog:'
         version: 1.2.20(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -484,6 +490,9 @@ importers:
       '@app/config':
         specifier: workspace:*
         version: link:../config
+      '@tailwindcss/node':
+        specifier: 'catalog:'
+        version: 4.3.3
       '@tailwindcss/postcss':
         specifier: 'catalog:'
         version: 4.3.3
@@ -493,6 +502,9 @@ importers:
       '@testing-library/react':
         specifier: 'catalog:'
         version: 16.3.3(@testing-library/dom@10.4.1)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.20.1
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.17

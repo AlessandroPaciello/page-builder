@@ -211,3 +211,12 @@ Sessione di Alessandro con agente forge (`_bmad-output/forge/pipeline-troppo-vin
 - source_spec: `_bmad-output/implementation-artifacts/2-9-skill-pds-component.md`
   summary: la regola 10 di `verify:library` (contrasto) misura le coppie ricavate dal design committato (`designs/*.design.json`) e non i valori live di Penpot, e nessun comando aggiorna il design committato dopo un drift — un contrasto peggiorato in Penpot passa con tutti i gate verdi.
   evidence: nel giro 2 di [PS] su Alert il token `color.muted-foreground` è finito sulla root della cella `status=warning`: heading 1.93:1 e description 1.82:1 su `#3e4942`, mentre `verify:library` e `gates:render` erano verdi (verde finto). Dopo il riallineamento `alert.design.json` resta con `description` `warning` = `color.card-foreground` mentre Penpot e la fixture hanno `color.muted-foreground`. Rimandato da Alessandro (opzione a) come **prerequisito della Story 2.10**, che moltiplica i componenti.
+
+## Deferred from: code review Story 2.9 (2026-09-14)
+
+- source_spec: `_bmad-output/implementation-artifacts/2-9-skill-pds-component.md`
+  summary: il giudizio ammette un solo `role` fisso per componente, quindi un componente con stati informativi e bloccanti (Alert: `info`/`success` vs `warning`/`error`) non può avere `role="status"` sugli uni e `role="alert"` sugli altri.
+  evidence: Alert emette `role="alert"` (live region assertiva) anche per `info`/`success`, che interrompe lo screen reader a ogni render; limite di espressività pre-esistente del giudizio (`a11y.role` stringa unica), non introdotto dalla 2.9. Da decidere prima che la 2.10 generi Toast/Alert definitivi.
+- source_spec: `_bmad-output/implementation-artifacts/2-9-skill-pds-component.md`
+  summary: `_bmad/_config/skill-manifest.csv` registra le skill pds con path `_bmad/pds/<skill>/SKILL.md`, che su disco non esistono (le skill stanno in `skills/`, `.claude/skills/`, `.agents/skills/`).
+  evidence: vale per pds-additive, pds-bootstrap, pds-setup e ora pds-component (schema dell'installer copiato); un consumer che risolve le skill dal manifest non le trova. Pre-esistente; da verificare con il flusso di installazione del modulo (pds-setup / installer BMad).

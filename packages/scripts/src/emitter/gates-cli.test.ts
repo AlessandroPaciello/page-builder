@@ -1,9 +1,13 @@
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import { exitCodeOf, renderMarkdown } from "../component-report";
 import type { LibrarySnapshot } from "../library/library-snapshot";
 import { committedComponents, loadFixture } from "./artifacts";
-import { defaultGatesDeps, parseGatesArgs, runGates, type GatesDeps } from "./gates-cli";
+import { defaultGatesDeps, parseGatesArgs, runGates, runGatesCli, type GatesDeps } from "./gates-cli";
 
 /**
  * Test del CLI gates:render (Story 2.8 parte B): un componente con un
@@ -279,5 +283,24 @@ describe("parseGatesArgs (Story 2.9)", () => {
     expect(() => parseGatesArgs(["--json"])).toThrow(/richiede un percorso/);
     expect(() => parseGatesArgs(["--json", "--x"])).toThrow(/richiede un percorso/);
     expect(() => parseGatesArgs(["--force"])).toThrow(/--force/);
+  });
+});
+
+describe("runGatesCli — --json (Story 2.9)", () => {
+  it("con --json <path> scrive il report JSON e restituisce l'exit code del report", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "gates-json-"));
+    try {
+      const jsonPath = join(dir, "gates.json");
+      const printed: string[] = [];
+      const code = await runGatesCli(["--", "--json", jsonPath], deps(), {}, (text) => printed.push(text));
+      expect(existsSync(jsonPath)).toBe(true);
+      const json = JSON.parse(readFileSync(jsonPath, "utf8"));
+      expect(json.title).toBe("gates:render");
+      expect(code).toBe(json.exitCode);
+      expect(code).toBe(exitCodeOf(await runGates(deps())));
+      expect(printed.join("\n")).toContain("gates:render —");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

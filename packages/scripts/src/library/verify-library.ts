@@ -215,6 +215,26 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
     // Regola 4: proprietà di variante = assi del contratto (nome e numero,
     // non l'ordine: lo normalizza la pipeline); valori per insieme.
     const expectedAxes = contract.axes.map((axis) => axis.name);
+    const design = input.designs?.[contract.name];
+    const expectedKeys = cartesian(contract.axes).map((values) =>
+      contract.axes.map((axis, index) => `${axis.name}=${values[index]}`).join("|"),
+    );
+    // `addCell` pianifica solo alle stesse condizioni di `library-plan`: assi
+    // del container (grezzi) nell'ordine del contratto e plugin data = contractId.
+    const rawAxesInOrder =
+      raw.axes.length === expectedAxes.length && raw.axes.every((axis, index) => axis === expectedAxes[index]);
+    const addCellBlockers: string[] = [];
+    if (!rawAxesInOrder) {
+      addCellBlockers.push(`gli assi del container nell'ordine del contratto [${expectedAxes.join(", ")}] (trovati [${raw.axes.join(", ")}])`);
+    }
+    if (raw.pluginData !== expectedPluginData) {
+      addCellBlockers.push(`il contratto alla versione corrente (plugin data "${expectedPluginData}", prima bump:contract)`);
+    }
+    /** Kind di un gruppo di celle mancanti: come per la singola cella (design, poi blocchi di addCell). */
+    const missingCellsKind = (keys: readonly string[]): ProblemKind => {
+      if (keys.some((key) => design?.cells[key] === undefined)) return "missing-cell-undesigned";
+      return addCellBlockers.length === 0 ? "missing-cell" : "missing-cell-blocked";
+    };
     const axesDiffer =
       container.axes.length !== expectedAxes.length || expectedAxes.some((axis) => !container.axes.includes(axis));
     if (axesDiffer) {
@@ -245,15 +265,14 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
       if (missing.length > 0) {
         pending(
           `Contratto "${contract.name}", asse "${axis.name}": valori del contratto [${missing.join(", ")}] assenti in Penpot (valori trovati [${found.join(", ")}]) — le celle relative mancano: vedi le domande al designer sotto.`,
-          "missing-cell",
+          missingCellsKind(
+            expectedKeys.filter((key) => missing.some((value) => key.split("|").includes(`${axis.name}=${value}`))),
+          ),
         );
       }
     }
 
     // Regola 5: celle = prodotto cartesiano completo; nessun variantError.
-    const expectedKeys = cartesian(contract.axes).map((values) =>
-      contract.axes.map((axis, index) => `${axis.name}=${values[index]}`).join("|"),
-    );
     const foundKeys = new Map<string, number>();
     /** Chiave della cella di un valore non adottato → adottabile (solo assi `option`). */
     const extraValueKeys = new Map<string, boolean>();
@@ -279,25 +298,12 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
         );
       }
     }
-    const design = input.designs?.[contract.name];
-    // `addCell` pianifica solo alle stesse condizioni di `library-plan`: assi
-    // del container (grezzi) nell'ordine del contratto e plugin data = contractId.
-    const rawAxesInOrder =
-      raw.axes.length === expectedAxes.length && raw.axes.every((axis, index) => axis === expectedAxes[index]);
-    const addCellBlockers: string[] = [];
-    if (!rawAxesInOrder) {
-      addCellBlockers.push(`gli assi del container nell'ordine del contratto [${expectedAxes.join(", ")}] (trovati [${raw.axes.join(", ")}])`);
-    }
-    if (raw.pluginData !== expectedPluginData) {
-      addCellBlockers.push(`il contratto alla versione corrente (plugin data "${expectedPluginData}", prima bump:contract)`);
-    }
     for (const key of expectedKeys) {
       if (!foundKeys.has(key)) {
         // Cella mancante: una domanda al designer, mai una cella inventata.
         let designHint = "";
-        let kind: ProblemKind = "missing-cell-undesigned";
+        const kind = missingCellsKind([key]);
         if (design?.cells[key] !== undefined) {
-          kind = addCellBlockers.length === 0 ? "missing-cell" : "missing-cell-blocked";
           designHint =
             addCellBlockers.length === 0
               ? ` Il design committato la prevede: pnpm add:library la crea (addCell).`

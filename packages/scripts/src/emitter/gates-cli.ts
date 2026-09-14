@@ -239,12 +239,25 @@ export function parseGatesArgs(args: readonly string[]): GatesArgs {
 
 const isDirectInvocation = process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
 
+/**
+ * Entry del CLI senza `process.exit`: argomenti → gate → report (terminale,
+ * `$GITHUB_STEP_SUMMARY`, JSON con `--json <path>`) → exit code.
+ */
+export async function runGatesCli(
+  argv: readonly string[],
+  deps: GatesDeps = defaultGatesDeps(),
+  env: NodeJS.ProcessEnv = process.env,
+  print?: (text: string) => void,
+): Promise<number> {
+  const args = parseGatesArgs(argv);
+  const report = await runGates(deps);
+  return publishReport(report, env, print, args.jsonPath);
+}
+
 if (isDirectInvocation) {
-  Promise.resolve()
-    .then(() => parseGatesArgs(process.argv.slice(2)))
-    .then(async (args) => ({ args, report: await runGates() }))
-    .then(({ args, report }) => {
-      process.exit(publishReport(report, process.env, undefined, args.jsonPath));
+  runGatesCli(process.argv.slice(2))
+    .then((code) => {
+      process.exit(code);
     })
     .catch((error: unknown) => {
       console.error(error instanceof Error ? error.message : error);

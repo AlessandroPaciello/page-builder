@@ -2,7 +2,7 @@
 title: 'Story 2.9 — skill pds-component: creare e sincronizzare i componenti'
 type: 'feature'
 created: '2026-09-13'
-status: 'in-review'
+status: 'done'
 route: 'dispatch'
 baseline_commit: '32ddba3c00b5db1f5aae5cbc3445daa9f7e406ab'
 review_loop_iteration: 0
@@ -93,6 +93,12 @@ context:
 
 **Sorpresa trovata da [PC] (Alert, 2026-09-13): test accoppiati allo stato del catalogo.** Aggiungere `alert` al registry (con `SCHEMA_VERSION` 2) ha rotto 10 test di `packages/scripts` che non dipendevano da Alert. Alcuni usavano "alert"/"Alert" come contratto o design inesistente: `verify-library.test.ts` (regola 11 e copertura), `designs-loader.test.ts` e `bump-contract.test.ts` ora usano "ghost"/"Ghost", e la copertura legge i nomi dal registry. Altri avevano `SCHEMA_VERSION` 1→2 scritta a mano: `adopt-variant.test.ts` e `adopt-cli.test.ts` ora ricavano la versione da `SCHEMA_VERSION` e dalle voci del fingerprint. Resta rosso di proposito solo "lo snapshot committato, come in CI", finché il container Alert non è in Penpot e lo snapshot non viene riscritto.
 
+**Difetti preesistenti fatti emergere da Alert, corretti nella 2.9 (decisione di Alessandro, opzione b, 2026-09-14).**
+- (1) Nessuno importava il tema dei token, quindi `text-info`, `text-success`, `text-warning`, `text-destructive-foreground`, `font-regular` e `tracking-none` non generavano CSS. Ora `globals.css` importa `@penpot-ds/tokens/tailwind-theme.css` dopo `@theme inline` (ui dipende da `@penpot-ds/tokens`) e vincono i valori di Penpot (`--color-card: var(--color-white)`, `--radius-lg: 12px`).
+- (2) Sulle parti figlie base e variante producevano due `text-*` risolti dall'ordine alfabetico del CSS. Ora l'emitter passa anche le parti figlie con cva da `cn`, e `cn` usa `extendTailwindMerge` con le scale dei token (`colorNames`, `fontSizeNames`, `fontWeightNames`, `trackingNames`, `fontFamilyNames`), che `generate:theme` ricava dal catalogo ed espone in `@penpot-ds/tokens/scales`. Col merge di default `font-regular` passava per una famiglia.
+- Controllo nuovo `packages/ui/src/styles/generated-classes.test.ts`, che gira anche in `gates:render`: ogni classe dei file `@generated` (cva con varianti, `className` letterali) deve produrre CSS con `@tailwindcss/node`. Prova rossa: senza l'import del tema fallisce nominando 11 classi, fra cui `text-info`.
+- Rigenerati Badge e Alert (Input e AccordionItem invariati), `render:check` a diff zero.
+
 **Non fatto:**
 - **Verifica live** ([PC] su Alert, [PS] su drift, variante aggiunta in Penpot, cella mancante): servono Alessandro e il token Penpot, che in questa sessione non era caricato (gate drift skippato: "No userToken found"). [PC] richiede le sue risposte (assi, parti, aspetto delle celle) e scrive nella library live; i casi [PS] richiedono modifiche in Penpot che fa lui. Gli AC 1 e i log dei percorsi restano aperti.
 - **`bmad-workflow-builder`:** non eseguita. È conversazionale e questa sessione non era interattiva: la skill è scritta a mano sul modello di `pds-additive`. L'analisi di qualità della workflow-builder va lanciata sulla skill.
@@ -123,6 +129,8 @@ context:
 - Giro 5, caso cella mancante: Alessandro ha eliminato la cella `status=success` in Penpot. `verify` exit 0 con Alert `pending`, `kind: missing-cell` (asse + cella); `gates` exit 1 con `kind: drift`. La prima riga della tabella è `missing-cell` → `pds-additive`: dry-run (1 differenza segnalata, piano `addCell "Alert" cella "status=success"`), `add:library` exit 0, `verify` 4/4 ok. Rilettura: resta `drift` (nuovo `kind`, non lo stesso) → estrazione e render exit 0, ricetta e file generati identici, `gates:render --json` live exit 0, 4/4 ok.
 - Sorpresa 3: dopo l'`addCell` la fixture aveva i valori d'asse nell'ordine di Penpot (`success` per primo): stessa radice del drift finto sulle celle, coperta a metà dalla prima correzione. `component-reader.ts`: helper `compareValues` unico, `canonicalValues` sui valori d'asse della fixture; test rosso/verde "ordine canonico dei valori d'asse". Riestratti i 4 componenti: Alert torna a `info, success, warning, error`, `render:check` diff zero, gate live exit 0.
 - Verifica finale (turbo `--force`, niente cache): `test` 7/7, `check-types` 10/10, `lint` 6/6, nessuno skip.
+- 2026-09-14 — Commit `379f513` dello stato prima delle correzioni di review (richiesto da Alessandro).
+- 2026-09-14 — Decisione di Alessandro sulla review (opzione b): i due difetti pre-esistenti emersi con Alert si correggono **in questa story**, non con loopback né rimando: (1) tema dei token non importato in `ui` (classi da token non generate nel CSS); (2) l'emitter non passa le parti figlie da `cn` (conflitti `text-*` risolti dall'ordine alfabetico del CSS). Più le 9 patch del Review Triage Log.
 
 ## Spec Change Log
 
@@ -147,6 +155,12 @@ context:
 - [edge-case-hunter] `--json` passato due volte: vince l'ultimo — **low**: caso mai prodotto dalla skill; il fix aggiunge una guardia. → rifiutato
 - [verification-gap] `main()` di `library-cli` inoltra `jsonPath` senza test — **medium**: verificato (nessun test chiama `main` di `library-cli`); togliere lo spread non rompe nulla. → patch (test su `main` con `--snapshot`)
 - [verification-gap] entry point di `gates-cli` (`parseGatesArgs` → `publishReport(..., jsonPath)`) senza test — **medium**: verificato (il blocco `isDirectInvocation` non è eseguito da nessun test). → patch (estrarre la logica in una funzione testabile del modulo)
+
+**Loop 1 — esito (2026-09-14):**
+- Decisione di Alessandro (opzione b): i due **high** pre-esistenti corretti in questa story invece del loopback. Tema: `ui` dipende da `@penpot-ds/tokens` e `globals.css` importa `tailwind-theme.css` dopo `@theme inline` (vincono i valori Penpot). `cn`: `extendTailwindMerge` con le scale dei token (`colorNames`, `fontSizeNames`, `fontWeightNames`, `trackingNames`, `fontFamilyNames`) generate dal catalogo da `generate:theme` ed esposte in `@penpot-ds/tokens/scales`. Emitter: parti figlie con cva da `cn(...)`; rigenerati Badge e Alert. Controllo nuovo `packages/ui/src/styles/generated-classes.test.ts` (ogni classe dei file `@generated` produce CSS) con caso rosso permanente senza l'import del tema.
+- Le 9 patch applicate dal subagent di implementazione: kind dell'asse derivato come quello della cella (+ test rosso/verde); [PC] passo 4 snapshot committato; [PC] passo 1 hash del fingerprint; skill senza testo specifico di Alert; nota nella riga `drift` sul design committato; `alert.design.json` `warning` → `color.muted-foreground`; `preceded-by` di [PS] = `pds-additive:add` in sorgente e copie; test ordinamento con valori ignoti; test di `main()` con `--json`; `runGatesCli` esportata e testata.
+- 2 defer registrati in `deferred-work.md` (ruolo unico nel giudizio; path del `skill-manifest.csv`).
+- Verifica post-patch: `turbo test --force` 7/7 (scripts 549, ui 27, contracts 133, api 34, auth 11, db 8 con `pnpm db:start`, domain 13), `check-types` 10/10, `lint` 6/6, nessuno skip; `render:check` diff zero; `gates:render --json` exit 0 4/4 ok (drift SKIPPED: Penpot MCP disconnesso; fixture e ricette non toccate dal loop, drift verificato live prima); `next build` di `apps/web` riuscita.
 
 ## Design Notes
 

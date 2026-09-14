@@ -266,6 +266,14 @@ describe("renderComponent — instradamento per tipo d'asse", () => {
     }
   });
 
+  it("parte figlia con cva: className passa da cn (base e variante si fondono), mai la chiamata cva nuda", () => {
+    const tsx = renderCommitted("Badge").files.find((file) => file.path === "data-display/Badge.tsx")!.content;
+    expect(tsx).toContain("className={cn(badgeLabelVariants({ variant, size }))}");
+    expect(tsx).not.toMatch(/className=\{badgeLabelVariants\(/);
+    // La radice resta com'era: cva + className dell'utente.
+    expect(tsx).toContain("className={cn(badgeVariants({ variant, size }), className)}");
+  });
+
   it("Input (asse state): prefissi focus-visible:/aria-invalid:/disabled: e placeholder:", () => {
     const result = renderCommitted("Input");
     const tsx = result.files.find((file) => file.path === "inputs/Input.tsx")!.content;

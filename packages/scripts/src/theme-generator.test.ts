@@ -313,3 +313,24 @@ describe("generateTheme — guardie fail-loud (review 2.1)", () => {
     expect(ts).toBe(committedTs);
   });
 });
+
+describe("generateTheme — nomi delle scale per tailwind-merge (Story 2.9)", () => {
+  it("esporta colori, dimensioni, pesi, tracking e famiglie ricavati dal catalogo", () => {
+    const { ts } = generateTheme(loadFixture());
+    const colors = /export const colorNames = \[([^\]]*)\]/.exec(ts)![1]!;
+    for (const name of ["card", "destructive-foreground", "info", "success", "warning"]) expect(colors).toContain(`"${name}"`);
+    expect(ts).toMatch(/export const fontSizeNames = \[[^\]]*"sm",/s);
+    expect(ts).toMatch(/export const fontWeightNames = \[\n  "regular",/);
+    expect(ts).toMatch(/export const trackingNames = \[\n  "none",/);
+    expect(ts).toMatch(/export const fontFamilyNames = \[\n  "sans",\n  "serif",\n\] as const;/);
+  });
+
+  it("i nomi seguono il catalogo, non una lista a mano: un token nuovo compare, uno di altro tipo no", () => {
+    const catalog = loadFixture();
+    catalog.sets[0]!.tokens.push({ name: "font-weight.black", type: "fontWeights", value: "900" });
+    const { ts } = generateTheme(catalog);
+    const weights = /export const fontWeightNames = \[([^\]]*)\]/.exec(ts)![1]!;
+    expect(weights).toContain('"black"');
+    expect(/export const trackingNames = \[([^\]]*)\]/.exec(ts)![1]).not.toContain('"black"');
+  });
+});

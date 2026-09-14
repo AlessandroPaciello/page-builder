@@ -57,7 +57,7 @@ export type BadgeProps = React.ComponentProps<"span"> & {
 function Badge({ className, variant, size, label, ...props }: BadgeProps) {
   return (
     <span data-slot="badge" className={cn(badgeVariants({ variant, size }), className)} {...props}>
-      <span data-slot="badge-label" className={badgeLabelVariants({ variant, size })}>
+      <span data-slot="badge-label" className={cn(badgeLabelVariants({ variant, size }))}>
         {label}
       </span>
     </span>

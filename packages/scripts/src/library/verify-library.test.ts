@@ -604,6 +604,28 @@ describe("verifyLibrary — kind per problema (Story 2.9)", () => {
     expect(new Set(kinds(result, "Badge"))).toEqual(new Set(["missing-cell-undesigned"]));
   });
 
+  it("valore del contratto assente in Penpot (asse e celle): il kind dell'asse segue design e blocchi di addCell", () => {
+    const withoutDestructive = (reverseAxes = false): LibrarySnapshot => {
+      const snapshot = greenSnapshot();
+      const badge = snapshot.components.find((c) => c.name === "Badge")!;
+      badge.axesValues.variant = badge.axesValues.variant!.filter((value) => value !== "destructive");
+      badge.cells = badge.cells.filter((cell) => cell.variantProps?.variant !== "destructive");
+      if (reverseAxes) badge.axes = [...badge.axes].reverse();
+      return snapshot;
+    };
+    const axisKind = (result: ReturnType<typeof verifyLibrary>) =>
+      result.components
+        .find((v) => v.component === "Badge")!
+        .problems.find((p) => p.message.includes("[destructive] assenti in Penpot"))?.kind;
+    // Verde: nessun valore mancante, nessun problema d'asse.
+    expect(axisKind(verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot: greenSnapshot(), designs }))).toBeUndefined();
+    expect(axisKind(verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot: withoutDestructive(), designs }))).toBe("missing-cell");
+    expect(axisKind(verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot: withoutDestructive() }))).toBe("missing-cell-undesigned");
+    expect(axisKind(verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot: withoutDestructive(true), designs }))).toBe(
+      "missing-cell-blocked",
+    );
+  });
+
   it("cell-not-in-contract: una cella fuori dal prodotto cartesiano del contratto", () => {
     const snapshot = greenSnapshot();
     const badge = snapshot.components.find((c) => c.name === "Badge")!;

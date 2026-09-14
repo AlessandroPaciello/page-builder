@@ -396,6 +396,18 @@ function collectByType(catalog: TokenCatalog, index: Map<string, IndexedToken>, 
   return entries;
 }
 
+/** Suffissi dei token di un tipo (lo stesso `varSuffix` delle utility), in ordine di catalogo. */
+function collectSuffixes(catalog: TokenCatalog, index: Map<string, IndexedToken>, type: TokenType): string[] {
+  const prefixLength = TYPE_NAMESPACE[type].length + 1;
+  return catalog.sets.flatMap((set) =>
+    set.tokens.filter((token) => token.type === type).map((token) => index.get(token.name)!.varName.slice(prefixLength)),
+  );
+}
+
+function renderNames(exportName: string, names: readonly string[]): string {
+  return `export const ${exportName} = [\n${names.map((name) => `  "${name}",`).join("\n")}\n] as const;`;
+}
+
 function renderRecordLiteral(entries: ScaleEntry[], valueOf: (entry: ScaleEntry) => string): string {
   const lines = entries.map((entry) => `  "${entry.suffix}": ${valueOf(entry)},`);
   return `{\n${lines.join("\n")}\n}`;
@@ -484,6 +496,18 @@ ${renderScale("radii", radiusEntries)}
 ${renderOptions("radiiOptions", radiusEntries)}
 
 ${renderMap("radiiMap", radiusEntries, TYPE_NAMESPACE.borderRadius)}
+
+// Nomi dei token per le scale di tailwind-merge (la \`cn\` dei componenti): senza,
+// \`font-regular\` passa per una famiglia e \`tracking-none\` non è riconosciuto.
+${renderNames("colorNames", collectSuffixes(catalog, index, "color"))}
+
+${renderNames("fontSizeNames", collectSuffixes(catalog, index, "fontSizes"))}
+
+${renderNames("fontWeightNames", collectSuffixes(catalog, index, "fontWeights"))}
+
+${renderNames("trackingNames", collectSuffixes(catalog, index, "letterSpacing"))}
+
+${renderNames("fontFamilyNames", collectSuffixes(catalog, index, "fontFamilies"))}
 `;
 
   return { css, ts };

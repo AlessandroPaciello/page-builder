@@ -96,6 +96,27 @@ describe("componentFixtureFromSnapshot", () => {
     ]);
   });
 
+  it("valori che il contratto non ha (variante non adottata): dopo quelli noti, in ordine alfabetico; due ordini Penpot → stessa fixture", () => {
+    const cell = (variant: string) => ({
+      variantProps: { variant, size: "sm" },
+      variantError: null,
+      root: layer("Badge", { fill: "color.primary" }),
+    });
+    const container = (variants: string[], cellOrder: string[]) =>
+      badgeContainer({ axesValues: { variant: variants, size: ["sm", "md"] }, cells: cellOrder.map(cell) });
+    const first = componentFixtureFromSnapshot(
+      "Badge",
+      snapshotWith(container(["outline", "default", "info", "secondary", "destructive"], ["outline", "secondary", "info", "default"])),
+    );
+    const second = componentFixtureFromSnapshot(
+      "Badge",
+      snapshotWith(container(["info", "destructive", "secondary", "outline", "default"], ["default", "info", "outline", "secondary"])),
+    );
+    expect(first.axes[0]!.values).toEqual(["default", "secondary", "destructive", "info", "outline"]);
+    expect(first.cells.map((c) => c.variantProps.variant)).toEqual(["default", "secondary", "info", "outline"]);
+    expect(JSON.stringify(second)).toBe(JSON.stringify(first));
+  });
+
   it("non cerca per prefisso: un container chiamato 'Badge / Default' non è il container del contratto", () => {
     // Nella library verificata il nome del container è il PascalCase esatto
     // del contratto (regola 2 di verifyLibrary): un nome con separatore di

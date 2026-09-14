@@ -33,24 +33,25 @@ Tutti i percorsi `src/…` sono relativi a `packages/scripts`.
 ### Domande (una alla volta, prima di scrivere qualsiasi file)
 
 1. **Assi**: nome, tipo (`option`, `state`, `behavior`), valori e default di ognuno. I nomi sono in minuscolo e rispettano `/^[a-z][a-z0-9-]*$/`.
-2. **Parti**: le parti a profondità 1 oltre a `root`, e i field content con i loro default. Nessun field può chiamarsi come un attributo HTML globale (`title`, `id`, `hidden`, `lang`, …), perché il contratto lo rifiuta: proponi un nome alternativo (per Alert, `heading` al posto di `title`).
+2. **Parti**: le parti a profondità 1 oltre a `root`, e i field content con i loro default. Nessun field può chiamarsi come un attributo HTML globale (`title`, `id`, `hidden`, `lang`, …), perché il contratto lo rifiuta: proponi un nome alternativo (es. `heading` al posto di `title`).
 3. **Dominio**: uno fra i domini del catalogo (Data Display, Inputs, Feedback, Layout, Navigation, Overlays), nella forma kebab usata da `ui/src/domains` (es. `feedback`).
-4. **A11y**: `role` e `aria-*` statici, ad esempio `role="alert"` per Alert. Arrivano nel `.tsx` e il gate a11y verifica che ci siano.
+4. **A11y**: `role` e `aria-*` statici (es. `role="alert"` per un messaggio bloccante, `role="status"` per un'informazione). Arrivano nel `.tsx` e il gate a11y verifica che ci siano.
 5. **Aspetto delle celle**: per ogni cella del prodotto cartesiano e per ogni parte, le proprietà `proprietà → token` con i token che esistono già nel catalogo. Non inventare valori: se un valore non ha un token, è una domanda per il designer, e nel design non entra nessun literal.
 6. **Base shadcn**: il componente da `npx shadcn add <comp>`, se esiste. Se non c'è una base headless e il componente ha logica propria, è un componente custom e la pipeline non lo genera: fermati e riportalo.
 
 ### Passi (ognuno ha il suo comando o file e il suo esito)
 
-1. **Contratto**: `packages/contracts/src/components/<kebab>.ts` sul modello di un contratto esistente (es. `badge.ts`), con la registrazione in `packages/contracts/src/registry.ts`. Un contratto nuovo cambia il fingerprint: alza `SCHEMA_VERSION` e aggiungi la voce in `contracts.fingerprint.json`, come richiede il test di `@app/contracts`. Verifica con `pnpm --filter @app/contracts test`.
+1. **Contratto**: `packages/contracts/src/components/<kebab>.ts` sul modello di un contratto esistente (es. `badge.ts`), con la registrazione in `packages/contracts/src/registry.ts`. Un contratto nuovo cambia il fingerprint: alza `SCHEMA_VERSION` (N→N+1) e lancia `pnpm --filter @app/contracts test`. Il test fallisce e stampa l'hash del payload corrente ("hash attuale: …"): quell'hash entra in `contracts.fingerprint.json` come voce **nuova** `"N+1"`, in coda. Le voci esistenti non si riscrivono mai. Rilancia il test, che deve essere verde.
 2. **Design**: `src/library/designs/<kebab>.design.json` con le celle e i token delle risposte alla domanda 5. Il test di copertura design↔registry deve essere verde.
-3. **Container in Penpot**: lancia la skill `pds-additive`. `add:library` crea il container col plugin data e `verify:library` deve essere verde. Coppie di contrasto: `verify:library` le ricava dai design (regola 10). Per Alert, controlla che warning e info su `card` siano misurati.
-4. **Giudizio**: `src/recipes/judgments/<kebab>.json`, con il dominio e l'a11y delle domande 3 e 4.
-5. **Base**: `npx shadcn add <comp>` e copia dei sorgenti in `src/emitter/bases/<base>/`, sul modello delle basi esistenti.
-6. **Binding**: `src/emitter/bindings/<kebab>.binding.json`, cioè la base, le parti del contratto verso le parti della base, i valori d'asse verso l'API e, se un layer ha un nome diverso dalla parte, gli alias (`parts.<parte>.aliases`).
-7. **Estrazione**: `{scripts} extract:component -- <Comp>` scrive fixture e ricetta e fallisce senza scrivere se qualcosa non torna.
-8. **Render**: `{scripts} render:component -- <Comp>` scrive `.tsx`, test, story e barrel del dominio, marcati `@generated`.
-9. **Barrel**: aggiungi l'export in `packages/ui/src/domains/index.ts`, l'unico file scritto a mano.
-10. **Gate**: `{scripts} gates:render --json <tmp>/gates.json`. [PC] è finita solo con exit 0 e la voce `<Comp>` in stato `ok`. Se un passo fallisce, riporta l'errore dello script e torna al passo che lo causa (design, giudizio, binding). Non si corregge mai un file generato.
+3. **Container in Penpot**: lancia la skill `pds-additive`. `add:library` crea il container col plugin data e `verify:library` deve essere verde. Coppie di contrasto: `verify:library` le ricava dai design (regola 10). Controlla che ogni coppia testo/sfondo del design nuovo compaia fra le coppie misurate dalla regola 10.
+4. **Snapshot committato**: chiedi conferma, perché il comando sovrascrive un file committato. Poi `{scripts} verify:library --write-snapshot src/library/library.snapshot.json` (lettura live) e mostra il `git diff` dello snapshot. Senza questo passo il test CI sullo snapshot committato resta rosso.
+5. **Giudizio**: `src/recipes/judgments/<kebab>.json`, con il dominio e l'a11y delle domande 3 e 4.
+6. **Base**: `npx shadcn add <comp>` e copia dei sorgenti in `src/emitter/bases/<base>/`, sul modello delle basi esistenti.
+7. **Binding**: `src/emitter/bindings/<kebab>.binding.json`, cioè la base, le parti del contratto verso le parti della base, i valori d'asse verso l'API e, se un layer ha un nome diverso dalla parte, gli alias (`parts.<parte>.aliases`).
+8. **Estrazione**: `{scripts} extract:component -- <Comp>` scrive fixture e ricetta e fallisce senza scrivere se qualcosa non torna.
+9. **Render**: `{scripts} render:component -- <Comp>` scrive `.tsx`, test, story e barrel del dominio, marcati `@generated`.
+10. **Barrel**: aggiungi l'export in `packages/ui/src/domains/index.ts`, l'unico file scritto a mano.
+11. **Gate**: `{scripts} gates:render --json <tmp>/gates.json`. [PC] è finita solo con exit 0 e la voce `<Comp>` in stato `ok`. Se un passo fallisce, riporta l'errore dello script e torna al passo che lo causa (design, giudizio, binding). Non si corregge mai un file generato.
 
 ## [PS] Sincronizza componente
 
@@ -73,7 +74,7 @@ Tutti i percorsi `src/…` sono relativi a `packages/scripts`.
 | `missing-cell` | Lancia la skill `pds-additive`: `add:library` crea la cella (`addCell`). Poi rileggi lo stato. |
 | `cell-not-in-contract` | Blocco e domanda al designer: la cella è fuori dal prodotto cartesiano del contratto. Non si inventa nulla. |
 | `blocked-property` | Indica come si sblocca, cioè una riga del registro in `src/style-properties.ts` con stato `supported`, la mappatura dell'emitter e un test rosso/verde nella stessa PR, e chiedi la decisione. Nessuna modifica automatica. |
-| `drift` | `{scripts} extract:component -- <Comp>`, poi `{scripts} render:component -- <Comp>`, poi mostra `git diff` di fixture, ricetta e file generati e lancia `{scripts} gates:render --json <tmp>/gates.json`, che deve dare exit 0. |
+| `drift` | `{scripts} extract:component -- <Comp>`, poi `{scripts} render:component -- <Comp>`, poi mostra `git diff` di fixture, ricetta e file generati e lancia `{scripts} gates:render --json <tmp>/gates.json`, che deve dare exit 0. Il design committato (`designs/<kebab>.design.json`) non si aggiorna con questo percorso e resta al valore vecchio: è un limite noto, registrato in deferred-work il 2026-09-14, e va riportato allo sviluppatore. |
 | `snapshot-stale` | Chiedi conferma: il comando sovrascrive un file committato. Poi `{scripts} verify:library --write-snapshot src/library/library.snapshot.json` (lettura live), mostra il `git diff` dello snapshot e rileggi lo stato. |
 | `gate-failed` | Riporta il gate e il messaggio. La correzione sta nella ricetta, nel binding, nel giudizio o nel design, mai nel file generato. Fermati. |
 | `pending` | In attesa di altro: riportalo senza correggere nulla. |

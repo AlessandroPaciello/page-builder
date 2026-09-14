@@ -90,7 +90,7 @@
         "letterSpacing": "tracking.none"
       },
       "description": {
-        "fill": "color.card-foreground",
+        "fill": "color.muted-foreground",
         "fontSize": "text.sm",
         "fontWeight": "font-weight.regular",
         "letterSpacing": "tracking.none"

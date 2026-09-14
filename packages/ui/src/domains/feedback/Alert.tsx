@@ -66,10 +66,10 @@ export type AlertProps = React.ComponentProps<"div"> & {
 function Alert({ className, status, heading, description, ...props }: AlertProps) {
   return (
     <div data-slot="alert" className={cn(alertVariants({ status }), className)} role="alert" {...props}>
-      <div data-slot="alert-heading" className={alertHeadingVariants({ status })}>
+      <div data-slot="alert-heading" className={cn(alertHeadingVariants({ status }))}>
         {heading}
       </div>
-      <div data-slot="alert-description" className={alertDescriptionVariants({ status })}>
+      <div data-slot="alert-description" className={cn(alertDescriptionVariants({ status }))}>
         {description}
       </div>
     </div>

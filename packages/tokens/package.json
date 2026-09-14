@@ -9,6 +9,7 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./scales": "./src/tokens.generated.ts",
     "./tailwind-theme.css": "./src/tailwind-theme.css",
     "./tailwind-extras.css": "./src/tailwind-extras.css"
   },

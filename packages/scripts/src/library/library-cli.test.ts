@@ -4,7 +4,9 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { loadCommittedBindings, parseArgs, runVerify, serializeSnapshot, stepOutcome, writeSnapshotFile } from "./library-cli";
+import { fileURLToPath } from "node:url";
+
+import { loadCommittedBindings, main, parseArgs, runVerify, serializeSnapshot, stepOutcome, writeSnapshotFile } from "./library-cli";
 
 /**
  * Test del CLI di library (review 2.4): gli errori di parseArgs escono loud,
@@ -182,6 +184,28 @@ describe("verify:library --json (Story 2.9)", () => {
       const badge = json.components.find((v: { component: string }) => v.component === "Badge");
       expect(badge.problems.map((p: { kind: string }) => p.kind)).toContain("snapshot-stale");
     } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe("main — verify con --json (Story 2.9)", () => {
+  it("inoltra jsonPath a runVerify: il file JSON esiste, ogni problema ha un kind, exitCode = exit di main", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "main-json-"));
+    const log = console.log;
+    console.log = () => {};
+    try {
+      const jsonPath = join(dir, "verify.json");
+      const snapshotPath = fileURLToPath(new URL("./library.snapshot.json", import.meta.url));
+      const code = await main({ mode: "verify", dryRun: false, snapshotPath, jsonPath });
+      expect(existsSync(jsonPath)).toBe(true);
+      const json = JSON.parse(readFileSync(jsonPath, "utf8"));
+      expect(json.title).toBe("verify:library");
+      expect(json.exitCode).toBe(code);
+      const problems = [...json.components, ...json.global].flatMap((v: { problems: Array<{ kind?: unknown }> }) => v.problems);
+      for (const problem of problems) expect(typeof problem.kind).toBe("string");
+    } finally {
+      console.log = log;
       rmSync(dir, { recursive: true, force: true });
     }
   });
