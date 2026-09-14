@@ -14,3 +14,4 @@
 export { Badge, type BadgeProps } from "./data-display";
 export { Input, type InputProps } from "./inputs";
 export { AccordionItem, type AccordionItemProps } from "./layout";
+export { Alert, type AlertProps } from "./feedback";

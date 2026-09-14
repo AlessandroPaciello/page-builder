@@ -1,9 +1,13 @@
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import { exitCodeOf, renderMarkdown } from "../component-report";
 import type { LibrarySnapshot } from "../library/library-snapshot";
 import { committedComponents, loadFixture } from "./artifacts";
-import { defaultGatesDeps, runGates, type GatesDeps } from "./gates-cli";
+import { defaultGatesDeps, parseGatesArgs, runGates, runGatesCli, type GatesDeps } from "./gates-cli";
 
 /**
  * Test del CLI gates:render (Story 2.8 parte B): un componente con un
@@ -197,5 +201,106 @@ describe("runGates — per componente", () => {
     expect(report.global.find((v) => v.component.startsWith("artefatti condivisi"))?.problems[0]?.message).toContain("catalogo illeggibile");
     expect(report.components.every((v) => v.status === "red" && v.problems[0]!.message.startsWith("Non valutato"))).toBe(true);
     expect(exitCodeOf(report)).toBe(1);
+  });
+});
+
+describe("runGates — kind per problema (Story 2.9)", () => {
+  function kindsOf(report: Awaited<ReturnType<typeof runGates>>, component: string): string[] {
+    return report.components.find((v) => v.component === component)?.problems.map((p) => p.kind) ?? [];
+  }
+
+  function liveFromFixtures(): LibrarySnapshot {
+    return {
+      sets: [],
+      componentCount: COMPONENTS.length,
+      components: COMPONENTS.map((component) => {
+        const fixture = structuredClone(loadFixture(component));
+        return {
+          id: fixture.penpotComponentId,
+          name: fixture.componentName,
+          pluginData: fixture.contract,
+          axes: fixture.axes.map((axis) => axis.name),
+          axesValues: Object.fromEntries(fixture.axes.map((axis) => [axis.name, [...axis.values]])),
+          cells: fixture.cells.map((cell) => ({ variantProps: { ...cell.variantProps }, variantError: null, root: cell.root })),
+        };
+      }),
+    };
+  }
+
+  it("verde: Penpot live uguale alle fixture → nessun problema, nessun kind", async () => {
+    const report = await runGates(deps({ fetchLive: () => Promise.resolve(liveFromFixtures()) }));
+    expect(report.components.flatMap((v) => v.problems)).toEqual([]);
+  });
+
+  it("drift: la fixture diverge da Penpot live (token cambiato)", async () => {
+    const live = liveFromFixtures();
+    live.components.find((c) => c.name === "Badge")!.cells[0]!.root.tokens.fill = "color.muted";
+    const report = await runGates(deps({ fetchLive: () => Promise.resolve(live) }));
+    expect(kindsOf(report, "Badge")).toEqual(["drift"]);
+  });
+
+  it("estrazione live impossibile (container assente) → other, non drift", async () => {
+    const report = await runGates(deps({ fetchLive: () => Promise.resolve({ sets: [], componentCount: 0, components: [] }) }));
+    for (const component of COMPONENTS) expect(kindsOf(report, component)).toEqual(["other"]);
+  });
+
+  it("gate-failed: file generato divergente (componente) e suite a11y rossa (riga globale)", async () => {
+    const base = defaultGatesDeps();
+    const report = await runGates(
+      deps({
+        existingFiles: () => ({ ...base.existingFiles(), "inputs/Input.tsx": "// @generated — manomesso\n" }),
+        runSuite: () => ({ exitCode: 1, failedFiles: [], spawnError: null }),
+      }),
+    );
+    expect(new Set(kindsOf(report, "Input"))).toEqual(new Set(["gate-failed"]));
+    expect(kindsOf(report, "Badge")).toEqual([]);
+    expect(report.global.flatMap((v) => v.problems.map((p) => p.kind))).toEqual(["gate-failed"]);
+  });
+
+  it("other: artefatto non caricabile", async () => {
+    const [broken] = COMPONENTS;
+    const base = defaultGatesDeps();
+    const report = await runGates(
+      deps({
+        loadBinding: (name) => {
+          if (name === broken) throw new Error("rotto (test)");
+          return base.loadBinding(name);
+        },
+      }),
+    );
+    expect(kindsOf(report, broken!)).toEqual(["other"]);
+  });
+});
+
+describe("parseGatesArgs (Story 2.9)", () => {
+  it("nessun argomento o solo `--`: niente JSON; `--json <path>` lo abilita", () => {
+    expect(parseGatesArgs([])).toEqual({});
+    expect(parseGatesArgs(["--"])).toEqual({});
+    expect(parseGatesArgs(["--", "--json", "/tmp/g.json"])).toEqual({ jsonPath: "/tmp/g.json" });
+  });
+
+  it("rifiuta --json senza percorso e argomenti sconosciuti", () => {
+    expect(() => parseGatesArgs(["--json"])).toThrow(/richiede un percorso/);
+    expect(() => parseGatesArgs(["--json", "--x"])).toThrow(/richiede un percorso/);
+    expect(() => parseGatesArgs(["--force"])).toThrow(/--force/);
+  });
+});
+
+describe("runGatesCli — --json (Story 2.9)", () => {
+  it("con --json <path> scrive il report JSON e restituisce l'exit code del report", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "gates-json-"));
+    try {
+      const jsonPath = join(dir, "gates.json");
+      const printed: string[] = [];
+      const code = await runGatesCli(["--", "--json", jsonPath], deps(), {}, (text) => printed.push(text));
+      expect(existsSync(jsonPath)).toBe(true);
+      const json = JSON.parse(readFileSync(jsonPath, "utf8"));
+      expect(json.title).toBe("gates:render");
+      expect(code).toBe(json.exitCode);
+      expect(code).toBe(exitCodeOf(await runGates(deps())));
+      expect(printed.join("\n")).toContain("gates:render —");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

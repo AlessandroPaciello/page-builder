@@ -67,9 +67,9 @@ describe("designCoverage — design ↔ registry dei contratti", () => {
   });
 
   it("design senza contratto → rosso che nomina il design", () => {
-    const designs = { ...committedDesigns(), alert: JSON.parse(minimal) };
+    const designs = { ...committedDesigns(), ghost: JSON.parse(minimal) };
     const coverage = designCoverage(designs, Object.values(COMPONENT_CONTRACTS));
     expect(coverage.ok).toBe(false);
-    expect(coverage.designsWithoutContract).toEqual(["alert"]);
+    expect(coverage.designsWithoutContract).toEqual(["ghost"]);
   });
 });

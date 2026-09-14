@@ -22,58 +22,7 @@
   "cells": [
     {
       "variantProps": {
-        "variant": "destructive",
-        "size": "md"
-      },
-      "root": {
-        "name": "Badge",
-        "kind": "board",
-        "tokens": {
-          "borderRadiusBottomRight": "radius.full",
-          "fill": "color.destructive",
-          "borderRadiusTopRight": "radius.full",
-          "paddingRight": "spacing.3",
-          "paddingTop": "spacing.1",
-          "paddingLeft": "spacing.3",
-          "paddingBottom": "spacing.1",
-          "borderRadiusBottomLeft": "radius.full",
-          "borderRadiusTopLeft": "radius.full"
-        },
-        "style": {
-          "fill": [
-            "#ba1a1a"
-          ],
-          "borderRadiusTopLeft": 9999,
-          "borderRadiusTopRight": 9999,
-          "borderRadiusBottomRight": 9999,
-          "borderRadiusBottomLeft": 9999
-        },
-        "children": [
-          {
-            "name": "label",
-            "kind": "text",
-            "tokens": {
-              "fill": "color.destructive-foreground",
-              "fontSize": "text.sm",
-              "fontWeight": "font-weight.medium",
-              "letterSpacing": "tracking.none"
-            },
-            "style": {
-              "fill": [
-                "#ffffff"
-              ],
-              "fontSize": "14",
-              "fontWeight": "500",
-              "letterSpacing": "0"
-            },
-            "children": []
-          }
-        ]
-      }
-    },
-    {
-      "variantProps": {
-        "variant": "destructive",
+        "variant": "default",
         "size": "sm"
       },
       "root": {
@@ -81,7 +30,7 @@
         "kind": "board",
         "tokens": {
           "borderRadiusBottomRight": "radius.full",
-          "fill": "color.destructive",
+          "fill": "color.primary",
           "borderRadiusTopRight": "radius.full",
           "paddingRight": "spacing.2",
           "paddingTop": "spacing.1",
@@ -92,7 +41,7 @@
         },
         "style": {
           "fill": [
-            "#ba1a1a"
+            "#006c49"
           ],
           "borderRadiusTopLeft": 9999,
           "borderRadiusTopRight": 9999,
@@ -104,7 +53,7 @@
             "name": "label",
             "kind": "text",
             "tokens": {
-              "fill": "color.destructive-foreground",
+              "fill": "color.primary-foreground",
               "fontSize": "text.xs",
               "fontWeight": "font-weight.medium",
               "letterSpacing": "tracking.none"
@@ -112,108 +61,6 @@
             "style": {
               "fill": [
                 "#ffffff"
-              ],
-              "fontSize": "12",
-              "fontWeight": "500",
-              "letterSpacing": "0"
-            },
-            "children": []
-          }
-        ]
-      }
-    },
-    {
-      "variantProps": {
-        "variant": "secondary",
-        "size": "md"
-      },
-      "root": {
-        "name": "Badge",
-        "kind": "board",
-        "tokens": {
-          "borderRadiusBottomRight": "radius.full",
-          "fill": "color.secondary",
-          "borderRadiusTopRight": "radius.full",
-          "paddingRight": "spacing.3",
-          "paddingTop": "spacing.1",
-          "paddingLeft": "spacing.3",
-          "paddingBottom": "spacing.1",
-          "borderRadiusBottomLeft": "radius.full",
-          "borderRadiusTopLeft": "radius.full"
-        },
-        "style": {
-          "fill": [
-            "#e8f5ef"
-          ],
-          "borderRadiusTopLeft": 9999,
-          "borderRadiusTopRight": 9999,
-          "borderRadiusBottomRight": 9999,
-          "borderRadiusBottomLeft": 9999
-        },
-        "children": [
-          {
-            "name": "label",
-            "kind": "text",
-            "tokens": {
-              "fill": "color.secondary-foreground",
-              "fontSize": "text.sm",
-              "fontWeight": "font-weight.medium",
-              "letterSpacing": "tracking.none"
-            },
-            "style": {
-              "fill": [
-                "#004830"
-              ],
-              "fontSize": "14",
-              "fontWeight": "500",
-              "letterSpacing": "0"
-            },
-            "children": []
-          }
-        ]
-      }
-    },
-    {
-      "variantProps": {
-        "variant": "secondary",
-        "size": "sm"
-      },
-      "root": {
-        "name": "Badge",
-        "kind": "board",
-        "tokens": {
-          "borderRadiusBottomRight": "radius.full",
-          "fill": "color.secondary",
-          "borderRadiusTopRight": "radius.full",
-          "paddingRight": "spacing.2",
-          "paddingTop": "spacing.1",
-          "paddingLeft": "spacing.2",
-          "paddingBottom": "spacing.1",
-          "borderRadiusBottomLeft": "radius.full",
-          "borderRadiusTopLeft": "radius.full"
-        },
-        "style": {
-          "fill": [
-            "#e8f5ef"
-          ],
-          "borderRadiusTopLeft": 9999,
-          "borderRadiusTopRight": 9999,
-          "borderRadiusBottomRight": 9999,
-          "borderRadiusBottomLeft": 9999
-        },
-        "children": [
-          {
-            "name": "label",
-            "kind": "text",
-            "tokens": {
-              "fill": "color.secondary-foreground",
-              "fontSize": "text.xs",
-              "fontWeight": "font-weight.medium",
-              "letterSpacing": "tracking.none"
-            },
-            "style": {
-              "fill": [
-                "#004830"
               ],
               "fontSize": "12",
               "fontWeight": "500",
@@ -277,7 +124,7 @@
     },
     {
       "variantProps": {
-        "variant": "default",
+        "variant": "secondary",
         "size": "sm"
       },
       "root": {
@@ -285,7 +132,7 @@
         "kind": "board",
         "tokens": {
           "borderRadiusBottomRight": "radius.full",
-          "fill": "color.primary",
+          "fill": "color.secondary",
           "borderRadiusTopRight": "radius.full",
           "paddingRight": "spacing.2",
           "paddingTop": "spacing.1",
@@ -296,7 +143,7 @@
         },
         "style": {
           "fill": [
-            "#006c49"
+            "#e8f5ef"
           ],
           "borderRadiusTopLeft": 9999,
           "borderRadiusTopRight": 9999,
@@ -308,7 +155,109 @@
             "name": "label",
             "kind": "text",
             "tokens": {
-              "fill": "color.primary-foreground",
+              "fill": "color.secondary-foreground",
+              "fontSize": "text.xs",
+              "fontWeight": "font-weight.medium",
+              "letterSpacing": "tracking.none"
+            },
+            "style": {
+              "fill": [
+                "#004830"
+              ],
+              "fontSize": "12",
+              "fontWeight": "500",
+              "letterSpacing": "0"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "variantProps": {
+        "variant": "secondary",
+        "size": "md"
+      },
+      "root": {
+        "name": "Badge",
+        "kind": "board",
+        "tokens": {
+          "borderRadiusBottomRight": "radius.full",
+          "fill": "color.secondary",
+          "borderRadiusTopRight": "radius.full",
+          "paddingRight": "spacing.3",
+          "paddingTop": "spacing.1",
+          "paddingLeft": "spacing.3",
+          "paddingBottom": "spacing.1",
+          "borderRadiusBottomLeft": "radius.full",
+          "borderRadiusTopLeft": "radius.full"
+        },
+        "style": {
+          "fill": [
+            "#e8f5ef"
+          ],
+          "borderRadiusTopLeft": 9999,
+          "borderRadiusTopRight": 9999,
+          "borderRadiusBottomRight": 9999,
+          "borderRadiusBottomLeft": 9999
+        },
+        "children": [
+          {
+            "name": "label",
+            "kind": "text",
+            "tokens": {
+              "fill": "color.secondary-foreground",
+              "fontSize": "text.sm",
+              "fontWeight": "font-weight.medium",
+              "letterSpacing": "tracking.none"
+            },
+            "style": {
+              "fill": [
+                "#004830"
+              ],
+              "fontSize": "14",
+              "fontWeight": "500",
+              "letterSpacing": "0"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "variantProps": {
+        "variant": "destructive",
+        "size": "sm"
+      },
+      "root": {
+        "name": "Badge",
+        "kind": "board",
+        "tokens": {
+          "borderRadiusBottomRight": "radius.full",
+          "fill": "color.destructive",
+          "borderRadiusTopRight": "radius.full",
+          "paddingRight": "spacing.2",
+          "paddingTop": "spacing.1",
+          "paddingLeft": "spacing.2",
+          "paddingBottom": "spacing.1",
+          "borderRadiusBottomLeft": "radius.full",
+          "borderRadiusTopLeft": "radius.full"
+        },
+        "style": {
+          "fill": [
+            "#ba1a1a"
+          ],
+          "borderRadiusTopLeft": 9999,
+          "borderRadiusTopRight": 9999,
+          "borderRadiusBottomRight": 9999,
+          "borderRadiusBottomLeft": 9999
+        },
+        "children": [
+          {
+            "name": "label",
+            "kind": "text",
+            "tokens": {
+              "fill": "color.destructive-foreground",
               "fontSize": "text.xs",
               "fontWeight": "font-weight.medium",
               "letterSpacing": "tracking.none"
@@ -318,6 +267,57 @@
                 "#ffffff"
               ],
               "fontSize": "12",
+              "fontWeight": "500",
+              "letterSpacing": "0"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "variantProps": {
+        "variant": "destructive",
+        "size": "md"
+      },
+      "root": {
+        "name": "Badge",
+        "kind": "board",
+        "tokens": {
+          "borderRadiusBottomRight": "radius.full",
+          "fill": "color.destructive",
+          "borderRadiusTopRight": "radius.full",
+          "paddingRight": "spacing.3",
+          "paddingTop": "spacing.1",
+          "paddingLeft": "spacing.3",
+          "paddingBottom": "spacing.1",
+          "borderRadiusBottomLeft": "radius.full",
+          "borderRadiusTopLeft": "radius.full"
+        },
+        "style": {
+          "fill": [
+            "#ba1a1a"
+          ],
+          "borderRadiusTopLeft": 9999,
+          "borderRadiusTopRight": 9999,
+          "borderRadiusBottomRight": 9999,
+          "borderRadiusBottomLeft": 9999
+        },
+        "children": [
+          {
+            "name": "label",
+            "kind": "text",
+            "tokens": {
+              "fill": "color.destructive-foreground",
+              "fontSize": "text.sm",
+              "fontWeight": "font-weight.medium",
+              "letterSpacing": "tracking.none"
+            },
+            "style": {
+              "fill": [
+                "#ffffff"
+              ],
+              "fontSize": "14",
               "fontWeight": "500",
               "letterSpacing": "0"
             },

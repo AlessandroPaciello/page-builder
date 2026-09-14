@@ -1,0 +1,10 @@
+{
+  "domain": "feedback",
+  "headless": null,
+  "a11y": {
+    "role": "alert",
+    "ariaAttributes": [],
+    "focusVisible": false,
+    "stateConveyedByTextAndColor": true
+  }
+}

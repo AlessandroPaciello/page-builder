@@ -138,7 +138,7 @@ describe("bump-cli", () => {
   it("resolveContract accetta Badge o badge e nomina i contratti se non trova", () => {
     expect(resolveContract("Badge", contracts).name).toBe("badge");
     expect(resolveContract("accordion-item", contracts).name).toBe("accordion-item");
-    expect(() => resolveContract("Alert", contracts)).toThrow(/"Alert" non trovato.*badge/);
+    expect(() => resolveContract("Ghost", contracts)).toThrow(/"Ghost" non trovato.*badge/);
   });
 
   describe("main", () => {

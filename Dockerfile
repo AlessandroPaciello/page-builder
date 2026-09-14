@@ -36,6 +36,7 @@ COPY packages/api/package.json packages/api/
 COPY packages/domain/package.json packages/domain/
 COPY packages/env/package.json packages/env/
 COPY packages/ui/package.json packages/ui/
+COPY packages/tokens/package.json packages/tokens/
 COPY packages/config/package.json packages/config/
 # Il postinstall di @app/db esegue `prisma generate`: serve prisma.config.ts e
 # lo schema, altrimenti il generate fallisce ("schema.prisma: file not found").

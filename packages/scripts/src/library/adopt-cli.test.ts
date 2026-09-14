@@ -3,7 +3,7 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writ
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
-import { COMPONENT_CONTRACTS, defineContract, fingerprintPayload, SECTION_DEFINITIONS, type ComponentContract } from "@app/contracts";
+import { COMPONENT_CONTRACTS, defineContract, fingerprintPayload, SCHEMA_VERSION, SECTION_DEFINITIONS, type ComponentContract } from "@app/contracts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { BindingSchema } from "../emitter/binding-shadcn";
@@ -127,7 +127,7 @@ describe("adopt-cli", () => {
     expect(await main({ component: "Badge", yes: false, snapshotPath }, { paths })).toBe(0);
     expect(contents(paths)).toEqual(before);
     const printed = log.mock.calls.map((call: unknown[]) => String(call[0])).join("\n");
-    expect(printed).toContain("SCHEMA_VERSION 1 → 2");
+    expect(printed).toContain(`SCHEMA_VERSION ${SCHEMA_VERSION} → ${SCHEMA_VERSION + 1}`);
     expect(printed).toContain('"outline": "outline"');
     expect(printed).toContain('+     "variant=outline|size=sm": {');
     expect(printed).toContain("Nessuna scrittura");
@@ -153,8 +153,11 @@ describe("adopt-cli", () => {
     const recorded = JSON.parse(readFileSync(paths.fingerprintPath, "utf8")) as Record<string, string>;
     const components = Object.values(COMPONENT_CONTRACTS).map((c) => (c.name === "badge" ? adopted : c));
     const hash = createHash("sha256").update(fingerprintPayload(components, Object.values(SECTION_DEFINITIONS))).digest("hex");
-    expect(schemaVersion).toBe(2);
+    expect(schemaVersion).toBe(SCHEMA_VERSION + 1);
     expect(recorded[String(schemaVersion)]).toBe(hash);
+    // Le voci esistenti restano quelle committate.
+    const committed = JSON.parse(readFileSync(DEFAULT_PATHS.fingerprintPath, "utf8")) as Record<string, string>;
+    for (const [version, entry] of Object.entries(committed)) expect(recorded[version]).toBe(entry);
     expect(recorded["1"]).toBe("05ca6aceeaa588384d74dd5626e4eb22fe9d3cf09a15f7492faa1f65a910d332");
 
     // Validazione del binding: schema + valori = valori del contratto (come render-component).

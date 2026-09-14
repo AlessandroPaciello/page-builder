@@ -18,6 +18,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@penpot-ds/tokens": "workspace:*",
     "@radix-ui/react-accordion": "catalog:",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -31,9 +32,11 @@
   },
   "devDependencies": {
     "@app/config": "workspace:*",
+    "@tailwindcss/node": "catalog:",
     "@tailwindcss/postcss": "catalog:",
     "@testing-library/dom": "catalog:",
     "@testing-library/react": "catalog:",
+    "@types/node": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "jsdom": "catalog:",

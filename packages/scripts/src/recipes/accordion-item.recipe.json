@@ -2,14 +2,14 @@
   "componentName": "AccordionItem",
   "parts": {
     "root": {
-      "state=open": {
+      "state=closed": {
         "fill": "color.card",
         "borderRadiusTopLeft": "radius.md",
         "borderRadiusTopRight": "radius.md",
         "borderRadiusBottomRight": "radius.md",
         "borderRadiusBottomLeft": "radius.md"
       },
-      "state=closed": {
+      "state=open": {
         "fill": "color.card",
         "borderRadiusTopLeft": "radius.md",
         "borderRadiusTopRight": "radius.md",
@@ -18,14 +18,14 @@
       }
     },
     "trigger": {
-      "state=open": {
+      "state=closed": {
         "paddingTop": "spacing.3",
         "paddingBottom": "spacing.3",
         "paddingLeft": "spacing.4",
         "paddingRight": "spacing.4",
         "columnGap": "spacing.2"
       },
-      "state=closed": {
+      "state=open": {
         "paddingTop": "spacing.3",
         "paddingBottom": "spacing.3",
         "paddingLeft": "spacing.4",
@@ -34,13 +34,13 @@
       }
     },
     "label": {
-      "state=open": {
+      "state=closed": {
         "fill": "color.foreground",
         "fontSize": "text.sm",
         "fontWeight": "font-weight.medium",
         "letterSpacing": "tracking.none"
       },
-      "state=closed": {
+      "state=open": {
         "fill": "color.foreground",
         "fontSize": "text.sm",
         "fontWeight": "font-weight.medium",
@@ -48,35 +48,35 @@
       }
     },
     "chevron": {
-      "state=open": {
+      "state=closed": {
         "strokeColor": "color.foreground",
         "strokeWidth": "border-width.default"
       },
-      "state=closed": {
+      "state=open": {
         "strokeColor": "color.foreground",
         "strokeWidth": "border-width.default"
       }
     },
     "content": {
-      "state=open": {
+      "state=closed": {
         "paddingLeft": "spacing.4",
         "paddingRight": "spacing.4",
         "paddingBottom": "spacing.4"
       },
-      "state=closed": {
+      "state=open": {
         "paddingLeft": "spacing.4",
         "paddingRight": "spacing.4",
         "paddingBottom": "spacing.4"
       }
     },
     "body": {
-      "state=open": {
+      "state=closed": {
         "fill": "color.muted-foreground",
         "fontSize": "text.sm",
         "fontWeight": "font-weight.regular",
         "letterSpacing": "tracking.none"
       },
-      "state=closed": {
+      "state=open": {
         "fill": "color.muted-foreground",
         "fontSize": "text.sm",
         "fontWeight": "font-weight.regular",
@@ -84,11 +84,11 @@
       }
     },
     "divider": {
-      "state=open": {
+      "state=closed": {
         "strokeColor": "color.border",
         "strokeWidth": "border-width.default"
       },
-      "state=closed": {
+      "state=open": {
         "strokeColor": "color.border",
         "strokeWidth": "border-width.default"
       }

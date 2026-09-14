@@ -674,7 +674,10 @@ function cvaPropsArgs(ctx: EmitterContext): string {
 function jsxClassName(node: PartNode, isRoot: boolean, ctx: EmitterContext): string {
   if (node.classes.cva !== undefined) {
     const call = `${node.classes.cva.name}({ ${cvaPropsArgs(ctx)} })`;
-    return isRoot ? `cn(${call}, className)` : call;
+    // Anche le parti figlie passano da `cn`: base e variante della stessa
+    // proprietà (es. due `text-*`) si risolvono per ordine, non per l'ordine
+    // alfabetico delle utility nel CSS (Story 2.9).
+    return isRoot ? `cn(${call}, className)` : `cn(${call})`;
   }
   return isRoot ? `cn("${node.classes.staticClasses}", className)` : `"${node.classes.staticClasses}"`;
 }

@@ -118,6 +118,15 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
+/*
+ * Tema dei token Penpot (generato da `generate:theme`), importato DOPO il
+ * blocco `@theme inline` di shadcn: sui nomi in comune vincono i valori di
+ * Penpot, e i token che shadcn non ha (info, success, warning,
+ * destructive-foreground, font-weight, tracking…) generano le loro utility.
+ * Lo verifica `generated-classes.test.ts`.
+ */
+@import "@penpot-ds/tokens/tailwind-theme.css";
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

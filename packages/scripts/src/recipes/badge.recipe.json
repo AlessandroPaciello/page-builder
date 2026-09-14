@@ -2,42 +2,9 @@
   "componentName": "Badge",
   "parts": {
     "root": {
-      "variant=destructive|size=md": {
+      "variant=default|size=sm": {
         "borderRadiusBottomRight": "radius.full",
-        "fill": "color.destructive",
-        "borderRadiusTopRight": "radius.full",
-        "paddingRight": "spacing.3",
-        "paddingTop": "spacing.1",
-        "paddingLeft": "spacing.3",
-        "paddingBottom": "spacing.1",
-        "borderRadiusBottomLeft": "radius.full",
-        "borderRadiusTopLeft": "radius.full"
-      },
-      "variant=destructive|size=sm": {
-        "borderRadiusBottomRight": "radius.full",
-        "fill": "color.destructive",
-        "borderRadiusTopRight": "radius.full",
-        "paddingRight": "spacing.2",
-        "paddingTop": "spacing.1",
-        "paddingLeft": "spacing.2",
-        "paddingBottom": "spacing.1",
-        "borderRadiusBottomLeft": "radius.full",
-        "borderRadiusTopLeft": "radius.full"
-      },
-      "variant=secondary|size=md": {
-        "borderRadiusBottomRight": "radius.full",
-        "fill": "color.secondary",
-        "borderRadiusTopRight": "radius.full",
-        "paddingRight": "spacing.3",
-        "paddingTop": "spacing.1",
-        "paddingLeft": "spacing.3",
-        "paddingBottom": "spacing.1",
-        "borderRadiusBottomLeft": "radius.full",
-        "borderRadiusTopLeft": "radius.full"
-      },
-      "variant=secondary|size=sm": {
-        "borderRadiusBottomRight": "radius.full",
-        "fill": "color.secondary",
+        "fill": "color.primary",
         "borderRadiusTopRight": "radius.full",
         "paddingRight": "spacing.2",
         "paddingTop": "spacing.1",
@@ -57,39 +24,54 @@
         "borderRadiusBottomLeft": "radius.full",
         "borderRadiusTopLeft": "radius.full"
       },
-      "variant=default|size=sm": {
+      "variant=secondary|size=sm": {
         "borderRadiusBottomRight": "radius.full",
-        "fill": "color.primary",
+        "fill": "color.secondary",
         "borderRadiusTopRight": "radius.full",
         "paddingRight": "spacing.2",
         "paddingTop": "spacing.1",
         "paddingLeft": "spacing.2",
+        "paddingBottom": "spacing.1",
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusTopLeft": "radius.full"
+      },
+      "variant=secondary|size=md": {
+        "borderRadiusBottomRight": "radius.full",
+        "fill": "color.secondary",
+        "borderRadiusTopRight": "radius.full",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.1",
+        "paddingLeft": "spacing.3",
+        "paddingBottom": "spacing.1",
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusTopLeft": "radius.full"
+      },
+      "variant=destructive|size=sm": {
+        "borderRadiusBottomRight": "radius.full",
+        "fill": "color.destructive",
+        "borderRadiusTopRight": "radius.full",
+        "paddingRight": "spacing.2",
+        "paddingTop": "spacing.1",
+        "paddingLeft": "spacing.2",
+        "paddingBottom": "spacing.1",
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusTopLeft": "radius.full"
+      },
+      "variant=destructive|size=md": {
+        "borderRadiusBottomRight": "radius.full",
+        "fill": "color.destructive",
+        "borderRadiusTopRight": "radius.full",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.1",
+        "paddingLeft": "spacing.3",
         "paddingBottom": "spacing.1",
         "borderRadiusBottomLeft": "radius.full",
         "borderRadiusTopLeft": "radius.full"
       }
     },
     "label": {
-      "variant=destructive|size=md": {
-        "fill": "color.destructive-foreground",
-        "fontSize": "text.sm",
-        "fontWeight": "font-weight.medium",
-        "letterSpacing": "tracking.none"
-      },
-      "variant=destructive|size=sm": {
-        "fill": "color.destructive-foreground",
-        "fontSize": "text.xs",
-        "fontWeight": "font-weight.medium",
-        "letterSpacing": "tracking.none"
-      },
-      "variant=secondary|size=md": {
-        "fill": "color.secondary-foreground",
-        "fontSize": "text.sm",
-        "fontWeight": "font-weight.medium",
-        "letterSpacing": "tracking.none"
-      },
-      "variant=secondary|size=sm": {
-        "fill": "color.secondary-foreground",
+      "variant=default|size=sm": {
+        "fill": "color.primary-foreground",
         "fontSize": "text.xs",
         "fontWeight": "font-weight.medium",
         "letterSpacing": "tracking.none"
@@ -100,9 +82,27 @@
         "fontWeight": "font-weight.medium",
         "letterSpacing": "tracking.none"
       },
-      "variant=default|size=sm": {
-        "fill": "color.primary-foreground",
+      "variant=secondary|size=sm": {
+        "fill": "color.secondary-foreground",
         "fontSize": "text.xs",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "variant=secondary|size=md": {
+        "fill": "color.secondary-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "variant=destructive|size=sm": {
+        "fill": "color.destructive-foreground",
+        "fontSize": "text.xs",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "variant=destructive|size=md": {
+        "fill": "color.destructive-foreground",
+        "fontSize": "text.sm",
         "fontWeight": "font-weight.medium",
         "letterSpacing": "tracking.none"
       }

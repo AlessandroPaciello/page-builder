@@ -58,3 +58,76 @@ export const radiiMap = {
   "lg": "var(--radius-lg)",
   "full": "var(--radius-full)",
 } as const;
+
+// Nomi dei token per le scale di tailwind-merge (la `cn` dei componenti): senza,
+// `font-regular` passa per una famiglia e `tracking-none` non è riconosciuto.
+export const colorNames = [
+  "gray-1",
+  "gray-2",
+  "gray-8",
+  "gray-11",
+  "gray-12",
+  "white",
+  "accent-1",
+  "accent-2",
+  "accent-9",
+  "accent-11",
+  "accent-12",
+  "red-9",
+  "green-9",
+  "amber-9",
+  "blue-9",
+  "background",
+  "foreground",
+  "card",
+  "card-foreground",
+  "popover",
+  "popover-foreground",
+  "primary",
+  "primary-foreground",
+  "secondary",
+  "secondary-foreground",
+  "muted",
+  "muted-foreground",
+  "accent",
+  "accent-foreground",
+  "destructive",
+  "destructive-foreground",
+  "border",
+  "input",
+  "ring",
+  "success",
+  "success-foreground",
+  "warning",
+  "warning-foreground",
+  "info",
+  "info-foreground",
+] as const;
+
+export const fontSizeNames = [
+  "xs",
+  "sm",
+  "base",
+  "lg",
+  "xl",
+  "2xl",
+  "3xl",
+] as const;
+
+export const fontWeightNames = [
+  "regular",
+  "medium",
+  "semibold",
+  "bold",
+] as const;
+
+export const trackingNames = [
+  "none",
+  "tight",
+  "wide",
+] as const;
+
+export const fontFamilyNames = [
+  "sans",
+  "serif",
+] as const;

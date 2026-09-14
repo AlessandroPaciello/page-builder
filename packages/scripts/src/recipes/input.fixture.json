@@ -16,7 +16,7 @@
   "cells": [
     {
       "variantProps": {
-        "state": "disabled"
+        "state": "default"
       },
       "root": {
         "name": "Input",
@@ -30,7 +30,6 @@
           "paddingTop": "spacing.2",
           "strokeWidth": "border-width.default",
           "paddingLeft": "spacing.3",
-          "opacity": "opacity.disabled",
           "paddingBottom": "spacing.2",
           "borderRadiusBottomLeft": "radius.md",
           "borderRadiusTopLeft": "radius.md"
@@ -41,63 +40,6 @@
           ],
           "strokeColor": [
             "#7a8f85"
-          ],
-          "strokeWidth": 1,
-          "borderRadiusTopLeft": 8,
-          "borderRadiusTopRight": 8,
-          "borderRadiusBottomRight": 8,
-          "borderRadiusBottomLeft": 8,
-          "opacity": 0.5
-        },
-        "children": [
-          {
-            "name": "placeholder",
-            "kind": "text",
-            "tokens": {
-              "fill": "color.muted-foreground",
-              "fontSize": "text.sm",
-              "fontWeight": "font-weight.regular",
-              "letterSpacing": "tracking.none"
-            },
-            "style": {
-              "fill": [
-                "#3e4942"
-              ],
-              "fontSize": "14",
-              "fontWeight": "400",
-              "letterSpacing": "0"
-            },
-            "children": []
-          }
-        ]
-      }
-    },
-    {
-      "variantProps": {
-        "state": "error"
-      },
-      "root": {
-        "name": "Input",
-        "kind": "board",
-        "tokens": {
-          "borderRadiusBottomRight": "radius.md",
-          "strokeColor": "color.destructive",
-          "fill": "color.background",
-          "borderRadiusTopRight": "radius.md",
-          "paddingRight": "spacing.3",
-          "paddingTop": "spacing.2",
-          "strokeWidth": "border-width.default",
-          "paddingLeft": "spacing.3",
-          "paddingBottom": "spacing.2",
-          "borderRadiusBottomLeft": "radius.md",
-          "borderRadiusTopLeft": "radius.md"
-        },
-        "style": {
-          "fill": [
-            "#faf4e8"
-          ],
-          "strokeColor": [
-            "#ba1a1a"
           ],
           "strokeWidth": 1,
           "borderRadiusTopLeft": 8,
@@ -202,14 +144,14 @@
     },
     {
       "variantProps": {
-        "state": "default"
+        "state": "error"
       },
       "root": {
         "name": "Input",
         "kind": "board",
         "tokens": {
           "borderRadiusBottomRight": "radius.md",
-          "strokeColor": "color.border",
+          "strokeColor": "color.destructive",
           "fill": "color.background",
           "borderRadiusTopRight": "radius.md",
           "paddingRight": "spacing.3",
@@ -225,13 +167,71 @@
             "#faf4e8"
           ],
           "strokeColor": [
-            "#7a8f85"
+            "#ba1a1a"
           ],
           "strokeWidth": 1,
           "borderRadiusTopLeft": 8,
           "borderRadiusTopRight": 8,
           "borderRadiusBottomRight": 8,
           "borderRadiusBottomLeft": 8
+        },
+        "children": [
+          {
+            "name": "placeholder",
+            "kind": "text",
+            "tokens": {
+              "fill": "color.muted-foreground",
+              "fontSize": "text.sm",
+              "fontWeight": "font-weight.regular",
+              "letterSpacing": "tracking.none"
+            },
+            "style": {
+              "fill": [
+                "#3e4942"
+              ],
+              "fontSize": "14",
+              "fontWeight": "400",
+              "letterSpacing": "0"
+            },
+            "children": []
+          }
+        ]
+      }
+    },
+    {
+      "variantProps": {
+        "state": "disabled"
+      },
+      "root": {
+        "name": "Input",
+        "kind": "board",
+        "tokens": {
+          "borderRadiusBottomRight": "radius.md",
+          "strokeColor": "color.border",
+          "fill": "color.background",
+          "borderRadiusTopRight": "radius.md",
+          "paddingRight": "spacing.3",
+          "paddingTop": "spacing.2",
+          "strokeWidth": "border-width.default",
+          "paddingLeft": "spacing.3",
+          "opacity": "opacity.disabled",
+          "paddingBottom": "spacing.2",
+          "borderRadiusBottomLeft": "radius.md",
+          "borderRadiusTopLeft": "radius.md"
+        },
+        "style": {
+          "fill": [
+            "#faf4e8"
+          ],
+          "strokeColor": [
+            "#7a8f85"
+          ],
+          "strokeWidth": 1,
+          "borderRadiusTopLeft": 8,
+          "borderRadiusTopRight": 8,
+          "borderRadiusBottomRight": 8,
+          "borderRadiusBottomLeft": 8,
+          "opacity": 0.5
         },
         "children": [
           {

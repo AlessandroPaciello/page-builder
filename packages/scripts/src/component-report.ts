@@ -1,4 +1,4 @@
-import { appendFileSync } from "node:fs";
+import { appendFileSync, renameSync, writeFileSync } from "node:fs";
 
 /**
  * Esito per componente (Story 2.8 parte B): `verify:library` e `gates:render`
@@ -11,8 +11,47 @@ import { appendFileSync } from "node:fs";
 
 export type VerdictStatus = "ok" | "red" | "pending";
 
+/**
+ * Tipo del problema (Story 2.9): unione CHIUSA che decide il percorso della
+ * skill `pds-component` [PS] — la skill instrada sul `kind`, mai sul testo
+ * del messaggio (AD-11: il percorso sta negli script). Un problema senza un
+ * tipo più preciso vale `other` (rosso) o `pending` (in attesa): la skill lo
+ * riporta e si ferma.
+ */
+export const PROBLEM_KINDS = [
+  /** Gate 5: la fixture committata diverge da Penpot live → riestrarre. */
+  "drift",
+  /** Valore d'asse `option` in Penpot non adottato (o cella di quel valore) → decisione + `adopt:variant`. */
+  "variant-not-adopted",
+  /** Valore in più su un asse `state`/`behavior`: `adopt:variant` non lo adotta → designer. */
+  "variant-not-adoptable",
+  /** Cella del contratto assente in Penpot, prevista dal design e creabile → `add:library` (`addCell`). */
+  "missing-cell",
+  /** Come sopra, ma `addCell` è bloccato (ordine degli assi, plugin data non corrente) → il blocco nominativo. */
+  "missing-cell-blocked",
+  /** Cella del contratto assente in Penpot e dal design committato → domanda al designer, mai inventata. */
+  "missing-cell-undesigned",
+  /** Cella in Penpot fuori dal prodotto cartesiano del contratto → blocco + domanda al designer. */
+  "cell-not-in-contract",
+  /** Proprietà bloccata dal registro → sblocco (riga + mappatura + test rosso/verde), decisione umana. */
+  "blocked-property",
+  /** Plugin data `nome@versione` ≠ contratto corrente (regola 3) → regola A, `bump:contract`. */
+  "contract-version",
+  /** Componente committato assente dallo snapshot da file → `verify:library --write-snapshot`. */
+  "snapshot-stale",
+  /** Gate di `gates:render` rosso (completezza, rigenerazione, conformità, a11y). */
+  "gate-failed",
+  /** In attesa di altro, senza un percorso proprio. */
+  "pending",
+  /** Nessun tipo noto: la skill lo riporta e si ferma. */
+  "other",
+] as const;
+
+export type ProblemKind = (typeof PROBLEM_KINDS)[number];
+
 export interface Problem {
   readonly severity: "red" | "pending";
+  readonly kind: ProblemKind;
   readonly message: string;
 }
 
@@ -51,17 +90,19 @@ export class VerdictCollector {
     if (!this.byComponent.has(component)) this.byComponent.set(component, []);
   }
 
-  add(component: string, severity: Problem["severity"], message: string): void {
+  add(component: string, severity: Problem["severity"], message: string, kind: ProblemKind): void {
     this.declare(component);
-    this.byComponent.get(component)!.push({ severity, message });
+    this.byComponent.get(component)!.push({ severity, kind, message });
   }
 
-  red(component: string, message: string): void {
-    this.add(component, "red", message);
+  /** Problema rosso; senza un tipo più preciso vale `other`. */
+  red(component: string, message: string, kind: ProblemKind = "other"): void {
+    this.add(component, "red", message, kind);
   }
 
-  pending(component: string, message: string): void {
-    this.add(component, "pending", message);
+  /** Problema in attesa; senza un tipo più preciso vale `pending`. */
+  pending(component: string, message: string, kind: ProblemKind = "pending"): void {
+    this.add(component, "pending", message, kind);
   }
 
   verdicts(): ComponentVerdict[] {
@@ -133,19 +174,51 @@ export function renderMarkdown(report: ComponentReport): string {
 }
 
 /**
+ * Lo stesso report per la macchina (Story 2.9): ogni problema porta
+ * `severity`, `kind` e `message`; `exitCode` è quello del comando. È ciò che
+ * legge la skill `pds-component` per scegliere il percorso.
+ */
+export function renderJson(report: ComponentReport): string {
+  const verdict = (entry: ComponentVerdict) => ({
+    component: entry.component,
+    status: entry.status,
+    problems: entry.problems.map((problem) => ({ severity: problem.severity, kind: problem.kind, message: problem.message })),
+  });
+  const payload = {
+    title: report.title,
+    exitCode: exitCodeOf(report),
+    components: report.components.map(verdict),
+    global: report.global.map(verdict),
+    notes: [...report.notes],
+  };
+  return `${JSON.stringify(payload, null, 2)}\n`;
+}
+
+/** Scrive il JSON con tmp + rename: un fallimento non lascia un file a metà. */
+export function writeJsonReport(path: string, report: ComponentReport): void {
+  const tmp = `${path}.tmp`;
+  writeFileSync(tmp, renderJson(report), "utf8");
+  renameSync(tmp, path);
+}
+
+/**
  * Stampa il report nel terminale e, se `GITHUB_STEP_SUMMARY` esiste, lo
  * appende in Markdown (decisione 2: nessun permesso nuovo nel workflow).
+ * Con `jsonPath` (flag `--json <path>`, Story 2.9) scrive ANCHE il JSON su
+ * file: additivo, terminale, Markdown ed exit code restano identici.
  * Restituisce l'exit code secondo la decisione 1.
  */
 export function publishReport(
   report: ComponentReport,
   env: NodeJS.ProcessEnv = process.env,
   print: (text: string) => void = (text) => console.log(text),
+  jsonPath?: string,
 ): number {
   print(renderTerminal(report));
   const summary = env.GITHUB_STEP_SUMMARY;
   if (summary !== undefined && summary.trim().length > 0) {
     appendFileSync(summary, renderMarkdown(report), "utf8");
   }
+  if (jsonPath !== undefined) writeJsonReport(jsonPath, report);
   return exitCodeOf(report);
 }

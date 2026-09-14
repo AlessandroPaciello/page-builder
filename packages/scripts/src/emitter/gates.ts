@@ -149,7 +149,7 @@ export interface DriftResult {
   /** Per `drift`: i componenti da riestrarre, nominati. */
   drifted?: string[];
   /** Per `drift`: una riga per componente (Story 2.8 parte B: il report è per componente). */
-  details?: Array<{ component: string; detail: string }>;
+  details?: Array<{ component: string; detail: string; diverged: boolean }>;
   /** Per `skipped`: il motivo documentato (Penpot irraggiungibile). Mai un verde finto. */
   reason?: string;
 }
@@ -177,7 +177,7 @@ export async function checkDrift(options: {
     };
   }
   const drifted: string[] = [];
-  const details: Array<{ component: string; detail: string }> = [];
+  const details: Array<{ component: string; detail: string; diverged: boolean }> = [];
   for (const { component, committedFixture } of options.components) {
     let liveFixture: ComponentFixture;
     try {
@@ -185,12 +185,14 @@ export async function checkDrift(options: {
     } catch (error) {
       const cause = `estrazione live fallita: ${error instanceof Error ? error.message : String(error)}`;
       drifted.push(`${component} (${cause})`);
-      details.push({ component, detail: `Gate drift: ${cause}` });
+      // Estrazione live impossibile (es. variante non adottata): non è un
+      // drift da riestrarre, lo stato vero lo dice verify:library.
+      details.push({ component, detail: `Gate drift: ${cause}`, diverged: false });
       continue;
     }
     if (stableStringify(liveFixture) !== stableStringify(committedFixture)) {
       drifted.push(component);
-      details.push({ component, detail: `Gate drift: la fixture committata diverge da Penpot live — riestrarre con extract:component -- ${component}.` });
+      details.push({ component, detail: `Gate drift: la fixture committata diverge da Penpot live — riestrarre con extract:component -- ${component}.`, diverged: true });
     }
   }
   if (drifted.length > 0) {

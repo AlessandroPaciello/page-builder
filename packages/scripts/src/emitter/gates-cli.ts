@@ -156,12 +156,12 @@ export async function runGates(deps: GatesDeps = defaultGatesDeps()): Promise<Co
     // Gate 4 — conformità al contratto.
     const conformance = checkConformance([{ component, fixture, recipe, catalog, judgment, aliases }]);
     for (const failure of conformance.failures) {
-      for (const error of failure.errors) verdicts.red(component, `Gate conformità: ${error}`);
+      for (const error of failure.errors) verdicts.red(component, `Gate conformità: ${error}`, "gate-failed");
     }
 
     // Gate 1 — completezza artefatti.
     const completeness = checkCompleteness([{ component, domain: recipe.judgment.domain }], Object.keys(existing));
-    for (const missing of completeness.missing) verdicts.red(component, `Gate completezza: manca ${missing.path}`);
+    for (const missing of completeness.missing) verdicts.red(component, `Gate completezza: manca ${missing.path}`, "gate-failed");
 
     // Gate 2 — rigenerazione a diff zero (renderCheck, nessuna scrittura).
     try {
@@ -172,10 +172,11 @@ export async function runGates(deps: GatesDeps = defaultGatesDeps()): Promise<Co
         verdicts.red(
           component,
           `Gate rigenerazione: file ${divergence.reason === "missing" ? "assente" : "divergente"}: ${divergence.path}`,
+          "gate-failed",
         );
       }
     } catch (error) {
-      verdicts.red(component, `Gate rigenerazione: il rendering è fallito — ${message(error)}`);
+      verdicts.red(component, `Gate rigenerazione: il rendering è fallito — ${message(error)}`, "gate-failed");
     }
   }
 
@@ -185,7 +186,7 @@ export async function runGates(deps: GatesDeps = defaultGatesDeps()): Promise<Co
   const suiteLabel = "gate a11y — suite ui (vitest-axe)";
   global.declare(suiteLabel);
   const suite = checkA11y(deps.runSuite());
-  if (!suite.ok) global.red(suiteLabel, `Gate a11y: ${suite.detail}`);
+  if (!suite.ok) global.red(suiteLabel, `Gate a11y: ${suite.detail}`, "gate-failed");
   const declared = checkDeclaredA11y(
     a11yEntries.map(({ component, domain, a11y }) => {
       const path = `${domain}/${component}.test.tsx`;
@@ -196,6 +197,7 @@ export async function runGates(deps: GatesDeps = defaultGatesDeps()): Promise<Co
     verdicts.red(
       missing.component,
       `Gate a11y: ${missing.path} non asserisce nel DOM l'attributo dichiarato "${missing.attribute}" (rigenera con render:component).`,
+      "gate-failed",
     );
   }
 
@@ -204,7 +206,7 @@ export async function runGates(deps: GatesDeps = defaultGatesDeps()): Promise<Co
   if (drift.status === "skipped") {
     notes.push(`Gate drift SKIPPED — ${drift.reason}`);
   } else if (drift.status === "drift") {
-    for (const { component, detail } of drift.details ?? []) verdicts.red(component, detail);
+    for (const { component, detail, diverged } of drift.details ?? []) verdicts.red(component, detail, diverged ? "drift" : "other");
   } else {
     notes.push("Gate drift: fixture committate allineate a Penpot live.");
   }
@@ -212,12 +214,50 @@ export async function runGates(deps: GatesDeps = defaultGatesDeps()): Promise<Co
   return { title: "gates:render", components: verdicts.verdicts(), global: global.verdicts(), notes };
 }
 
+export interface GatesArgs {
+  /** `--json <path>` (Story 2.9): scrive anche il report JSON, con `kind` per problema. */
+  jsonPath?: string;
+}
+
+/** Argomenti di gates:render: solo `--json <path>`; il resto è un errore loud. */
+export function parseGatesArgs(args: readonly string[]): GatesArgs {
+  const rest = args.filter((arg) => arg !== "--");
+  let jsonPath: string | undefined;
+  for (let index = 0; index < rest.length; index++) {
+    const arg = rest[index];
+    if (arg === "--json") {
+      const value = rest[index + 1];
+      if (!value || value.startsWith("--")) throw new Error("Opzione --json richiede un percorso file.");
+      jsonPath = value;
+      index++;
+    } else {
+      throw new Error(`Argomento non riconosciuto: ${arg} — usare [--json <path>].`);
+    }
+  }
+  return jsonPath === undefined ? {} : { jsonPath };
+}
+
 const isDirectInvocation = process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
 
+/**
+ * Entry del CLI senza `process.exit`: argomenti → gate → report (terminale,
+ * `$GITHUB_STEP_SUMMARY`, JSON con `--json <path>`) → exit code.
+ */
+export async function runGatesCli(
+  argv: readonly string[],
+  deps: GatesDeps = defaultGatesDeps(),
+  env: NodeJS.ProcessEnv = process.env,
+  print?: (text: string) => void,
+): Promise<number> {
+  const args = parseGatesArgs(argv);
+  const report = await runGates(deps);
+  return publishReport(report, env, print, args.jsonPath);
+}
+
 if (isDirectInvocation) {
-  runGates()
-    .then((report) => {
-      process.exit(publishReport(report));
+  runGatesCli(process.argv.slice(2))
+    .then((code) => {
+      process.exit(code);
     })
     .catch((error: unknown) => {
       console.error(error instanceof Error ? error.message : error);

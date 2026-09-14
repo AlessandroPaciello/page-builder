@@ -68,6 +68,55 @@ describe("componentFixtureFromSnapshot", () => {
     expect(cell.root.children[0]!.tokens).toEqual({ fill: "color.primary-foreground", fontSize: "text.xs" });
   });
 
+  it("ordine canonico delle celle (Story 2.9): l'ordine dei figli in Penpot non cambia la fixture", () => {
+    const cell = (variant: string, size: string) => ({
+      variantProps: { variant, size },
+      variantError: null,
+      root: layer("Badge", { fill: `color.${variant === "default" ? "primary" : variant}` }),
+    });
+    const contractOrder = [cell("default", "sm"), cell("default", "md"), cell("secondary", "sm"), cell("destructive", "md")];
+    const penpotOrder = [cell("destructive", "md"), cell("secondary", "sm"), cell("default", "md"), cell("default", "sm")];
+    const fromContractOrder = componentFixtureFromSnapshot("Badge", snapshotWith(badgeContainer({ cells: contractOrder })));
+    const fromPenpotOrder = componentFixtureFromSnapshot("Badge", snapshotWith(badgeContainer({ cells: penpotOrder })));
+    expect(JSON.stringify(fromPenpotOrder)).toBe(JSON.stringify(fromContractOrder));
+    expect(fromPenpotOrder.cells.map((c) => `${c.variantProps.variant}/${c.variantProps.size}`)).toEqual([
+      "default/sm",
+      "default/md",
+      "secondary/sm",
+      "destructive/md",
+    ]);
+  });
+
+  it("ordine canonico dei valori d'asse (Story 2.9): una cella ricreata in Penpot non riordina la fixture", () => {
+    const penpotOrder = badgeContainer({ axesValues: { variant: ["secondary", "destructive", "default"], size: ["md", "sm"] } });
+    const fixture = componentFixtureFromSnapshot("Badge", snapshotWith(penpotOrder));
+    expect(fixture.axes).toEqual([
+      { name: "variant", values: ["default", "secondary", "destructive"] },
+      { name: "size", values: ["sm", "md"] },
+    ]);
+  });
+
+  it("valori che il contratto non ha (variante non adottata): dopo quelli noti, in ordine alfabetico; due ordini Penpot → stessa fixture", () => {
+    const cell = (variant: string) => ({
+      variantProps: { variant, size: "sm" },
+      variantError: null,
+      root: layer("Badge", { fill: "color.primary" }),
+    });
+    const container = (variants: string[], cellOrder: string[]) =>
+      badgeContainer({ axesValues: { variant: variants, size: ["sm", "md"] }, cells: cellOrder.map(cell) });
+    const first = componentFixtureFromSnapshot(
+      "Badge",
+      snapshotWith(container(["outline", "default", "info", "secondary", "destructive"], ["outline", "secondary", "info", "default"])),
+    );
+    const second = componentFixtureFromSnapshot(
+      "Badge",
+      snapshotWith(container(["info", "destructive", "secondary", "outline", "default"], ["default", "info", "outline", "secondary"])),
+    );
+    expect(first.axes[0]!.values).toEqual(["default", "secondary", "destructive", "info", "outline"]);
+    expect(first.cells.map((c) => c.variantProps.variant)).toEqual(["default", "secondary", "info", "outline"]);
+    expect(JSON.stringify(second)).toBe(JSON.stringify(first));
+  });
+
   it("non cerca per prefisso: un container chiamato 'Badge / Default' non è il container del contratto", () => {
     // Nella library verificata il nome del container è il PascalCase esatto
     // del contratto (regola 2 di verifyLibrary): un nome con separatore di
