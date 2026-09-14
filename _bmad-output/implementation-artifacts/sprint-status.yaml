@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-07-26
-last_updated: "2026-09-14 (bmad-build 2.9 — skill pds-component: implementazione, verifica live su Alert e review completate; story → review. Corretti anche tema token non importato in ui e parti figlie senza cn; 3 defer)"
+last_updated: "2026-09-14 (2.9 skill pds-component → done: PR #39 mergiata in develop come dc464cc; 3 defer da trattare prima della 2.10)"
 project: page-builder
 project_key: NOKEY
 tracking_system: file-system
@@ -66,7 +66,7 @@ development_status:
   2-6-emitter-shadcn-deterministico-e-gate-ci: done
   2-7-pipeline-pronta-per-piu-componenti: done
   2-8-registro-delle-proprieta-e-blocco-per-componente: done
-  2-9-skill-pds-component: review
+  2-9-skill-pds-component: done
   2-10-libreria-componenti-accessibile: backlog
   2-11-storybook-del-design-system: backlog
   epic-2-retrospective: optional
