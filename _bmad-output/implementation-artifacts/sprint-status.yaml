@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-07-26
-last_updated: "2026-09-14 (2.9 skill pds-component → done: PR #39 mergiata in develop come dc464cc; 3 defer da trattare prima della 2.10)"
+last_updated: "2026-09-15 (correct-course elasticità dell'estrazione: nuova Story 2.10 fedeltà live ed estrazione guidata dal contratto, libreria → 2.11, Storybook → 2.12; Epic 2 da 11 a 12 story)"
 project: page-builder
 project_key: NOKEY
 tracking_system: file-system
@@ -67,8 +67,9 @@ development_status:
   2-7-pipeline-pronta-per-piu-componenti: done
   2-8-registro-delle-proprieta-e-blocco-per-componente: done
   2-9-skill-pds-component: done
-  2-10-libreria-componenti-accessibile: backlog
-  2-11-storybook-del-design-system: backlog
+  2-10-fedelta-live-ed-estrazione-guidata-dal-contratto: backlog
+  2-11-libreria-componenti-accessibile: backlog
+  2-12-storybook-del-design-system: backlog
   epic-2-retrospective: optional
 
   epic-3: backlog
@@ -118,7 +119,7 @@ action_items:
     owner: "Dev"
     status: open
   - epic: 1
-    action: "Rivalutare la robustezza del dropdown-menu scritto a mano (focus trap, portal, ARIA) quando Story 2.10 genera il primo primitivo reale via Radix (ex 2.4, poi 2.7, poi 2.9)"
+    action: "Rivalutare la robustezza del dropdown-menu scritto a mano (focus trap, portal, ARIA) quando Story 2.11 genera il primo primitivo reale via Radix (ex 2.4, poi 2.7, poi 2.9, poi 2.10)"
     owner: "Dev"
     status: open
   - epic: 2
