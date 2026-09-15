@@ -298,7 +298,7 @@ So that il codice sia riproducibile e il drift design↔codice sia un test rosso
 
 As a sviluppatore,
 I want che la pipeline regga un catalogo di componenti che cresce e un design che evolve,
-So that la libreria dei sei domini (2.10) si generi senza verdi finti né passaggi a mano fuori dai comandi (FR2, NFR1, AD-11).
+So that la libreria dei sei domini (2.11) si generi senza verdi finti né passaggi a mano fuori dai comandi (FR2, NFR1, AD-11).
 
 **Acceptance Criteria:**
 
@@ -345,7 +345,25 @@ So that aggiungere o aggiornare un componente non richieda di conoscere a memori
 **And** `pds-additive` al passo 3, dopo aver riportato una differenza, indica la voce che la risolve; le due voci sono registrate nel `module-help.csv` di `pds-setup`
 **And** la skill è costruita con `bmad-workflow-builder` e verificata eseguendo i due percorsi su un componente reale.
 
-### Story 2.10: Libreria componenti accessibile
+### Story 2.10: Fedeltà live ed estrazione guidata dal contratto
+
+As a designer/sviluppatore,
+I want che l'estrazione prenda il contratto come riferimento, misuri il contrasto su Penpot live e che l'a11y possa variare per variante,
+So that la libreria dei sei domini (2.11) nasca senza verdi finti, e quando il design si allontana dal contratto la pipeline lo segnali e aiuti ad adattarlo invece di perderlo in silenzio (FR2, NFR1, NFR5, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** il modulo condiviso delle regole della library fra estrazione e `verify:library` (regole 2, 3, 6, 7), il registro delle proprietà della Story 2.8 e ogni parte di contratto con un ruolo (`surface`/`text`/`icon`/`divider`, AD-11)
+**When** estraggo o verifico un componente in cui una cella porta un token su una proprietà che il ruolo della parte non ammette (es. `strokeColor` su una parte `text`, anche al posto del `fill`)
+**Then** il solo componente è **in attesa**, con un messaggio che nomina componente, cella, parte, ruolo, proprietà e token, e propone l'adattamento nell'ordine designer → ruolo che impara la proprietà (riga della tabella ruolo → proprietà + mappatura + test rosso/verde) → cambio di ruolo nel contratto (comando con diff e `--yes`, solo `SCHEMA_VERSION`)
+**And** i contratti esistenti (Badge, Input, AccordionItem, Alert) dichiarano il ruolo delle parti, `designs/*.design.json` lo eredita dal contratto invece di dichiarare `kind`, e l'output generato resta byte-identico (`render:check` a diff zero)
+**And** la regola 10 di `verify:library` misura le coppie testo/sfondo **per componente** sui token dello snapshot live (parte `text`/`icon` × `surface` che la contiene, per cella), e un contrasto sotto soglia rende rossa la voce del componente (prova rosso/verde con il caso Alert `status=warning` a 1.82:1)
+**And** un design committato diverso da Penpot è un problema `design-drift` della voce, e `pnpm sync:design -- <Comp>` stampa il diff e con `--yes` riscrive `designs/<comp>.design.json` (tmp + rename, mai scritture su Penpot); `alert.design.json` è riallineato con il comando
+**And** `a11y.role` del giudizio accetta una mappa per un asse `option`; l'emitter emette il role per variante e il gate a11y lo verifica per ogni variante; Alert emette `role="status"` per `info`/`success` e `role="alert"` per `warning`/`error`
+**And** la skill `pds-component` [PS] instrada i nuovi stati (proprietà fuori ruolo → i tre adattamenti; `design-drift` → `sync:design`)
+**And** ogni controllo nuovo ha una propria prova rosso/verde.
+
+### Story 2.11: Libreria componenti accessibile
 
 As a sviluppatore,
 I want una libreria di componenti organizzata per dominio e conforme alla a11y baseline,
@@ -353,13 +371,13 @@ So that l'editor e le composizioni possano costruirci sopra (FR3, NFR1).
 
 **Acceptance Criteria:**
 
-**Given** i token generati, i contratti, l'emitter della Story 2.6, la pipeline della Story 2.7 e il registro delle proprietà della Story 2.8
+**Given** i token generati, i contratti, l'emitter della Story 2.6, la pipeline della Story 2.7, il registro delle proprietà della Story 2.8 e l'estrazione guidata dal contratto della Story 2.10
 **When** genero i componenti per i sei domini (data-display, inputs, feedback, layout, navigation, overlays) in `packages/ui/src/domains`, ciascuno creato con la voce [PC] di `pds-component` (Story 2.9): prima il contratto e il container Penpot, poi estrazione e render
 **Then** ogni componente interattivo ha focus visibile WCAG AA, stato comunicato da testo+colore e ARIA corretto, con il comportamento fornito dall'headless Radix dichiarato nel binding
 **And** i test axe passano su tutti i componenti e i componenti in `domains/` non importano da `editor/`, verificato da **lint bloccante**
 **And** i componenti senza headless disponibile e con logica propria (Table con sorting, Carousel) e i componenti complessi hanno un contratto completo e un segnaposto in Penpot; l'adapter è scritto a mano, senza marker `@generated`, e la pipeline li ignora.
 
-### Story 2.11: Storybook del design system
+### Story 2.12: Storybook del design system
 
 As a sviluppatore,
 I want uno Storybook che aggrega le storie dei componenti con addon di accessibilità,

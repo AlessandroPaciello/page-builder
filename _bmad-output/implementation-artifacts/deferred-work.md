@@ -211,12 +211,14 @@ Sessione di Alessandro con agente forge (`_bmad-output/forge/pipeline-troppo-vin
 - source_spec: `_bmad-output/implementation-artifacts/2-9-skill-pds-component.md`
   summary: la regola 10 di `verify:library` (contrasto) misura le coppie ricavate dal design committato (`designs/*.design.json`) e non i valori live di Penpot, e nessun comando aggiorna il design committato dopo un drift — un contrasto peggiorato in Penpot passa con tutti i gate verdi.
   evidence: nel giro 2 di [PS] su Alert il token `color.muted-foreground` è finito sulla root della cella `status=warning`: heading 1.93:1 e description 1.82:1 su `#3e4942`, mentre `verify:library` e `gates:render` erano verdi (verde finto). Dopo il riallineamento `alert.design.json` resta con `description` `warning` = `color.card-foreground` mentre Penpot e la fixture hanno `color.muted-foreground`. Rimandato da Alessandro (opzione a) come **prerequisito della Story 2.10**, che moltiplica i componenti.
+  routed: Story 2.10 (correct-course 2026-09-15) — regola 10 per componente sui token live + sync:design; alert.design.json riallineato con il comando.
 
 ## Deferred from: code review Story 2.9 (2026-09-14)
 
 - source_spec: `_bmad-output/implementation-artifacts/2-9-skill-pds-component.md`
   summary: il giudizio ammette un solo `role` fisso per componente, quindi un componente con stati informativi e bloccanti (Alert: `info`/`success` vs `warning`/`error`) non può avere `role="status"` sugli uni e `role="alert"` sugli altri.
   evidence: Alert emette `role="alert"` (live region assertiva) anche per `info`/`success`, che interrompe lo screen reader a ogni render; limite di espressività pre-esistente del giudizio (`a11y.role` stringa unica), non introdotto dalla 2.9. Da decidere prima che la 2.10 generi Toast/Alert definitivi.
+  routed: Story 2.10 (correct-course 2026-09-15) — a11y.role come mappa per asse option; Alert status/alert per variante.
 - source_spec: `_bmad-output/implementation-artifacts/2-9-skill-pds-component.md`
   summary: `_bmad/_config/skill-manifest.csv` registra le skill pds con path `_bmad/pds/<skill>/SKILL.md`, che su disco non esistono (le skill stanno in `skills/`, `.claude/skills/`, `.agents/skills/`).
   evidence: vale per pds-additive, pds-bootstrap, pds-setup e ora pds-component (schema dell'installer copiato); un consumer che risolve le skill dal manifest non le trova. Pre-esistente; da verificare con il flusso di installazione del modulo (pds-setup / installer BMad).
@@ -226,6 +228,7 @@ Sessione di Alessandro con agente forge (`_bmad-output/forge/pipeline-troppo-vin
 - source_spec: `_bmad-output/implementation-artifacts/spec-riordino-packages-scripts.md`
   summary: Regole della library duplicate fra estrazione (`component-reader.ts`, `extract-component.ts`) e `verify-library.ts` (regole 2, 3, 6, 7: nome del container, versione del plugin data, parti con binding, valori senza token) portate in un modulo condiviso, così la futura elasticità dell'estrazione si applica in un posto solo.
   evidence: split dal riordino (controllo multi-goal, scelta di Alessandro "A+C ora, B dopo"): cambia la logica e non solo la posizione dei file, quindi rischia di alterare messaggi e ordine dei controlli dentro un refactor che deve lasciarli identici. Prerequisito del correct-course sull'elasticità dell'estrazione, prima della 2.10.
+  routed: in corso in un'altra sessione (2026-09-15); è la Given della Story 2.10, che resta backlog finché non è done.
 - source_spec: `_bmad-output/implementation-artifacts/spec-riordino-packages-scripts.md`
   summary: Aggiornare l'albero di `packages/scripts` in `ARCHITECTURE-SPINE.md:241-245` (oggi `penpot/ recipes/ render/ gates/`) alla struttura del riordino (`src/{shared,theme,extract,library,emitter,cli}` + `data/`), in una PR `chore/` separata.
   evidence: decisione 2a di Alessandro (2026-09-14): i planning-artifacts non si toccano dal branch del riordino; senza questa voce l'obbligo resterebbe solo nella sezione congelata della spec (review, blind-hunter).
@@ -235,3 +238,12 @@ Sessione di Alessandro con agente forge (`_bmad-output/forge/pipeline-troppo-vin
 - source_spec: `_bmad-output/implementation-artifacts/spec-riordino-packages-scripts.md`
   summary: `generate:theme` non chiama `process.exit` a fine run, a differenza degli altri entrypoint di `src/cli/`: con `--live` un transport MCP aperto può tenere vivo il processo.
   evidence: pre-esistente (nel baseline `src/generate-theme.ts` usava già solo `process.exitCode = 1`); gli altri CLI chiudono esplicitamente per i socket MCP/SSE (commento in `cli/extract-component.ts`). Da verificare con un run `--live` reale: se il processo resta appeso, allineare la chiusura agli altri entrypoint.
+
+## Register: correct-course "elasticità dell'estrazione" (2026-09-15)
+
+Pianificato da `sprint-change-proposal-2026-09-15.md`, prima della libreria:
+
+- **Contratto come riferimento dell'estrazione** (decisione di Alessandro, variante A): ogni parte del contratto dichiara un ruolo (`surface`/`text`/`icon`/`divider`); la tabella ruolo → proprietà ammesse sta in `packages/scripts`, accanto al registro. Una proprietà fuori ruolo (es. `strokeColor` su un testo, anche al posto del `fill`) mette in attesa il solo componente e propone: designer → ruolo che impara la proprietà → cambio di ruolo nel contratto. Scartata la variante B (proprietà elencate per parte nel contratto): porterebbe il vocabolario Penpot in `@app/contracts` (AD-5). → AD-11, `penpot-pipeline.md`, **Story 2.10**.
+- **Contrasto live + `sync:design`** e **role per variante** → **Story 2.10**.
+- Rinumerazione: libreria **2.11**, Storybook **2.12**. I riferimenti storici di questo file a "Story 2.10" come libreria e "Story 2.11" come Storybook (register Alert, problema 7) valgono con i numeri nuovi.
+- **Aperti:** vocabolario esatto dei ruoli e proprietà ammesse per ruolo (da fissare nella spec della 2.10); se `surface` con solo `strokeColor` (outline) resta ammesso senza `fill`.

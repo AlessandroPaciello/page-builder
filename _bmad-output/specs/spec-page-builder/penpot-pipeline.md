@@ -87,6 +87,7 @@ L'agent decide la fattorizzazione per parti e i requisiti a11y. Vincoli:
 - ogni token referenziato esiste nel catalogo dello Stadio 1 — un valore literal **non passa la validazione**. È l'attuazione di "never assume missing values": un test, non una raccomandazione;
 - una parte annidata con assi propri fa **fallire lo schema**: la composizione (più item, sezioni) è una definizione di sezione, non una ricetta;
 - la **geometria delle icone** (path) è ignorata — l'icona in codice viene dalla libreria icone;
+- `a11y.role` è un role unico **oppure** una mappa per un asse `option` (`{ "axis": "status", "values": { "info": "status", "success": "status", "warning": "alert", "error": "alert" } }`): ogni valore dell'asse ha il suo role ARIA valido, l'emitter lo emette per variante e il gate a11y verifica ogni variante (prova rosso/verde); una mappa su un asse `state`/`behavior` o incompleta è rifiutata dallo schema (correct-course 2026-09-15, Story 2.10);
 - i binding token espliciti (colore/radius/font) e il layout/spacing/sizing dal CSS raw restano responsabilità separate, per non emettere stili in conflitto;
 - l'agent si rievoca solo se cambia la **struttura** del componente. Un token diverso o una nuova variante (già nel contratto) passano per fixture → render, senza agent.
 
@@ -111,6 +112,16 @@ Quando l'emitter non sa esprimere un design valido fatto con i token, si estende
 
 **Mai generare in silenzio una versione infedele.** Ciò che non è esprimibile blocca **solo quel componente**, con un messaggio che nomina il problema; gli altri proseguono. Attriti di organizzazione del file: maiuscole, spazi e ordine degli assi sono normalizzati dalla pipeline; un layer con un nome diverso dalla parte è un **alias nel binding** (a cura dello sviluppatore); una cella mancante blocca il componente e chiede al designer — mai inventata. Una variante aggiunta in Penpot blocca solo quel componente, che resta all'ultima versione buona, finché lo sviluppatore non la adotta (skill `pds-component` / `adopt:variant`); i componenti in attesa sono visibili nel report di PR/CI, non solo nel terminale.
 
+### Ruolo di parte — il contratto come riferimento dell'estrazione
+
+Ogni parte del contratto dichiara un **ruolo** (AD-11): `surface`, `text`, `icon`, `divider`. Accanto al registro delle proprietà, in `packages/scripts`, una **tabella ruolo → proprietà ammesse** dice quali proprietà del registro può portare una parte con quel ruolo (es. `text`: colore su `fill`, tipografia; `surface`: `fill`, `strokeColor`, radius, padding, gap, ombra; `icon`: colore su `strokeColor` o `fill`). Estrazione e `verify:library` confrontano ogni cella con la tabella: una proprietà che il ruolo non ammette **blocca solo quel componente** (stato **in attesa**) con un messaggio che nomina componente, cella, parte, ruolo, proprietà e token, e propone l'adattamento in quest'ordine:
+
+1. **al designer** — sposta il token sulla proprietà attesa (es. da `strokeColor` a `fill` su un testo); il messaggio è leggibile senza conoscere la pipeline;
+2. **allo sviluppatore, se il design è voluto** — il ruolo impara la proprietà: una riga della tabella + la mappatura dell'emitter + un test rosso/verde, **una volta per tutte**; il contratto non cambia;
+3. **allo sviluppatore, se la parte è d'altro tipo** — cambio di ruolo nel contratto (cambio compatibile: solo `SCHEMA_VERSION`), con un comando che propone il diff e scrive con `--yes`, come `adopt:variant`.
+
+Il ruolo sostituisce il `kind` del design committato come fonte: `designs/*.design.json` lo eredita dal contratto. (Correct-course 2026-09-15, Story 2.10.)
+
 ### Confine contratto / fixture / ricetta / emitter — la regola
 
 > **Contratto** = il vocabolario che il page builder espone (e che le pagine salvano).
@@ -120,7 +131,7 @@ Quando l'emitter non sa esprimere un design valido fatto con i token, si estende
 
 | Dato | Dove | Perché |
 |---|---|---|
-| assi, valori ammessi, tipo di asse (`option`/`state`/`behavior`) | contratto | vocabolario del page builder |
+| assi, valori ammessi, tipo di asse (`option`/`state`/`behavior`), ruolo di parte (`surface`/`text`/`icon`/`divider`) | contratto | vocabolario del page builder |
 | `height: 32px`, `border-color → border` | fixture | fatto misurabile / binding esplicito del designer |
 | celle `proprietà → token` per parte × asse | ricetta | fattorizzazione = giudizio |
 | `aria-invalid` sullo stato error | ricetta | l'a11y non è disegnabile |
@@ -167,7 +178,7 @@ I gate valutano **per componente**: un componente fuori regola rende rossa solo 
 - **rosso** — almeno un problema che va corretto (artefatto rotto, gate violato, collisione di normalizzazione, alias invalido, regole 1–3, 6, 7 non bloccata, cella duplicata o in più senza valore nuovo);
 - **in attesa** — solo problemi che aspettano una decisione: **valore d'asse in Penpot non adottato** (rimando a `pnpm adopt:variant -- <Comp>`; le celle di quel valore sono in attesa anche loro), **proprietà bloccata dal registro**, **cella mancante** (o valore del contratto assente in Penpot): una **domanda al designer**, mai una cella inventata; se il design committato prevede la cella, il messaggio rimanda a `pnpm add:library` (`addCell`).
 
-Le regole globali di `verify:library` (8 copertura spec, 9 tema, 10 contrasto, e la copertura design↔registry) sono righe **globali**, fuori dalle voci; in `gates:render` è globale la suite ui (vitest-axe), mentre l'a11y dichiarata, conformità, completezza, rigenerazione e drift sono per componente. In `gates:render` il caricamento e il rendering di ogni componente sono isolati: un artefatto che lancia rende rossa la sua voce e gli altri vengono comunque valutati. Un gate drift saltato (Penpot irraggiungibile) è una **nota** del report col motivo.
+Le regole globali di `verify:library` (8 copertura spec, 9 tema, e la copertura design↔registry) sono righe **globali**, fuori dalle voci. La **regola 10 (contrasto)** è **per componente** e misura i token **live** (correct-course 2026-09-15, Story 2.10): le coppie si ricavano dallo snapshot letto da Penpot (parte `text`/`icon` × parte `surface` che la contiene, per cella, grazie al ruolo), non da `designs/*.design.json`; le coppie di catalogo (`CATALOG_PAIRS`) restano globali. Un design committato che diverge da Penpot è un problema nominativo della voce (kind `design-drift`), che rimanda a `pnpm sync:design -- <Comp>`: il comando stampa il diff design committato ↔ Penpot, con `--yes` riscrive il design (tmp + rename), non scrive mai su Penpot. In `gates:render` è globale la suite ui (vitest-axe), mentre l'a11y dichiarata, conformità, completezza, rigenerazione e drift sono per componente. In `gates:render` il caricamento e il rendering di ogni componente sono isolati: un artefatto che lancia rende rossa la sua voce e gli altri vengono comunque valutati. Un gate drift saltato (Penpot irraggiungibile) è una **nota** del report col motivo.
 
 **Exit code** (decisione 1 di Alessandro, 2026-09-13): 1 solo se almeno una voce (di componente o globale) è rossa; con voci `ok`/`in attesa` l'exit è 0.
 
