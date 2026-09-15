@@ -21,4 +21,6 @@ export interface BoundaryReport {
 
 /** `@app/*` vietato tranne `@app/contracts` (senza traversate `..`/`.`). */
 export function isForbiddenSpecifier(specifier: string): boolean;
+/** True se `specifier`, risolto rispetto a `file`, esce dalla radice del package. */
+export function escapesPackageRoot(packageRoot: string, file: string, specifier: string): boolean;
 export function checkBoundaries(options: { packageRoot: string }): BoundaryReport;

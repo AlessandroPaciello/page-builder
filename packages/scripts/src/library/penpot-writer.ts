@@ -4,7 +4,7 @@ import type { Operation } from "./library-plan";
  * Traduce le `Operation` del piano in codice `execute_code` (Story 2.4,
  * Task 5): UN'operazione per chiamata, o lotti piccoli per i container, così
  * un errore live nomina l'operazione fallita. Il writer NON esegue nulla:
- * esegue il CLI (`library-cli.ts`) via `callPenpotTool`.
+ * esegue il CLI (`cli/library.ts`) via `callPenpotTool`.
  *
  * API usate (verificate con `high_level_overview`, 2026-09-12):
  * - `penpot.library.local.tokens.addSet({ name, active: true })`, `set.addToken({ type, name, value })`;

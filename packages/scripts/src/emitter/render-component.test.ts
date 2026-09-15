@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { ComponentRecipe } from "../recipe-schema";
+import type { ComponentRecipe } from "../extract/recipe-schema";
 import { loadBaseSources, loadBinding, loadCatalog, loadFixture, loadRecipe } from "./artifacts";
 import type { ComponentBinding } from "./binding-shadcn";
 import { declaredA11yAssertion, isGeneratedFile, renderCheck, renderComponent } from "./render-component";

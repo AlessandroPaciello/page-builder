@@ -21,7 +21,7 @@ Guida il bootstrap una tantum della library Penpot a partire dai contratti di `@
 Il compito di questa skill è guidare e fare domande, in quest'ordine:
 
 1. **File Penpot connesso.** Chiedi conferma che il file Penpot aperto sia quello nuovo e vuoto destinato alla library e che il plugin MCP sia connesso (token in `PENPOT_MCP_TOKEN`). Un file con già set di token o componenti viene rifiutato dal comando senza scrivere nulla: in quel caso il percorso è `pds-additive`.
-2. **Revisione del seed e dei design con il designer.** Mostra `{project-root}/packages/scripts/src/library/semantic-tokens.seed.json` e i file in `{project-root}/packages/scripts/src/library/designs/` e chiedi conferma dei valori: dopo il bootstrap i valori sono del designer in Penpot.
+2. **Revisione del seed e dei design con il designer.** Mostra `{project-root}/packages/scripts/data/semantic-tokens.seed.json` e i file in `{project-root}/packages/scripts/data/designs/` e chiedi conferma dei valori: dopo il bootstrap i valori sono del designer in Penpot.
 3. **Dry-run.** Lancia `pnpm --filter @penpot-ds/scripts bootstrap:library -- --dry-run` dalla root del progetto e mostra il piano: rifiuto, operazioni previste, nessuna scrittura. Chiedi conferma prima di procedere.
 4. **Esecuzione.** Lancia `pnpm --filter @penpot-ds/scripts bootstrap:library`. Se esce con 1 senza scritture, riporta il motivo (library non vuota) e ferma.
 5. **Esito.** Lancia `pnpm --filter @penpot-ds/scripts verify:library` e riporta l'exit code. Verde: bootstrap riuscito. Rosso: riporta gli errori così come lo script li nomina — la correzione sta nel designer o nel seed, non in una rettifica a mano.

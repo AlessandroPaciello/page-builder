@@ -5,7 +5,8 @@ import { join } from "node:path";
 import { COMPONENT_CONTRACTS, type ComponentContract } from "@app/contracts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { main, parseBumpArgs, resolveContract } from "./bump-cli";
+import { parseBumpArgs } from "../cli/bump-contract";
+import { resolveContract, runBump } from "./bump-command";
 import { bumpStep, planBump } from "./bump-contract";
 import type { LibrarySnapshot, SnapshotComponent } from "./library-snapshot";
 
@@ -122,7 +123,7 @@ describe("bumpStep — il codice generato eseguito su un container finto", () =>
   });
 });
 
-describe("bump-cli", () => {
+describe("bump:contract (CLI e comando)", () => {
   it("parseBumpArgs: componente, --yes / --dry-run alternativi, --snapshot solo in lettura", () => {
     expect(parseBumpArgs(["--", "Badge"])).toEqual({ component: "Badge", yes: false, snapshotPath: undefined });
     expect(parseBumpArgs(["badge", "--dry-run"])).toEqual({ component: "badge", yes: false, snapshotPath: undefined });
@@ -169,28 +170,28 @@ describe("bump-cli", () => {
 
     it("senza --yes stampa badge@1 → badge@2, non scrive, exit 0", async () => {
       const { callTool, writes } = transport(true);
-      expect(await main({ component: "Badge", yes: false }, { contracts, callTool })).toBe(0);
+      expect(await runBump({ component: "Badge", yes: false }, { contracts, callTool })).toBe(0);
       expect(writes).toEqual([]);
       expect(console.log).toHaveBeenCalledWith(expect.stringContaining("badge@1 → badge@2"));
     });
 
     it("con --yes scrive e la rilettura è verde → exit 0", async () => {
       const { callTool, writes } = transport(true);
-      expect(await main({ component: "Badge", yes: true }, { contracts, callTool })).toBe(0);
+      expect(await runBump({ component: "Badge", yes: true }, { contracts, callTool })).toBe(0);
       expect(writes).toHaveLength(1);
     });
 
     it("con --yes e un transport che ignora la scrittura → exit 1", async () => {
       const { callTool, writes } = transport(false);
-      expect(await main({ component: "Badge", yes: true }, { contracts, callTool })).toBe(1);
+      expect(await runBump({ component: "Badge", yes: true }, { contracts, callTool })).toBe(1);
       expect(writes).toHaveLength(1);
       expect(console.error).toHaveBeenCalledWith(expect.stringContaining('trovato "badge@1"'));
     });
 
     it("nulla da fare → exit 0 senza scrittura; errore del piano → exit 1", async () => {
       const { callTool, writes } = transport(true);
-      expect(await main({ component: "Input", yes: true }, { contracts, callTool })).toBe(1); // nessun container Input
-      expect(await main({ component: "Badge", yes: true }, { contracts: Object.values(COMPONENT_CONTRACTS), callTool })).toBe(0);
+      expect(await runBump({ component: "Input", yes: true }, { contracts, callTool })).toBe(1); // nessun container Input
+      expect(await runBump({ component: "Badge", yes: true }, { contracts: Object.values(COMPONENT_CONTRACTS), callTool })).toBe(0);
       expect(writes).toEqual([]);
     });
 
@@ -198,7 +199,7 @@ describe("bump-cli", () => {
       const dir = mkdtempSync(join(tmpdir(), "bump-"));
       const path = join(dir, "snapshot.json");
       writeFileSync(path, JSON.stringify(snapshotWith(container("Badge", "badge@1"))));
-      expect(await main({ component: "badge", yes: false, snapshotPath: path }, { contracts })).toBe(0);
+      expect(await runBump({ component: "badge", yes: false, snapshotPath: path }, { contracts })).toBe(0);
       expect(console.log).toHaveBeenCalledWith(expect.stringContaining("badge@1 → badge@2"));
     });
 
@@ -206,7 +207,7 @@ describe("bump-cli", () => {
       const dir = mkdtempSync(join(tmpdir(), "bump-"));
       const path = join(dir, "snapshot.json");
       writeFileSync(path, "{ non è json");
-      expect(await main({ component: "badge", yes: false, snapshotPath: path }, { contracts })).toBe(1);
+      expect(await runBump({ component: "badge", yes: false, snapshotPath: path }, { contracts })).toBe(1);
       expect(console.error).toHaveBeenCalledWith(expect.stringContaining(`Snapshot "${path}" non leggibile`));
     });
   });

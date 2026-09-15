@@ -1,4 +1,4 @@
-import type { PenpotTokenValue, TokenType } from "../theme-generator";
+import type { PenpotTokenValue, TokenType } from "../shared/theme-generator";
 import { committedDesigns } from "./designs-loader";
 import type { ComponentDesign } from "./library-plan";
 

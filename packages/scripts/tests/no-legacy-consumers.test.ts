@@ -1,10 +1,10 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
+
+import { PATHS } from "../src/shared/paths";
 
 /**
  * "Nessun consumer vecchio" (Story 2.4, Task 8, AC #4): scansiona
@@ -15,8 +15,7 @@ import { afterEach, describe, expect, it } from "vitest";
  * che ricompaiano.
  */
 
-const here = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(here, "../../..");
+const repoRoot = PATHS.repoRoot;
 const SCANNED_DIRS = [join(repoRoot, "packages/ui/src"), join(repoRoot, "apps/web/src")];
 const LEGACY_TOKEN_PATTERN = /\bmis[-.]/;
 

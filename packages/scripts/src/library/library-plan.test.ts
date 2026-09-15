@@ -1,16 +1,17 @@
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 
 import { COMPONENT_CONTRACTS, type ComponentContract } from "@app/contracts";
 import { describe, expect, it } from "vitest";
 
+import { PATHS } from "../shared/paths";
 import { committedDesigns } from "./designs-loader";
-import { planLibrary, pascalCase, type ComponentDesign, type LibraryPlanResult } from "./library-plan";
+import { pascalCase } from "../shared/naming";
+import { planLibrary, type ComponentDesign, type LibraryPlanResult } from "./library-plan";
 import { LIBRARY_SPEC, type SemanticSeed } from "./library-spec";
 import { emptySnapshot, type LibrarySnapshot, type SnapshotSet } from "./library-snapshot";
 
 const seed: SemanticSeed = JSON.parse(
-  readFileSync(resolve(import.meta.dirname, "semantic-tokens.seed.json"), "utf8"),
+  readFileSync(PATHS.semanticSeedPath, "utf8"),
 ) as SemanticSeed;
 
 const designs: Record<string, ComponentDesign> = committedDesigns();

@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 
 import { COMPONENT_CONTRACTS } from "@app/contracts";
 import { describe, expect, it } from "vitest";
 
+import { PATHS } from "../shared/paths";
 import { committedDesigns } from "./designs-loader";
 import { planLibrary, type Operation } from "./library-plan";
 import { LIBRARY_SPEC, type SemanticSeed } from "./library-spec";
@@ -11,7 +11,7 @@ import { emptySnapshot } from "./library-snapshot";
 import { operationsToSteps } from "./penpot-writer";
 
 const seed: SemanticSeed = JSON.parse(
-  readFileSync(resolve(import.meta.dirname, "semantic-tokens.seed.json"), "utf8"),
+  readFileSync(PATHS.semanticSeedPath, "utf8"),
 ) as SemanticSeed;
 
 const designs = committedDesigns();

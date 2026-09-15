@@ -1,14 +1,14 @@
-import { componentFixtureFromSnapshot } from "../component-reader";
-import type { ComponentFixture } from "../recipe-schema";
+import { componentFixtureFromSnapshot } from "../extract/component-reader";
+import type { ComponentFixture } from "../extract/recipe-schema";
 import type { LibrarySnapshot } from "../library/library-snapshot";
-import { stableStringify, validateRecipe } from "../validate-recipe";
+import { stableStringify, validateRecipe } from "../extract/validate-recipe";
 import { declaredA11yAssertion, renderCheck, type RenderedFile } from "./render-component";
 
 /**
  * I cinque gate del regime design→codice (Story 2.6, AC #2; penpot-pipeline.md
  * «Gate di verifica»): funzioni PURE, ognuna con prova rosso/verde propria
  * nella suite — un input che viola il gate lo fa fallire, non un canary
- * manuale. Il wiring CI è in `gates-cli.ts` + `.github/workflows/ci.yml`.
+ * manuale. Il wiring CI è in `cli/gates-render.ts` + `.github/workflows/ci.yml`.
  */
 
 export interface CompletenessEntry {

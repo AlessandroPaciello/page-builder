@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveMcpEndpoint } from "../mcp-client";
+import { resolveMcpEndpoint } from "../shared/mcp-client";
 import { STYLE_OF_SOURCE, readLibrarySnapshot } from "./library-reader";
 
 /** `styleOf` eseguito davvero, come in Penpot, su shape finte. */

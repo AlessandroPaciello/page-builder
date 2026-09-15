@@ -28,7 +28,7 @@ L'esito lo decidono gli script di `packages/scripts`: exit code e `kind` nel rep
 
 ## [PC] Crea componente
 
-Tutti i percorsi `src/…` sono relativi a `packages/scripts`.
+Tutti i percorsi `src/…` e `data/…` sono relativi a `packages/scripts`.
 
 ### Domande (una alla volta, prima di scrivere qualsiasi file)
 
@@ -42,12 +42,12 @@ Tutti i percorsi `src/…` sono relativi a `packages/scripts`.
 ### Passi (ognuno ha il suo comando o file e il suo esito)
 
 1. **Contratto**: `packages/contracts/src/components/<kebab>.ts` sul modello di un contratto esistente (es. `badge.ts`), con la registrazione in `packages/contracts/src/registry.ts`. Un contratto nuovo cambia il fingerprint: alza `SCHEMA_VERSION` (N→N+1) e lancia `pnpm --filter @app/contracts test`. Il test fallisce e stampa l'hash del payload corrente ("hash attuale: …"): quell'hash entra in `contracts.fingerprint.json` come voce **nuova** `"N+1"`, in coda. Le voci esistenti non si riscrivono mai. Rilancia il test, che deve essere verde.
-2. **Design**: `src/library/designs/<kebab>.design.json` con le celle e i token delle risposte alla domanda 5. Il test di copertura design↔registry deve essere verde.
+2. **Design**: `data/designs/<kebab>.design.json` con le celle e i token delle risposte alla domanda 5. Il test di copertura design↔registry deve essere verde.
 3. **Container in Penpot**: lancia la skill `pds-additive`. `add:library` crea il container col plugin data e `verify:library` deve essere verde. Coppie di contrasto: `verify:library` le ricava dai design (regola 10). Controlla che ogni coppia testo/sfondo del design nuovo compaia fra le coppie misurate dalla regola 10.
-4. **Snapshot committato**: chiedi conferma, perché il comando sovrascrive un file committato. Poi `{scripts} verify:library --write-snapshot src/library/library.snapshot.json` (lettura live) e mostra il `git diff` dello snapshot. Senza questo passo il test CI sullo snapshot committato resta rosso.
-5. **Giudizio**: `src/recipes/judgments/<kebab>.json`, con il dominio e l'a11y delle domande 3 e 4.
-6. **Base**: `npx shadcn add <comp>` e copia dei sorgenti in `src/emitter/bases/<base>/`, sul modello delle basi esistenti.
-7. **Binding**: `src/emitter/bindings/<kebab>.binding.json`, cioè la base, le parti del contratto verso le parti della base, i valori d'asse verso l'API e, se un layer ha un nome diverso dalla parte, gli alias (`parts.<parte>.aliases`).
+4. **Snapshot committato**: chiedi conferma, perché il comando sovrascrive un file committato. Poi `{scripts} verify:library --write-snapshot data/library.snapshot.json` (lettura live) e mostra il `git diff` dello snapshot. Senza questo passo il test CI sullo snapshot committato resta rosso.
+5. **Giudizio**: `data/recipes/judgments/<kebab>.json`, con il dominio e l'a11y delle domande 3 e 4.
+6. **Base**: `npx shadcn add <comp>` e copia dei sorgenti in `data/bases/<base>/`, sul modello delle basi esistenti.
+7. **Binding**: `data/bindings/<kebab>.binding.json`, cioè la base, le parti del contratto verso le parti della base, i valori d'asse verso l'API e, se un layer ha un nome diverso dalla parte, gli alias (`parts.<parte>.aliases`).
 8. **Estrazione**: `{scripts} extract:component -- <Comp>` scrive fixture e ricetta e fallisce senza scrivere se qualcosa non torna.
 9. **Render**: `{scripts} render:component -- <Comp>` scrive `.tsx`, test, story e barrel del dominio, marcati `@generated`.
 10. **Barrel**: aggiungi l'export in `packages/ui/src/domains/index.ts`, l'unico file scritto a mano.
@@ -57,7 +57,7 @@ Tutti i percorsi `src/…` sono relativi a `packages/scripts`.
 
 ### Lettura dello stato
 
-1. `{scripts} verify:library --json <tmp>/verify.json` (lettura live; senza Penpot usa `--snapshot src/library/library.snapshot.json`).
+1. `{scripts} verify:library --json <tmp>/verify.json` (lettura live; senza Penpot usa `--snapshot data/library.snapshot.json`).
 2. `{scripts} gates:render --json <tmp>/gates.json`.
 3. Leggi le voci di `<Comp>` nei due JSON: `status` e, per ogni problema, `kind`. Una riga `global` rossa (contrasto, suite a11y) blocca: riportala come bloccante, perché porta l'exit a 1.
 4. Esito: "allineato" solo se `<Comp>` è `ok` in entrambi, **e** entrambi i JSON hanno `exitCode` 0, **e** la lettura è stata live (niente `--snapshot`, nessuna nota `Gate drift SKIPPED` in `notes`). Se la lettura non era live, chiudi con "non verificato live" e il motivo, mai con "allineato".
@@ -73,9 +73,9 @@ Tutti i percorsi `src/…` sono relativi a `packages/scripts`.
 | `missing-cell-undesigned` | La cella non c'è né in Penpot né nel design. Porta la domanda al designer: la combinazione va disegnata? Non inventare la cella. La risposta torna nel design come in [PC] passo 2. |
 | `missing-cell` | Lancia la skill `pds-additive`: `add:library` crea la cella (`addCell`). Poi rileggi lo stato. |
 | `cell-not-in-contract` | Blocco e domanda al designer: la cella è fuori dal prodotto cartesiano del contratto. Non si inventa nulla. |
-| `blocked-property` | Indica come si sblocca, cioè una riga del registro in `src/style-properties.ts` con stato `supported`, la mappatura dell'emitter e un test rosso/verde nella stessa PR, e chiedi la decisione. Nessuna modifica automatica. |
-| `drift` | `{scripts} extract:component -- <Comp>`, poi `{scripts} render:component -- <Comp>`, poi mostra `git diff` di fixture, ricetta e file generati e lancia `{scripts} gates:render --json <tmp>/gates.json`, che deve dare exit 0. Il design committato (`designs/<kebab>.design.json`) non si aggiorna con questo percorso e resta al valore vecchio: è un limite noto, registrato in deferred-work il 2026-09-14, e va riportato allo sviluppatore. |
-| `snapshot-stale` | Chiedi conferma: il comando sovrascrive un file committato. Poi `{scripts} verify:library --write-snapshot src/library/library.snapshot.json` (lettura live), mostra il `git diff` dello snapshot e rileggi lo stato. |
+| `blocked-property` | Indica come si sblocca, cioè una riga del registro in `src/shared/style-properties.ts` con stato `supported`, la mappatura dell'emitter e un test rosso/verde nella stessa PR, e chiedi la decisione. Nessuna modifica automatica. |
+| `drift` | `{scripts} extract:component -- <Comp>`, poi `{scripts} render:component -- <Comp>`, poi mostra `git diff` di fixture, ricetta e file generati e lancia `{scripts} gates:render --json <tmp>/gates.json`, che deve dare exit 0. Il design committato (`data/designs/<kebab>.design.json`) non si aggiorna con questo percorso e resta al valore vecchio: è un limite noto, registrato in deferred-work il 2026-09-14, e va riportato allo sviluppatore. |
+| `snapshot-stale` | Chiedi conferma: il comando sovrascrive un file committato. Poi `{scripts} verify:library --write-snapshot data/library.snapshot.json` (lettura live), mostra il `git diff` dello snapshot e rileggi lo stato. |
 | `gate-failed` | Riporta il gate e il messaggio. La correzione sta nella ricetta, nel binding, nel giudizio o nel design, mai nel file generato. Fermati. |
 | `pending` | In attesa di altro: riportalo senza correggere nulla. |
 | `other` o un `kind` sconosciuto | Riportalo così com'è e fermati. |

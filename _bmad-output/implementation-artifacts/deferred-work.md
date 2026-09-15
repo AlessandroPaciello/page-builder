@@ -87,7 +87,7 @@ Lavoro identificato durante le review e rimandato consapevolmente. Ogni voce ind
 
 ## Deferred from: dev-story of 2-3-package-dei-contratti (2026-09-12)
 
-- **Gli altri cinque `check-boundaries.mjs` restano senza test propri** — `packages/contracts/scripts/check-boundaries.mjs` nasce con il modello da seguire: allowlist, funzione pura `checkBoundaries({ packageRoot })` esportata con tipi `.d.mts`, CLI dietro la guardia di invocazione diretta, prova rosso/verde su package finti in tmpdir più il package reale verde (`tests/check-boundaries.test.ts`). `domain`, `api`, `ui`, `scripts` e `tokens` restano a denylist e senza test. L'action item della retro Epic 1 resta **open**; estenderlo agli altri package era fuori scope della Story 2.3.
+- **Gli altri cinque `check-boundaries.mjs` restano senza test propri** — `packages/contracts/scripts/check-boundaries.mjs` nasce con il modello da seguire: allowlist, funzione pura `checkBoundaries({ packageRoot })` esportata con tipi `.d.mts`, CLI dietro la guardia di invocazione diretta, prova rosso/verde su package finti in tmpdir più il package reale verde (`tests/check-boundaries.test.ts`). `domain`, `api`, `ui` e `tokens` restano a denylist e senza test. *(Aggiornato il 2026-09-14, riordino di `packages/scripts`: `scripts` ha il canary rosso/verde dalla Story 2.4 e ora il gate risolve gli specifier relativi rispetto al file, rosso se escono dalla radice del package — il buco dei relativi è chiuso per `scripts`.)* L'action item della retro Epic 1 resta **open**; estenderlo agli altri package era fuori scope della Story 2.3.
 - **Falso positivo fail-closed dello scanner dei contratti** — gli specifier sono cercati con i literal intatti, così una stringa che contiene `from "react"` o `require("x")` è segnalata. È voluto (in `src/` dei contratti non esiste un uso legittimo) ed è coperto da un test "rosso atteso"; da rivalutare solo se un messaggio di errore dei contratti dovesse citare un import.
 
 ## Deferred from: code review of 2-3-package-dei-contratti (2026-09-12)
@@ -220,3 +220,18 @@ Sessione di Alessandro con agente forge (`_bmad-output/forge/pipeline-troppo-vin
 - source_spec: `_bmad-output/implementation-artifacts/2-9-skill-pds-component.md`
   summary: `_bmad/_config/skill-manifest.csv` registra le skill pds con path `_bmad/pds/<skill>/SKILL.md`, che su disco non esistono (le skill stanno in `skills/`, `.claude/skills/`, `.agents/skills/`).
   evidence: vale per pds-additive, pds-bootstrap, pds-setup e ora pds-component (schema dell'installer copiato); un consumer che risolve le skill dal manifest non le trova. Pre-esistente; da verificare con il flusso di installazione del modulo (pds-setup / installer BMad).
+
+## Deferred from: bmad-build riordino di packages/scripts (2026-09-14)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-riordino-packages-scripts.md`
+  summary: Regole della library duplicate fra estrazione (`component-reader.ts`, `extract-component.ts`) e `verify-library.ts` (regole 2, 3, 6, 7: nome del container, versione del plugin data, parti con binding, valori senza token) portate in un modulo condiviso, così la futura elasticità dell'estrazione si applica in un posto solo.
+  evidence: split dal riordino (controllo multi-goal, scelta di Alessandro "A+C ora, B dopo"): cambia la logica e non solo la posizione dei file, quindi rischia di alterare messaggi e ordine dei controlli dentro un refactor che deve lasciarli identici. Prerequisito del correct-course sull'elasticità dell'estrazione, prima della 2.10.
+- source_spec: `_bmad-output/implementation-artifacts/spec-riordino-packages-scripts.md`
+  summary: Aggiornare l'albero di `packages/scripts` in `ARCHITECTURE-SPINE.md:241-245` (oggi `penpot/ recipes/ render/ gates/`) alla struttura del riordino (`src/{shared,theme,extract,library,emitter,cli}` + `data/`), in una PR `chore/` separata.
+  evidence: decisione 2a di Alessandro (2026-09-14): i planning-artifacts non si toccano dal branch del riordino; senza questa voce l'obbligo resterebbe solo nella sezione congelata della spec (review, blind-hunter).
+- source_spec: `_bmad-output/implementation-artifacts/spec-riordino-packages-scripts.md`
+  summary: Nessun test esegue `generate:theme` sui path di default (`PATHS.catalogPath` → `PATHS.tokensSrcDir`): lo smoke lo lancia solo con `--bogus`, che fallisce nel parsing prima di toccare i file.
+  evidence: review verification-gap: un collegamento sbagliato dei path (chiave diversa ma esistente) passerebbe `paths.test`, il drift test di `theme-generator.test.ts` (chiama `generateTheme` direttamente) e lo smoke. Chiuderlo richiede comportamento nuovo: una modalità `--check` che confronta senza scrivere, o un seam per la cartella di output, perché un run reale riscrive file committati in `packages/tokens/src` mentre altri test li leggono.
+- source_spec: `_bmad-output/implementation-artifacts/spec-riordino-packages-scripts.md`
+  summary: `generate:theme` non chiama `process.exit` a fine run, a differenza degli altri entrypoint di `src/cli/`: con `--live` un transport MCP aperto può tenere vivo il processo.
+  evidence: pre-esistente (nel baseline `src/generate-theme.ts` usava già solo `process.exitCode = 1`); gli altri CLI chiudono esplicitamente per i socket MCP/SSE (commento in `cli/extract-component.ts`). Da verificare con un run `--live` reale: se il processo resta appeso, allineare la chiusura agli altri entrypoint.

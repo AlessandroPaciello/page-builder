@@ -1,7 +1,8 @@
 import { contractId, type ComponentContract } from "@app/contracts";
 
-import type { RegisteredProperty, STYLE_PROPERTIES } from "../style-properties";
-import type { PenpotTokenValue, TokenType } from "../theme-generator";
+import { pascalCase } from "../shared/naming";
+import type { RegisteredProperty, STYLE_PROPERTIES } from "../shared/style-properties";
+import type { PenpotTokenValue, TokenType } from "../shared/theme-generator";
 import type { LibrarySpec, SemanticSeed } from "./library-spec";
 import type { LibrarySnapshot } from "./library-snapshot";
 
@@ -118,14 +119,6 @@ export interface PlanLibraryInput {
   readonly seed: SemanticSeed;
   readonly designs: Readonly<Record<string, ComponentDesign>>;
   readonly snapshot: LibrarySnapshot;
-}
-
-/** `badge` → `Badge`, `accordion-item` → `AccordionItem`: il nome del container in Penpot. */
-export function pascalCase(kebab: string): string {
-  return kebab
-    .split("-")
-    .map((word) => (word.length > 0 ? word[0]!.toUpperCase() + word.slice(1) : word))
-    .join("");
 }
 
 /** Chiave cella nel design: assi in ordine contratto, `variant=default|size=sm`. */

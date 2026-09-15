@@ -6,8 +6,9 @@ import { COMPONENT_CONTRACTS, fingerprintPayload, SCHEMA_VERSION, SECTION_DEFINI
 import { describe, expect, it, vi } from "vitest";
 
 import { BindingSchema } from "../emitter/binding-shadcn";
-import { FixtureSchema, type ComponentFixture } from "../recipe-schema";
-import { DEFAULT_PATHS } from "./adopt-cli";
+import { FixtureSchema, type ComponentFixture } from "../extract/recipe-schema";
+import { PATHS } from "../shared/paths";
+import { DEFAULT_PATHS } from "./adopt-command";
 import {
   addValuesToContractSource,
   planAdoption,
@@ -21,7 +22,7 @@ import type { ComponentDesign } from "./library-plan";
 import type { LibrarySnapshot, SnapshotCell, SnapshotLayer } from "./library-snapshot";
 import { verifyLibrary } from "./verify-library";
 
-const recipesDir = resolve(import.meta.dirname, "../recipes");
+const recipesDir = PATHS.recipesDir;
 
 function fixture(name: string): ComponentFixture {
   return FixtureSchema.parse(JSON.parse(readFileSync(resolve(recipesDir, `${name}.fixture.json`), "utf8")));
