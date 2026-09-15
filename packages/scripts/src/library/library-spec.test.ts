@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { PATHS } from "../shared/paths";
 import { contrastRatio } from "./contrast";
 import { committedDesigns } from "./designs-loader";
 import type { ComponentDesign } from "./library-plan";
@@ -13,11 +13,10 @@ import {
   type SemanticSeed,
   type SeedToken,
 } from "./library-spec";
-import { generateTheme, varName, type TokenCatalog } from "../theme-generator";
+import { generateTheme, varName, type TokenCatalog } from "../shared/theme-generator";
 
-const here = import.meta.dirname;
 const seed: SemanticSeed = JSON.parse(
-  readFileSync(resolve(here, "semantic-tokens.seed.json"), "utf8"),
+  readFileSync(PATHS.semanticSeedPath, "utf8"),
 ) as SemanticSeed;
 
 function seedCatalog(): TokenCatalog {

@@ -1,16 +1,17 @@
 import type { ComponentContract } from "@app/contracts";
 
-import { VerdictCollector, type ComponentReport, type ComponentVerdict, type ProblemKind } from "../component-report";
-import { partOfLayer, resolvePartAliases, type AliasSource } from "../recipe-schema";
-import { layerTreeIssues, propertyDefinition } from "../style-properties";
-import type { TokenCatalog } from "../theme-generator";
-import { generateTheme } from "../theme-generator";
+import { VerdictCollector, type ComponentReport, type ComponentVerdict, type ProblemKind } from "../shared/component-report";
+import { partOfLayer, resolvePartAliases, type AliasSource } from "../extract/recipe-schema";
+import { layerTreeIssues, propertyDefinition } from "../shared/style-properties";
+import type { TokenCatalog } from "../shared/theme-generator";
+import { generateTheme } from "../shared/theme-generator";
 import { contrastRatio, parseHex } from "./contrast";
 import { designCoverage } from "./designs-loader";
-import { cartesian, pascalCase, sameColorish, type ComponentDesign } from "./library-plan";
+import { pascalCase } from "../shared/naming";
+import { cartesian, sameColorish, type ComponentDesign } from "./library-plan";
 import type { LibrarySpec, SemanticSeed } from "./library-spec";
 import type { LibrarySnapshot, SnapshotLayer } from "./library-snapshot";
-import { normalizeVariants } from "../variant-normalize";
+import { normalizeVariants } from "../extract/variant-normalize";
 
 /**
  * Il verificatore che DECIDE l'esito (Story 2.4, Task 4, AC #3): funzione
@@ -393,7 +394,7 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
     if (!containers.some((container) => container.name === component)) {
       verdicts.red(
         component,
-        `Componente committato "${component}" assente dallo snapshot della library — snapshot da aggiornare: pnpm verify:library --write-snapshot src/library/library.snapshot.json (lettura live).`,
+        `Componente committato "${component}" assente dallo snapshot della library — snapshot da aggiornare: pnpm verify:library --write-snapshot data/library.snapshot.json (lettura live).`,
         "snapshot-stale",
       );
     }

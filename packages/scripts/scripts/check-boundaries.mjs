@@ -21,10 +21,15 @@
  * `raw` (commenti stripping, literal intatti) è un backstop anti-desync che
  * segnala qualunque `@app/` fuori dai casi ammessi. Un `@app/contracts/..`
  * (traversata fuori dal package) è rosso sia come specifier sia in raw.
+ *
+ * Import relativi (riordino di packages/scripts): uno specifier relativo in
+ * posizione di import si risolve rispetto al file ed è rosso se esce dalla
+ * radice del package — `../../ui/src/y` raggiungerebbe `@penpot-ds/ui` senza
+ * nominarlo. Gli import relativi interni fra cartelle di `src/` restano verdi.
  */
 
-import { readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const SOURCE_EXTENSION = /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs)$/;
@@ -51,6 +56,25 @@ const FORBIDDEN_RAW = [
   /@penpot-ds\/ui/,
   /(^|[^\w@./-])apps\//,
 ];
+
+/**
+ * Specifier relativi in posizione di import: `from "…"`, `import "…"`,
+ * `import("…")`, `require("…")`. Solo questi si risolvono rispetto al file:
+ * un literal qualunque che comincia con `../` (un path in un messaggio) non è
+ * un import.
+ */
+const RELATIVE_IMPORT = /(?:\bfrom|\bimport|\brequire)\s*\(?\s*(["'`])(\.{1,2}\/[^"'`\n]*)\1/g;
+
+/**
+ * Un import relativo che, risolto rispetto al file, esce dalla radice del
+ * package (es. `../../ui/src/y` o `../../apps/web/src/x`): aggira il confine
+ * senza nominare `@penpot-ds/ui` né `apps/`. Un import relativo interno fra
+ * cartelle di `src/` (`../shared/paths`) resta verde.
+ */
+export function escapesPackageRoot(packageRoot, file, specifier) {
+  const target = relative(resolve(packageRoot), resolve(dirname(file), specifier));
+  return target === ".." || target.startsWith(`..${sep}`) || isAbsolute(target);
+}
 
 function stripComments(source) {
   let out = "";
@@ -142,7 +166,11 @@ export function checkBoundaries({ packageRoot }) {
   const violations = [];
   const scanErrors = [];
   const srcDir = join(packageRoot, "src");
-  const files = sourceFiles(srcDir, new Set(), scanErrors);
+  const srcFiles = sourceFiles(srcDir, new Set(), scanErrors);
+  // Le basi shadcn committate (`data/bases/`, .tsx) sono codice anche se
+  // vivono fuori da `src/`: stesse regole. Assenti in un package senza basi.
+  const basesDir = join(packageRoot, "data", "bases");
+  const files = existsSync(basesDir) ? srcFiles.concat(sourceFiles(basesDir, new Set(), scanErrors)) : srcFiles;
 
   for (const path of files) {
     let raw;
@@ -161,6 +189,18 @@ export function checkBoundaries({ packageRoot }) {
           violations.push({ file, line: index + 1, specifier: match[1], text: rawLines[index]?.trim() ?? "" });
         }
       }
+      for (const match of line.matchAll(RELATIVE_IMPORT)) {
+        const specifier = match[2];
+        if (escapesPackageRoot(packageRoot, path, specifier)) {
+          violations.push({
+            file,
+            line: index + 1,
+            specifier,
+            reason: `import relativo fuori dalla radice del package (${relative(packageRoot, resolve(dirname(path), specifier))})`,
+            text: rawLines[index]?.trim() ?? "",
+          });
+        }
+      }
     });
     if (FORBIDDEN_RAW.some((pattern) => pattern.test(scanned))) {
       violations.push({
@@ -172,7 +212,7 @@ export function checkBoundaries({ packageRoot }) {
   }
 
   // Un gate che non ha guardato nulla non può dire verde.
-  if (files.length === 0 && scanErrors.length === 0) {
+  if (srcFiles.length === 0 && scanErrors.length === 0) {
     scanErrors.push({ path: srcDir, reason: "nessun sorgente trovato: src/ è vuota" });
   }
 

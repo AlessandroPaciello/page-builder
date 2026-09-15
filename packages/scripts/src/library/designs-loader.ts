@@ -1,20 +1,20 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 
 import type { ComponentContract } from "@app/contracts";
 
+import { PATHS } from "../shared/paths";
 import type { ComponentDesign } from "./library-plan";
 
 /**
  * Loader dei design committati (Story 2.7, problema 3): i design sono
- * `designs/<contratto>.design.json`, e la chiave è il nome del file. Nessuna
+ * `data/designs/<contratto>.design.json`, e la chiave è il nome del file. Nessuna
  * lista a mano nel CLI o nei test: un design nuovo entra per costruzione, e
  * la copertura design↔registry dei contratti la verifica `designCoverage`.
  * Stesso schema di `committedComponents` (emitter/artifacts.ts).
  */
 
-export const designsDir = resolve(dirname(fileURLToPath(import.meta.url)), "designs");
+export const designsDir = PATHS.designsDir;
 
 const DESIGN_SUFFIX = ".design.json";
 

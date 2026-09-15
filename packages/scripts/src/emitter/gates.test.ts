@@ -2,9 +2,9 @@ import { readdirSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-import { componentFixtureFromSnapshot } from "../component-reader";
+import { componentFixtureFromSnapshot } from "../extract/component-reader";
 import type { LibrarySnapshot } from "../library/library-snapshot";
-import type { ComponentFixture } from "../recipe-schema";
+import type { ComponentFixture } from "../extract/recipe-schema";
 import {
   committedComponents,
   loadBaseSources,
@@ -24,7 +24,7 @@ import {
   checkDrift,
   checkRegeneration,
 } from "./gates";
-import { loadJudgment } from "../extract-component";
+import { loadJudgment } from "../extract/extract-component";
 import { declaredA11yAssertion, renderComponent } from "./render-component";
 
 /**

@@ -15,8 +15,8 @@ import ts from "typescript";
 
 import { BindingSchema, type ComponentBinding } from "../emitter/binding-shadcn";
 import { influencingAxes } from "../emitter/axis-influence";
-import { partBindings } from "../recipe-schema";
-import { propertyDefinition } from "../style-properties";
+import { partBindings } from "../extract/recipe-schema";
+import { propertyDefinition } from "../shared/style-properties";
 import { cartesian, type ComponentDesign } from "./library-plan";
 import type { LibrarySnapshot, SnapshotCell, SnapshotLayer } from "./library-snapshot";
 
@@ -47,9 +47,9 @@ export interface AdoptionSources {
   readonly schemaVersion: SourceFile;
   /** `packages/contracts/tests/contracts.fingerprint.json` (append-only). */
   readonly fingerprint: SourceFile;
-  /** `packages/scripts/src/emitter/bindings/<nome>.binding.json`. */
+  /** `packages/scripts/data/bindings/<nome>.binding.json`. */
   readonly binding: SourceFile;
-  /** `packages/scripts/src/library/designs/<nome>.design.json`. */
+  /** `packages/scripts/data/designs/<nome>.design.json`. */
   readonly design: SourceFile;
 }
 

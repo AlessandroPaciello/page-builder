@@ -1,10 +1,10 @@
-import { PLUGIN_DATA_PATTERN, contractByName } from "../component-reader";
-import { toKebab } from "../extract-component";
+import { PLUGIN_DATA_PATTERN, contractByName } from "../extract/component-reader";
+import { toKebab } from "../shared/naming";
 import type { SnapshotLayer } from "../library/library-snapshot";
-import { cellKeyOf, resolvePartAliases, type ComponentFixture, type ComponentRecipe } from "../recipe-schema";
-import { lookupProperty, radiusCorners, removalClasses, type EmitRule } from "../style-properties";
-import { varSuffix, type TokenCatalog, type TokenType } from "../theme-generator";
-import { buildTokenVocabulary, validateClassesAgainstVocabulary } from "../token-vocabulary";
+import { cellKeyOf, resolvePartAliases, type ComponentFixture, type ComponentRecipe } from "../extract/recipe-schema";
+import { lookupProperty, radiusCorners, removalClasses, type EmitRule } from "../shared/style-properties";
+import { varSuffix, type TokenCatalog, type TokenType } from "../shared/theme-generator";
+import { buildTokenVocabulary, validateClassesAgainstVocabulary } from "../theme/token-vocabulary";
 import { influencingAxes, parseCellKey } from "./axis-influence";
 import type { BindingPart, ComponentBinding } from "./binding-shadcn";
 

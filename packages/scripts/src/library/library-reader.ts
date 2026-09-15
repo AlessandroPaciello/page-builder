@@ -5,8 +5,8 @@ import {
   withTimeout,
   type McpCallToolResult,
   type McpEndpoint,
-} from "../mcp-client";
-import { propertiesReadAs, strokeKeywordReads } from "../style-properties";
+} from "../shared/mcp-client";
+import { propertiesReadAs, strokeKeywordReads } from "../shared/style-properties";
 import type { LibrarySnapshot, SnapshotToken } from "./library-snapshot";
 
 /**

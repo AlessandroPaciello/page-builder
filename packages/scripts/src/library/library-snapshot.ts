@@ -1,4 +1,4 @@
-import type { PenpotTokenValue, TokenType } from "../theme-generator";
+import type { PenpotTokenValue, TokenType } from "../shared/theme-generator";
 
 /**
  * Snapshot serializzabile della library Penpot locale (Story 2.4, Task 4):

@@ -1,27 +1,26 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join, resolve } from "node:path";
 
-import { loadCatalogFixture, loadJudgment, fixturePathFor, recipePathFor, toKebab } from "../extract-component";
-import { FixtureSchema, RecipeSchema, type ComponentFixture, type ComponentRecipe } from "../recipe-schema";
-import type { TokenCatalog } from "../theme-generator";
+import { loadCatalogFixture, loadJudgment, fixturePathFor, recipePathFor } from "../extract/extract-component";
+import { PATHS } from "../shared/paths";
+import { toKebab } from "../shared/naming";
+import { FixtureSchema, RecipeSchema, type ComponentFixture, type ComponentRecipe } from "../extract/recipe-schema";
+import type { TokenCatalog } from "../shared/theme-generator";
 import { BindingSchema, type ComponentBinding } from "./binding-shadcn";
 
 /**
  * Caricamento degli artefatti committati dell'emitter (Story 2.6): fixture e
- * ricetta da `src/recipes/`, giudizio da `src/recipes/judgments/`, binding da
- * `src/emitter/bindings/`, basi shadcn da `src/emitter/bases/`. Tutto
+ * ricetta da `data/recipes/`, giudizio da `data/recipes/judgments/`, binding da
+ * `data/bindings/`, basi shadcn da `data/bases/` (path in `shared/paths.ts`). Tutto
  * validato ALLA FONTE con gli schemi: un JSON malformato produce un errore
  * che nomina il file e il campo, mai un SyntaxError grezzo a valle.
  */
 
-const here = dirname(fileURLToPath(import.meta.url));
-
-export const recipesDir = resolve(here, "../recipes");
-export const bindingsDir = resolve(here, "bindings");
-export const basesDir = resolve(here, "bases");
+export const recipesDir = PATHS.recipesDir;
+export const bindingsDir = PATHS.bindingsDir;
+export const basesDir = PATHS.basesDir;
 /** Radice dei file generati: `packages/ui/src/domains/`. */
-export const domainsRoot = resolve(here, "../../../ui/src/domains");
+export const domainsRoot = PATHS.domainsRoot;
 
 export function loadCatalog(): TokenCatalog {
   return loadCatalogFixture();
@@ -79,7 +78,7 @@ export function loadBinding(componentName: string, dir: string = bindingsDir): C
 
 /**
  * Componenti coperti dai gate, derivati dalle ricette committate
- * (`src/recipes/*.recipe.json`, validate con RecipeSchema): un componente
+ * (`data/recipes/*.recipe.json`, validate con RecipeSchema): un componente
  * futuro con ricetta committata entra nei gate per costruzione, non resta
  * fuori in silenzio da una lista hard-coded. Ordinati per output
  * deterministico.
@@ -130,7 +129,7 @@ export function scanCommittedComponents(dir: string = recipesDir): CommittedScan
 export function loadBaseSources(base: string, root: string = basesDir): Record<string, string> {
   const dir = resolve(root, base);
   if (!existsSync(dir)) {
-    throw new Error(`Base shadcn "${base}" non trovata: ${dir} — committala sotto src/emitter/bases/ (shadcn add una tantum).`);
+    throw new Error(`Base shadcn "${base}" non trovata: ${dir} — committala sotto data/bases/ (shadcn add una tantum).`);
   }
   const sources: Record<string, string> = {};
   for (const entry of readdirSync(dir)) {

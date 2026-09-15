@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -72,11 +72,42 @@ describe("checkBoundaries: verde", () => {
     expect(report).toEqual({ violations: [], scanErrors: [], scannedFileCount: 2 });
   });
 
+  it("import relativo interno fra cartelle di src/ (`../shared/paths`) è verde", () => {
+    const report = checkBoundaries({
+      packageRoot: fakePackage({
+        "src/shared/paths.ts": "export const PATHS = {};\n",
+        "src/cli/main.ts": 'import { PATHS } from "../shared/paths";\nexport { PATHS };\n',
+        "src/index.ts": 'export { PATHS } from "./shared/paths";\n',
+      }),
+    });
+    expect(report).toEqual({ violations: [], scanErrors: [], scannedFileCount: 3 });
+  });
+
+  it("un literal `../` che non è un import (path in un messaggio) non riguarda il check dei relativi", () => {
+    const report = checkBoundaries({
+      packageRoot: fakePackage({ "src/index.ts": 'export const hint = "../../tokens/src";\n' }),
+    });
+    expect(report.violations).toEqual([]);
+  });
+
+  it("un import vietato in una base shadcn `data/bases/x/x.tsx` è rosso", () => {
+    const report = checkBoundaries({
+      packageRoot: fakePackage({
+        "src/index.ts": "export const x = 1;\n",
+        "data/bases/x/x.tsx": 'import { Button } from "@penpot-ds/ui";\nexport { Button };\n',
+      }),
+    });
+    expect(report.violations.some((v) => v.specifier === "@penpot-ds/ui" && v.file === join("data", "bases", "x", "x.tsx")), JSON.stringify(report)).toBe(true);
+  });
+
   it("il package reale packages/scripts è verde", () => {
     const report = checkBoundaries({ packageRoot: REAL_PACKAGE_ROOT });
     expect(report.violations).toEqual([]);
     expect(report.scanErrors).toEqual([]);
     expect(report.scannedFileCount).toBeGreaterThan(0);
+    // Anche le basi in data/bases/ sono scansionate.
+    const srcCount = readdirSync(join(REAL_PACKAGE_ROOT, "src"), { recursive: true }).filter((entry) => /\.tsx?$/.test(String(entry))).length;
+    expect(report.scannedFileCount).toBeGreaterThan(srcCount);
   });
 });
 
@@ -140,6 +171,22 @@ describe("checkBoundaries: rosso", () => {
     // deve prenderlo comunque.
     const report = checkSource("const a = \"it's\"; import x from 'apps/web';\n");
     expect(report.violations.length).toBeGreaterThan(0);
+  });
+
+  it("import relativo `../../apps/web/src/x` fuori dalla radice del package è rosso, con file, riga e specifier", () => {
+    const report = checkSource('export const a = 1;\nimport { page } from "../../apps/web/src/x";\n');
+    const violation = report.violations.find((entry) => entry.specifier === "../../apps/web/src/x");
+    expect(violation, JSON.stringify(report)).toMatchObject({ file: join("src", "local.ts"), line: 2 });
+    expect(violation?.reason).toMatch(/fuori dalla radice del package/);
+  });
+
+  it("import relativo `../../ui/src/y` fuori dalla radice del package è rosso", () => {
+    expectRed(checkSource('import { Button } from "../../ui/src/y";\n'), "../../ui/src/y");
+  });
+
+  it("import dinamico e side-effect relativi fuori dal package sono rossi", () => {
+    expectRed(checkSource('await import("../../ui/src/y");\n'), "../../ui/src/y");
+    expectRed(checkSource('import "../../outside";\n'), "../../outside");
   });
 
   it("apps/web in una stringa fuori da qualunque literal scannerizzato è rosso via backstop raw", () => {

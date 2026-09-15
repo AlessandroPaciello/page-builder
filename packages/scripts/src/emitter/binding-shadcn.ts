@@ -3,7 +3,7 @@ import { z } from "zod";
 /**
  * Tabella di binding per componente per l'emitter shadcn (Story 2.6, AD-11):
  * emitter + binding = tutto ciò che dipende dalla libreria. La tabella è
- * committata (`src/emitter/bindings/<kebab>.binding.json`) e dichiara:
+ * committata (`data/bindings/<kebab>.binding.json`) e dichiara:
  * componente base shadcn, parti ricetta → parti libreria, headless, valori
  * d'asse → API della libreria. L'emitter (`render-component.ts`) legge, non
  * giudica: il TIPO d'asse vive solo nel contratto (`@app/contracts`), qui è
@@ -66,7 +66,7 @@ export const BindingSchema = z.object({
   componentName: z.string().min(1),
   /** Plugin data `nome@versione`: deve coincidere con `fixture.contract`. */
   contract: z.string().min(1),
-  /** Directory della base shadcn committata sotto `src/emitter/bases/`. */
+  /** Directory della base shadcn committata sotto `data/bases/`. */
   base: z.string().min(1),
   /** Libreria headless: import riusato verbatim dalla base, parte Root per i wrap di test/story. */
   headless: z
