@@ -104,7 +104,15 @@
     "domain": "feedback",
     "headless": null,
     "a11y": {
-      "role": "alert",
+      "role": {
+        "axis": "status",
+        "values": {
+          "info": "status",
+          "success": "status",
+          "warning": "alert",
+          "error": "alert"
+        }
+      },
       "ariaAttributes": [],
       "focusVisible": false,
       "stateConveyedByTextAndColor": true

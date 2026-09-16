@@ -8,6 +8,7 @@ import {
   RecipeSchema,
   cellKeyOf,
   partBindings,
+  roleMapProblems,
   type ComponentFixture,
   type ComponentRecipe,
 } from "./recipe-schema";
@@ -224,6 +225,10 @@ export function validateRecipe(
       }
     }
   }
+
+  // Role per variante (Story 2.10, D): una mappa è ammessa solo su un asse
+  // `option` del contratto e ne copre esattamente i valori.
+  for (const problem of roleMapProblems(r.judgment.a11y.role, contract)) errors.push(`ricetta judgment ${problem}`);
 
   // Giudizio (change log loop 1, BH#3): recipe.judgment deve coincidere col
   // contenuto del file di giudizio per contratto (`judgments/<nome>.json`,

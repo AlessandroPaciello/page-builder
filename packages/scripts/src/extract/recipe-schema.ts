@@ -73,6 +73,62 @@ export type DesignDomain = (typeof DESIGN_DOMAINS)[number];
  * Story 2.5). `headless: null` = nessuna libreria headless necessaria.
  * `comment` è il posto per le note in file JSON (niente commenti liberi).
  */
+/**
+ * `a11y.role` (Story 2.10, D): un role unico, `null`, oppure una mappa per un
+ * asse `option` del contratto — `{ axis, values: { <valore>: <role> } }`.
+ * Che l'asse sia `option` e che la mappa copra esattamente i suoi valori lo
+ * decide `roleMapProblems` contro il contratto (lo schema non lo conosce).
+ */
+export const RoleMapSchema = z
+  .object({
+    axis: z.string().min(1),
+    values: z.record(z.string().min(1), z.string().min(1)),
+  })
+  .strict();
+
+export type RoleMap = z.infer<typeof RoleMapSchema>;
+
+export type DeclaredRole = string | null | RoleMap;
+
+/** `true` se il role dichiarato è una mappa per variante. */
+export function isRoleMap(role: DeclaredRole): role is RoleMap {
+  return role !== null && typeof role === "object";
+}
+
+/**
+ * I problemi di una mappa di role contro il contratto: asse inesistente, asse
+ * `state`/`behavior` (non è una prop: nessuna variante da mappare), valori
+ * mancanti o estranei. Un role unico o `null` non ha problemi qui.
+ */
+export function roleMapProblems(
+  role: DeclaredRole,
+  contract: { readonly name: string; readonly axes: readonly { readonly name: string; readonly type: string; readonly values: readonly string[] }[] },
+): string[] {
+  if (!isRoleMap(role)) return [];
+  const axis = contract.axes.find((candidate) => candidate.name === role.axis);
+  if (axis === undefined) {
+    return [
+      `a11y.role: la mappa è sull'asse "${role.axis}", che il contratto "${contract.name}" non ha (assi: [${contract.axes.map((candidate) => candidate.name).join(", ")}]).`,
+    ];
+  }
+  if (axis.type !== "option") {
+    return [
+      `a11y.role: la mappa è sull'asse "${axis.name}" di tipo "${axis.type}" — solo un asse "option" è una prop che varia il role; un asse state/behavior è rifiutato.`,
+    ];
+  }
+  const problems: string[] = [];
+  const declared = Object.keys(role.values);
+  const missing = axis.values.filter((value) => !declared.includes(value));
+  const extra = declared.filter((value) => !axis.values.includes(value));
+  if (missing.length > 0) {
+    problems.push(`a11y.role: la mappa sull'asse "${axis.name}" è incompleta — mancano [${missing.join(", ")}] (valori del contratto: [${axis.values.join(", ")}]).`);
+  }
+  if (extra.length > 0) {
+    problems.push(`a11y.role: la mappa sull'asse "${axis.name}" ha valori estranei [${extra.join(", ")}] (valori del contratto: [${axis.values.join(", ")}]).`);
+  }
+  return problems;
+}
+
 export const JudgmentSchema = z.object({
   domain: z.enum(DESIGN_DOMAINS),
   headless: z
@@ -82,7 +138,7 @@ export const JudgmentSchema = z.object({
     })
     .nullable(),
   a11y: z.object({
-    role: z.string().nullable(),
+    role: z.union([z.string(), RoleMapSchema]).nullable(),
     ariaAttributes: z.array(z.string()),
     focusVisible: z.boolean(),
     stateConveyedByTextAndColor: z.boolean(),

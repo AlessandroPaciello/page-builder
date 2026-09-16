@@ -58,6 +58,7 @@ export function fingerprintPayload(
         default: axis.default,
       })),
       parts: contract.parts,
+      partRoles: contract.partRoles,
       fields: fieldsShape(contract.fields, contract.name),
     })),
     sections: sections.map((section) => ({

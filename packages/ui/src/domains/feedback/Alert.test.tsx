@@ -41,8 +41,23 @@ describe("Alert", () => {
     expect((await axe(container)).violations).toEqual([]);
   });
 
-  it("porta il role dichiarato (alert)", () => {
-    const { container } = render(<Alert heading="heading" description="description" />);
+  it("porta il role dichiarato (status=info: status)", () => {
+    const { container } = render(<Alert status="info" heading="heading" description="description" />);
+    expect(declaredAttribute(container, "role")?.getAttribute("role")).toBe("status");
+  });
+
+  it("porta il role dichiarato (status=success: status)", () => {
+    const { container } = render(<Alert status="success" heading="heading" description="description" />);
+    expect(declaredAttribute(container, "role")?.getAttribute("role")).toBe("status");
+  });
+
+  it("porta il role dichiarato (status=warning: alert)", () => {
+    const { container } = render(<Alert status="warning" heading="heading" description="description" />);
+    expect(declaredAttribute(container, "role")?.getAttribute("role")).toBe("alert");
+  });
+
+  it("porta il role dichiarato (status=error: alert)", () => {
+    const { container } = render(<Alert status="error" heading="heading" description="description" />);
     expect(declaredAttribute(container, "role")?.getAttribute("role")).toBe("alert");
   });
 });

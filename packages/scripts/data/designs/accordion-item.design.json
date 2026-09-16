@@ -1,7 +1,6 @@
 {
   "parts": {
     "root": {
-      "kind": "board",
       "size": [
         340,
         160
@@ -10,7 +9,6 @@
       "align": "start"
     },
     "trigger": {
-      "kind": "board",
       "parent": "root",
       "size": [
         336,
@@ -20,16 +18,13 @@
       "align": "center"
     },
     "label": {
-      "kind": "text",
       "parent": "trigger",
       "text": "Sezione"
     },
     "chevron": {
-      "kind": "path",
       "parent": "trigger"
     },
     "content": {
-      "kind": "board",
       "parent": "root",
       "size": [
         336,
@@ -39,12 +34,10 @@
       "align": "start"
     },
     "body": {
-      "kind": "text",
       "parent": "content",
       "text": "Contenuto"
     },
     "divider": {
-      "kind": "board",
       "parent": "root",
       "size": [
         336,

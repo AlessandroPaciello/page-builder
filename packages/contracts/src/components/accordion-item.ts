@@ -13,6 +13,15 @@ export const accordionItem = defineContract({
   version: 1,
   axes: [{ name: "state", type: "behavior", values: ["closed", "open"], default: "closed" }],
   parts: ["root", "trigger", "label", "chevron", "content", "body", "divider"],
+  partRoles: {
+    root: "surface",
+    trigger: "surface",
+    label: "text",
+    chevron: "icon",
+    content: "surface",
+    body: "text",
+    divider: "divider",
+  },
   fields: {
     label: { schema: z.string(), kind: "content" },
     body: { schema: z.string(), kind: "content" },

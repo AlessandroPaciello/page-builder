@@ -1,6 +1,54 @@
 import { describe, expect, it } from "vitest";
 
-import { FixtureSchema, JudgmentSchema, RecipeSchema, partBindings, resolvePartAliases } from "./recipe-schema";
+import { COMPONENT_CONTRACTS, badge, input } from "@app/contracts";
+
+const alert = COMPONENT_CONTRACTS.alert;
+
+import { FixtureSchema, JudgmentSchema, RecipeSchema, partBindings, resolvePartAliases, roleMapProblems } from "./recipe-schema";
+
+describe("a11y.role per variante (Story 2.10, D)", () => {
+  const judgment = (role: unknown) => ({
+    domain: "feedback",
+    headless: null,
+    a11y: { role, ariaAttributes: [], focusVisible: false, stateConveyedByTextAndColor: true },
+  });
+  const alertMap = { axis: "status", values: { info: "status", success: "status", warning: "alert", error: "alert" } };
+
+  it("lo schema accetta un role unico, null e una mappa {axis, values}", () => {
+    expect(JudgmentSchema.safeParse(judgment("alert")).success).toBe(true);
+    expect(JudgmentSchema.safeParse(judgment(null)).success).toBe(true);
+    expect(JudgmentSchema.safeParse(judgment(alertMap)).success).toBe(true);
+  });
+
+  it("lo schema rifiuta una mappa malformata (chiave in più, role non stringa, asse mancante)", () => {
+    expect(JudgmentSchema.safeParse(judgment({ ...alertMap, extra: 1 })).success).toBe(false);
+    expect(JudgmentSchema.safeParse(judgment({ axis: "status", values: { info: 1 } })).success).toBe(false);
+    expect(JudgmentSchema.safeParse(judgment({ values: alertMap.values })).success).toBe(false);
+  });
+
+  it("verde: mappa completa su un asse option del contratto; role unico o null senza problemi", () => {
+    expect(roleMapProblems(alertMap, alert)).toEqual([]);
+    expect(roleMapProblems("alert", alert)).toEqual([]);
+    expect(roleMapProblems(null, alert)).toEqual([]);
+  });
+
+  it("rosso: mappa su un asse state/behavior", () => {
+    const problems = roleMapProblems({ axis: "state", values: { default: "textbox", focus: "textbox", error: "textbox", disabled: "textbox" } }, input);
+    expect(problems).toEqual([expect.stringMatching(/asse "state" di tipo "state".*rifiutato/)]);
+  });
+
+  it("rosso: mappa incompleta o con valori estranei, nominati", () => {
+    const { error: _omitted, ...incomplete } = alertMap.values;
+    expect(roleMapProblems({ axis: "status", values: incomplete }, alert)).toEqual([expect.stringMatching(/incompleta — mancano \[error\]/)]);
+    expect(roleMapProblems({ axis: "status", values: { ...alertMap.values, fatal: "alert" } }, alert)).toEqual([
+      expect.stringMatching(/valori estranei \[fatal\]/),
+    ]);
+  });
+
+  it("rosso: mappa su un asse che il contratto non ha", () => {
+    expect(roleMapProblems({ axis: "tone", values: {} }, badge)).toEqual([expect.stringMatching(/asse "tone", che il contratto "badge" non ha/)]);
+  });
+});
 
 /**
  * Badge-like: cella con albero layer root + label (stessa forma letta dallo

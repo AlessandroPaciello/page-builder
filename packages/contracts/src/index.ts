@@ -11,6 +11,8 @@ export {
   defineContract,
   type FieldDef,
   type FieldKind,
+  PART_ROLES,
+  type PartRole,
   propsSchema,
 } from "./contract";
 export { canonical, fingerprintPayload } from "./fingerprint";

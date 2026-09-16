@@ -1,7 +1,6 @@
 {
   "parts": {
     "root": {
-      "kind": "board",
       "size": [
         360,
         80
@@ -10,12 +9,10 @@
       "align": "start"
     },
     "heading": {
-      "kind": "text",
       "parent": "root",
       "text": "Heading"
     },
     "description": {
-      "kind": "text",
       "parent": "root",
       "text": "Description"
     }

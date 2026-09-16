@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { PATHS } from "../shared/paths";
 import { committedDesigns } from "./designs-loader";
 import { pascalCase } from "../shared/naming";
-import { planLibrary, type ComponentDesign, type LibraryPlanResult } from "./library-plan";
+import { PART_KIND_BY_ROLE, partKindOf, planLibrary, type ComponentDesign, type LibraryPlanResult } from "./library-plan";
 import { LIBRARY_SPEC, type SemanticSeed } from "./library-spec";
 import { emptySnapshot, type LibrarySnapshot, type SnapshotSet } from "./library-snapshot";
 
@@ -190,6 +190,25 @@ describe("additiva", () => {
     expect(second.differences).toEqual([]);
   });
 
+  it("il tipo di shape di ogni parte viene dal ruolo nel contratto (Story 2.10, A), non dal design", () => {
+    expect(PART_KIND_BY_ROLE).toEqual({ surface: "board", divider: "board", text: "text", icon: "path" });
+    const container = plan().operations.find((op) => op.kind === "createContainer" && op.contract === "accordion-item");
+    if (container?.kind !== "createContainer") throw new Error("container accordion-item assente dal piano");
+    expect(Object.fromEntries(container.cells[0]!.parts.map((part) => [part.name, part.kind]))).toEqual({
+      root: "board",
+      trigger: "board",
+      label: "text",
+      chevron: "path",
+      content: "board",
+      body: "text",
+      divider: "board",
+    });
+    for (const design of Object.values(designs)) {
+      for (const part of Object.values(design.parts)) expect(part).not.toHaveProperty("kind");
+    }
+    expect(() => partKindOf({ name: "demo", partRoles: {} }, "root")).toThrow(/Contratto "demo": la parte "root" non ha un ruolo/);
+  });
+
   it("con un contratto nuovo nel registry crea solo quel container", () => {
     const snapshot = apply(emptySnapshot(), plan());
     // Contratto fittizio costruito a partire da uno reale (review 2.4:
@@ -205,7 +224,7 @@ describe("additiva", () => {
       } as ComponentContract,
     ];
     const selectDesign: ComponentDesign = {
-      parts: { root: { kind: "board" }, placeholder: { kind: "text", parent: "root", text: "Scegli" } },
+      parts: { root: {}, placeholder: { parent: "root", text: "Scegli" } },
       cells: {
         "state=default": {
           root: { fill: "color.background" },

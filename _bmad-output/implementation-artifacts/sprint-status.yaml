@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-07-26
-last_updated: "2026-09-15 (correct-course elasticità dell'estrazione: nuova Story 2.10 fedeltà live ed estrazione guidata dal contratto, libreria → 2.11, Storybook → 2.12; Epic 2 da 11 a 12 story)"
+last_updated: "2026-09-15 (bmad-build 2.10: spec approvata, story → in-progress) (correct-course elasticità dell'estrazione: nuova Story 2.10 fedeltà live ed estrazione guidata dal contratto, libreria → 2.11, Storybook → 2.12; Epic 2 da 11 a 12 story)"
 project: page-builder
 project_key: NOKEY
 tracking_system: file-system
@@ -67,7 +67,7 @@ development_status:
   2-7-pipeline-pronta-per-piu-componenti: done
   2-8-registro-delle-proprieta-e-blocco-per-componente: done
   2-9-skill-pds-component: done
-  2-10-fedelta-live-ed-estrazione-guidata-dal-contratto: backlog
+  2-10-fedelta-live-ed-estrazione-guidata-dal-contratto: in-progress
   2-11-libreria-componenti-accessibile: backlog
   2-12-storybook-del-design-system: backlog
   epic-2-retrospective: optional

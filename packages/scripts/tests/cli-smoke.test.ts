@@ -48,6 +48,8 @@ const USAGE_ERRORS: Record<string, { args: string[]; expected: RegExp }> = {
   "generate-theme.ts": { args: ["--bogus"], expected: /Argomenti non riconosciuti: --bogus/ },
   "library.ts": { args: [], expected: /Modalità "<mancante>" non riconosciuta/ },
   "render-component.ts": { args: [], expected: /Nome componente mancante/ },
+  "role-part.ts": { args: [], expected: /Attesi componente, parte e ruolo .*uso: pnpm role:part/ },
+  "sync-design.ts": { args: [], expected: /Componente mancante — uso: pnpm sync:design/ },
 };
 
 // Ogni caso lancia un processo `node --import tsx`: il primo parte a freddo

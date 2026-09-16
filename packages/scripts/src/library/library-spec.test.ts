@@ -4,12 +4,9 @@ import { describe, expect, it } from "vitest";
 
 import { PATHS } from "../shared/paths";
 import { contrastRatio } from "./contrast";
-import { committedDesigns } from "./designs-loader";
-import type { ComponentDesign } from "./library-plan";
 import {
+  CATALOG_PAIRS,
   LIBRARY_SPEC,
-  buildContrastPairs,
-  deriveDesignContrastPairs,
   type SemanticSeed,
   type SeedToken,
 } from "./library-spec";
@@ -107,40 +104,12 @@ describe("LIBRARY_SPEC — contenuto minimo richiesto", () => {
     expect(byType.get("shadow")).toBe(4);
   });
 
-  it("LIBRARY_SPEC.contrastPairs = buildContrastPairs(design committati), senza duplicati", () => {
-    expect(LIBRARY_SPEC.contrastPairs).toEqual(buildContrastPairs(committedDesigns()));
+  it("LIBRARY_SPEC.contrastPairs = solo le coppie di catalogo (Story 2.10, B), senza duplicati né design", () => {
+    expect(LIBRARY_SPEC.contrastPairs).toBe(CATALOG_PAIRS);
     const keys = LIBRARY_SPEC.contrastPairs.map((p) => `${p.foreground}|${p.background}|${p.minRatio}`);
     expect(new Set(keys).size).toBe(keys.length);
-  });
-
-  it("ogni coppia ricavata dai design è presidiata dalla spec con soglia ≥ quella ricavata", () => {
-    for (const pair of deriveDesignContrastPairs(committedDesigns())) {
-      expect(
-        LIBRARY_SPEC.contrastPairs.some(
-          (declared) =>
-            declared.foreground === pair.foreground &&
-            declared.background === pair.background &&
-            !declared.fillPairOnly &&
-            declared.minRatio >= pair.minRatio,
-        ),
-        `${pair.foreground} su ${pair.background}`,
-      ).toBe(true);
-    }
-  });
-
-  it("le combinazioni della vecchia lista a mano escono dalla derivazione (tranne ring su card, dal binding)", () => {
-    const derived = deriveDesignContrastPairs(committedDesigns());
-    expect(derived).toEqual(
-      expect.arrayContaining([
-        { foreground: "color.muted-foreground", background: "color.background", minRatio: 4.5 },
-        { foreground: "color.muted-foreground", background: "color.card", minRatio: 4.5 },
-        { foreground: "color.foreground", background: "color.card", minRatio: 4.5 },
-        { foreground: "color.destructive", background: "color.background", minRatio: 3 },
-      ]),
-    );
-    // ring su card NON è derivabile: nessun design lega color.ring dentro una
-    // board card (è il focus ring del binding AccordionItem) — resta nel catalogo.
-    expect(derived.some((p) => p.foreground === "color.ring" && p.background === "color.card")).toBe(false);
+    // Le coppie dei componenti (testo/icona × superficie) le misura la regola 10 per componente sui token live.
+    expect(LIBRARY_SPEC.contrastPairs).not.toContainEqual({ foreground: "color.muted-foreground", background: "color.card", minRatio: 4.5 });
     expect(LIBRARY_SPEC.contrastPairs).toContainEqual({ foreground: "color.ring", background: "color.card", minRatio: 3 });
   });
 
@@ -149,98 +118,6 @@ describe("LIBRARY_SPEC — contenuto minimo richiesto", () => {
     expect(fillOnly).toHaveLength(1);
     expect(fillOnly[0]?.foreground).toBe("color.warning-foreground");
     expect(fillOnly[0]?.background).toBe("color.warning");
-  });
-});
-
-describe("deriveDesignContrastPairs — meccanismo", () => {
-  const design = (parts: ComponentDesign["parts"], cells: ComponentDesign["cells"]): ComponentDesign => ({ parts, cells });
-
-  it("testo contro il fill del primo antenato board che lo ha (4.5), saltando le board senza fill", () => {
-    const pairs = deriveDesignContrastPairs({
-      demo: design(
-        {
-          root: { kind: "board" },
-          box: { kind: "board", parent: "root" },
-          label: { kind: "text", parent: "box" },
-        },
-        { "tone=a": { root: { fill: "color.card" }, box: { paddingTop: "spacing.1" }, label: { fill: "color.foreground" } } },
-      ),
-    });
-    expect(pairs).toEqual([{ foreground: "color.foreground", background: "color.card", minRatio: 4.5 }]);
-  });
-
-  it("senza antenati con fill ripiega su color.background; parent assente = figlia di root", () => {
-    const pairs = deriveDesignContrastPairs({
-      demo: design({ root: { kind: "board" }, label: { kind: "text" } }, { "tone=a": { label: { fill: "color.muted-foreground" } } }),
-    });
-    expect(pairs).toEqual([{ foreground: "color.muted-foreground", background: "color.background", minRatio: 4.5 }]);
-  });
-
-  it("strokeColor contro il fill dell'antenato (3); lo stroke di root contro color.background", () => {
-    const pairs = deriveDesignContrastPairs({
-      demo: design(
-        { root: { kind: "board" }, divider: { kind: "board", parent: "root" } },
-        {
-          "tone=a": {
-            root: { fill: "color.card", strokeColor: "color.ring" },
-            divider: { strokeColor: "color.border" },
-          },
-        },
-      ),
-    });
-    expect(pairs).toEqual([
-      { foreground: "color.border", background: "color.card", minRatio: 3 },
-      { foreground: "color.ring", background: "color.background", minRatio: 3 },
-    ]);
-  });
-
-  it("il fill di una parte non text (board, path) non è una coppia di testo", () => {
-    const pairs = deriveDesignContrastPairs({
-      demo: design({ root: { kind: "board" }, icon: { kind: "path" } }, { "tone=a": { root: { fill: "color.card" }, icon: { fill: "color.primary" } } }),
-    });
-    expect(pairs).toEqual([]);
-  });
-
-  it("deduplica fra celle e design tenendo la soglia più alta; ordine deterministico", () => {
-    const base = design(
-      { root: { kind: "board" }, label: { kind: "text" }, icon: { kind: "path" } },
-      {
-        "tone=a": { root: { fill: "color.card" }, label: { fill: "color.foreground" }, icon: { strokeColor: "color.foreground" } },
-        "tone=b": { root: { fill: "color.card" }, label: { fill: "color.foreground" } },
-      },
-    );
-    const first = deriveDesignContrastPairs({ zeta: base, alfa: base });
-    const second = deriveDesignContrastPairs({ alfa: base, zeta: base });
-    expect(first).toEqual([{ foreground: "color.foreground", background: "color.card", minRatio: 4.5 }]);
-    expect(second).toEqual(first);
-  });
-
-  it("catena di parent ciclica → errore che nomina design e parte", () => {
-    expect(() =>
-      deriveDesignContrastPairs({
-        demo: design(
-          { root: { kind: "board" }, a: { kind: "board", parent: "b" }, b: { kind: "board", parent: "a" }, t: { kind: "text", parent: "a" } },
-          { "tone=a": { t: { fill: "color.foreground" } } },
-        ),
-      }),
-    ).toThrow(/Design "demo".*parte "t".*ciclica/);
-  });
-
-  it("un design aggiunto porta le sue coppie nella spec senza toccare liste (e le già presidiate non si ripetono)", () => {
-    const alert = design(
-      { root: { kind: "board" }, title: { kind: "text", parent: "root" } },
-      { "variant=destructive": { root: { fill: "color.destructive" }, title: { fill: "color.destructive-foreground" } } },
-    );
-    const extra = design(
-      { root: { kind: "board" }, title: { kind: "text", parent: "root" } },
-      { "variant=muted": { root: { fill: "color.muted" }, title: { fill: "color.primary" } } },
-    );
-    const pairs = buildContrastPairs({ ...committedDesigns(), alert, extra });
-    const matching = (fg: string, bg: string) => pairs.filter((p) => p.foreground === fg && p.background === bg);
-    expect(matching("color.destructive-foreground", "color.destructive")).toHaveLength(1);
-    expect(matching("color.primary", "color.muted")).toEqual([
-      { foreground: "color.primary", background: "color.muted", minRatio: 4.5 },
-    ]);
   });
 });
 

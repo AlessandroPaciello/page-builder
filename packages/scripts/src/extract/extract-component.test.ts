@@ -219,19 +219,30 @@ describe("buildRecipe", () => {
       );
     });
 
-    it("icona: strokeWidth su un layer path non blocca l'estrazione", () => {
+    it("strokeWidth sulla parte label (ruolo text) ferma l'estrazione come proprietà fuori ruolo (Story 2.10, A)", () => {
       const iconCatalog: TokenCatalog = {
         sets: [...catalog.sets, { name: "border", tokens: [{ name: "border-width.default", type: "borderWidth", value: "1" }] }],
       };
-      const withIcon = withRoot((root) => {
+      const withStroke = withRoot((root) => {
         const label = root.children[0]!;
         label.kind = "path";
         label.tokens.strokeWidth = "border-width.default";
         label.style.strokeWidth = 1;
       });
-      expect(buildRecipe(withIcon, iconCatalog, badgeJudgment).parts.label!["variant=default|size=sm"]).toMatchObject({
-        strokeWidth: "border-width.default",
+      // Il registro la ignora sulla geometria del path, ma il contratto dice che "label" è un testo.
+      expect(() => buildRecipe(withStroke, iconCatalog, badgeJudgment)).toThrow(
+        /Proprietà fuori ruolo \(componente "Badge", cella "variant=default\|size=sm", parte "label", ruolo "text", proprietà "strokeWidth", token "border-width.default"\)/,
+      );
+    });
+
+    it("strokeColor al posto del fill su un testo → estrazione ferma con i tre adattamenti; il fill sul testo passa", () => {
+      const moved = withRoot((root) => {
+        const label = root.children[0]!;
+        label.tokens = { strokeColor: label.tokens.fill! };
+        label.style = { strokeColor: ["<valore>"] };
       });
+      expect(() => buildRecipe(moved, catalog, badgeJudgment)).toThrow(/ruolo "text", proprietà "strokeColor".*1\) designer.*2\) sviluppatore.*3\) sviluppatore, .*pnpm role:part -- Badge label/s);
+      expect(() => buildRecipe(fixture, catalog, badgeJudgment)).not.toThrow();
     });
 
     it("le ricette committate si riottengono byte per byte dalle fixture committate", () => {

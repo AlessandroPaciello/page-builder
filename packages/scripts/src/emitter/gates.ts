@@ -2,7 +2,8 @@ import { componentFixtureFromSnapshot } from "../extract/component-reader";
 import type { ComponentFixture } from "../extract/recipe-schema";
 import type { LibrarySnapshot } from "../library/library-snapshot";
 import { stableStringify, validateRecipe } from "../extract/validate-recipe";
-import { declaredA11yAssertion, renderCheck, type RenderedFile } from "./render-component";
+import { isRoleMap, type DeclaredRole } from "../extract/recipe-schema";
+import { declaredA11yAssertion, declaredRoleVariantTitle, renderCheck, type RenderedFile } from "./render-component";
 
 /**
  * I cinque gate del regime design→codice (Story 2.6, AC #2; penpot-pipeline.md
@@ -85,8 +86,8 @@ export interface DeclaredA11yEntry {
   component: string;
   /** Percorso del test generato, relativo a `ui/src/domains/`. */
   path: string;
-  /** `recipe.judgment.a11y`: ciò che il giudizio dichiara. */
-  a11y: { role: string | null; ariaAttributes: readonly string[] };
+  /** `recipe.judgment.a11y`: ciò che il giudizio dichiara (role unico o mappa per variante). */
+  a11y: { role: DeclaredRole; ariaAttributes: readonly string[] };
   /** Contenuto del test committato; `undefined` = file assente. */
   testContent: string | undefined;
 }
@@ -104,13 +105,26 @@ export function checkDeclaredA11y(entries: readonly DeclaredA11yEntry[]): {
 } {
   const missing: Array<{ component: string; path: string; attribute: string }> = [];
   for (const { component, path, a11y, testContent } of entries) {
-    // Un attributo ripetuto nel giudizio non deve duplicare i mancanti.
-    const declared: Array<[string, string]> = [
-      ...(a11y.role !== null ? [["role", declaredA11yAssertion("role", a11y.role)] as [string, string]] : []),
-      ...[...new Set(a11y.ariaAttributes)].map((attribute): [string, string] => [attribute, declaredA11yAssertion(attribute)]),
-    ];
-    for (const [attribute, assertion] of declared) {
-      if (testContent === undefined || !testContent.includes(assertion)) missing.push({ component, path, attribute });
+    // Un attributo ripetuto nel giudizio non deve duplicare i mancanti. Un
+    // role per variante (Story 2.10, D) si verifica valore per valore: il
+    // titolo del suo `it` più l'asserzione del suo role.
+    const declared: Array<[string, string[]]> = [];
+    const role = a11y.role;
+    if (isRoleMap(role)) {
+      for (const [value, mapped] of Object.entries(role.values)) {
+        declared.push([
+          `role (${role.axis}=${value}: ${mapped})`,
+          [`it("${declaredRoleVariantTitle(role.axis, value, mapped)}"`, declaredA11yAssertion("role", mapped)],
+        ]);
+      }
+    } else if (role !== null) {
+      declared.push(["role", [declaredA11yAssertion("role", role)]]);
+    }
+    for (const attribute of new Set(a11y.ariaAttributes)) declared.push([attribute, [declaredA11yAssertion(attribute)]]);
+    for (const [attribute, snippets] of declared) {
+      if (testContent === undefined || snippets.some((snippet) => !testContent.includes(snippet))) {
+        missing.push({ component, path, attribute });
+      }
     }
   }
   return { ok: missing.length === 0, missing };

@@ -1,3 +1,6 @@
+import type { PartRole } from "@app/contracts";
+
+import { pascalCase } from "./naming";
 import type { TokenType } from "./theme-generator";
 
 /**
@@ -280,6 +283,76 @@ export const STYLE_PROPERTIES = {
 /** Nome di una proprietà registrata (i nomi `TokenProperty` di Penpot). */
 export type RegisteredProperty = keyof typeof STYLE_PROPERTIES;
 
+/**
+ * Tabella ruolo → proprietà ammesse (Story 2.10, A; decisione di Alessandro,
+ * 2026-09-15): quali proprietà del registro può portare, con un token, una
+ * parte con quel ruolo del contratto (`@app/contracts`, AD-11). Il contratto
+ * non conosce Penpot: il vocabolario Penpot vive qui, accanto al registro.
+ * Una `surface` con solo `strokeColor` (outline, senza `fill`) è valida.
+ * Insegnare una proprietà a un ruolo = una riga qui + la mappatura
+ * dell'emitter + un test rosso/verde, una volta per tutte.
+ */
+export const ROLE_PROPERTIES = {
+  surface: [
+    "fill",
+    "strokeColor",
+    "strokeWidth",
+    "strokeStyle",
+    "strokeAlignment",
+    "borderRadiusTopLeft",
+    "borderRadiusTopRight",
+    "borderRadiusBottomRight",
+    "borderRadiusBottomLeft",
+    "paddingTop",
+    "paddingRight",
+    "paddingBottom",
+    "paddingLeft",
+    "rowGap",
+    "columnGap",
+    "shadow",
+    "opacity",
+  ],
+  // Tipografia del registro: dimensione, peso, spaziatura, famiglia (bloccata dal registro).
+  text: ["fill", "fontSize", "fontWeight", "letterSpacing", "fontFamilies", "opacity"],
+  icon: ["fill", "strokeColor", "strokeWidth"],
+  divider: ["strokeColor", "strokeWidth", "strokeStyle"],
+} as const satisfies Record<PartRole, readonly RegisteredProperty[]>;
+
+/** `true` se il ruolo ammette la proprietà (tabella ruolo → proprietà). */
+export function roleAdmits(role: PartRole, property: string): boolean {
+  return (ROLE_PROPERTIES[role] as readonly string[]).includes(property);
+}
+
+/**
+ * Il messaggio di una proprietà fuori ruolo: nomina componente, cella, parte,
+ * ruolo, proprietà e token, e propone i tre adattamenti nell'ordine fissato
+ * (designer → il ruolo impara la proprietà → cambio di ruolo nel contratto).
+ */
+export function outsideRoleProblem(
+  property: string,
+  role: PartRole,
+  where: { component?: string; cell?: string; part: string; token: string },
+): string {
+  const admitted = ROLE_PROPERTIES[role] as readonly string[];
+  const otherRoles = (Object.keys(ROLE_PROPERTIES) as PartRole[]).filter((candidate) => candidate !== role && roleAdmits(candidate, property));
+  const component = where.component !== undefined ? pascalCase(where.component) : "<Comp>";
+  const location = [
+    ...(where.component !== undefined ? [`componente "${component}"`] : []),
+    ...(where.cell !== undefined ? [`cella "${where.cell}"`] : []),
+    `parte "${where.part}"`,
+    `ruolo "${role}"`,
+    `proprietà "${property}"`,
+    `token "${where.token}"`,
+  ].join(", ");
+  const roleHint = otherRoles.length > 0 ? `uno fra [${otherRoles.join(", ")}], che ammettono "${property}"` : "<ruolo>";
+  return (
+    `Proprietà fuori ruolo (${location}): il ruolo "${role}" ammette solo [${admitted.join(", ")}]. Adattamenti, in ordine: ` +
+    `1) designer: in Penpot sposta il token "${where.token}" della parte "${where.part}" su una proprietà che il ruolo ammette; ` +
+    `2) sviluppatore, se il design è voluto: insegna "${property}" al ruolo "${role}" — una riga di ROLE_PROPERTIES (style-properties.ts) + la mappatura dell'emitter + un test rosso/verde, una volta per tutte (il contratto non cambia); ` +
+    `3) sviluppatore, se la parte è d'altro tipo: pnpm role:part -- ${component} ${where.part} ${roleHint} (diff, poi --yes; solo SCHEMA_VERSION).`
+  );
+}
+
 const REGISTRY: Readonly<Record<string, PropertyDefinition>> = STYLE_PROPERTIES;
 
 export function registeredProperties(): RegisteredProperty[] {
@@ -362,24 +435,41 @@ interface LayerLike {
  * nome. Una proprietà presente sia nello stile sia nei token è segnalata una
  * volta sola.
  */
-export function layerTreeProblems(root: LayerLike, where: { component?: string; cell?: string }): string[] {
-  return layerTreeIssues(root, where).map((issue) => issue.message);
+export function layerTreeProblems(
+  root: LayerLike,
+  where: { component?: string; cell?: string },
+  aliases: Readonly<Record<string, string>> = {},
+  roles?: Readonly<Record<string, PartRole>>,
+): string[] {
+  return layerTreeIssues(root, where, aliases, roles).map((issue) => issue.message);
+}
+
+/** Un problema di proprietà: `blocked` e `outsideRole` mettono il componente in attesa, gli altri sono rossi. */
+export interface LayerIssue {
+  readonly blocked: boolean;
+  /** Token su una proprietà che il ruolo della parte non ammette (Story 2.10, A). */
+  readonly outsideRole: boolean;
+  readonly message: string;
 }
 
 /**
  * Come `layerTreeProblems`, ma dice anche se il problema è una proprietà
  * BLOCCATA (registrata, stato `blocked`): è ciò che mette un componente "in
  * attesa" in `verify:library` (Story 2.8 parte B), mentre non registrata e
- * valore fuori lista restano rossi.
+ * valore fuori lista restano rossi. Con i `roles` del contratto (Story 2.10,
+ * A) controlla anche il ruolo: un token su una proprietà usabile che il
+ * ruolo della parte non ammette è un problema `outsideRole`, mai corretto.
  */
 export function layerTreeIssues(
   root: LayerLike,
   where: { component?: string; cell?: string },
   aliases: Readonly<Record<string, string>> = {},
-): Array<{ blocked: boolean; message: string }> {
-  const issues: Array<{ blocked: boolean; message: string }> = [];
+  roles?: Readonly<Record<string, PartRole>>,
+): LayerIssue[] {
+  const issues: LayerIssue[] = [];
   const visit = (layer: LayerLike, part: string): void => {
     const properties = [...new Set([...Object.keys(layer.style), ...Object.keys(layer.tokens)])];
+    const role = roles !== undefined && Object.hasOwn(roles, part) ? roles[part] : undefined;
     for (const property of properties) {
       const problem = propertyProblem(property, {
         ...where,
@@ -387,12 +477,18 @@ export function layerTreeIssues(
         ...(Object.hasOwn(layer.style, property) ? { value: layer.style[property] } : {}),
         ...(Object.hasOwn(layer.tokens, property) ? { token: layer.tokens[property] } : {}),
       });
-      if (problem === null) continue;
+      if (problem === null) {
+        // Proprietà usabile: il ruolo della parte deve ammetterla (solo i token, lo stile senza binding è della regola 7).
+        if (role !== undefined && Object.hasOwn(layer.tokens, property) && !roleAdmits(role, property)) {
+          issues.push({ blocked: false, outsideRole: true, message: outsideRoleProblem(property, role, { ...where, part, token: layer.tokens[property]! }) });
+        }
+        continue;
+      }
       // Bloccata = l'unico ramo di `propertyProblem` raggiunto a registro
       // noto e valore in lista: la riga esiste e il suo stato è `blocked`.
       const definition = propertyDefinition(property);
       const blocked = definition !== undefined && definition.status.state === "blocked" && problem.startsWith("Proprietà bloccata");
-      issues.push({ blocked, message: problem });
+      issues.push({ blocked, outsideRole: false, message: problem });
     }
     for (const child of layer.children) visit(child, Object.hasOwn(aliases, child.name) ? aliases[child.name]! : child.name);
   };

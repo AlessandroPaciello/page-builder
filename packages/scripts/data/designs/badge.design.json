@@ -1,7 +1,6 @@
 {
   "parts": {
     "root": {
-      "kind": "board",
       "size": [
         110,
         34
@@ -10,7 +9,6 @@
       "align": "center"
     },
     "label": {
-      "kind": "text",
       "parent": "root",
       "text": "Badge"
     }
