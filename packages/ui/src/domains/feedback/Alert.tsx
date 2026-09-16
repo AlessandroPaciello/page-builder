@@ -57,6 +57,8 @@ const alertDescriptionVariants = cva(
   },
 );
 
+const alertRoles = { info: "status", success: "status", warning: "alert", error: "alert" } as const;
+
 export type AlertProps = React.ComponentProps<"div"> & {
   status?: "info" | "success" | "warning" | "error";
   heading?: string;
@@ -65,7 +67,7 @@ export type AlertProps = React.ComponentProps<"div"> & {
 
 function Alert({ className, status, heading, description, ...props }: AlertProps) {
   return (
-    <div data-slot="alert" className={cn(alertVariants({ status }), className)} role="alert" {...props}>
+    <div data-slot="alert" className={cn(alertVariants({ status }), className)} role={alertRoles[status ?? "info"]} {...props}>
       <div data-slot="alert-heading" className={cn(alertHeadingVariants({ status }))}>
         {heading}
       </div>

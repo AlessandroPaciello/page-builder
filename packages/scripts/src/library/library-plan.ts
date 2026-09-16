@@ -1,4 +1,4 @@
-import { contractId, type ComponentContract } from "@app/contracts";
+import { contractId, type ComponentContract, type PartRole } from "@app/contracts";
 
 import { pascalCase } from "../shared/naming";
 import type { RegisteredProperty, STYLE_PROPERTIES } from "../shared/style-properties";
@@ -28,13 +28,31 @@ export type StyleProperty = {
 /** Il tipo di shape da creare per una parte: `root` è sempre la board della cella. */
 export type PartKind = "board" | "text" | "path";
 
+/**
+ * Il tipo di shape si ricava dal ruolo della parte nel contratto (Story 2.10,
+ * A): il ruolo è la fonte, il design non dichiara più `kind`.
+ */
+export const PART_KIND_BY_ROLE: Readonly<Record<PartRole, PartKind>> = {
+  surface: "board",
+  divider: "board",
+  text: "text",
+  icon: "path",
+};
+
+/** Il tipo di shape di una parte del contratto, dal suo ruolo; errore nominativo se il ruolo manca. */
+export function partKindOf(contract: Pick<ComponentContract, "name" | "partRoles">, part: string): PartKind {
+  const role = Object.hasOwn(contract.partRoles, part) ? contract.partRoles[part] : undefined;
+  if (role === undefined) throw new Error(`Contratto "${contract.name}": la parte "${part}" non ha un ruolo in partRoles.`);
+  return PART_KIND_BY_ROLE[role];
+}
+
+/** Layout di seed di una parte: il tipo di shape viene dal ruolo nel contratto, non da qui. */
 export interface DesignPart {
-  readonly kind: PartKind;
   /** Parte contenitore (`"root"` = la board della cella); assente = figlia diretta della board. */
   readonly parent?: string;
-  /** Contenuto campione per `kind: "text"` (il designer lo cambia in Penpot). */
+  /** Contenuto campione per una parte `text` (il designer lo cambia in Penpot). */
   readonly text?: string;
-  /** Dimensione della board (solo `kind: "board"`): è layout, libera, non tokenizzata. */
+  /** Dimensione della board (solo parti `surface`/`divider`): è layout, libera, non tokenizzata. */
   readonly size?: readonly [number, number];
   /** Direzione del flex layout della board. */
   readonly dir?: "row" | "column";
@@ -195,7 +213,7 @@ function cellPlan(contract: ComponentContract, design: ComponentDesign, values: 
     const styleTokens = cellDesign[partName] ?? {};
     return {
       name: partName,
-      kind: partDesign.kind,
+      kind: partKindOf(contract, partName),
       parent: partDesign.parent ?? null,
       ...(partDesign.text !== undefined ? { text: partDesign.text } : {}),
       ...(partDesign.size !== undefined ? { size: partDesign.size } : {}),

@@ -12,8 +12,34 @@ const valid = {
     { name: "state", type: "state", values: ["default", "focus"], default: "default" },
   ],
   parts: ["root", "label"],
+  partRoles: { root: "surface", label: "text" },
   fields: { label: { schema: z.string(), kind: "content" } },
 } as const;
+
+describe("defineContract — ruolo di parte (Story 2.10, A)", () => {
+  it("verde: ogni parte ha un ruolo del vocabolario", () => {
+    expect(() => defineContract({ ...valid, partRoles: { root: "surface", label: "icon" } })).not.toThrow();
+  });
+
+  it.each([
+    ["parte senza ruolo", { ...valid, partRoles: { root: "surface" } }, /demo-chip.*parte "label" senza ruolo/],
+    ["ruolo fuori vocabolario", { ...valid, partRoles: { root: "surface", label: "heading" } }, /demo-chip.*parte "label", ruolo "heading" non è nel vocabolario/],
+    [
+      "ruolo di una parte che il contratto non ha",
+      { ...valid, partRoles: { root: "surface", label: "text", badge: "text" } },
+      /demo-chip.*partRoles nomina la parte "badge"/,
+    ],
+  ])("rosso: %s", (_label, def, message) => {
+    expect(() => defineContract(def as never)).toThrow(message);
+  });
+
+  it("il ruolo entra nel fingerprint: cambiarlo cambia il payload", () => {
+    const text = fingerprintPayload([defineContract(valid)], []);
+    const icon = fingerprintPayload([defineContract({ ...valid, partRoles: { root: "surface", label: "icon" } })], []);
+    expect(text).toContain(`"partRoles":{"label":"text","root":"surface"}`);
+    expect(icon).not.toBe(text);
+  });
+});
 
 describe("defineContract", () => {
   it("accetta un contratto valido e lo restituisce intatto", () => {

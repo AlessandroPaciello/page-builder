@@ -16,7 +16,10 @@ const baseSources: Record<string, Record<string, string>> = {
   badge: loadBaseSources("badge"),
   input: loadBaseSources("input"),
   accordion: loadBaseSources("accordion"),
+  alert: loadBaseSources("alert"),
 };
+
+const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 function renderCommitted(componentName: string, existingFiles?: Record<string, string>) {
   const fixture = loadFixture(componentName);
@@ -409,6 +412,33 @@ describe("renderComponent — a11y dichiarata nel giudizio", () => {
     const test = fileOf(result, "Input.test.tsx");
     expect(test).toContain(`it("porta l'attributo dichiarato aria-invalid (state=error)"`);
     expect(test).toContain(`it("porta l'attributo dichiarato aria-invalid (state=focus)"`);
+  });
+
+  it("role per variante (Story 2.10, D): mappa const + role dal default cva, un it per valore (Alert)", () => {
+    const result = renderCommitted("Alert");
+    const tsx = fileOf(result, "Alert.tsx");
+    expect(tsx).toContain(`const alertRoles = { info: "status", success: "status", warning: "alert", error: "alert" } as const;`);
+    expect(tsx).toMatch(/<div data-slot="alert" [^\n]*role=\{alertRoles\[status \?\? "info"\]\} \{\.\.\.props\}>/);
+    expect(tsx).not.toContain(`role="`);
+    const test = fileOf(result, "Alert.test.tsx");
+    for (const [value, role] of [["info", "status"], ["success", "status"], ["warning", "alert"], ["error", "alert"]] as const) {
+      expect(test).toContain(`it("porta il role dichiarato (status=${value}: ${role})"`);
+      expect(test).toContain(`<Alert status="${value}" heading=`);
+    }
+    expect(test.match(new RegExp(escapeRegExp(declaredA11yAssertion("role", "status")), "g"))).toHaveLength(2);
+  });
+
+  it("role per variante rifiutato dal contratto (asse state, mappa incompleta) → errore nominativo", () => {
+    const onState = structuredClone(loadRecipe("Input")) as ComponentRecipe;
+    onState.judgment.a11y.role = { axis: "state", values: { default: "textbox", focus: "textbox", error: "textbox", disabled: "textbox" } };
+    expect(() => renderComponent(loadFixture("Input"), onState, loadBinding("Input"), baseSources.input!, catalog)).toThrow(
+      /"Input".*asse "state" di tipo "state"/,
+    );
+    const incomplete = structuredClone(loadRecipe("Alert")) as ComponentRecipe;
+    incomplete.judgment.a11y.role = { axis: "status", values: { info: "status" } };
+    expect(() => renderComponent(loadFixture("Alert"), incomplete, loadBinding("Alert"), baseSources.alert!, catalog)).toThrow(
+      /"Alert".*incompleta — mancano \[success, warning, error\]/,
+    );
   });
 
   it("role o aria-* malformati nel giudizio → errore nominativo", () => {

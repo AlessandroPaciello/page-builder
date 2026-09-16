@@ -1,7 +1,14 @@
 import { PLUGIN_DATA_PATTERN, contractByName } from "../extract/component-reader";
 import { toKebab } from "../shared/naming";
 import type { SnapshotLayer } from "../library/library-snapshot";
-import { cellKeyOf, resolvePartAliases, type ComponentFixture, type ComponentRecipe } from "../extract/recipe-schema";
+import {
+  cellKeyOf,
+  isRoleMap,
+  resolvePartAliases,
+  roleMapProblems,
+  type ComponentFixture,
+  type ComponentRecipe,
+} from "../extract/recipe-schema";
 import { lookupProperty, radiusCorners, removalClasses, type EmitRule } from "../shared/style-properties";
 import { varSuffix, type TokenCatalog, type TokenType } from "../shared/theme-generator";
 import { buildTokenVocabulary, validateClassesAgainstVocabulary } from "../theme/token-vocabulary";
@@ -694,13 +701,70 @@ const ARIA_ROLE = /^[a-z]+( [a-z]+)*$/;
 // I nomi ARIA legittimi contengono anche cifre (aria-level, aria-valuenow, aria-posinset).
 const ARIA_ATTRIBUTE = /^aria-[a-z0-9]+$/;
 
+/** Role unico dichiarato nel giudizio; `null` anche quando il role è una mappa per variante (vedi `declaredRoleVariants`). */
 function declaredRole(ctx: EmitterContext): string | null {
   const role = ctx.recipe.judgment.a11y.role;
-  if (role === null) return null;
+  if (role === null || isRoleMap(role)) return null;
   if (!ARIA_ROLE.test(role)) {
     fail(`il giudizio di "${ctx.recipe.componentName}" dichiara a11y.role "${role}", che non è un role ARIA valido.`);
   }
   return role;
+}
+
+interface RoleVariants {
+  /** Nome della mappa const emessa (`alertRoles`). */
+  readonly constName: string;
+  /** Asse del contratto e prop cva che lo porta. */
+  readonly axis: string;
+  readonly prop: string;
+  /** Valore API del default dell'asse: il role quando la prop non è passata. */
+  readonly defaultApi: string;
+  /** Una voce per valore del contratto, nell'ordine del contratto. */
+  readonly entries: ReadonlyArray<{ readonly value: string; readonly apiValue: string; readonly role: string }>;
+}
+
+/**
+ * Role per variante (Story 2.10, D): la mappa del giudizio su un asse
+ * `option`, con le chiavi tradotte nei valori API del binding. Una mappa che
+ * il contratto rifiuta (asse state/behavior, incompleta, valori estranei) o un
+ * role non ARIA ferma l'emitter con l'errore nominativo.
+ */
+function declaredRoleVariants(ctx: EmitterContext): RoleVariants | null {
+  const role = ctx.recipe.judgment.a11y.role;
+  if (role === null || !isRoleMap(role)) return null;
+  const componentName = ctx.recipe.componentName;
+  const problems = roleMapProblems(role, ctx.contract);
+  if (problems.length > 0) fail(`il giudizio di "${componentName}": ${problems.join(" ")}`);
+  const axis = ctx.contract.axes.find((candidate) => candidate.name === role.axis)!;
+  const bound = ctx.binding.axes[axis.name];
+  if (bound === undefined) fail(`asse "${axis.name}" senza tipo nel binding.`);
+  const entries = axis.values.map((value) => {
+    const mapped = role.values[value]!;
+    if (!ARIA_ROLE.test(mapped)) {
+      fail(`il giudizio di "${componentName}" dichiara a11y.role "${mapped}" per ${axis.name}=${value}, che non è un role ARIA valido.`);
+    }
+    const apiValue = bound.values[value];
+    if (apiValue === undefined) fail(`asse "${axis.name}", valore "${value}" senza API nel binding.`);
+    return { value, apiValue, role: mapped };
+  });
+  const defaultApi = bound.values[axis.default];
+  if (defaultApi === undefined) fail(`asse "${axis.name}" senza default nel binding.`);
+  return {
+    constName: `${componentNameCamel(componentName)}Roles`,
+    axis: axis.name,
+    prop: bound.prop ?? axis.name,
+    defaultApi,
+    entries,
+  };
+}
+
+/**
+ * Titolo del test generato per il role di UNA variante: stessa stringa per
+ * l'emitter e per `checkDeclaredA11y`, che così verifica ogni valore della
+ * mappa (l'asserzione da sola è uguale per due valori con lo stesso role).
+ */
+export function declaredRoleVariantTitle(axis: string, value: string, role: string): string {
+  return `porta il role dichiarato (${axis}=${value}: ${role})`;
 }
 
 /**
@@ -742,6 +806,11 @@ function renderPartJsx(ctx: EmitterContext, node: PartNode, isRoot: boolean, ind
     // (il consumer può ancora sovrascriverlo). Il test generato lo asserisce nel DOM.
     const role = declaredRole(ctx);
     if (role !== null) attributes.push(`role="${role}"`);
+    // Role per variante: dalla mappa const, col default cva dell'asse quando la prop manca.
+    const roleVariants = declaredRoleVariants(ctx);
+    if (roleVariants !== null) {
+      attributes.push(`role={${roleVariants.constName}[${roleVariants.prop} ?? "${roleVariants.defaultApi}"]}`);
+    }
     attributes.push("{...props}");
   }
 
@@ -883,10 +952,21 @@ ${[
   // nell'export list (TS2484).
   const exportNames = [componentName, ...cvas.map((cva) => cva.name)];
 
+  const roleVariants = declaredRoleVariants(ctx);
+  const roleMapBlock =
+    roleVariants === null
+      ? []
+      : [
+          `const ${roleVariants.constName} = { ${roleVariants.entries
+            .map(({ apiValue, role }) => `${/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(apiValue) ? apiValue : JSON.stringify(apiValue)}: "${role}"`)
+            .join(", ")} } as const;`,
+        ];
+
   const sections = [
     provenanceHeader(ctx),
     imports.join("\n"),
     ...(cvas.length > 0 ? [cvaBlocks] : []),
+    ...roleMapBlock,
     `export type ${componentName}Props = ${propsType}`,
     `function ${componentName}({ ${destructure.join(", ")}, ...props }: ${componentName}Props) {\n  return (\n${rootJsx}\n  );\n}`,
     `export { ${exportNames.join(", ")} };`,
@@ -1001,11 +1081,19 @@ function renderTestFile(ctx: EmitterContext): string {
    */
   const a11y = ctx.recipe.judgment.a11y;
   const role = declaredRole(ctx);
-  const declaredCount = (role !== null ? 1 : 0) + a11y.ariaAttributes.length;
+  const roleVariants = declaredRoleVariants(ctx);
+  const declaredCount = (role !== null || roleVariants !== null ? 1 : 0) + a11y.ariaAttributes.length;
   if (role !== null) {
     tests.push(`  it("porta il role dichiarato (${role})", () => {
     const { container } = ${renderCall(`<${componentName} ${jsxArgs()} />`)};
     ${declaredA11yAssertion("role", role)}
+  });`);
+  }
+  // Role per variante: un `it` per valore dell'asse, con la prop esplicita.
+  for (const entry of roleVariants?.entries ?? []) {
+    tests.push(`  it("${declaredRoleVariantTitle(roleVariants!.axis, entry.value, entry.role)}", () => {
+    const { container } = ${renderCall(`<${componentName} ${roleVariants!.prop}="${entry.apiValue}" ${jsxArgs()} />`)};
+    ${declaredA11yAssertion("role", entry.role)}
   });`);
   }
   for (const attribute of a11y.ariaAttributes) {

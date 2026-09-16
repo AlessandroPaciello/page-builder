@@ -1,9 +1,14 @@
+import { COMPONENT_CONTRACTS, PART_ROLES } from "@app/contracts";
 import { describe, expect, it } from "vitest";
 
+import { committedComponents, loadFixture } from "../emitter/artifacts";
+import { loadPartAliases } from "../extract/extract-component";
 import type { StyleProperty } from "../library/library-plan";
 import {
   ICON_LAYER_KINDS,
+  ROLE_PROPERTIES,
   STYLE_PROPERTIES,
+  layerTreeIssues,
   layerTreeProblems,
   lookupProperty,
   propertyProblem,
@@ -20,6 +25,88 @@ import { utilityPrefixesFor } from "../theme/token-vocabulary";
  */
 
 const where = { component: "Input", part: "root", cell: "state=default" };
+
+describe("tabella ruolo → proprietà (Story 2.10, A)", () => {
+  interface TestLayer {
+    name: string;
+    tokens: Record<string, string>;
+    style: Record<string, unknown>;
+    children: TestLayer[];
+  }
+  const layer = (name: string, tokens: Record<string, string>, children: TestLayer[] = []): TestLayer => ({
+    name,
+    tokens,
+    style: {},
+    children,
+  });
+  const roles = { root: "surface", heading: "text", chevron: "icon", divider: "divider" } as const;
+
+  it("la tabella copre i quattro ruoli del vocabolario e nomina solo proprietà registrate", () => {
+    expect(Object.keys(ROLE_PROPERTIES).sort()).toEqual([...PART_ROLES].sort());
+    for (const properties of Object.values(ROLE_PROPERTIES)) {
+      for (const property of properties) expect(registeredProperties()).toContain(property);
+    }
+  });
+
+  it("verde: fill e tipografia su text, outline (solo strokeColor) su surface, stroke su icon e divider", () => {
+    const tree = layer("Alert", { strokeColor: "color.border", paddingTop: "spacing.4" }, [
+      layer("heading", { fill: "color.foreground", fontSize: "text.sm", fontWeight: "font-weight.semibold" }),
+      layer("chevron", { strokeColor: "color.foreground", strokeWidth: "border-width.default" }),
+      layer("divider", { strokeColor: "color.border", strokeWidth: "border-width.default" }),
+    ]);
+    expect(layerTreeIssues(tree, { component: "alert", cell: "status=info" }, {}, roles)).toEqual([]);
+  });
+
+  it("rosso: strokeColor su un testo (anche al posto del fill) → fuori ruolo, con i tre adattamenti in ordine", () => {
+    const tree = layer("Alert", { fill: "color.card" }, [layer("heading", { strokeColor: "color.warning" })]);
+    const issues = layerTreeIssues(tree, { component: "alert", cell: "status=warning" }, {}, roles);
+    expect(issues).toHaveLength(1);
+    const [issue] = issues;
+    expect(issue).toMatchObject({ blocked: false, outsideRole: true });
+    expect(issue!.message).toContain(
+      `Proprietà fuori ruolo (componente "Alert", cella "status=warning", parte "heading", ruolo "text", proprietà "strokeColor", token "color.warning")`,
+    );
+    const designer = issue!.message.indexOf("1) designer");
+    const teach = issue!.message.indexOf("2) sviluppatore, se il design è voluto");
+    const change = issue!.message.indexOf("3) sviluppatore, se la parte è d'altro tipo: pnpm role:part -- Alert heading uno fra [surface, icon, divider]");
+    expect(designer).toBeGreaterThan(-1);
+    expect(teach).toBeGreaterThan(designer);
+    expect(change).toBeGreaterThan(teach);
+  });
+
+  it("rosso: fill su un divider, padding su un'icona", () => {
+    const tree = layer("AccordionItem", {}, [layer("divider", { fill: "color.border" }), layer("chevron", { paddingTop: "spacing.1" })]);
+    const issues = layerTreeIssues(tree, { component: "accordion-item" }, {}, roles);
+    expect(issues.map((issue) => [issue.outsideRole, /parte "(\w+)", ruolo "(\w+)", proprietà "(\w+)"/.exec(issue.message)?.slice(1)])).toEqual([
+      [true, ["divider", "divider", "fill"]],
+      [true, ["chevron", "icon", "paddingTop"]],
+    ]);
+  });
+
+  it("la parte si riconosce anche per alias; senza ruoli nessun controllo di ruolo", () => {
+    const tree = layer("Alert", {}, [layer("Title", { strokeColor: "color.warning" })]);
+    expect(layerTreeIssues(tree, {}, { Title: "heading" }, roles)).toHaveLength(1);
+    expect(layerTreeIssues(tree, {}, { Title: "heading" })).toEqual([]);
+  });
+
+  it("una proprietà non registrata resta un problema del registro (rosso), non fuori ruolo", () => {
+    const tree = layer("Alert", {}, [layer("heading", { textDecoration: "x" })]);
+    const [issue] = layerTreeIssues(tree, {}, {}, roles);
+    expect(issue).toMatchObject({ blocked: false, outsideRole: false });
+    expect(issue!.message).toMatch(/^Proprietà non registrata/);
+  });
+
+  it("nessuna cella delle fixture committate viola la tabella (decisione 2026-09-15)", () => {
+    for (const component of committedComponents()) {
+      const fixture = loadFixture(component);
+      const contract = COMPONENT_CONTRACTS[fixture.contract.split("@")[0]! as keyof typeof COMPONENT_CONTRACTS];
+      for (const cell of fixture.cells) {
+        const outside = layerTreeIssues(cell.root, { component }, loadPartAliases(component), contract.partRoles).filter((issue) => issue.outsideRole);
+        expect(outside, component).toEqual([]);
+      }
+    }
+  });
+});
 
 describe("registro — matrice della spec", () => {
   it("tratteggio: strokeStyle dashed è registrato ma bloccato", () => {

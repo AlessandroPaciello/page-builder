@@ -16,6 +16,8 @@
     "lint": "node ./scripts/check-boundaries.mjs",
     "render:check": "node --import tsx src/cli/render-component.ts --all --check",
     "render:component": "node --import tsx src/cli/render-component.ts",
+    "role:part": "node --import tsx src/cli/role-part.ts",
+    "sync:design": "node --import tsx src/cli/sync-design.ts",
     "test": "vitest run",
     "validate:recipe": "node --import tsx src/cli/extract-component.ts validate",
     "verify:library": "node --import tsx src/cli/library.ts verify"

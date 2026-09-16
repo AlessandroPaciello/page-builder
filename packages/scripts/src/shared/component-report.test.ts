@@ -137,6 +137,9 @@ describe("kind e JSON (Story 2.9)", () => {
       "contract-version",
       "snapshot-stale",
       "gate-failed",
+      "design-drift",
+      "property-outside-role",
+      "contrast",
       "pending",
       "other",
     ]);

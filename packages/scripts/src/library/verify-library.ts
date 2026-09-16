@@ -12,6 +12,7 @@ import { cartesian, sameColorish, type ComponentDesign } from "./library-plan";
 import type { LibrarySpec, SemanticSeed } from "./library-spec";
 import type { LibrarySnapshot, SnapshotLayer } from "./library-snapshot";
 import { normalizeVariants } from "../extract/variant-normalize";
+import { describeDrift, designDrift, liveDesignCells } from "./sync-design";
 
 /**
  * Il verificatore che DECIDE l'esito (Story 2.4, Task 4, AC #3): funzione
@@ -64,7 +65,7 @@ export interface VerifyResult {
   readonly pending: readonly string[];
   /** Una voce per componente (PascalCase del contratto, o nome del container orfano). */
   readonly components: readonly ComponentVerdict[];
-  /** Regole globali (8 copertura spec, 9 tema, 10 contrasto, copertura design↔registry). */
+  /** Regole globali (8 copertura spec, 9 tema, 10 contrasto delle coppie di catalogo, copertura design↔registry). */
   readonly global: readonly ComponentVerdict[];
 }
 
@@ -87,6 +88,9 @@ function buildTokenIndex(snapshot: LibrarySnapshot): Map<string, TokenFacts> {
   }
   return index;
 }
+
+/** Sfondo di ripiego della regola 10 per componente, quando nessuna surface antenata ha un fill: la pagina. */
+const PAGE_BACKGROUND = "color.background";
 
 function walkLayers(root: SnapshotLayer, visit: (layer: SnapshotLayer) => void): void {
   visit(root);
@@ -361,9 +365,10 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
     for (const cell of container.cells) {
       if (cell.variantProps === null) continue; // già segnalata dalla regola 5
       const key = cellKeyOf(contract, cell.variantProps);
-      for (const issue of layerTreeIssues(cell.root, { component: contract.name, cell: key }, aliases)) {
+      for (const issue of layerTreeIssues(cell.root, { component: contract.name, cell: key }, aliases, contract.partRoles)) {
         const message = `Contratto "${contract.name}", cella "${key}": ${issue.message}`;
         if (issue.blocked) pending(message, "blocked-property");
+        else if (issue.outsideRole) pending(message, "property-outside-role");
         else red(message);
       }
       walkLayers(cell.root, (layer) => {
@@ -385,6 +390,57 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
           }
         }
       });
+    }
+
+    // Regola 10 per componente (Story 2.10, B): contrasto sui token LIVE
+    // dello snapshot, cella per cella, grazie al ruolo delle parti — una
+    // parte `text` (fill, 4.5:1) o `icon` (strokeColor/fill, 3:1) contro la
+    // `surface` antenata più vicina con un fill (ripiego: la pagina).
+    for (const cell of container.cells) {
+      if (cell.variantProps === null) continue; // già segnalata dalla regola 5
+      const key = cellKeyOf(contract, cell.variantProps);
+      const visit = (layer: SnapshotLayer, part: string, surface: { part: string; token: string } | null): void => {
+        const role = Object.hasOwn(contract.partRoles, part) ? contract.partRoles[part] : undefined;
+        if (role === "text" || role === "icon") {
+          const minRatio = role === "text" ? 4.5 : 3;
+          for (const property of role === "text" ? ["fill"] : ["strokeColor", "fill"]) {
+            const token = layer.tokens[property];
+            if (token === undefined) continue;
+            const backgroundToken = surface?.token ?? PAGE_BACKGROUND;
+            const on = surface === null ? `sulla pagina (${backgroundToken})` : `su "${surface.part}" (surface, fill ${backgroundToken})`;
+            const pair = `Contratto "${contract.name}", cella "${key}": contrasto della parte "${part}" (${role}, ${property} ${token}) ${on}`;
+            const foreground = resolveColor(token, tokenIndex);
+            const background = resolveColor(backgroundToken, tokenIndex);
+            if (!foreground || !background || !parseHex(foreground) || !parseHex(background)) {
+              red(`${pair}: valore non risolvibile a un colore (foreground=${JSON.stringify(foreground)}, background=${JSON.stringify(background)}).`, "contrast");
+              continue;
+            }
+            const ratio = contrastRatio(foreground, background);
+            if (ratio < minRatio) {
+              red(`${pair}: ${ratio.toFixed(2)}:1 < soglia ${minRatio}:1 (${foreground} su ${background}).`, "contrast");
+            }
+          }
+        }
+        const fill = layer.tokens.fill;
+        const next = role === "surface" && fill !== undefined ? { part, token: fill } : surface;
+        for (const child of layer.children) visit(child, partOfLayer(child.name, aliases), next);
+      };
+      visit(cell.root, "root", null);
+    }
+
+    // Design committato ≠ Penpot (Story 2.10, C): in attesa, non rosso — il
+    // codice generato resta fedele (lo protegge il gate drift), resta
+    // indietro solo il seed di `addCell`. Una riga per cella divergente.
+    if (design !== undefined) {
+      const drift = designDrift(design.cells, liveDesignCells(contract, container.cells, aliases));
+      const byCell = new Map<string, string[]>();
+      for (const entry of drift) byCell.set(entry.cell, [...(byCell.get(entry.cell) ?? []), describeDrift(entry)]);
+      for (const [cell, lines] of byCell) {
+        pending(
+          `Contratto "${contract.name}": il design committato diverge da Penpot nella cella "${cell}" (${lines.join("; ")}) — riallinealo con pnpm sync:design -- ${containerName} (diff, poi --yes).`,
+          "design-drift",
+        );
+      }
     }
   }
 
@@ -471,7 +527,9 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
     global.red(rule9, `Il catalogo non passa generateTheme(): ${(error as Error).message}`);
   }
 
-  // Regola 10: le coppie di contrasto della spec rispettano la soglia sui valori risolti.
+  // Regola 10, parte globale: le coppie del CATALOGO (indipendenti dai
+  // componenti) rispettano la soglia; le coppie dei componenti sono per
+  // componente, sui token live (sopra).
   const rule10 = "regola 10 — contrasto";
   global.declare(rule10);
   for (const pair of spec.contrastPairs) {

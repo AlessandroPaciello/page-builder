@@ -8,6 +8,7 @@ export const input = defineContract({
   version: 1,
   axes: [{ name: "state", type: "state", values: ["default", "focus", "error", "disabled"], default: "default" }],
   parts: ["root", "placeholder"],
+  partRoles: { root: "surface", placeholder: "text" },
   fields: {
     placeholder: { schema: z.string(), kind: "content" },
   },

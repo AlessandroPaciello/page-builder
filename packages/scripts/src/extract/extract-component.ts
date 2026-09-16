@@ -11,6 +11,7 @@ import {
   cellKeyOf,
   partBindings,
   resolvePartAliases,
+  roleMapProblems,
   type ComponentJudgment,
   type ComponentFixture,
   type ComponentRecipe,
@@ -78,6 +79,11 @@ export function loadJudgment(contractName: string): ComponentJudgment {
   if (!parsed.success) {
     const issues = parsed.error.issues.map((issue) => `${issue.path.map(String).join(".") || "<root>"}: ${issue.message}`);
     throw new Error(`File di giudizio malformato per il contratto "${contractName}" (${path}):\n${issues.join("\n")}`);
+  }
+  const contract = contractByName(contractName);
+  const roleProblems = contract === undefined ? [] : roleMapProblems(parsed.data.a11y.role, contract);
+  if (roleProblems.length > 0) {
+    throw new Error(`File di giudizio malformato per il contratto "${contractName}" (${path}):\n${roleProblems.join("\n")}`);
   }
   return parsed.data;
 }
@@ -163,7 +169,9 @@ export function buildRecipe(
     seenKeys.add(key);
     // Registro delle proprietà (Story 2.8): una proprietà non registrata o
     // bloccata, nello stile o nei binding, ferma l'estrazione — mai uno skip.
-    const problems = layerTreeProblems(cell.root, { component: fixture.componentName, cell: key });
+    // Il contratto è il riferimento (Story 2.10, A): un token su una
+    // proprietà che il ruolo della parte non ammette la ferma anch'esso.
+    const problems = layerTreeProblems(cell.root, { component: fixture.componentName, cell: key }, aliases, contract.partRoles);
     if (problems.length > 0) {
       throw new Error(`Estrazione di "${fixture.componentName}" bloccata dal registro delle proprietà:\n${problems.join("\n")}`);
     }

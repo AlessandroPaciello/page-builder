@@ -41,6 +41,12 @@ export const PROBLEM_KINDS = [
   "snapshot-stale",
   /** Gate di `gates:render` rosso (completezza, rigenerazione, conformità, a11y). */
   "gate-failed",
+  /** Design committato ≠ Penpot live (celle) → `sync:design -- <Comp>` (Story 2.10, C). */
+  "design-drift",
+  /** Token su una proprietà che il ruolo della parte non ammette → i tre adattamenti (Story 2.10, A). */
+  "property-outside-role",
+  /** Coppia testo/icona × superficie sotto soglia sui token live (regola 10 per componente, Story 2.10, B). */
+  "contrast",
   /** In attesa di altro, senza un percorso proprio. */
   "pending",
   /** Nessun tipo noto: la skill lo riporta e si ferma. */

@@ -1,7 +1,6 @@
 {
   "parts": {
     "root": {
-      "kind": "board",
       "size": [
         260,
         44
@@ -10,7 +9,6 @@
       "align": "center"
     },
     "placeholder": {
-      "kind": "text",
       "parent": "root",
       "text": "Email"
     }

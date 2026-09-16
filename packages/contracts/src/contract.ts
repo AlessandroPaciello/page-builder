@@ -15,6 +15,20 @@ import { z } from "zod";
  */
 export type AxisType = "option" | "state" | "behavior";
 
+/**
+ * Ruolo di parte (AD-11, Story 2.10): che cosa la parte È, dichiarato nel
+ * contratto e mai in Penpot. Vocabolario chiuso, indipendente da Penpot e
+ * dalle librerie: quali proprietà Penpot ammette ogni ruolo lo dice la
+ * tabella ruolo → proprietà di `packages/scripts`, non il contratto.
+ * - `surface` → contenitore (sfondo, bordo, raggio, spaziatura);
+ * - `text`    → testo;
+ * - `icon`    → icona vettoriale;
+ * - `divider` → separatore (solo tratto).
+ */
+export const PART_ROLES = ["surface", "text", "icon", "divider"] as const;
+
+export type PartRole = (typeof PART_ROLES)[number];
+
 /** Classificazione di un campo: `structure` bloccata nelle sezioni, `content` modificabile e sanitizzato. */
 export type FieldKind = "structure" | "content";
 
@@ -40,6 +54,8 @@ export interface ComponentContract {
   readonly axes: readonly Axis[];
   /** Lista piatta per costruzione: una parte è un nome, senza annidamento né assi propri. */
   readonly parts: readonly [string, ...string[]];
+  /** Il ruolo di ogni parte (esattamente le `parts`, una voce ciascuna). */
+  readonly partRoles: Readonly<Record<string, PartRole>>;
   readonly fields: Readonly<Record<string, FieldDef>>;
 }
 
@@ -161,6 +177,22 @@ export function defineContract<const C extends ComponentContract>(def: C): C {
     if (!IDENTIFIER.test(part)) fail(`parte "${part}" ha un nome non valido (identificatore minuscolo)`);
   }
   for (const part of duplicates(def.parts)) fail(`parte "${part}" duplicata`);
+
+  // Ruolo di parte (AD-11): ogni parte ne ha uno, del vocabolario chiuso, e
+  // `partRoles` non nomina parti che il contratto non ha.
+  const roles: Readonly<Record<string, unknown>> = def.partRoles ?? {};
+  for (const part of def.parts) {
+    if (!Object.hasOwn(roles, part)) {
+      fail(`parte "${part}" senza ruolo in partRoles (ruoli: ${PART_ROLES.join(", ")})`);
+    }
+    const role = roles[part];
+    if (!(PART_ROLES as readonly unknown[]).includes(role)) {
+      fail(`parte "${part}", ruolo ${JSON.stringify(role)} non è nel vocabolario (${PART_ROLES.join(", ")})`);
+    }
+  }
+  for (const part of Object.keys(roles)) {
+    if (!def.parts.includes(part)) fail(`partRoles nomina la parte "${part}", che il contratto non ha`);
+  }
 
   for (const [field, def_] of Object.entries(def.fields)) {
     if (!IDENTIFIER.test(field) || field === "__proto__") {

@@ -186,6 +186,16 @@ describe("Gate 3 — a11y dichiarata (role/aria-* del giudizio asseriti nel DOM)
     // Un role diverso da quello dichiarato non conta come asserzione.
     expect(checkDeclaredA11y([{ ...entry, testContent: declaredA11yAssertion("role", "status") }]).ok).toBe(false);
   });
+
+  it("role per variante (Story 2.10, D): verde con un it per valore; rosso nominando il valore il cui it manca", () => {
+    const existing = readExistingFiles(domainsRoot);
+    const path = "feedback/Alert.test.tsx";
+    expect(checkDeclaredA11y(declaredEntries(existing).filter((entry) => entry.component === "Alert")).ok).toBe(true);
+    // Stesso role "alert" di error: l'asserzione resta nel file, ma il test di warning sparisce.
+    existing[path] = existing[path]!.replace(`it("porta il role dichiarato (status=warning: alert)"`, `it("altro"`);
+    const result = checkDeclaredA11y(declaredEntries(existing));
+    expect(result.missing).toEqual([{ component: "Alert", path, attribute: "role (status=warning: alert)" }]);
+  });
 });
 
 describe("Gate 4 — conformità al contratto", () => {

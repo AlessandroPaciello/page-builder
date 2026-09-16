@@ -97,6 +97,15 @@ describe("validateRecipe", () => {
     expect(result.errors.join("\n")).toContain("ricetta judgment");
   });
 
+  it("role per variante (Story 2.10, D): mappa completa su un asse option valida; incompleta rifiutata col nome", () => {
+    const withMap = { ...validJudgment, a11y: { ...validJudgment.a11y, role: { axis: "size", values: { sm: "status", md: "status" } } } };
+    expect(validateRecipe(validFixture, { ...validRecipe, judgment: withMap }, catalog, withMap).errors).toEqual([]);
+    const incomplete = { ...validJudgment, a11y: { ...validJudgment.a11y, role: { axis: "size", values: { sm: "status" } } } };
+    const result = validateRecipe(validFixture, { ...validRecipe, judgment: incomplete }, catalog, incomplete);
+    expect(result.valid).toBe(false);
+    expect(result.errors.join("\n")).toMatch(/a11y\.role: la mappa sull'asse "size" è incompleta — mancano \[md\]/);
+  });
+
   it("rifiuta un file di giudizio malformato (validato con JudgmentSchema)", () => {
     const result = validateRecipe(validFixture, validRecipe, catalog, { ...validJudgment, domain: "marketing" });
     expect(result.valid).toBe(false);
