@@ -274,3 +274,9 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor
 - **Default `layoutAlign`/`zIndex` live non verificati** — vedi voce 2.12 già presente sopra (reader MCP **Story 2.13**).
 - **`writeTheme` non atomica su due file** — `packages/scripts/src/theme/theme-command.ts`: ogni file è tmp+rename ma la coppia no; pattern preesistente all'estrazione, re-run chiude il buco.
 - **Sezione senza `slots` → TypeError in fingerprint (maybe-false, sarebbe medium)** — `packages/contracts/src/fingerprint.ts:76`: da dirimere leggendo `SectionDefinition` (slots obbligatorio?) o `?? []`.
+
+## Deferred from: build review of 2-13-library-e-propose-penpot-dal-contratto-di-estrazione (2026-09-17)
+
+- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/2-13-library-e-propose-penpot-dal-contratto-di-estrazione.md`
+  summary: il delay fisso di 150ms prima di `createComponent` nel writer v2 potrebbe non bastare se `applyToken` è più lento su Penpot live (maybe-false, sarebbe medium).
+  evidence: `packages/scripts/src/v2/library-writer.ts:174` eredita il pattern dalla v1 (`src/library/penpot-writer.ts:190`); senza run live non si decide. Si osserva il primo `library add` live: se i binding mancano a snapshot, sostituire l'attesa con un poll su `shape.tokens`.
