@@ -1,0 +1,70 @@
+- id: "1"
+  title: Fondamenta v2 — contratti, registro, guscio
+  description: >-
+    CAP-1, CAP-2, CAP-3, CAP-8 in packages/scripts/src/v2: contratto del page
+    builder ridotto con SCHEMA_VERSION, defineExtraction con i controlli a module
+    load, registro con layout e posizione, guscio CLI e ScriptError.
+  spec_checkpoint: true
+  invoke_dev_with: >-
+    La v1 resta verde e nessun comando v1 importa da src/v2. Leggere
+    extraction-contract.md e la simulazione della card prima di scrivere
+    defineExtraction. Un test rosso/verde per ogni controllo a module load e per
+    ogni categoria di ScriptError.
+- id: "2"
+  title: library ed extract v2
+  description: >-
+    CAP-4 e CAP-6: library bootstrap/add dal contratto di estrazione; extract con
+    stadi nominati, istantanea unica data/components/<nome>.json, --check e
+    --snapshot.
+  invoke_dev_with: >-
+    Stadi penpot → contract → parts → properties → write nel log, ognuno con una
+    sola categoria di errore. Verificare sul reader MCP layoutChild.absolute,
+    parentX/parentY e zIndex prima di insegnare position al registro. Nessuna
+    scrittura su Penpot fuori da library.
+- id: "3"
+  title: render v2 e gates
+  description: >-
+    CAP-5 e CAP-9: render dai tre input (istantanea, contratto di estrazione,
+    registro) ai quattro file @generated; when, repeat, attribute, assi state,
+    headless per parte; gates in CI con render --check --all, suite ui, axe.
+  spec_checkpoint: true
+  invoke_dev_with: >-
+    Nessuna base shadcn e nessun campo structural. Un file senza marker
+    @generated non viene mai sovrascritto. --all accumula i fallimenti e li
+    elenca alla fine; nessun process.exitCode fuori dal guscio.
+- id: "4"
+  title: ProductCard end-to-end
+  description: >-
+    CAP-10: i due contratti della card, library add, disegno in Penpot, extract,
+    render, gates verdi, story in Storybook; nessuna riga a mano in packages/ui.
+  done_checkpoint: true
+  invoke_dev_with: >-
+    Il disegno in Penpot lo fa Alessandro o il designer: dopo library add la
+    story si ferma e riparte quando il container è disegnato. Il testo del badge
+    è il field badgeLabel del page builder. Chiudere solo dopo il giudizio
+    visivo di Alessandro in Storybook.
+- id: "5"
+  title: Rimozione della v1 e rigenerazione dei quattro componenti con Base UI
+  description: >-
+    CAP-11: cancellare codice v1, data/{judgments,bindings,designs,bases,recipes},
+    comandi v1, i quattro componenti generati, shadcn e Radix; appiattire src/v2;
+    rigenerare Badge, Input, Alert, AccordionItem con la v2 e @base-ui/react.
+  spec_checkpoint: true
+  invoke_dev_with: >-
+    Ricavare i contratti di estrazione da judgment e binding letti dalla storia
+    git prima di cancellarli. AccordionItem per ultimo: è la verifica pratica di
+    Base UI. Criterio unico per ogni componente: extract e render verdi, test e
+    axe verdi, diff zero in CI. Controllare che apps/web non importi i quattro
+    componenti nella finestra tra cancellazione e rigenerazione.
+- id: "6"
+  title: propose e riscrittura delle skill pds-*
+  description: >-
+    CAP-7 e chiusura di CAP-11: il comando propose che stampa il diff dei due
+    contratti senza scrivere; skill pds-bootstrap, pds-additive, pds-component
+    riscritte sui sei comandi v2.
+  done_checkpoint: true
+  invoke_dev_with: >-
+    propose non scrive mai né su Penpot né sui contratti. Al termine nessuna
+    skill cita verify:library, add:library, gates:render, adopt:variant,
+    sync:design, extract:component, bump:contract, bootstrap:library, role:part
+    o render:component.

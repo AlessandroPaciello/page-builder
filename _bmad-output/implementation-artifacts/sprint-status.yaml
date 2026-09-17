@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-07-26
-last_updated: "2026-09-15 (bmad-build 2.10: spec approvata, story → in-progress) (correct-course elasticità dell'estrazione: nuova Story 2.10 fedeltà live ed estrazione guidata dal contratto, libreria → 2.11, Storybook → 2.12; Epic 2 da 11 a 12 story)"
+last_updated: "2026-09-17 (correct-course pipeline v2: 2.10 → done dopo la PR #43; Storybook anticipato a 2.11; nuove 2.12–2.17 per CAP-1…11 dello SPEC-refactor-packages-scripts; libreria → 2.18; Epic 2 da 12 a 18 story) (2026-09-15 bmad-build 2.10: spec approvata, story → in-progress) (correct-course elasticità dell'estrazione: nuova Story 2.10, libreria → 2.11, Storybook → 2.12; Epic 2 da 11 a 12 story)"
 project: page-builder
 project_key: NOKEY
 tracking_system: file-system
@@ -67,9 +67,15 @@ development_status:
   2-7-pipeline-pronta-per-piu-componenti: done
   2-8-registro-delle-proprieta-e-blocco-per-componente: done
   2-9-skill-pds-component: done
-  2-10-fedelta-live-ed-estrazione-guidata-dal-contratto: in-progress
-  2-11-libreria-componenti-accessibile: backlog
-  2-12-storybook-del-design-system: backlog
+  2-10-fedelta-live-ed-estrazione-guidata-dal-contratto: done
+  2-11-storybook-del-design-system: backlog
+  2-12-fondamenta-v2-due-contratti-registro-guscio: backlog
+  2-13-library-e-propose-penpot-dal-contratto-di-estrazione: backlog
+  2-14-extract-e-render-una-istantanea-quattro-file: backlog
+  2-15-productcard-end-to-end-e-gate-in-ci: backlog
+  2-16-rimozione-della-v1-e-rigenerazione-dei-quattro-componenti: backlog
+  2-17-skill-pds-sui-sei-comandi: backlog
+  2-18-libreria-componenti-accessibile: backlog
   epic-2-retrospective: optional
 
   epic-3: backlog
@@ -115,11 +121,11 @@ action_items:
     owner: "Amelia (Dev)"
     status: open
   - epic: 1
-    action: "Correggere gli alias shadcn in components.json (puntano al barrel editor/index.ts invece che a una directory) in Story 2.6 (Task 0), quando l'emitter inizia a usare il CLI shadcn per davvero — ex Story 2.3, rinumerata dal correct-course 2026-09-12"
+    action: "Correggere gli alias shadcn in components.json (puntano al barrel editor/index.ts invece che a una directory) in Story 2.6 (Task 0), quando l'emitter inizia a usare il CLI shadcn per davvero — ex Story 2.3, rinumerata dal correct-course 2026-09-12. Senza oggetto: shadcn e components.json escono con la v1 nella Story 2.16 (correct-course 2026-09-17)"
     owner: "Dev"
-    status: open
+    status: done
   - epic: 1
-    action: "Rivalutare la robustezza del dropdown-menu scritto a mano (focus trap, portal, ARIA) quando Story 2.11 genera il primo primitivo reale via Radix (ex 2.4, poi 2.7, poi 2.9, poi 2.10)"
+    action: "Rivalutare la robustezza del dropdown-menu scritto a mano (focus trap, portal, ARIA) quando Story 2.16 rigenera l'AccordionItem via Base UI (ex 2.4, poi 2.7, 2.9, 2.10, 2.11 — correct-course 2026-09-17)"
     owner: "Dev"
     status: open
   - epic: 2

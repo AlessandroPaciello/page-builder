@@ -23,7 +23,7 @@ Questo documento decompone i requisiti dello SPEC (spec-kernel, in sostituzione 
 ### Functional Requirements
 
 FR1 (CAP-1): Il sistema estrae i design token da Penpot e genera lo strato token (colori/tipografia/spacing/radii/ombre) consumato dalla UI, data-driven dal catalogo Penpot.
-FR2 (CAP-2): Il sistema genera primitive React accessibili dai componenti Penpot (assi del contratto disegnati come varianti in Penpot → ricetta per parti → emitter della libreria), con componente+test+story+barrel, preservando i file scritti a mano.
+FR2 (CAP-2): Il sistema genera primitive React accessibili dai componenti Penpot (contratto del page builder + contratto di estrazione → istantanea letta da Penpot → render sul registro delle proprietà), con componente+test+story+barrel, preservando i file scritti a mano.
 FR3 (CAP-3): Il sistema offre una libreria di primitive UI headless/accessibili organizzate per dominio (data-display, inputs, feedback, layout, navigation, overlays).
 FR4 (CAP-4): Il sistema espone le primitive come blocchi del page-builder con campi validati da schema e controlli guidati dai token, aggregati in un'unica config con slot annidabili.
 FR5 (CAP-5): Il sistema fornisce composizioni di prodotto per l'editor (LifecycleBadge, SaveStateIndicator, TopBar, PageList, VersionList, EmptyState) costruite solo su primitive+token.
@@ -45,7 +45,7 @@ NFR2 (Sicurezza/Authz): Autorizzazione deny-by-default enforced server-side a co
 NFR3 (Sicurezza/XSS): I campi content del payload sono sanitizzati lato server prima di persist/publish; campi/blocchi ignoti trattati come content (fail-safe).
 NFR4 (Integrità dati): Invariante ≤1 PUBLISHED per pagina garantito a livello DB (indice univoco parziale); ogni salvataggio crea una nuova versione DRAFT immutabile (no mutazione in-place); versionNumber allocato dal core con UNIQUE(page_id, version_number).
 NFR5 (Coerenza design↔codice): Penpot è single source of truth di valori e aspetto; il contratto dei componenti è del page builder; artefatti generati marcati @generated e mai editati a mano; la rigenerazione preserva i file scritti a mano.
-NFR6 (Confine UI): Il frontend consuma esclusivamente il design system (@penpot-ds/ui), non uno stack UI stilistico parallelo; layering contracts ← {ui/domains, puck-components, domain, render}; tokens ← ui/domains ← {puck-components, ui/editor}. Le primitive headless (Radix) non sono una libreria concorrente: importabili solo da ui/src/domains.
+NFR6 (Confine UI): Il frontend consuma esclusivamente il design system (@penpot-ds/ui), non uno stack UI stilistico parallelo; layering contracts ← {ui/domains, puck-components, domain, render}; tokens ← ui/domains ← {puck-components, ui/editor}. Le primitive headless (Base UI) non sono una libreria concorrente: importabili solo da ui/src/domains.
 NFR7 (Intercambiabilità commerce): I blocchi commerce e il render parlano solo al port CommerceProvider; cambiare/affiancare sorgente = cambiare un adapter, non riscrivere i blocchi.
 NFR8 (Deferred — Perf): Budget di latenza render/save deliberatamente deferiti (da misurare in implementazione, non vincolati qui).
 
@@ -55,7 +55,7 @@ _Da Architecture Spine (AD-1…13) e Stack — vincoli tecnici che impattano l'i
 
 - **[STARTER] Scaffolding greenfield (Epic 1, Story 1):** workspace inizializzato con `create-better-t-stack` (3.37.0) → Next.js App Router + TypeScript; monorepo pnpm (10) + Turborepo (2); rimozione di ogni residuo legacy. Stack pinnato allo scaffold: Next 16.x, React 19, PostgreSQL 18, Prisma 7.9+, Better Auth, oRPC, Tailwind 4, Node LTS. `@puckeditor/core` 0.22.x (NB: `@measured/puck` è deprecato) è ratificato nello spine ma **installato in Epic 3/4**, non allo scaffold.
 - **AD-1/AD-2 (paradigma):** core di dominio esagonale in `packages/domain` (no HTTP, no React), unico punto di accesso al dominio (mutazioni + letture non-pubbliche); adapter attorno; core estraibile.
-- **AD-3/AD-11 (design system):** ricostruzione dei `packages/*` (tokens/ui/puck-components/scripts/storybook; nessun package `primitives`); token e componenti `ui/domains` generati via pipeline Penpot→codice con regime contratto → fixture → ricetta → emitter per libreria (una libreria per installazione).
+- **AD-3/AD-11 (design system):** ricostruzione dei `packages/*` (tokens/ui/puck-components/scripts/storybook; nessun package `primitives`); token e componenti `ui/domains` generati via pipeline Penpot→codice con regime due contratti → istantanea → render (AD-11 v2, correct-course 2026-09-17); il regime v1 (fixture → ricetta → emitter shadcn) resta in servizio fino alla rimozione prevista dalla Story 2.16. Una libreria per installazione.
 - **AD-4/AD-13 (auth/authz/errori):** Better Auth (adapter Prisma) fornisce Principal+ruolo nel context oRPC; authz fine nel core; errori di dominio tipizzati → set oRPC fisso; semantica 404 (non rivelare esistenza) vs 403.
 - **AD-5/AD-6 (contratti/payload):** schemi Zod + classifier structure/content + definizioni di sezione condivisi FE/BE in `packages/contracts` (`@app/contracts`, zero dipendenze UI); payload jsonb {content,root,zones}; block-id client-owned immutabili; schemaVersion di `contracts`.
 - **AD-7 (integrità publish):** indice univoco parziale Postgres via migration SQL esplicita (eseguita in release, prima dell'avvio app, gate CI); publish/rollback/archive in transazione che accoppia Page.status↔PageVersion.status.
@@ -102,7 +102,7 @@ Scaffolding greenfield del workspace (create-better-t-stack → Next.js App Rout
 **FRs covered:** FR12 (fondamenta); abilita tutti gli altri. Vincoli: AD-1, AD-2, AD-4, AD-7 (schema indice), NFR2, NFR4, [STARTER].
 
 ### Epic 2: Design system — token e componenti da Penpot
-Pipeline Penpot→codice (packages/scripts) che genera token (packages/tokens) e componenti React accessibili (packages/ui/src/domains) attraverso il regime contratto → fixture → ricetta → emitter (AD-11), con Storybook. Outcome: si generano token e componenti accessibili dal catalogo Penpot in modo riproducibile, conformi ai contratti del page builder, visibili e testati in Storybook.
+Pipeline Penpot→codice (packages/scripts) che genera token (packages/tokens) e componenti React accessibili (packages/ui/src/domains). Il regime arriva in due tempi: la v1 (contratto → fixture → ricetta → emitter shadcn, Story 2.1–2.10) porta la pipeline fino a quattro componenti reali e ne scopre il limite sul primo caso davvero composito; la v2 (due contratti → istantanea → render headless, Story 2.12–2.17) lo risolve nel vocabolario del contratto e cancella la v1. Outcome: si generano token e componenti accessibili dal catalogo Penpot in modo riproducibile, conformi ai contratti del page builder, visibili e testati in Storybook — ProductCard compresa, senza una riga di codice a mano.
 **FRs covered:** FR1, FR2, FR3. Vincoli: AD-3, AD-5, AD-11, NFR1, NFR5, UX-DR1-5,7.
 
 ### Epic 3: Blocchi ed elementi dell'editor
@@ -205,7 +205,9 @@ So that l'app sia deployabile in modo portabile con lo schema sempre applicato p
 
 ## Epic 2: Design system — token e componenti da Penpot
 
-Si generano token e componenti React accessibili dal catalogo Penpot in modo riproducibile, visibili e testati in Storybook. Il regime è `contratto → fixture → ricetta → emitter` (AD-11, rivisto 2026-09-12): il contratto è del page builder (`@app/contracts`), Penpot disegna valori e aspetto; l'unico passo di giudizio è la ricetta, committata e rivedibile; il codice è funzione pura di fixture+ricetta+binding.
+Si generano token e componenti React accessibili dal catalogo Penpot in modo riproducibile, visibili e testati in Storybook. Il regime è `due contratti → istantanea → render` (AD-11 v2, rivisto 2026-09-17): il contratto del page builder (`@app/contracts`) possiede il vocabolario che l'editor e le pagine salvate usano; il contratto di estrazione (`packages/scripts`) possiede come il componente si legge da Penpot e come si rende; Penpot disegna valori e aspetto; l'unica istantanea, scritta solo da `extract`, è ciò che si rivede in PR; il codice è funzione pura di istantanea + contratto di estrazione + registro.
+
+> **Story 2.1–2.10 (v1).** Descrivono il regime `contratto → fixture → ricetta → emitter shadcn`, completato e mergiato. Restano **come storia**: non vanno riscritte, e il codice che documentano è in servizio finché la Story 2.16 non lo cancella. Il limite che ha portato alla v2 non era negli script ma nel vocabolario del contratto — vedi [SPEC-refactor-packages-scripts](../specs/spec-refactor-packages-scripts/SPEC.md) e `sprint-change-proposal-2026-09-17.md`.
 
 **Tooling:** BMad Builder installato il 2026-09-12 (`bmb` v2.2.2). Il modulo BMad `penpot-ds` (codice `pds`) si crea **dentro la Story 2.4** (Task 6), perché il dev scrive le sue skill (decisione di Alessandro, 2026-09-12).
 
@@ -363,7 +365,128 @@ So that la libreria dei sei domini (2.11) nasca senza verdi finti, e quando il d
 **And** la skill `pds-component` [PS] instrada i nuovi stati (proprietà fuori ruolo → i tre adattamenti; `design-drift` → `sync:design`)
 **And** ogni controllo nuovo ha una propria prova rosso/verde.
 
-### Story 2.11: Libreria componenti accessibile
+### Story 2.11: Storybook del design system
+
+*(ex 2.12, anticipata dal correct-course 2026-09-17: CAP-10 richiede il giudizio visivo della ProductCard in Storybook.)*
+
+As a sviluppatore,
+I want uno Storybook che aggrega le storie dei componenti con addon di accessibilità,
+So that il design system sia esplorabile e il giudizio visivo della ProductCard (Story 2.15) abbia un posto dove avvenire.
+
+**Acceptance Criteria:**
+
+**Given** i componenti `ui/domains` con le loro story generate
+**When** avvio Storybook
+**Then** le storie dei componenti sono navigabili con i token applicati e l'addon a11y attivo
+**And** le story sono CSF3 valido con le props in `args`, e un gate esegue le story generate (smoke test), così una story che rende il componente senza props è un test rosso — il gate vale per le story della v1 oggi e per quelle di `render` v2 domani, senza modifiche
+**And** il build statico di Storybook è prodotto senza errori ed è un job di CI.
+
+### Story 2.12: Fondamenta v2 — due contratti, registro, guscio
+
+*(CAP-1, CAP-2, CAP-3, CAP-8 di [SPEC-refactor-packages-scripts](../specs/spec-refactor-packages-scripts/SPEC.md).)*
+
+As a sviluppatore,
+I want il modello v2 in `packages/scripts/src/v2` e il contratto del page builder ridotto a ciò che le pagine usano,
+So that il vocabolario della ProductCard esista prima di qualunque comando e la v1 resti verde nel frattempo (FR2, AD-5, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** lo SPEC v2 e `extraction-contract.md`
+**When** riduco `@app/contracts`
+**Then** il fingerprint copre solo `name`, `version`, assi `option`, `fields` (testo, attributo, url, array), slot; `SCHEMA_VERSION` sale **una volta**; `parts`, `partRoles` e gli assi `state`/`behavior` restano accettati come **estensione deprecata fuori dal fingerprint**, letta solo dalla v1, con un test che ne fissa la cancellazione alla Story 2.16
+**And** `defineExtraction` importa il contratto del page builder e fallisce **a module load** — nominando parte e campo — su field inesistente o di tipo sbagliato, `when` su asse non `option`, albero senza radice o con cicli, parte senza ruolo, plugin data incoerente (prova rosso/verde per ciascun controllo)
+**And** i **due contratti della ProductCard** (page builder + estrazione, dalla simulazione) sono scritti e sono la prima prova del modello: `badgeLabel` è un field del page builder
+**And** il registro unico impara `layout` (`dir`, `align`, `justify`, `gap`, `wrap`) e `position` letti dal layer Penpot, e il ruolo `image` (raggio, opacità, layout, posizione, **nessun `fill`**); una proprietà nuova entra con una riga + test rosso/verde
+**And** esiste un solo guscio CLI (parser, guardia di invocazione diretta, `main()` che restituisce il codice) e una sola `ScriptError { kind, component?, cell?, part?, detail }` con exit `1` input · `2` penpot · `3` contract · `4` gate; nessun `process.exitCode` fuori dal guscio; un test per categoria
+**And** la v1 è intatta: `gates:render` a diff zero, suite `scripts` e `ui` verdi, copertura che non scende.
+
+### Story 2.13: `library` e `propose` — Penpot dal contratto di estrazione
+
+*(CAP-6, CAP-7.)*
+
+As a designer/sviluppatore,
+I want che il container Penpot nasca dal contratto di estrazione e che Penpot possa proporre modifiche ai contratti senza scriverle,
+So that il designer disegni già dentro le celle e i layer giusti e ogni cambio di contratto passi da un diff letto da un umano (AD-11).
+
+**Acceptance Criteria:**
+
+**Given** i due contratti della ProductCard (Story 2.12) e una library senza la card
+**When** lancio `library add ProductCard`
+**Then** in Penpot esiste il VariantContainer con plugin data, gli assi (inclusi `state`), 6 board e i layer con i nomi delle parti (alias inclusi), token legati su ogni proprietà di stile
+**And** rilanciato non modifica né cancella nulla e segnala le differenze; `--dry-run` stampa senza scrivere; `library bootstrap` rifiuta su library esistente e crea anche i token shadow/ring
+**And** `propose <Comp>` legge Penpot e stampa il diff proposto sui **due** contratti (valore d'asse, parte o ruolo assenti), nominando file e riga; non scrive mai né su Penpot né sui contratti; sostituisce `adopt:variant`, `bump:contract` e `role:part`
+**And** ogni controllo nuovo ha una propria prova rosso/verde; la v1 resta intatta.
+
+### Story 2.14: `extract` e `render` — una istantanea, quattro file
+
+*(CAP-4, CAP-5.)*
+
+As a sviluppatore,
+I want leggere un componente da Penpot in una sola istantanea validata e generare da lì i quattro file,
+So that `judgments/`, `bindings/`, `designs/`, `bases/` e la coppia fixture+ricetta non servano più (FR2, NFR5, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** i due contratti della ProductCard e un'istantanea Penpot (live o `--snapshot <file>`)
+**When** lancio `extract ProductCard`
+**Then** viene scritta (tmp + rename) `data/components/product-card.json` con `contract`, `provenance` e `cells[cella][parte]` per 6 celle; `--check` confronta senza scrivere
+**And** con il layer `Badge` presente nella cella `promo=none` fallisce con `kind: contract` nominando componente, cella e parte, propone gli adattamenti in ordine (designer → registro → contratto di estrazione) e non scrive nulla; gli stadi `penpot → contract → parts → properties → write` compaiono nel log con una sola categoria di errore ciascuno
+**And** `render ProductCard` produce `<Comp>.tsx`, `.test.tsx`, `.stories.tsx` e barrel marcati `@generated` con provenienza: `when` → render condizionale, `repeat` → `map`, `attribute` → attributo, assi `state` → prefissi, primitivo headless (Base UI) → elemento della parte, layout e posizione → classi dal registro, **nessuna base**
+**And** `render --check --all` rigenera a diff zero; un file senza marker non viene mai sovrascritto; `--all` accumula i fallimenti per componente e li elenca alla fine
+**And** ogni controllo nuovo ha una propria prova rosso/verde; la v1 resta intatta.
+
+### Story 2.15: ProductCard end-to-end e gate in CI
+
+*(CAP-10, CAP-9.)*
+
+As a designer/sviluppatore,
+I want la ProductCard disegnata in Penpot e arrivata in `packages/ui` senza codice a mano, con la CI che la rigenera,
+So that il modello v2 sia dimostrato sul caso più difficile prima di cancellare la v1 (FR2, NFR1, NFR5).
+
+**Acceptance Criteria:**
+
+**Given** il container creato nella Story 2.13 e disegnato da Alessandro in Penpot (varianti con e senza sconto, tag ripetuti, immagine)
+**When** lancio `extract ProductCard` e `render ProductCard`
+**Then** entrambi sono verdi, test generati e axe verdi, la story compare in Storybook (Story 2.11) e il **giudizio visivo di Alessandro** è registrato nella story
+**And** `gates` esegue `render --check --all` + suite ui + axe con report per componente (`$GITHUB_STEP_SUMMARY`); un componente divergente rende rossa la CI nominandolo e gli altri sono comunque verificati; nessun comando live gira in CI
+**And** in CI convivono `gates:render` (v1) e `gates` (v2) fino alla Story 2.16, con i diff zero di entrambi
+**And** nessuna riga di codice a mano in `packages/ui` per la card; diff zero dal primo commit.
+
+### Story 2.16: Rimozione della v1 e rigenerazione dei quattro componenti
+
+*(CAP-11, piano in [migration.md](../specs/spec-refactor-packages-scripts/migration.md).)*
+
+As a sviluppatore,
+I want cancellare la v1 e far rinascere Badge, Input, Alert e AccordionItem dalla v2,
+So that esista una sola pipeline e un solo modo di descrivere un componente (FR2, NFR5, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** la card passata (Story 2.15)
+**When** rimuovo la v1
+**Then** `data/judgments`, `data/bindings`, `data/designs`, `data/bases`, `data/recipes`, gli otto comandi v1, il codice v1, i quattro componenti generati, `shadcn`, `radix-ui` e `@radix-ui/react-accordion` non esistono più; `@base-ui/react` entra; `src/v2` si appiattisce in `src`; i campi deprecati di `@app/contracts` sono cancellati **senza** nuovo bump di `SCHEMA_VERSION`; la sezione "Stadio 2 (v1)" di `penpot-pipeline.md` è cancellata
+**And** i quattro componenti rinascono **uno alla volta** (Badge, Input, Alert, AccordionItem per ultimo) ciascuno con contratto ridotto + contratto di estrazione scritto dai file v1 (storia git), `extract`, `render`, diff zero, test e axe verdi; nessun confronto con la v1
+**And** il Badge esce con `flex`/`items-center`/`gap-*` derivati dal layer Penpot e non da un campo scritto a mano; l'Alert emette `role` per variante; l'AccordionItem usa Base UI ed è la verifica pratica dell'headless
+**And** `apps/web` è ricontrollata per consumatori dei quattro componenti nella finestra tra rimozione e rigenerazione; l'action item della retro Epic 1 sul dropdown-menu scritto a mano è rivalutato qui
+**And** le voci di `deferred-work.md` legate ad artefatti v1 (register del correct-course 2026-09-17) sono chiuse come "senza oggetto" con riferimento a questa story.
+
+### Story 2.17: Skill `pds-*` sui sei comandi
+
+As a sviluppatore,
+I want le skill `pds-bootstrap`, `pds-additive` e `pds-component` riscritte sui sei comandi,
+So that il ciclo di vita di un componente resti guidato senza citare nulla che non esista più (FR2, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** la v2 sola in `packages/scripts` (Story 2.16)
+**When** riscrivo le skill
+**Then** nessuna skill `pds-*` cita un comando v1 (`grep` a zero su `verify:library`, `add:library`, `gates:render`, `adopt:variant`, `sync:design`, `extract:component`, `bump:contract`, `bootstrap:library`, `role:part`, `render:component`)
+**And** [PC] chiede assi `option` e field per il page builder, poi parti/ruoli/`when`/`repeat`/headless/a11y per l'estrazione, scrive i due contratti, chiama `library add`, poi `extract`, `render`, `gates`; [PS] legge lo stato con `extract --check` e `gates` e instrada: drift → `extract` + `render` con diff; Penpot davanti ai contratti → `propose` e applicazione a mano; errore `contract` → i tre adattamenti; la regola di `repeat` (primo layer come modello, gli altri identici) è detta al designer
+**And** la skill si ferma solo sulle decisioni umane, non scrive mai su Penpot né sui contratti fuori dai comandi; l'esito è l'exit code; `module-help.csv` aggiornato; verificata eseguendo i due percorsi su un componente reale.
+
+### Story 2.18: Libreria componenti accessibile
+
+*(ex 2.11, riposizionata dal correct-course 2026-09-17 dopo la v2.)*
 
 As a sviluppatore,
 I want una libreria di componenti organizzata per dominio e conforme alla a11y baseline,
@@ -371,25 +494,11 @@ So that l'editor e le composizioni possano costruirci sopra (FR3, NFR1).
 
 **Acceptance Criteria:**
 
-**Given** i token generati, i contratti, l'emitter della Story 2.6, la pipeline della Story 2.7, il registro delle proprietà della Story 2.8 e l'estrazione guidata dal contratto della Story 2.10
-**When** genero i componenti per i sei domini (data-display, inputs, feedback, layout, navigation, overlays) in `packages/ui/src/domains`, ciascuno creato con la voce [PC] di `pds-component` (Story 2.9): prima il contratto e il container Penpot, poi estrazione e render
-**Then** ogni componente interattivo ha focus visibile WCAG AA, stato comunicato da testo+colore e ARIA corretto, con il comportamento fornito dall'headless Radix dichiarato nel binding
+**Given** i token generati, la v2 (Story 2.12–2.16) e le skill riscritte (Story 2.17)
+**When** genero i componenti per i sei domini (data-display, inputs, feedback, layout, navigation, overlays) in `packages/ui/src/domains`, ciascuno creato con la voce [PC] di `pds-component`: due contratti, `library add`, disegno, `extract`, `render`
+**Then** ogni componente interattivo ha focus visibile WCAG AA, stato comunicato da testo+colore e ARIA corretto, con il comportamento fornito dall'headless **Base UI** dichiarato **per parte nel contratto di estrazione**
 **And** i test axe passano su tutti i componenti e i componenti in `domains/` non importano da `editor/`, verificato da **lint bloccante**
 **And** i componenti senza headless disponibile e con logica propria (Table con sorting, Carousel) e i componenti complessi hanno un contratto completo e un segnaposto in Penpot; l'adapter è scritto a mano, senza marker `@generated`, e la pipeline li ignora.
-
-### Story 2.12: Storybook del design system
-
-As a sviluppatore,
-I want uno Storybook che aggrega le storie dei componenti con addon di accessibilità,
-So that il design system sia esplorabile e verificabile visivamente.
-
-**Acceptance Criteria:**
-
-**Given** i componenti `ui/domains` con le loro story
-**When** avvio Storybook
-**Then** le storie dei componenti sono navigabili con i token applicati e l'addon a11y attivo
-**And** l'emitter genera le story in CSF3 valido, con le props in `args`, e un gate esegue le story generate (smoke test), così una story che rende il componente senza props è un test rosso
-**And** il build statico di Storybook è prodotto senza errori.
 
 
 ## Epic 3: Blocchi ed elementi dell'editor

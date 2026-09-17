@@ -2,7 +2,7 @@
 title: 'Story 2.10 — Fedeltà live ed estrazione guidata dal contratto'
 type: 'feature'
 created: '2026-09-15'
-status: 'in-progress'
+status: 'done'
 route: 'dispatch'
 baseline_commit: '54019c03ae600db50aa082366e114a49779e8318'
 review_loop_iteration: 0
