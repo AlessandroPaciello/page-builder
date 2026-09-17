@@ -1,5 +1,3 @@
-import type { PartRole } from "@app/contracts";
-
 import { pascalCase } from "./naming";
 import type { TokenType } from "./theme-generator";
 
@@ -16,7 +14,29 @@ import type { TokenType } from "./theme-generator";
  * il componente con un errore nominativo. Una proprietà assente dal registro
  * blocca anch'essa. Sbloccarne una = una riga qui + la mappatura + un test
  * rosso/verde.
+ *
+ * Dalla Story 2.12 (v2, CAP-3) il registro impara anche `layout` (direzione,
+ * allineamento, giustificazione, wrap — i gap sono `rowGap`/`columnGap`) e
+ * `position` (assoluta, x, y, z-index), letti dal layer Penpot per le parti
+ * `surface`/`image`: nessuna classe Tailwind di layout entra a mano. Il
+ * vocabolario dei ruoli di parte (`PART_ROLES`, con `image`) vive qui: è il
+ * registro a possedere la tabella ruolo → proprietà.
  */
+
+/**
+ * Ruolo di parte (AD-11 v2): che cosa la parte È, dichiarato nel contratto
+ * di estrazione e mai in Penpot. Vocabolario chiuso:
+ * - `surface` → contenitore (sfondo, bordo, raggio, spaziatura, layout, posizione);
+ * - `text`    → testo;
+ * - `icon`    → icona vettoriale;
+ * - `divider` → separatore (solo tratto);
+ * - `image`   → immagine: raggio, opacità, layout, posizione e NESSUN `fill`
+ *               (unica eccezione a "token su ogni stile": il contenuto arriva dal field).
+ * `PART_ROLES` di `@app/contracts` (4 ruoli) è l'estensione deprecata della v1.
+ */
+export const PART_ROLES = ["surface", "text", "icon", "divider", "image"] as const;
+
+export type PartRole = (typeof PART_ROLES)[number];
 
 /** Layer Penpot che disegnano un'icona: qui lo stroke è vettoriale e la sua geometria si ignora. */
 export const ICON_LAYER_KINDS: readonly string[] = ["path", "vector", "ellipse", "line"];
@@ -39,6 +59,18 @@ export type ReadRule =
   | { readonly source: "opacity" }
   /** `shape.shadows` non vuoto. */
   | { readonly source: "shadows" }
+  /**
+   * Flex layout della board (`shape.flex`, Story 2.12): `dir`, `alignItems`,
+   * `justifyContent`, `wrap`. Registrata solo se diversa dal default della
+   * lista (`kind: keyword`). I gap del flex sono `rowGap`/`columnGap`.
+   */
+  | { readonly source: "flexLayout"; readonly field: "dir" | "alignItems" | "justifyContent" | "wrap" }
+  /**
+   * Posizione del layer nel genitore (Story 2.12): `shape.layoutChild.absolute`
+   * (parola chiave), `shape.parentX`/`parentY` (token di spaziatura),
+   * `shape.layoutChild.zIndex` (parola chiave). Verifica sul reader MCP: Story 2.13.
+   */
+  | { readonly source: "layoutChild"; readonly field: "absolute" | "x" | "y" | "zIndex" }
   /** Non letta dal reader: il motivo è dichiarato. */
   | { readonly source: "notRead"; readonly reason: string };
 
@@ -85,6 +117,13 @@ export type EmitRule =
       readonly baseValue: (className: string) => number | null;
       readonly baseDescription: string;
     }
+  /**
+   * Parola chiave → classi fisse (Story 2.12): per una proprietà `kind:
+   * keyword` ogni valore della lista ha le sue classi (es. `layoutDir`:
+   * `column` → `flex flex-col`). Le classi sono strutturali, dichiarate qui
+   * e mai derivate dal vocabolario token. Solo il render v2 le consuma.
+   */
+  | { readonly emit: "keywordClass"; readonly classes: Readonly<Record<string, string>> }
   /** Proprietà bloccata: nessuna mappatura. */
   | { readonly emit: "none" };
 
@@ -278,19 +317,89 @@ export const STYLE_PROPERTIES = {
     },
     emitter: { emit: "none" },
   },
+  // ---- Layout e posizione (Story 2.12, CAP-3): letti dal layer Penpot, mai
+  // ---- scritti a mano. In coda al registro: l'ordine delle righe sopra è
+  // ---- quello delle chiavi di `style` nelle fixture v1 (byte-identiche).
+  layoutDir: {
+    read: { source: "flexLayout", field: "dir" },
+    type: { kind: "keyword", values: ["row", "column"], default: "row" },
+    status: SUPPORTED,
+    emitter: { emit: "keywordClass", classes: { row: "flex flex-row", column: "flex flex-col" } },
+  },
+  layoutAlign: {
+    read: { source: "flexLayout", field: "alignItems" },
+    type: { kind: "keyword", values: ["start", "center", "end", "stretch", "baseline"], default: "stretch" },
+    status: SUPPORTED,
+    emitter: {
+      emit: "keywordClass",
+      classes: { start: "items-start", center: "items-center", end: "items-end", stretch: "items-stretch", baseline: "items-baseline" },
+    },
+  },
+  layoutJustify: {
+    read: { source: "flexLayout", field: "justifyContent" },
+    type: { kind: "keyword", values: ["start", "center", "end", "space-between", "space-around", "space-evenly"], default: "start" },
+    status: SUPPORTED,
+    emitter: {
+      emit: "keywordClass",
+      classes: {
+        start: "justify-start",
+        center: "justify-center",
+        end: "justify-end",
+        "space-between": "justify-between",
+        "space-around": "justify-around",
+        "space-evenly": "justify-evenly",
+      },
+    },
+  },
+  layoutWrap: {
+    read: { source: "flexLayout", field: "wrap" },
+    type: { kind: "keyword", values: ["nowrap", "wrap"], default: "nowrap" },
+    status: SUPPORTED,
+    emitter: { emit: "keywordClass", classes: { nowrap: "flex-nowrap", wrap: "flex-wrap" } },
+  },
+  positionAbsolute: {
+    read: { source: "layoutChild", field: "absolute" },
+    type: { kind: "keyword", values: ["static", "absolute"], default: "static" },
+    status: SUPPORTED,
+    // `relative` sul genitore di una parte assoluta lo emette il render v2 (Story 2.14).
+    emitter: { emit: "keywordClass", classes: { static: "", absolute: "absolute" } },
+  },
+  positionX: {
+    read: { source: "layoutChild", field: "x" },
+    type: token("spacing"),
+    status: SUPPORTED,
+    emitter: { emit: "utility", prefix: "left" },
+  },
+  positionY: {
+    read: { source: "layoutChild", field: "y" },
+    type: token("spacing"),
+    status: SUPPORTED,
+    emitter: { emit: "utility", prefix: "top" },
+  },
+  zIndex: {
+    read: { source: "layoutChild", field: "zIndex" },
+    type: { kind: "keyword", values: ["0", "10", "20", "30", "40", "50"], default: "0" },
+    status: SUPPORTED,
+    emitter: { emit: "keywordClass", classes: { "0": "z-0", "10": "z-10", "20": "z-20", "30": "z-30", "40": "z-40", "50": "z-50" } },
+  },
 } as const satisfies Record<string, PropertyDefinition>;
+
+/** Le proprietà di layout (flex del board) e di posizione, ammesse a `surface` e `image`. */
+const LAYOUT_PROPERTIES = ["layoutDir", "layoutAlign", "layoutJustify", "layoutWrap", "rowGap", "columnGap"] as const;
+const POSITION_PROPERTIES = ["positionAbsolute", "positionX", "positionY", "zIndex"] as const;
 
 /** Nome di una proprietà registrata (i nomi `TokenProperty` di Penpot). */
 export type RegisteredProperty = keyof typeof STYLE_PROPERTIES;
 
 /**
  * Tabella ruolo → proprietà ammesse (Story 2.10, A; decisione di Alessandro,
- * 2026-09-15): quali proprietà del registro può portare, con un token, una
- * parte con quel ruolo del contratto (`@app/contracts`, AD-11). Il contratto
- * non conosce Penpot: il vocabolario Penpot vive qui, accanto al registro.
- * Una `surface` con solo `strokeColor` (outline, senza `fill`) è valida.
- * Insegnare una proprietà a un ruolo = una riga qui + la mappatura
- * dell'emitter + un test rosso/verde, una volta per tutte.
+ * 2026-09-15; `image`, layout e posizione dalla Story 2.12): quali proprietà
+ * del registro può portare una parte con quel ruolo del contratto di
+ * estrazione (AD-11). Il contratto del page builder non conosce Penpot: il
+ * vocabolario Penpot vive qui, accanto al registro. Una `surface` con solo
+ * `strokeColor` (outline, senza `fill`) è valida. `image` non ammette `fill`.
+ * Insegnare una proprietà a un ruolo = una riga qui + la mappatura + un test
+ * rosso/verde, una volta per tutte.
  */
 export const ROLE_PROPERTIES = {
   surface: [
@@ -307,15 +416,25 @@ export const ROLE_PROPERTIES = {
     "paddingRight",
     "paddingBottom",
     "paddingLeft",
-    "rowGap",
-    "columnGap",
     "shadow",
     "opacity",
+    ...LAYOUT_PROPERTIES,
+    ...POSITION_PROPERTIES,
   ],
   // Tipografia del registro: dimensione, peso, spaziatura, famiglia (bloccata dal registro).
   text: ["fill", "fontSize", "fontWeight", "letterSpacing", "fontFamilies", "opacity"],
   icon: ["fill", "strokeColor", "strokeWidth"],
   divider: ["strokeColor", "strokeWidth", "strokeStyle"],
+  // Nessun `fill`: il contenuto arriva dal field `src`, la regola "token su ogni stile" non si applica al bitmap.
+  image: [
+    "borderRadiusTopLeft",
+    "borderRadiusTopRight",
+    "borderRadiusBottomRight",
+    "borderRadiusBottomLeft",
+    "opacity",
+    ...LAYOUT_PROPERTIES,
+    ...POSITION_PROPERTIES,
+  ],
 } as const satisfies Record<PartRole, readonly RegisteredProperty[]>;
 
 /** `true` se il ruolo ammette la proprietà (tabella ruolo → proprietà). */

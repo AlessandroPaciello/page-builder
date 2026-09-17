@@ -2,9 +2,9 @@ import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { COMPONENT_CONTRACTS } from "@app/contracts";
 import { afterEach, describe, expect, it } from "vitest";
 
+import { legacyContracts } from "../extract/component-reader";
 import { committedDesigns, designCoverage, designsDir } from "./designs-loader";
 
 const tempDirs: string[] = [];
@@ -55,20 +55,20 @@ describe("committedDesigns", () => {
 });
 
 describe("designCoverage — design ↔ registry dei contratti", () => {
-  it("i design committati coprono esattamente COMPONENT_CONTRACTS, in entrambi i sensi", () => {
-    const coverage = designCoverage(committedDesigns(), Object.values(COMPONENT_CONTRACTS));
+  it("i design committati coprono esattamente i contratti v1 (legacyContracts), in entrambi i sensi", () => {
+    const coverage = designCoverage(committedDesigns(), legacyContracts());
     expect(coverage).toEqual({ ok: true, contractsWithoutDesign: [], designsWithoutContract: [] });
   });
 
   it("contratto senza design → rosso che nomina il contratto", () => {
-    const coverage = designCoverage(committedDesigns(), [...Object.values(COMPONENT_CONTRACTS), { name: "select" }]);
+    const coverage = designCoverage(committedDesigns(), [...legacyContracts(), { name: "select" }]);
     expect(coverage.ok).toBe(false);
     expect(coverage.contractsWithoutDesign).toEqual(["select"]);
   });
 
   it("design senza contratto → rosso che nomina il design", () => {
     const designs = { ...committedDesigns(), ghost: JSON.parse(minimal) };
-    const coverage = designCoverage(designs, Object.values(COMPONENT_CONTRACTS));
+    const coverage = designCoverage(designs, legacyContracts());
     expect(coverage.ok).toBe(false);
     expect(coverage.designsWithoutContract).toEqual(["ghost"]);
   });

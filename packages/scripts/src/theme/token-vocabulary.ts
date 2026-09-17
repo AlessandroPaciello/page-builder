@@ -24,6 +24,9 @@ const TYPE_UTILITY_PREFIXES: Record<TokenType, readonly string[]> = {
     "m", "mx", "my", "mt", "mr", "mb", "ml",
     "gap", "gap-x", "gap-y",
     "inset", "inset-x", "inset-y",
+    // Posizione (Story 2.12): solo i due prefissi che il registro usa
+    // (`positionY` → top, `positionX` → left), non tutta la famiglia.
+    "top", "left",
   ],
   borderRadius: ["rounded"],
   borderWidth: [],

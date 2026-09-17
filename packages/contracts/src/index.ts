@@ -2,6 +2,7 @@ export { classifyField } from "./classifier";
 export { accordionItem } from "./components/accordion-item";
 export { badge } from "./components/badge";
 export { input } from "./components/input";
+export { productCard } from "./components/product-card";
 export {
   type Axis,
   type AxisType,
@@ -11,6 +12,8 @@ export {
   defineContract,
   type FieldDef,
   type FieldKind,
+  hasLegacyExtension,
+  type LegacyComponentContract,
   PART_ROLES,
   type PartRole,
   propsSchema,

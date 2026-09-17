@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 
-import { COMPONENT_CONTRACTS } from "@app/contracts";
 import { describe, expect, it } from "vitest";
 
+import { legacyContracts } from "../extract/component-reader";
 import { PATHS } from "../shared/paths";
 import { committedDesigns } from "./designs-loader";
 import type { Operation } from "./library-plan";
@@ -17,7 +17,7 @@ const seed: SemanticSeed = JSON.parse(
 
 const designs = committedDesigns();
 
-const contracts = Object.values(COMPONENT_CONTRACTS);
+const contracts = legacyContracts();
 
 /** Costruisce lo snapshot "verde" applicando il piano del bootstrap (ciò che il writer produrrebbe live). */
 function greenSnapshot(): LibrarySnapshot {
@@ -484,13 +484,15 @@ describe("verifyLibrary — un caso rosso per regola", () => {
     expect(result.errors[0]).toContain("assente dal registry");
   });
 
-  it("regola 11: verde quando il contratto del container è nel registry", () => {
+  it("regola 11: verde quando il contratto del container è nel registry, anche se non è fra i contratti verificati", () => {
     const snapshot = greenSnapshot();
     const result = verifyLibrary({ contracts, spec: LIBRARY_SPEC, snapshot });
     expect(result.errors.some((e) => e.includes("assente dal registry"))).toBe(false);
-    // Senza il contratto nel registry lo stesso container diventa orfano.
+    // Story 2.12: la regola guarda il REGISTRY completo, non i contratti
+    // verificati — un container di un contratto ridotto (v2, non in
+    // `legacyContracts()`) è legittimo, non orfano.
     const withoutBadge = verifyLibrary({ contracts: contracts.filter((c) => c.name !== "badge"), spec: LIBRARY_SPEC, snapshot });
-    expect(withoutBadge.errors.some((e) => e.includes('Container "Badge"') && e.includes("assente dal registry"))).toBe(true);
+    expect(withoutBadge.errors.some((e) => e.includes("assente dal registry"))).toBe(false);
   });
 
   it("i container estranei senza plugin data sono ignorati", () => {

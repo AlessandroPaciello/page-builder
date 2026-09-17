@@ -8,25 +8,26 @@ import { z } from "zod";
  */
 
 /**
- * Tipo d'asse, dichiarato nel contratto e mai in Penpot. Instradamento a valle:
- * - `option`   → prop scelta dall'editor (`cva` nell'emitter, field in Puck);
- * - `state`    → stato del browser (`focus-visible:`/`aria-invalid:`/`disabled:`), nessuna prop;
- * - `behavior` → stato dell'headless (`data-[state=…]:`), nessuna prop.
+ * Tipo d'asse, dichiarato nel contratto e mai in Penpot. Nel contratto del
+ * page builder (v2, AD-11) esiste solo `option`: prop scelta dall'editor,
+ * stile per variante. `state` (stato del browser, nessuna prop) e `behavior`
+ * (stato dell'headless, nessuna prop) sono assi di RENDERING e vivono nel
+ * contratto di estrazione (`packages/scripts`); qui restano accettati solo
+ * come estensione deprecata della v1, fuori dal fingerprint, fino alla
+ * Story 2.16.
  */
 export type AxisType = "option" | "state" | "behavior";
 
 /**
- * Ruolo di parte (AD-11, Story 2.10): che cosa la parte È, dichiarato nel
- * contratto e mai in Penpot. Vocabolario chiuso, indipendente da Penpot e
- * dalle librerie: quali proprietà Penpot ammette ogni ruolo lo dice la
- * tabella ruolo → proprietà di `packages/scripts`, non il contratto.
- * - `surface` → contenitore (sfondo, bordo, raggio, spaziatura);
- * - `text`    → testo;
- * - `icon`    → icona vettoriale;
- * - `divider` → separatore (solo tratto).
+ * Ruolo di parte della v1 (AD-11, Story 2.10). Nella v2 il ruolo è dichiarato
+ * nel contratto di estrazione e il vocabolario (con `image`) vive nel registro
+ * delle proprietà di `packages/scripts`. Qui resta solo per l'estensione
+ * deprecata `partRoles`, letta dalla v1 fino alla Story 2.16.
+ * @deprecated estensione v1: si cancella con `parts`/`partRoles` (Story 2.16).
  */
 export const PART_ROLES = ["surface", "text", "icon", "divider"] as const;
 
+/** @deprecated estensione v1 (Story 2.16). */
 export type PartRole = (typeof PART_ROLES)[number];
 
 /** Classificazione di un campo: `structure` bloccata nelle sezioni, `content` modificabile e sanitizzato. */
@@ -46,17 +47,54 @@ export interface FieldDef {
   readonly kind: FieldKind;
 }
 
+/**
+ * Contratto del page builder (AD-5, AD-11 v2): SOLO ciò che l'editor e le
+ * pagine salvate usano — nome, versione, assi `option`, field. Come si legge
+ * da Penpot e come si rende (parti, ruoli, assi di rendering, albero,
+ * headless) sta nel contratto di estrazione di `packages/scripts`, che
+ * importa questo e mai il contrario.
+ */
 export interface ComponentContract {
   /** kebab-case, es. `accordion-item`: è la parte `nome` del plugin data `nome@versione`. */
   readonly name: string;
   /** intero ≥1 */
   readonly version: number;
   readonly axes: readonly Axis[];
-  /** Lista piatta per costruzione: una parte è un nome, senza annidamento né assi propri. */
-  readonly parts: readonly [string, ...string[]];
-  /** Il ruolo di ogni parte (esattamente le `parts`, una voce ciascuna). */
-  readonly partRoles: Readonly<Record<string, PartRole>>;
   readonly fields: Readonly<Record<string, FieldDef>>;
+  /**
+   * Estensione deprecata della v1: lista piatta delle parti. Fuori dal
+   * fingerprint e dal formato canonico; letta solo dalla pipeline v1
+   * (`hasLegacyExtension`). Si cancella con la v1 (Story 2.16).
+   * @deprecated
+   */
+  readonly parts?: readonly [string, ...string[]];
+  /**
+   * Estensione deprecata della v1: il ruolo di ogni parte. Va insieme a
+   * `parts` (entrambi o nessuno). Si cancella con la v1 (Story 2.16).
+   * @deprecated
+   */
+  readonly partRoles?: Readonly<Record<string, PartRole>>;
+}
+
+/**
+ * Un contratto con l'estensione v1 presente: l'unica forma che la pipeline v1
+ * (`packages/scripts`, fuori da `src/v2`) accetta. Con la v1 sparisce anche
+ * questo tipo, senza toccare il fingerprint.
+ * @deprecated estensione v1 (Story 2.16).
+ */
+export type LegacyComponentContract = ComponentContract & {
+  readonly parts: readonly [string, ...string[]];
+  readonly partRoles: Readonly<Record<string, PartRole>>;
+};
+
+/**
+ * `true` se il contratto porta l'estensione v1 (`parts` + `partRoles`): è il
+ * solo modo in cui la v1 sceglie i contratti su cui lavorare. Un contratto
+ * ridotto (v2) è invisibile alla v1.
+ * @deprecated estensione v1 (Story 2.16).
+ */
+export function hasLegacyExtension(contract: ComponentContract): contract is LegacyComponentContract {
+  return contract.parts !== undefined && contract.partRoles !== undefined;
 }
 
 /** Stesso formato del `nome` nel plugin data Penpot `pagebuilder/contract = nome@versione`. */
@@ -173,25 +211,47 @@ export function defineContract<const C extends ComponentContract>(def: C): C {
     }
   }
 
-  for (const part of def.parts) {
-    if (!IDENTIFIER.test(part)) fail(`parte "${part}" ha un nome non valido (identificatore minuscolo)`);
+  // Estensione deprecata della v1 (`parts` + `partRoles`, Story 2.16): un
+  // contratto ridotto non la porta; se c'è, deve essere coerente come prima —
+  // entrambi i campi, parti valide, ogni parte con un ruolo del vocabolario.
+  if ((def.parts === undefined) !== (def.partRoles === undefined)) {
+    fail(
+      `estensione v1 incoerente: "parts" e "partRoles" vanno insieme (entrambi o nessuno) — un contratto ridotto non li ha, uno v1 li ha entrambi`,
+    );
   }
-  for (const part of duplicates(def.parts)) fail(`parte "${part}" duplicata`);
+  const hasExtension = def.parts !== undefined && def.partRoles !== undefined;
+  if (!hasExtension) {
+    // Contratto ridotto (v2): gli assi di rendering vivono nel contratto di
+    // estrazione, non qui. Con l'estensione v1 restano tollerati fino alla 2.16.
+    for (const axis of def.axes) {
+      if (axis.type !== "option") {
+        fail(
+          `asse "${axis.name}" di tipo "${axis.type}": il contratto del page builder ha solo assi "option" — "state" e "behavior" sono assi di rendering e vivono nel contratto di estrazione (packages/scripts)`,
+        );
+      }
+    }
+  }
+  if (def.parts !== undefined && def.partRoles !== undefined) {
+    for (const part of def.parts) {
+      if (!IDENTIFIER.test(part)) fail(`parte "${part}" ha un nome non valido (identificatore minuscolo)`);
+    }
+    for (const part of duplicates(def.parts)) fail(`parte "${part}" duplicata`);
 
-  // Ruolo di parte (AD-11): ogni parte ne ha uno, del vocabolario chiuso, e
-  // `partRoles` non nomina parti che il contratto non ha.
-  const roles: Readonly<Record<string, unknown>> = def.partRoles ?? {};
-  for (const part of def.parts) {
-    if (!Object.hasOwn(roles, part)) {
-      fail(`parte "${part}" senza ruolo in partRoles (ruoli: ${PART_ROLES.join(", ")})`);
+    // Ruolo di parte (AD-11): ogni parte ne ha uno, del vocabolario chiuso, e
+    // `partRoles` non nomina parti che il contratto non ha.
+    const roles: Readonly<Record<string, unknown>> = def.partRoles;
+    for (const part of def.parts) {
+      if (!Object.hasOwn(roles, part)) {
+        fail(`parte "${part}" senza ruolo in partRoles (ruoli: ${PART_ROLES.join(", ")})`);
+      }
+      const role = roles[part];
+      if (!(PART_ROLES as readonly unknown[]).includes(role)) {
+        fail(`parte "${part}", ruolo ${JSON.stringify(role)} non è nel vocabolario (${PART_ROLES.join(", ")})`);
+      }
     }
-    const role = roles[part];
-    if (!(PART_ROLES as readonly unknown[]).includes(role)) {
-      fail(`parte "${part}", ruolo ${JSON.stringify(role)} non è nel vocabolario (${PART_ROLES.join(", ")})`);
+    for (const part of Object.keys(roles)) {
+      if (!def.parts.includes(part)) fail(`partRoles nomina la parte "${part}", che il contratto non ha`);
     }
-  }
-  for (const part of Object.keys(roles)) {
-    if (!def.parts.includes(part)) fail(`partRoles nomina la parte "${part}", che il contratto non ha`);
   }
 
   for (const [field, def_] of Object.entries(def.fields)) {

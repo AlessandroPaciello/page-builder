@@ -1,5 +1,5 @@
 # generated: 2026-07-26
-# last_updated: 2026-09-13 (walkthrough 2.8 parte A: review completata e approvata, story 2.8 → done; 2 defer aperti in deferred-work richiedono rilettura live da Penpot) (bmad-build 2.8 parte A: registro delle proprietà done → story 2.8 in review; parti B e C in deferred-work) (code review 2.7: 16 patch applicate e verificate (6 gruppo 1 library, 10 gruppo 2 emitter+contracts); story → done) (correct-course: nuova Story 2.8 registro/blocco, Epic 2 da 10 a 11 story)
+# last_updated: 2026-09-17 (bmad-build 2.12: fondamenta v2 implementate e riviste → story in review; review parziale, 2 layer interrotti dal limite di spesa)
 # project: page-builder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -69,7 +69,7 @@ development_status:
   2-9-skill-pds-component: done
   2-10-fedelta-live-ed-estrazione-guidata-dal-contratto: done
   2-11-storybook-del-design-system: review
-  2-12-fondamenta-v2-due-contratti-registro-guscio: backlog
+  2-12-fondamenta-v2-due-contratti-registro-guscio: review
   2-13-library-e-propose-penpot-dal-contratto-di-estrazione: backlog
   2-14-extract-e-render-una-istantanea-quattro-file: backlog
   2-15-productcard-end-to-end-e-gate-in-ci: backlog

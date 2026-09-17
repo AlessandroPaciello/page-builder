@@ -1,23 +1,11 @@
-import { readFileSync, renameSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
-
 import { isDirectInvocation } from "../shared/direct-invocation";
-import { PATHS } from "../shared/paths";
-import { generateTheme, type TokenCatalog } from "../shared/theme-generator";
-import { readPenpotTokenCatalog } from "../theme/penpot-reader";
-
-const fixturePath = PATHS.catalogPath;
-const tokensSrcDir = PATHS.tokensSrcDir;
+import { runTheme } from "../theme/theme-command";
 
 /**
- * Scrittura atomica (temp + rename): un crash a metà write non lascia mai un
- * file troncato né nella fixture né nei file generati committati.
+ * Entry CLI v1 di `generate:theme` (Stadio 1): parsing e `main`. Il corpo è
+ * `src/theme/theme-command.ts`, condiviso col comando v2 `theme` (Story 2.12).
+ * Resta in servizio, invariato nel comportamento, fino alla Story 2.16.
  */
-function writeAtomic(filePath: string, content: string): void {
-  const tmp = `${filePath}.tmp`;
-  writeFileSync(tmp, content, "utf8");
-  renameSync(tmp, filePath);
-}
 
 /** Parsing stretto: qualunque argomento non riconosciuto è un errore, non un silenzioso fallback alla fixture stantecchia. */
 function parseArgs(args: readonly string[]): { live: boolean } {
@@ -30,36 +18,8 @@ function parseArgs(args: readonly string[]): { live: boolean } {
   return { live: args.includes("--live") };
 }
 
-/**
- * Lettura del catalogo. In modalità live la fixture NON viene scritta qui:
- * viene aggiornata solo DOPO che la generazione è riuscita (vedi main) — un
- * catalogo con riferimenti rotti o tipi sconosciuti non deve mai corrompere
- * la fixture committata.
- */
-async function loadCatalog(live: boolean): Promise<TokenCatalog> {
-  if (!live) {
-    return JSON.parse(readFileSync(fixturePath, "utf8")) as TokenCatalog;
-  }
-
-  const catalog = await readPenpotTokenCatalog();
-  console.log("Catalogo letto dal server MCP Penpot (live)");
-  return catalog;
-}
-
 async function main(): Promise<void> {
-  const { live } = parseArgs(process.argv.slice(2));
-  const catalog = await loadCatalog(live);
-  const { css, ts } = generateTheme(catalog);
-
-  writeAtomic(resolve(tokensSrcDir, "tailwind-theme.css"), css);
-  writeAtomic(resolve(tokensSrcDir, "tokens.generated.ts"), ts);
-
-  if (live) {
-    writeAtomic(fixturePath, `${JSON.stringify(catalog, null, 2)}\n`);
-    console.log(`Fixture cache aggiornata: ${fixturePath}`);
-  }
-
-  console.log("Generati packages/tokens/src/tailwind-theme.css e tokens.generated.ts");
+  await runTheme(parseArgs(process.argv.slice(2)));
 }
 
 if (isDirectInvocation(import.meta.url)) {

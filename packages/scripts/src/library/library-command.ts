@@ -1,8 +1,7 @@
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { COMPONENT_CONTRACTS } from "@app/contracts";
-
+import { legacyContracts } from "../extract/component-reader";
 import { PATHS } from "../shared/paths";
 import { publishReport } from "../shared/component-report";
 import { bindingsDir, scanCommittedComponents } from "../emitter/artifacts";
@@ -163,7 +162,7 @@ export function runVerify(
   seed: SemanticSeed,
   options: { fromFile?: boolean; env?: NodeJS.ProcessEnv; print?: (text: string) => void; jsonPath?: string } = {},
 ): number {
-  const contracts = Object.values(COMPONENT_CONTRACTS);
+  const contracts = legacyContracts();
   const { bindings, errors: bindingErrors } = loadCommittedBindings(contracts.map((contract) => contract.name));
   // Una ricetta committata malformata è una voce rossa col nome del file, non un crash.
   const scan = options.fromFile ? scanCommittedComponents() : undefined;
@@ -200,7 +199,7 @@ export async function runLibrary(args: CliArgs): Promise<number> {
   const mode = args.mode === "bootstrap" ? "bootstrap" : "additive";
   const plan = planLibrary({
     mode,
-    contracts: Object.values(COMPONENT_CONTRACTS),
+    contracts: legacyContracts(),
     spec: LIBRARY_SPEC,
     seed,
     designs: DESIGNS,

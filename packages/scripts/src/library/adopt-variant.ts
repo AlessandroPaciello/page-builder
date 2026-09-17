@@ -9,6 +9,7 @@ import {
   SECTION_DEFINITIONS,
   type Axis,
   type ComponentContract,
+  type LegacyComponentContract,
   type SectionDefinition,
 } from "@app/contracts";
 import ts from "typescript";
@@ -78,7 +79,7 @@ export type AdoptionPlan =
       readonly schemaVersion: { readonly from: number; readonly to: number };
       readonly hash: string;
       /** Il contratto in memoria con i valori aggiunti (default invariato). */
-      readonly adopted: ComponentContract;
+      readonly adopted: LegacyComponentContract;
       /** Celle aggiunte al design, in ordine di prodotto cartesiano. */
       readonly cells: readonly string[];
       readonly files: readonly AdoptionFile[];
@@ -251,7 +252,7 @@ const SCHEMA_VERSION_DECLARATION = /export const SCHEMA_VERSION = ([1-9]\d*);/g;
 // ---------------------------------------------------------------------------
 
 export function planAdoption(
-  contract: ComponentContract,
+  contract: LegacyComponentContract,
   snapshot: LibrarySnapshot,
   design: ComponentDesign,
   binding: ComponentBinding,
@@ -326,7 +327,7 @@ export function planAdoption(
     const addition = added.find((entry) => entry.axis === axis.name);
     return addition ? { ...axis, values: [...axis.values, ...addition.values] as unknown as Axis["values"] } : axis;
   });
-  let adopted: ComponentContract;
+  let adopted: LegacyComponentContract;
   try {
     adopted = defineContract({ ...contract, axes: adoptedAxes });
   } catch (cause) {

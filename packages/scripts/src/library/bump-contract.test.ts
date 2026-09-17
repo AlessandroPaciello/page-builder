@@ -2,16 +2,18 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { COMPONENT_CONTRACTS, type ComponentContract } from "@app/contracts";
+import { COMPONENT_CONTRACTS, type LegacyComponentContract } from "@app/contracts";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { legacyContracts } from "../extract/component-reader";
 import { parseBumpArgs } from "../cli/bump-contract";
 import { resolveContract, runBump } from "./bump-command";
 import { bumpStep, planBump } from "./bump-contract";
 import type { LibrarySnapshot, SnapshotComponent } from "./library-snapshot";
 
-const badge2 = { ...COMPONENT_CONTRACTS.badge, version: 2 } as ComponentContract;
-const contracts = Object.values(COMPONENT_CONTRACTS).map((c) => (c.name === "badge" ? badge2 : c));
+const badge2 = { ...COMPONENT_CONTRACTS.badge, version: 2 } as LegacyComponentContract;
+const contracts = legacyContracts().map((c) => (c.name === "badge" ? badge2 : c));
 
 function container(name: string, pluginData: string | null): SnapshotComponent {
   return { id: `id-${name}`, name, pluginData, axes: ["variant", "size"], axesValues: {}, cells: [] };
@@ -191,7 +193,7 @@ describe("bump:contract (CLI e comando)", () => {
     it("nulla da fare → exit 0 senza scrittura; errore del piano → exit 1", async () => {
       const { callTool, writes } = transport(true);
       expect(await runBump({ component: "Input", yes: true }, { contracts, callTool })).toBe(1); // nessun container Input
-      expect(await runBump({ component: "Badge", yes: true }, { contracts: Object.values(COMPONENT_CONTRACTS), callTool })).toBe(0);
+      expect(await runBump({ component: "Badge", yes: true }, { contracts: legacyContracts(), callTool })).toBe(0);
       expect(writes).toEqual([]);
     });
 
