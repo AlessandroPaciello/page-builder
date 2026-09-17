@@ -119,6 +119,8 @@ context:
 
 Solo il layer `blind-hunter` ha prodotto risultati: `edge-case-hunter` e `verification-gap` sono morti con HTTP 429 «monthly spend limit» dell'account, quindi la review è parziale e il loro esito manca.
 
+> Superata dalla CR full del 2026-09-17 (branch `story/2.12-...`, `ae82e94..843a442`, 49 file): 4/4 layer verdi, nessun 429. Esiti sotto in `### Review Findings (CR full 2026-09-17)`.
+
 | Verdetto | Finding | Evidenza / esito |
 |---|---|---|
 | high | `badge` figlio di `image` (`img` è void, non ha figli) | Verificato: l'albero dichiarato non è HTML renderizzabile; la simulazione stessa rende il badge come fratello dell'immagine. **Patch**: parte `media` (surface) contiene `image` e `badge`; `defineExtraction` rifiuta un `parent` con elemento void, con test. |
@@ -137,6 +139,41 @@ Solo il layer `blind-hunter` ha prodotto risultati: `edge-case-hunter` e `verifi
 | low | categoria `input` anche per errori di filesystem in `writeTheme` | `input` è la categoria di chi non ha un canale proprio (le quattro sono fissate da `commands.md`): un errore di scrittura non è `penpot` né `contract` né `gate`. Respinto. |
 | maybe-false | default di `layoutAlign` e lista chiusa di `zIndex` non verificati su Penpot | Non decidibile senza lettura live (MCP non raggiungibile in sessione). Deferred: la verifica dei campi del reader è già prevista dalla Story 2.13. |
 | false | `apps/web/next-env.d.ts` va escluso dal commit | Non è un difetto del cambio: il file era già sporco prima della story (rigenerazione di Next) ed è escluso dal diff sotto review. |
+
+### Review Findings (CR full 2026-09-17)
+
+CR full su `ae82e94..843a442` (49 file, +2086/-185, diff 3236 righe): `blind-hunter`, `edge-case-hunter`, `verification-gap`, `acceptance-auditor` tutti verdi. Nessun `decision-needed`.
+
+- [x] [Review][Patch] Attributi HTML non validati per nome [packages/scripts/src/v2/extraction.ts]
+- [x] [Review][Patch] `image` senza `src` passa il module load [packages/scripts/src/v2/extraction.ts]
+- [x] [Review][Patch] `v2-boundary`: pattern incompleti + esenzione `.test.ts` [packages/scripts/tests/v2-boundary.test.ts]
+- [x] [Review][Patch] `fingerprintComponents` scarta override sconosciuti in silenzio [packages/scripts/src/extract/component-reader.ts]
+- [x] [Review][Patch] `extraction.test.ts` confronta solo `parts` [packages/scripts/src/v2/extraction.test.ts]
+- [x] [Review][Patch] `defineExtraction` senza guardie runtime sui tipi [packages/scripts/src/v2/extraction.ts]
+- [x] [Review][Patch] Manca test invisibilità v1 della product-card [packages/scripts/src/extract/component-reader.test.ts]
+- [x] [Review][Patch] 7 rami di `defineExtraction` senza test [packages/scripts/src/v2/extraction.test.ts]
+- [x] [Review][Patch] `validate-recipe.ts` importa tipo pre-2.12 [packages/scripts/src/extract/validate-recipe.ts]
+- [x] [Review][Defer] Copertura review precedente parziale — deferred: chiusa da questa CR (4/4 layer, nessun 429)
+- [x] [Review][Defer] `a11y.ariaAttributes` senza vocabolario — deferred: vocabolario al render 2.14
+- [x] [Review][Defer] `headless.package`/primitivi senza check formato — deferred: formato al render 2.14
+- [x] [Review][Defer] `positionAbsolute: static` emette classe vuota + parent `relative` al render — deferred: `relative` assegnato al render 2.14
+- [x] [Review][Defer] Regola 11 sul registry completo — deferred: coesistenza voluta, verifica v2 all'extract 2.13
+- [x] [Review][Defer] Default `layoutAlign`/`zIndex` live non verificati — deferred: reader MCP 2.13 (già in deferred-work)
+- [x] [Review][Defer] `writeTheme` non atomica su due file — deferred: pattern preesistente, re-run chiude il buco
+- [x] [Review][Defer] Sezione senza `slots` → TypeError in fingerprint — deferred (maybe-false, sarebbe medium): dirimere leggendo `section.ts` o `?? []`
+
+Dettaglio patch:
+1. **Attributi**: `attribute` valida field/tipo ma mai il nome — chiave arbitraria accettata se il tipo matcha → HTML invalido a valle. Fix: allowlist/pattern nomi attributi (`extraction.ts:278-286`).
+2. **`image` senza `src`**: vietato `content` su image ma mai richiesto `attribute.src` — image senza sorgente passa. Fix: richiedi `src` per ruolo `image`.
+3. **`v2-boundary`**: `IMPORT_FROM_V2` manca backtick; `PROCESS_EXIT` manca `process["exit"]`, `exitCode++`/`+=`; `stripComments` mangia `//` in stringa; controllo exit esenta `.test.ts`. Fix: estendi regex, rimuovi/stringi esenzione.
+4. **`fingerprintComponents`**: override con nome non a registry ignorato — fingerprint diverge dall'intento. Fix: lancia su nome ignoto (`component-reader.ts:52-54`).
+5. **Test solo `parts`**: `productCardExtraction.parts` vs fixture solo parti — drift penpot/render/axes/a11y non rilevato. Fix: confronta intero contratto.
+6. **Guardie runtime**: `when` non-array, `headless.parts` assente, `package` non-stringa, `a11y.role` undefined/stringa vuota → TypeError o valori invalidi invece di `ScriptError contract`. Fix: guardie `Array.isArray`/typeof con fail nominativo.
+7. **Invisibilità v1**: nessun caso asserisce `contractByName("product-card") === undefined` né throw su container `product-card@1`; ricablare su registry pieno non romperebbe nulla. Fix: i due casi accanto al test `widget`.
+8. **7 rami senza test**: nome asse invalido, valori duplicati asse, nome parte invalido, tag invalido, attributo non-url su field non-testo, `when` duplicati, headless senza package — cancellare un controllo non rompe nulla. Fix: casi `expectContractError` per ramo.
+9. **`validate-recipe.ts:1`**: importa ancora `ComponentContract` pur leggendo `parts` (166, 213, 219); Code Map prevede `LegacyComponentContract`. Inerte. Fix: allinea import.
+
+Respinti (14): `propsSchema` già filtra `option` (false); ordine `allow`/`slots` nel fingerprint (low — normalizzare cambierebbe hash, autore scrive una volta); `badgeLabel` obbligatorio è decisione SPEC v2 (low — tocca la spec); `repeat` su qualunque ruolo ammesso da spec (false — nessun breakage prima del 2.14); strip `--` è disegno pnpm documentato (false); strictness duplicati v1 vs v2 preservata di proposito (low); `spacing` solo top/left deciso nel triage precedente, resta da allineare il testo frozen del Code Map (low — tocca la spec); argv null / return non-number impossibili via tipi (low); `runShell` non rigetta mai (false); `-live` errore non silenzioso (false); estensione incoerente lancia già in `defineContract` (false); `component: ""` collassa senza separatori spuri (false).
 
 ## Design Notes
 

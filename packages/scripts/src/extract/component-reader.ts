@@ -50,6 +50,12 @@ export function legacyContracts(): readonly LegacyComponentContract[] {
  * omonimi. Il fingerprint resta quello del test di `@app/contracts`.
  */
 export function fingerprintComponents(overrides: readonly ComponentContract[]): readonly ComponentContract[] {
+  const names = new Set((Object.values(COMPONENT_CONTRACTS) as readonly ComponentContract[]).map((contract) => contract.name));
+  for (const override of overrides) {
+    if (!names.has(override.name)) {
+      throw new Error(`fingerprintComponents: override "${override.name}" non è nel registry di @app/contracts — il fingerprint segue il chiamante solo per nomi noti.`);
+    }
+  }
   return (Object.values(COMPONENT_CONTRACTS) as readonly ComponentContract[]).map(
     (contract) => overrides.find((candidate) => candidate.name === contract.name) ?? contract,
   );

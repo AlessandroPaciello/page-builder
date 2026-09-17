@@ -276,6 +276,9 @@ export function defineExtraction<const C extends ComponentContract>(contract: C,
       if (part.role !== "text") fail(`"content" su una parte di ruolo "${part.role}": il testo appartiene a una parte "text" (il registro ammette la tipografia solo a quel ruolo).`, name);
     }
     for (const [attribute, fieldName] of Object.entries(part.attribute ?? {})) {
+      if (!/^[a-z][a-z0-9-]*$/.test(attribute)) {
+        fail(`"attribute.${attribute}" non è un nome di attributo HTML valido (minuscolo, es. "href", "src", "alt").`, name);
+      }
       const field = fieldOf(fieldName);
       if (field === undefined) fail(`"attribute.${attribute}" nomina il field "${fieldName}", che il contratto "${contract.name}" non ha (field: [${Object.keys(fields).join(", ")}]).`, name);
       const type = fieldType(field);
@@ -285,11 +288,15 @@ export function defineExtraction<const C extends ComponentContract>(contract: C,
         fail(`"attribute.${attribute}" vuole un field di testo: il field "${fieldName}" è di tipo "${type}".`, name);
       }
     }
+    if (part.role === "image" && part.attribute?.src === undefined) {
+      fail(`una parte "image" senza "attribute.src": il contenuto arriva da "src" (field url del page builder).`, name);
+    }
     if (name === "root" && part.attribute?.href !== undefined && part.element !== "a") {
       fail(`la radice con "attribute.href" è un link: l'elemento deve essere "a", non "${part.element}".`, name);
     }
     // 2. when: solo assi option del page builder, con valori esistenti.
     for (const [axisName, values] of Object.entries(part.when ?? {})) {
+      if (!Array.isArray(values)) fail(`"when.${axisName}" deve elencare valori (array), non ${JSON.stringify(values)}.`, name);
       const axis = contract.axes.find((candidate) => candidate.name === axisName);
       if (axis === undefined) {
         const render = Object.hasOwn(renderAxes, axisName) ? ` — "${axisName}" è un asse di rendering (${renderAxes[axisName]!.type}), non decide la presenza di una parte` : "";
@@ -306,14 +313,20 @@ export function defineExtraction<const C extends ComponentContract>(contract: C,
 
   // Headless: le parti nominate esistono.
   if (def.render.headless !== null) {
-    if (def.render.headless.package.length === 0) fail(`headless senza "package".`);
-    for (const name of Object.keys(def.render.headless.parts)) {
+    if (typeof def.render.headless.package !== "string" || def.render.headless.package.length === 0) fail(`headless senza "package".`);
+    const headlessParts: unknown = (def.render.headless as { parts?: unknown }).parts;
+    if (headlessParts === null || typeof headlessParts !== "object" || Array.isArray(headlessParts)) {
+      fail(`headless con "parts" mancanti: dichiara parte → primitivo, es. { root: "Item" }.`);
+    }
+    for (const name of Object.keys(headlessParts as Record<string, unknown>)) {
       if (!Object.hasOwn(def.parts, name)) fail(`headless nomina la parte "${name}", che il contratto di estrazione non ha.`, name);
     }
   }
 
   // a11y.role per variante: esattamente i valori di un asse option.
   const role = def.a11y.role;
+  if (role === undefined) fail(`a11y.role mancante: null, una stringa o un record per variante.`);
+  if (role === "") fail(`a11y.role vuoto: null per nessun ruolo o un ruolo ARIA valido.`);
   if (role !== null && typeof role === "object") {
     const keys = Object.keys(role).sort();
     const matching = optionAxes.filter((axis) => [...axis.values].sort().join("|") === keys.join("|"));

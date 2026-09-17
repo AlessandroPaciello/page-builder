@@ -263,3 +263,14 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor
 - source_spec: `_bmad-output/implementation-artifacts/2-12-fondamenta-v2-due-contratti-registro-guscio.md`
   summary: verificare su Penpot live il default di `layoutAlign` e la lista chiusa di `zIndex` del registro (Story 2.12), insieme ai campi `layoutChild.absolute`, `parentX`/`parentY` e `layoutChild.zIndex`.
   evidence: il registro dichiara `layoutAlign` default `stretch` e `zIndex` a multipli di 10; se il flex di Penpot ha default `start`, una board lasciata al default non registra nulla e rende `stretch`, e uno z-index fuori lista blocca il componente. Il server MCP non era raggiungibile nella sessione della 2.12; la Story 2.13 prevede già la verifica sul reader.
+
+## Deferred from: code review of 2-12-fondamenta-v2-due-contratti-registro-guscio (2026-09-17)
+
+- **Copertura review precedente parziale** — chiusa da questa CR: 4/4 layer (`blind-hunter`, `edge-case-hunter`, `verification-gap`, `acceptance-auditor`) verdi, nessun 429. Nessuna azione ulteriore.
+- **`a11y.ariaAttributes` senza vocabolario** — `packages/scripts/src/v2/extraction.ts`: stringhe arbitrarie passano il module load. Il vocabolario va deciso con il render (**Story 2.14**), che li consuma.
+- **`headless.package`/primitivi senza check formato** — `packages/scripts/src/v2/extraction.ts:309`: solo esistenza parte + package non vuoto. Il formato si fissa con il render (**Story 2.14**).
+- **`positionAbsolute: static` emette classe vuota + parent `relative` al render** — `packages/scripts/src/shared/style-properties.ts:365`: il `relative` sul genitore è assegnato al render (**Story 2.14**, vedi Design Notes 2.12).
+- **Regola 11 sul registry completo** — `packages/scripts/src/library/verify-library.ts:469`: coesistenza voluta (un container v2 è legittimo, non orfano); la verifica dei container v2 spetta all'`extract` (**Story 2.13**).
+- **Default `layoutAlign`/`zIndex` live non verificati** — vedi voce 2.12 già presente sopra (reader MCP **Story 2.13**).
+- **`writeTheme` non atomica su due file** — `packages/scripts/src/theme/theme-command.ts`: ogni file è tmp+rename ma la coppia no; pattern preesistente all'estrazione, re-run chiude il buco.
+- **Sezione senza `slots` → TypeError in fingerprint (maybe-false, sarebbe medium)** — `packages/contracts/src/fingerprint.ts:76`: da dirimere leggendo `SectionDefinition` (slots obbligatorio?) o `?? []`.

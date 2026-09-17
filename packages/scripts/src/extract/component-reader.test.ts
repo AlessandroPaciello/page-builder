@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { componentFixtureFromSnapshot } from "./component-reader";
+import { componentFixtureFromSnapshot, contractByName } from "./component-reader";
 import { emptySnapshot, type LibrarySnapshot, type SnapshotLayer, type SnapshotComponent } from "../library/library-snapshot";
 
 /**
@@ -161,6 +161,14 @@ describe("componentFixtureFromSnapshot", () => {
     const snapshot = snapshotWith(badgeContainer({ pluginData: "widget@1" }));
     expect(() => componentFixtureFromSnapshot("Badge", snapshot)).toThrow(
       /"widget".*non esiste in @app\/contracts/,
+    );
+  });
+
+  it("la product-card ridotta è invisibile alla v1 (CAP-1 in due tempi)", () => {
+    expect(contractByName("product-card")).toBeUndefined();
+    const snapshot = snapshotWith(badgeContainer({ id: "container-card", name: "ProductCard", pluginData: "product-card@1" }));
+    expect(() => componentFixtureFromSnapshot("ProductCard", snapshot)).toThrow(
+      /"product-card".*non esiste in @app\/contracts/,
     );
   });
 

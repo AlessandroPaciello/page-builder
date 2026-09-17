@@ -69,8 +69,9 @@ describe("defineExtraction — verde", () => {
     expect(extraction.parts.badgeLabel!.layer).toBe("Badge/Label");
     expect(extraction.axes.hover!.type).toBe("state");
     expect(Object.isFrozen(extraction)).toBe(true);
-    // Il modulo committato è la stessa definizione.
-    expect(productCardExtraction.parts).toEqual(extraction.parts);
+    // Il modulo committato è la stessa definizione: non solo le parti, ma
+    // anche penpot, render, assi e a11y (un drift lì resterebbe verde).
+    expect(productCardExtraction).toEqual(extraction);
   });
 
   it("a11y.role per variante accetta esattamente i valori dell'asse option", () => {
@@ -183,5 +184,52 @@ describe("defineExtraction — rosso, un ScriptError contract che nomina parte e
 
   it("a11y.role per variante con chiavi che non sono i valori di un asse option", () => {
     expectContractError({ ...base, a11y: { role: { none: null, offer: null }, focusVisible: true } }, undefined, /a11y\.role per variante ha le chiavi \[none, offer\], che non coincidono con i valori di un asse option.*promo \[none, offer, discount\]/);
+  });
+
+  it("nomi non validi e duplicati: asse di rendering, parte, elemento", () => {
+    expectContractError(
+      { ...base, axes: { Hover: { type: "state", values: ["off", "on"], default: "off" } } },
+      undefined,
+      /asse di rendering "Hover" ha un nome non valido/,
+    );
+    expectContractError(
+      { ...base, axes: { hover: { type: "state", values: ["off", "off"], default: "off" } } },
+      undefined,
+      /asse di rendering "hover" ha valori duplicati/,
+    );
+    expectContractError(
+      withParts({ Price: { role: "text", element: "span", parent: "body", content: "price" } }),
+      "Price",
+      /parte "Price" ha un nome non valido/,
+    );
+    expectContractError(
+      withParts({ price: { ...base.parts.price!, element: "Span" } }),
+      "price",
+      /non è un tag HTML valido/,
+    );
+  });
+
+  it("attributo non-url su field non di testo", () => {
+    expectContractError(
+      withParts({ price: { ...base.parts.price!, attribute: { title: "tags" } } }),
+      "price",
+      /"attribute\.title" vuole un field di testo: il field "tags" è di tipo "array"/,
+    );
+  });
+
+  it("when con valori duplicati", () => {
+    expectContractError(
+      withParts({ badge: { ...base.parts.badge!, when: { promo: ["offer", "offer"] } } }),
+      "badge",
+      /"when\.promo" ha valori duplicati/,
+    );
+  });
+
+  it("headless senza package", () => {
+    expectContractError(
+      { ...base, render: { domain: "commerce", headless: { package: "", parts: { root: "Root" } } } },
+      undefined,
+      /headless senza "package"/,
+    );
   });
 });
