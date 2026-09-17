@@ -11,9 +11,9 @@ tokens     ◄── ui/domains  ◄── puck-components
 scripts (pipeline Penpot) ── genera ──► tokens, ui/domains, definizioni di sezione
 ```
 
-- `contracts` — foglia, nessuna dipendenza da React/Puck/UI. Possiede props, tipi di asse, classifier structure/content e definizioni di sezione (AD-5).
+- `contracts` — foglia, nessuna dipendenza da React/Puck/UI. Possiede props, assi `option`, field, slot, classifier structure/content e definizioni di sezione (AD-5).
 - `tokens` — foglia del grafo, nessuna dipendenza interna.
-- `ui/domains` — dipende solo da `tokens` + `contracts` (+ headless Radix). Export `.`.
+- `ui/domains` — dipende solo da `tokens` + `contracts` (+ headless Base UI). Export `.`.
 - `ui/editor` — dipende solo da `ui/domains` + `tokens`. Export `./editor`.
 - `puck-components` — dipende da `contracts` + `ui/domains` + `tokens`. **Non** vede `ui/editor`.
 - **Regola di confine assoluta:** un componente in `domains/` non conosce il dominio page-builder e non importa mai da `editor/`. La semantica dell'editor vive in `editor/`, mai in `domains/`. Persa la barriera di package, il confine è tenuto da una regola di **lint bloccante in CI** e dai due export separati.
@@ -28,7 +28,7 @@ Il nome della variabile deriva dal **tipo** del token (namespace stabile: color,
 
 ## ui/domains — componenti generati da Penpot
 
-Componenti UI riusabili, organizzati per dominio, con varianti guidate dai token e ref forwarding. **Implementano i contratti** di `@app/contracts` e sono **generati** dalla pipeline fixture → ricetta → emitter (AD-11); compongono primitive **headless** (Radix) per il comportamento, che il design non esprime. La libreria è **sostituibile**: una sola per installazione, scelta a build time — cambiarla significa ridisegnare in Penpot e generare un'altra libreria, senza toccare contratti, sezioni e pagine salvate. Ogni componente rispetta la [a11y-baseline](./a11y-baseline.md). I pochi componenti senza headless disponibile e con logica propria (Table con sorting, Carousel) e i componenti complessi (3D, mappe, configuratori) hanno un contratto completo e un segnaposto in Penpot, ma l'adapter è scritto a mano, senza marker `@generated`, e ignorato dalla pipeline. Domini e componenti di riferimento:
+Componenti UI riusabili, organizzati per dominio, con varianti guidate dai token e ref forwarding. **Implementano i contratti** di `@app/contracts` e sono **generati** dalla pipeline due contratti → istantanea → render (AD-11 v2); compongono primitive **headless** (Base UI), dichiarate per parte nel contratto di estrazione, per il comportamento, che il design non esprime. La libreria è **sostituibile**: una sola per installazione, scelta a build time — cambiarla significa ridisegnare in Penpot e generare un'altra libreria, senza toccare contratti, sezioni e pagine salvate. Ogni componente rispetta la [a11y-baseline](./a11y-baseline.md). I pochi componenti senza headless disponibile e con logica propria (Table con sorting, Carousel) e i componenti complessi (3D, mappe, configuratori) hanno un contratto completo e un segnaposto in Penpot, ma l'adapter è scritto a mano, senza marker `@generated`, e ignorato dalla pipeline. Domini e componenti di riferimento:
 
 | Dominio | Componenti |
 |---|---|

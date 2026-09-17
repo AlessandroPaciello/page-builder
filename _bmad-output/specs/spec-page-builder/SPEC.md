@@ -109,5 +109,5 @@ Un workspace riscritto in cui i token e i componenti di un designer in Penpot fl
 
 - Penpot resta il tool di design sorgente e la pipeline di generazione è preservata come parte del target (richiesta esplicita "preservare la pipeline Penpot"); solo il backend applicativo cambia.
 - I ruoli di dominio (Admin/Editor/Cliente) e il modello Page/PageVersion sono concetti di prodotto, non artefatti dello stack scartato, e vengono preservati stack-agnosticamente; l'identità utente sarà fornita dallo stack scelto in fase architecture.
-- Una sola libreria componenti per installazione, scelta a build time: oggi la libreria generata da Penpot su base shadcn; una seconda libreria (es. MUI) implementerebbe gli stessi contratti.
+- Una sola libreria componenti per installazione, scelta a build time: oggi la libreria generata da Penpot su primitivi headless Base UI, senza basi di libreria; una seconda libreria (es. MUI) implementerebbe gli stessi contratti del page builder con un proprio contratto di estrazione.
 - Le pagine mescolano contenuto statico del design system e blocchi commerce data-driven; la vetrina e-commerce è servita dal page-builder stesso, con i dati commerce risolti server-side a render-time via il provider (CAP-15).

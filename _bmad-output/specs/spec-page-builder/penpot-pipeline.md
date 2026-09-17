@@ -1,6 +1,8 @@
 # Pipeline Penpot → codice
 
-Companion di [SPEC.md](./SPEC.md). Descrive **cosa** fa la pipeline design→codice e le regole di aderenza. Il transport verso Penpot **è un server MCP**, confermato in AD-11. Il contratto di ogni componente (assi, valori, tipo di asse, parti) è del page builder e vive in `@app/contracts`; **Penpot è la sorgente di valori e aspetto** — disegna gli assi del contratto, non li decide. La generazione è data-driven; i valori sono fedeli al design; il **comportamento accessibile non è disegnabile in Penpot** e arriva da una base headless dichiarata (AD-11). *(Rivisto dai correct-course 2026-09-12 e 2026-09-13.)*
+Companion di [SPEC.md](./SPEC.md). Descrive **cosa** fa la pipeline design→codice e le regole di aderenza. Il transport verso Penpot **è un server MCP**, confermato in AD-11. Il contratto di ogni componente (assi, valori, tipo di asse, parti) è del page builder e vive in `@app/contracts`; **Penpot è la sorgente di valori e aspetto** — disegna gli assi del contratto, non li decide. La generazione è data-driven; i valori sono fedeli al design; il **comportamento accessibile non è disegnabile in Penpot** e arriva da un primitivo headless dichiarato (AD-11). *(Rivisto dai correct-course 2026-09-12, 2026-09-13, 2026-09-15 e 2026-09-17.)*
+
+> **Due pipeline in servizio (2026-09-17 → CAP-11).** Lo Stadio 0 (contratto e library) e lo Stadio 1 (token) valgono per entrambe. Lo **Stadio 2** esiste in due versioni: la **v1** (fixture → ricetta → emitter shadcn), in servizio e verde finché la ProductCard non passa; la **v2** (due contratti → istantanea → render headless), che la sostituisce. Dove i due confliggono prevale [SPEC-refactor-packages-scripts](../spec-refactor-packages-scripts/SPEC.md). Alla chiusura di CAP-11 (Story 2.16) la sezione v1 **si cancella, non si aggiorna**.
 
 ## Principio guida
 
@@ -59,7 +61,32 @@ Penpot (catalogo token) ──► TokenCatalog (JSON) ──► mapping puro ─
 - La stessa funzione di derivazione del nome è riusata sia per le variabili CSS sia per le classi emesse dall'emitter, così i due lati non possono divergere (es. `color.primary` → sempre sia `--color-primary` sia `bg-primary`).
 - Output sovrascritto ad ogni run, con header `@generated`.
 
-## Stadio 2 — Estrazione e generazione COMPONENTI
+## Stadio 2 (v2) — Due contratti, una istantanea, sei comandi
+
+Regime deciso dal correct-course del 2026-09-17 su [SPEC-refactor-packages-scripts](../spec-refactor-packages-scripts/SPEC.md) (Story 2.12–2.17). L'estrazione resta **per-componente e su richiesta**, mai in CI né in build.
+
+```
+@app/contracts (name, version, assi option, fields, slot)          ← nel fingerprint
+        │  importato da
+        ▼
+packages/scripts/src/contracts/<nome>.extract.ts                    ← fuori dal fingerprint
+  (ruoli, when, repeat, parent, layer, element, content/attribute, headless, a11y)
+        │  validato a module load: contraddire il page builder = errore che nomina parte e campo
+        ▼
+Penpot (VariantContainer + plugin data) ──MCP── extract ──► data/components/<nome>.json   [unica istantanea]
+        │                                                    contract · provenance · cells[cella][parte]
+        ▼
+render (istantanea + contratto di estrazione + registro)
+        └─► <Comp>.tsx · .test.tsx · .stories.tsx · index.ts        [@generated, nessuna base]
+```
+
+**Sei comandi**, un guscio, una classe di errore: `theme`, `library`, `extract`, `render`, `gates`, `propose`. `ScriptError { kind, component?, cell?, part?, detail }`, exit `1` input · `2` penpot · `3` contract · `4` gate; nessun `process.exitCode` fuori dal guscio. Vocabolario completo del contratto di estrazione in [extraction-contract.md](../spec-refactor-packages-scripts/extraction-contract.md), tabella dei comandi e stadi di `extract` in [commands.md](../spec-refactor-packages-scripts/commands.md), piano di transizione in [migration.md](../spec-refactor-packages-scripts/migration.md).
+
+**Cosa non cambia rispetto alla v1:** il principio guida e la libertà del designer; l'aderenza stretta ai valori del design; il registro delle proprietà come unico posto dove si insegna una proprietà (da v2 impara anche `layout` e `position` dal layer, e il ruolo `image` senza `fill`); l'ordine degli adattamenti designer → registro → contratto; l'esito per componente col report (`gates`); il pass/fail negli script e mai nel prompt; la scrittura su Penpot solo via skill e `library`, mai correttiva; la convenzione `@generated`.
+
+**Cosa cambia:** `judgments/`, `bindings/`, `designs/`, `bases/`, `recipes/` e la coppia fixture+ricetta spariscono — l'istantanea li sostituisce tutti, e il suo diff in PR **è** la review del design. Il ruolo di parte esce dal contratto del page builder ed entra nel contratto di estrazione; il page builder tiene solo assi `option`, field e slot. Il drift non è più un gate a sé: `extract --check` confronta Penpot live senza scrivere. `propose` sostituisce `adopt:variant`, `bump:contract` e `role:part`: stampa il diff sui due contratti, lo sviluppatore lo applica a mano. Le basi shadcn e Radix escono; il primitivo headless è Base UI, dichiarato per parte.
+
+## Stadio 2 (v1) — Estrazione e generazione COMPONENTI  [in servizio fino a CAP-11 / Story 2.16, poi cancellata]
 
 L'estrazione è **per-componente e su richiesta** ("estrai Input"), non un batch di pagina.
 
@@ -196,3 +223,5 @@ Lato library, `verify:library` resta in sola lettura: una versione del contratto
 ## Convenzione @generated
 
 Tutti i file generati iniziano con un commento `@generated` che porta anche la **provenienza** — `penpotComponentId`, `fixtureHash` e il comando di rigenerazione — così si sa da quale stato del design è nato un file. Non si editano mai a mano: per cambiarli si modifica la **ricetta** o il **binding** (o si riestrae la fixture) e si rigenera.
+
+In v2 la provenienza sta nell'istantanea (`penpotComponentId`, `readAt`, hash) e per cambiare un file generato si modifica il **contratto di estrazione** o il **registro** (o si riestrae con `extract`), mai il file.

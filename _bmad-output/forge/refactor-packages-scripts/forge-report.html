@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forge: pipeline v2</title>
+<style>
+  :root { --bg:#f7f4ee; --ink:#1f1b16; --muted:#6b6259; --card:#fffdf9; --line:#e2dbd0; --accent:#8b2c1f; --ok:#2f6b3a; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#171411; --ink:#efe9e0; --muted:#a79d91; --card:#221e1a; --line:#3a332c; --accent:#d9694f; --ok:#7fc48c; } }
+  :root[data-theme="dark"] { --bg:#171411; --ink:#efe9e0; --muted:#a79d91; --card:#221e1a; --line:#3a332c; --accent:#d9694f; --ok:#7fc48c; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 Georgia, "Times New Roman", serif; }
+  main { max-width:860px; margin:0 auto; padding:32px 16px 64px; }
+  header { display:flex; gap:24px; align-items:center; flex-wrap:wrap; border-bottom:1px solid var(--line); padding-bottom:24px; margin-bottom:32px; }
+  h1 { font-size:1.7rem; margin:0 0 6px; } h2 { font-size:1.15rem; margin:32px 0 10px; letter-spacing:.02em; text-transform:uppercase; color:var(--muted); }
+  .meta { color:var(--muted); font-size:.95rem; }
+  .seal { width:150px; height:150px; flex:none; }
+  section.card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px 20px; }
+  ul { padding-left:20px; margin:8px 0; } li { margin:6px 0; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(240px,1fr)); gap:14px; }
+  .persona { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .persona b { display:block; } .persona i { color:var(--muted); font-size:.92rem; }
+  .kill { color:var(--accent); } code { font:.9em ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <svg class="seal" viewBox="0 0 150 150" role="img" aria-label="Sigillo HARDENED">
+    <defs><filter id="w"><feTurbulence baseFrequency="0.9" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale="3"/></filter></defs>
+    <g filter="url(#w)"><circle cx="75" cy="75" r="68" fill="#8b2c1f"/><circle cx="75" cy="75" r="60" fill="none" stroke="#5c1a12" stroke-width="2"/><circle cx="75" cy="75" r="52" fill="none" stroke="#f1c9bd" stroke-width="1.2" stroke-dasharray="3 4"/></g>
+    <text x="75" y="70" text-anchor="middle" font-family="Georgia, serif" font-size="17" font-weight="bold" fill="#fbe9e2" letter-spacing="2">HARDENED</text>
+    <text x="75" y="92" text-anchor="middle" font-family="Georgia, serif" font-size="9" fill="#f1c9bd">2026-09-16 · forge</text>
+  </svg>
+  <div>
+    <h1>Pipeline Penpot→codice v2</h1>
+    <div class="meta">Partita come "refactor di packages/scripts". Sessione di Alessandro, 2026-09-16.<br>Esito: <b style="color:var(--ok)">HARDENED</b>. Distillato in <code>forged-idea.md</code>, simulazione in <code>simulazione-card.md</code>.</div>
+  </div>
+</header>
+
+<section class="card">
+  <b>In una frase.</b> Il dolore non erano gli script ma il modello: un caso reale (ProductCard) si ferma in cinque punti del contratto, non della pipe. La v2 è due contratti, un'istantanea generata, un registro unico, sei comandi, niente shadcn.
+</section>
+
+<h2>Decisioni bloccate</h2>
+<ul>
+  <li><b>Due contratti.</b> Page builder (nel fingerprint: assi option, field, slot) e contratto di estrazione in <code>packages/scripts</code> che lo estende (parti con ruolo, <code>when</code>, <code>repeat</code>, <code>parent</code>, <code>attribute</code>, headless per parte, a11y). Dipendenza in una sola direzione.</li>
+  <li><b>Istantanea</b> <code>data/components/&lt;nome&gt;.json</code> scritta solo da <code>extract</code>: sostituisce fixture, ricetta e design.</li>
+  <li><b>Registro proprietà unico</b>, che impara layout, align, gap, position da Penpot. Ruolo <code>image</code> senza fill.</li>
+  <li><b>shadcn esce</b>; la base è il primitivo headless per parte. Radix vs Base UI → deep recon.</li>
+  <li><b>Sei comandi</b> con un guscio e una <code>ScriptError</code> con categoria ed exit code dedicato.</li>
+  <li><b>Card per prima</b>, poi migrazione dei quattro componenti, poi rimozione della v1 e riscrittura delle skill.</li>
+  <li><b>Regressione</b>: test + axe + confronto visivo per la migrazione; diff zero torna dopo.</li>
+  <li><b>Accettazione</b>: la ProductCard passa da Penpot a <code>packages/ui</code> senza codice a mano.</li>
+</ul>
+
+<h2>Scartato, e perché</h2>
+<ul>
+  <li class="kill">Refactor di sola visibilità: la sequenza v1 non era esagerata, ma non tocca il rischio vero.</li>
+  <li class="kill">Contratto del page builder che conosce Penpot: Puck dipenderebbe dal design.</li>
+  <li class="kill">Classi Tailwind a mano nel contratto di estrazione: tornerebbero con altro nome.</li>
+  <li class="kill">Basi shadcn: file inerti usati solo per import e confronto.</li>
+  <li class="kill">Badge per primo: preferito il caso difficile.</li>
+</ul>
+
+<h2>Punti deboli sopravvissuti</h2>
+<ul>
+  <li>Cinque parole nuove nel contratto di estrazione (<code>when</code>, <code>repeat</code>, <code>attribute</code>, <code>position</code>, ruolo <code>image</code>): ognuna è un caso nell'emitter.</li>
+  <li>La card non ha un v1 da confrontare: il primo giudizio è visivo, non un test.</li>
+  <li>Convivenza v1/v2 in CI durante la migrazione; Story 2.11 e 2.12 vanno riposizionate con un correct-course.</li>
+  <li>Deriva Penpot senza <code>extract</code>: non risolta dalla v2.</li>
+</ul>
+
+<h2>Chi ha messo alla prova l'idea</h2>
+<div class="grid">
+  <div class="persona"><b>🏗️ Winston · System Architect</b><i>Ha tenuto la direzione delle dipendenze e proposto la separazione in due contratti.</i></div>
+  <div class="persona"><b>💻 Amelia · Senior Software Engineer</b><i>Ha preteso un caso concreto prima di parlare di librerie.</i></div>
+  <div class="persona"><b>😤 Grumbal · The Adversary</b><i>Ha contato i costi: skill da riscrivere, fingerprint, settimane di branch, 25% dei casi con headless.</i></div>
+  <div class="persona"><b>🧑‍🎨 Dafne · designer freelance (voce generata)</b><i>Ha portato la card e la fiducia del designer come metro.</i></div>
+</div>
+</main>
+</body>
+</html>
