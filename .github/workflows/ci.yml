@@ -67,6 +67,13 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # Storybook del design system (Story 2.11): build statico dei 4
+      # componenti (Badge, Input, Alert, AccordionItem) con addon a11y. Solo
+      # build in CI, mai deploy o pubblicazione: un errore di bundling è un
+      # job rosso col modulo nel log, il dev resta usabile.
+      - name: Storybook static build
+        run: pnpm --filter storybook build-storybook
+
       # Il test dell'invariante (AC#2 Story 1.3) parte su uno schema già
       # applicato: `migrate deploy` è il percorso di release (Story 1.6) e
       # applica le migration committate senza evolve.

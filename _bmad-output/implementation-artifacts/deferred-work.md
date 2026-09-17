@@ -2,6 +2,10 @@
 
 Lavoro identificato durante le review e rimandato consapevolmente. Ogni voce indica da dove arriva e quando va ripresa.
 
+- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/2-11-storybook-del-design-system.md`
+  summary: Lo `storyName` emesso (`PropLabel` + valore asse capitalizzato) non è sanitizzato: un valore d'asse con `-`, spazi o stringa vuota produrrebbe uno `.stories.tsx` con sintassi invalida.
+  evidence: review 2-11 (ECH1) — costruzione pre-esistente (identica nella vecchia forma), nessun contratto attuale la viola; da valutare con guardrail o validazione valori alla prima estensione degli assi.
+
 ## Deferred from: code review of 1-1-scaffolding-greenfield-del-workspace (2026-07-26)
 
 - **Nessuna copertura di test né CI** — non esiste alcun file di test, nessun task `test` in `turbo.json`, nessun workflow in `.github/` (solo `CODEOWNERS` e `PULL_REQUEST_TEMPLATE.md`). Fuori scope per contratto: le Testing Requirements della Story 1.1 escludono esplicitamente test applicativi. Da riprendere in **Story 1.2** (`packages/domain`), che porta il primo caso d'uso testabile: lì va introdotto anche il task `test` in turbo.json e il workflow CI.

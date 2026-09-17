@@ -20,7 +20,11 @@
         "CORS_ORIGIN",
         "NEXT_PUBLIC_SERVER_URL"
       ],
-      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "storybook-static/**"]
+    },
+    "build-storybook": {
+      "dependsOn": ["^build"],
+      "outputs": ["storybook-static/**"]
     },
     "lint": {
       "dependsOn": ["^lint"]

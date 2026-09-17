@@ -1193,9 +1193,27 @@ function renderStoriesFile(ctx: EmitterContext): string {
   };
 
   const optionAxes = ctx.contract.axes.filter((axis) => axis.type === "option");
+  // Componenti headless con root (es. AccordionItem dentro Accordion Root):
+  // senza il wrapper Radix lancia "`AccordionItem` must be used within
+  // `Accordion`" e la story non sarebbe navigabile in Storybook né rendibile
+  // via composeStories nello smoke test. Il decorator riusa VERBATIM l'import
+  // headless della base (stesso alias del .tsx) e i rootProps del binding —
+  // nessuna lista hard-coded, vale per v1 e v2.
+  const hasHeadlessRoot = ctx.binding.headless !== null && ctx.binding.headless.root !== null;
+  const headlessImport =
+    hasHeadlessRoot && ctx.binding.headless !== null
+      ? extractImport(ctx.baseSource, ctx.binding.headless.package, ctx.binding.base).line
+      : null;
+  const rootPropsLiteral = hasHeadlessRoot ? jsxPropsLiteral(ctx.binding.headless?.rootProps ?? {}) : "";
+  const rootOpen = rootPropsLiteral.length > 0 ? `<${ctx.headlessAlias}.Root ${rootPropsLiteral}>` : `<${ctx.headlessAlias}.Root>`;
+  const decoratorSuffix = hasHeadlessRoot
+    ? `, decorators: [(Story) => (${rootOpen}<Story /></${ctx.headlessAlias}.Root>)]`
+    : "";
   const stories: string[] = [];
   if (optionAxes.length === 0) {
-    stories.push(`export const Default = ${argsLiteral()};`);
+    stories.push(
+      `export const Default: StoryObj<typeof ${componentName}> = { args: ${argsLiteral()}${decoratorSuffix} };`,
+    );
   } else {
     // Una story per OGNI valore di OGNI asse option: le altre assi option
     // restano al default (nessun prodotto cartesiano). Il nome include la
@@ -1208,18 +1226,26 @@ function renderStoriesFile(ctx: EmitterContext): string {
       for (const value of axis.values) {
         const apiValue = bound.values[value] ?? value;
         const storyName = `${propLabel}${value.charAt(0).toUpperCase()}${value.slice(1)}`;
-        stories.push(`export const ${storyName} = ${argsLiteral([`${propName}: "${apiValue}"`])};`);
+        stories.push(
+          `export const ${storyName}: StoryObj<typeof ${componentName}> = { args: ${argsLiteral([`${propName}: "${apiValue}"`])}${decoratorSuffix} };`,
+        );
       }
     }
   }
 
   const title = DOMAIN_TITLES[ctx.recipe.judgment.domain] ?? ctx.recipe.judgment.domain;
 
+  const storyImports = [
+    'import type { Meta, StoryObj } from "@storybook/react";',
+    ...(headlessImport !== null ? [headlessImport] : []),
+    `import { ${componentName} } from "./${componentName}";`,
+  ];
+
   return `${provenanceHeader(ctx)}
 
-import { ${componentName} } from "./${componentName}";
+${storyImports.join("\n")}
 
-const meta = { component: ${componentName}, title: "${title}/${componentName}" };
+const meta = { component: ${componentName}, title: "${title}/${componentName}" } satisfies Meta<typeof ${componentName}>;
 export default meta;
 
 ${stories.join("\n")}

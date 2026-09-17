@@ -526,3 +526,81 @@ describe("renderComponent — alias dei layer (Story 2.8 parte B)", () => {
     expect(() => aliased(["root"])).toThrow(/alias "root" della parte "label" è il nome di un'altra parte/);
   });
 });
+
+describe("renderComponent — stories CSF3 (Story 2.11)", () => {
+  const storiesOf = (componentName: string): string => {
+    const file = renderCommitted(componentName).files.find((file) => file.path.endsWith(".stories.tsx"));
+    expect(file).toBeDefined();
+    return file?.content ?? "";
+  };
+
+  it("Badge: Meta/StoryObj tipizzati, props in args, titolo Dominio/Nome e marker invariati", () => {
+    const stories = storiesOf("Badge");
+    expect(isGeneratedFile(stories)).toBe(true);
+    expect(stories).toContain('import type { Meta, StoryObj } from "@storybook/react";');
+    expect(stories).toContain('import { Badge } from "./Badge";');
+    expect(stories).toContain(
+      'const meta = { component: Badge, title: "Data Display/Badge" } satisfies Meta<typeof Badge>;',
+    );
+    expect(stories).toContain(
+      'export const VariantDefault: StoryObj<typeof Badge> = { args: { label: "Etichetta", variant: "default" } };',
+    );
+    expect(stories).toContain(
+      'export const VariantSecondary: StoryObj<typeof Badge> = { args: { label: "Etichetta", variant: "secondary" } };',
+    );
+    expect(stories).toContain(
+      'export const VariantDestructive: StoryObj<typeof Badge> = { args: { label: "Etichetta", variant: "destructive" } };',
+    );
+    expect(stories).toContain('export const SizeSm: StoryObj<typeof Badge> = { args: { label: "Etichetta", size: "sm" } };');
+    expect(stories).toContain('export const SizeMd: StoryObj<typeof Badge> = { args: { label: "Etichetta", size: "md" } };');
+    // Mai props al primo livello: ogni story dichiara args.
+    expect(stories).not.toMatch(/export const \w+ = \{ (label|variant|size)/);
+  });
+
+  it("Input (senza assi option): Default con args", () => {
+    const stories = storiesOf("Input");
+    expect(stories).toContain('const meta = { component: Input, title: "Inputs/Input" } satisfies Meta<typeof Input>;');
+    expect(stories).toContain(
+      'export const Default: StoryObj<typeof Input> = { args: { placeholder: "Segnaposto" } };',
+    );
+  });
+
+  it("Alert: ogni status con args e role per variante invariato", () => {
+    const stories = storiesOf("Alert");
+    expect(stories).toContain('const meta = { component: Alert, title: "Feedback/Alert" } satisfies Meta<typeof Alert>;');
+    for (const status of ["info", "success", "warning", "error"] as const) {
+      const name = `Status${status.charAt(0).toUpperCase()}${status.slice(1)}`;
+      expect(stories).toContain(`export const ${name}: StoryObj<typeof Alert> = { args: {`);
+      expect(stories).toContain(`status: "${status}"`);
+    }
+  });
+
+  it("AccordionItem: Default con args e decorator nel Root headless", () => {
+    const stories = storiesOf("AccordionItem");
+    expect(stories).toContain(
+      'const meta = { component: AccordionItem, title: "Layout/AccordionItem" } satisfies Meta<typeof AccordionItem>;',
+    );
+    expect(stories).toContain('import * as AccordionPrimitive from "@radix-ui/react-accordion";');
+    expect(stories).toContain(
+      'export const Default: StoryObj<typeof AccordionItem> = { args: { value: "item", label: "Etichetta", body: "Contenuto" }, decorators: [(Story) => (<AccordionPrimitive.Root collapsible type="single"><Story /></AccordionPrimitive.Root>)] };',
+    );
+  });
+
+  it("Badge/Input/Alert senza headless root: nessun decorator, solo args", () => {
+    for (const component of ["Badge", "Input", "Alert"]) {
+      const stories = storiesOf(component);
+      expect(stories).not.toContain("decorators");
+      expect(stories).not.toContain("AccordionPrimitive");
+    }
+  });
+
+  it("prova rosso/verde: la vecchia forma (props al primo livello, senza args) non passa le asserzioni CSF3", () => {
+    const oldForm = 'export const VariantDefault = { label: "Etichetta", variant: "default" };';
+    expect(oldForm).not.toContain("StoryObj");
+    expect(oldForm).not.toContain("args");
+    expect(oldForm).not.toContain('satisfies Meta');
+    // La nuova forma passa le stesse asserzioni: il test è verde solo con args.
+    expect(storiesOf("Badge")).toContain("StoryObj<typeof Badge>");
+    expect(storiesOf("Badge")).toContain("args:");
+  });
+});
