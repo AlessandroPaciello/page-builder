@@ -2,16 +2,16 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import {
-  COMPONENT_CONTRACTS,
   defineContract,
   fingerprintPayload,
   PART_ROLES,
   SECTION_DEFINITIONS,
-  type ComponentContract,
+  type LegacyComponentContract,
   type PartRole,
 } from "@app/contracts";
 import ts from "typescript";
 
+import { fingerprintComponents, legacyContracts } from "../extract/component-reader";
 import { PATHS } from "../shared/paths";
 import { pascalCase } from "../shared/naming";
 import { formatDiff } from "./adopt-command";
@@ -51,7 +51,7 @@ export type RolePartPlan =
       readonly to: PartRole;
       readonly schemaVersion: { readonly from: number; readonly to: number };
       readonly hash: string;
-      readonly changed: ComponentContract;
+      readonly changed: LegacyComponentContract;
       readonly files: readonly AdoptionFile[];
     };
 
@@ -121,11 +121,11 @@ export function setPartRoleInSource(text: string, path: string, contractName: st
 
 /** Il piano: funzione pura sui sorgenti come testo. */
 export function planRolePart(
-  contract: ComponentContract,
+  contract: LegacyComponentContract,
   part: string,
   role: string,
   sources: RolePartSources,
-  registry: AdoptionRegistry = { components: Object.values(COMPONENT_CONTRACTS), sections: Object.values(SECTION_DEFINITIONS) },
+  registry: AdoptionRegistry = { components: fingerprintComponents(legacyContracts()), sections: Object.values(SECTION_DEFINITIONS) },
 ): RolePartPlan {
   const error = (message: string): RolePartPlan => ({ kind: "error", message });
   const name = contract.name;
@@ -139,7 +139,7 @@ export function planRolePart(
   if (from === role) {
     return { kind: "nothing", message: `Contratto "${name}": la parte "${part}" ha già il ruolo "${role}" — nessun cambio.` };
   }
-  let changed: ComponentContract;
+  let changed: LegacyComponentContract;
   try {
     changed = defineContract({ ...contract, partRoles: { ...contract.partRoles, [part]: role } });
   } catch (cause) {
@@ -224,7 +224,7 @@ export interface RolePartPaths {
 }
 
 export interface RolePartDeps {
-  contracts?: readonly ComponentContract[];
+  contracts?: readonly LegacyComponentContract[];
   registry?: AdoptionRegistry;
   paths?: RolePartPaths;
   print?: (text: string) => void;
@@ -241,7 +241,7 @@ function readSource(path: string): SourceFile {
 /** Corpo di `role:part`, con argomenti già parsati: ritorna l'exit code. */
 export function runRolePart(args: RolePartArgs, deps: RolePartDeps = {}): number {
   const print = deps.print ?? ((text: string) => console.log(text));
-  const contracts = deps.contracts ?? Object.values(COMPONENT_CONTRACTS);
+  const contracts = deps.contracts ?? legacyContracts();
   const contract = resolveContract(args.component, contracts);
   const paths = deps.paths ?? { contractsSrcDir: PATHS.contractsSrcDir, fingerprintPath: PATHS.fingerprintPath };
   const sources: RolePartSources = {
@@ -249,7 +249,7 @@ export function runRolePart(args: RolePartArgs, deps: RolePartDeps = {}): number
     schemaVersion: readSource(resolve(paths.contractsSrcDir, "schema-version.ts")),
     fingerprint: readSource(paths.fingerprintPath),
   };
-  const plan = planRolePart(contract, args.part, args.role, sources, deps.registry ?? { components: contracts, sections: Object.values(SECTION_DEFINITIONS) });
+  const plan = planRolePart(contract, args.part, args.role, sources, deps.registry ?? { components: fingerprintComponents(contracts), sections: Object.values(SECTION_DEFINITIONS) });
   if (plan.kind === "error") {
     console.error(`✖ ${plan.message}`);
     return 1;

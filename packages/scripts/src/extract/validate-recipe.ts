@@ -1,4 +1,4 @@
-import { contractId, type ComponentContract } from "@app/contracts";
+import { contractId, type LegacyComponentContract } from "@app/contracts";
 
 import { PLUGIN_DATA_PATTERN, contractByName } from "./component-reader";
 
@@ -47,7 +47,7 @@ export function stableStringify(value: unknown): string {
   return JSON.stringify(value) ?? "null";
 }
 
-function cartesian(contract: ComponentContract): string[] {
+function cartesian(contract: LegacyComponentContract): string[] {
   let out: string[][] = [[]];
   for (const axis of contract.axes) {
     out = out.flatMap((prefix) => axis.values.map((value) => [...prefix, value]));

@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import { accordionItem } from "../src/components/accordion-item";
 import { badge } from "../src/components/badge";
 import { input } from "../src/components/input";
+import { productCard } from "../src/components/product-card";
 import { contractId, propsSchema, type ComponentContract } from "../src/contract";
 import { COMPONENT_CONTRACTS } from "../src/registry";
 
@@ -68,6 +69,36 @@ describe("accordion-item@1", () => {
 
   it("non espone lo stato come prop", () => {
     expect(Object.keys(propsSchema(accordionItem).shape)).toEqual(["label", "body"]);
+  });
+});
+
+describe("product-card@1 (Story 2.12, primo contratto ridotto)", () => {
+  it("ha un solo asse option, sei field e nessuna estensione v1", () => {
+    expect(productCard.name).toBe("product-card");
+    expect(productCard.version).toBe(1);
+    expect(productCard.axes).toEqual([
+      { name: "promo", type: "option", values: ["none", "offer", "discount"], default: "none" },
+    ]);
+    expect(Object.keys(productCard.fields)).toEqual(["image", "price", "description", "tags", "href", "badgeLabel"]);
+    expect("parts" in productCard).toBe(false);
+    expect("partRoles" in productCard).toBe(false);
+    for (const field of Object.values(productCard.fields)) expect(field.kind).toBe("content");
+  });
+
+  it("valida le props: url per image e href, array di stringhe per tags, badgeLabel testo dell'editor", () => {
+    const schema = propsSchema(productCard);
+    const valid = {
+      image: "https://example.test/a.png",
+      price: "9,90 €",
+      description: "Desc",
+      tags: ["nuovo", "bio"],
+      href: "https://example.test/p/1",
+      badgeLabel: "Offerta",
+    };
+    expect(schema.parse(valid)).toEqual({ promo: "none", ...valid });
+    expect(schema.safeParse({ ...valid, image: "non-un-url" }).success).toBe(false);
+    expect(schema.safeParse({ ...valid, tags: "bio" }).success).toBe(false);
+    expect(schema.safeParse({ ...valid, promo: "sale" }).success).toBe(false);
   });
 });
 

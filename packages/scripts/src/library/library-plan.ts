@@ -1,4 +1,4 @@
-import { contractId, type ComponentContract, type PartRole } from "@app/contracts";
+import { contractId, type LegacyComponentContract, type PartRole } from "@app/contracts";
 
 import { pascalCase } from "../shared/naming";
 import type { RegisteredProperty, STYLE_PROPERTIES } from "../shared/style-properties";
@@ -40,7 +40,7 @@ export const PART_KIND_BY_ROLE: Readonly<Record<PartRole, PartKind>> = {
 };
 
 /** Il tipo di shape di una parte del contratto, dal suo ruolo; errore nominativo se il ruolo manca. */
-export function partKindOf(contract: Pick<ComponentContract, "name" | "partRoles">, part: string): PartKind {
+export function partKindOf(contract: Pick<LegacyComponentContract, "name" | "partRoles">, part: string): PartKind {
   const role = Object.hasOwn(contract.partRoles, part) ? contract.partRoles[part] : undefined;
   if (role === undefined) throw new Error(`Contratto "${contract.name}": la parte "${part}" non ha un ruolo in partRoles.`);
   return PART_KIND_BY_ROLE[role];
@@ -132,7 +132,7 @@ export interface LibraryPlanResult {
 export interface PlanLibraryInput {
   readonly mode: "bootstrap" | "additive";
   /** I contratti, nell'ordine del registry: è l'ordine dei container nel piano. */
-  readonly contracts: readonly ComponentContract[];
+  readonly contracts: readonly LegacyComponentContract[];
   readonly spec: LibrarySpec;
   readonly seed: SemanticSeed;
   readonly designs: Readonly<Record<string, ComponentDesign>>;
@@ -140,7 +140,7 @@ export interface PlanLibraryInput {
 }
 
 /** Chiave cella nel design: assi in ordine contratto, `variant=default|size=sm`. */
-function cellKey(contract: ComponentContract, values: readonly string[]): string {
+function cellKey(contract: LegacyComponentContract, values: readonly string[]): string {
   return contract.axes.map((axis, index) => `${axis.name}=${values[index]}`).join("|");
 }
 
@@ -182,7 +182,7 @@ export function sameColorish(a: PenpotTokenValue, b: PenpotTokenValue): boolean 
   return sameValue(a, b);
 }
 
-function designFor(contract: ComponentContract, designs: PlanLibraryInput["designs"]): ComponentDesign {
+function designFor(contract: LegacyComponentContract, designs: PlanLibraryInput["designs"]): ComponentDesign {
   const design = designs[contract.name];
   if (!design) {
     throw new Error(`Design mancante per il contratto "${contract.name}" — aggiungi designs/${contract.name}.design.json.`);
@@ -195,7 +195,7 @@ function designFor(contract: ComponentContract, designs: PlanLibraryInput["desig
  * `createContainer` (tutte le celle) e `addCell` (solo le mancanti). Un design
  * senza la cella è un errore che nomina contratto e cella.
  */
-function cellPlan(contract: ComponentContract, design: ComponentDesign, values: readonly string[]): ContainerCellPlan {
+function cellPlan(contract: LegacyComponentContract, design: ComponentDesign, values: readonly string[]): ContainerCellPlan {
   const key = cellKey(contract, values);
   const cellDesign = design.cells[key];
   if (!cellDesign) {
@@ -225,7 +225,7 @@ function cellPlan(contract: ComponentContract, design: ComponentDesign, values: 
   return { variantProps, parts };
 }
 
-function containerOperation(contract: ComponentContract, designs: PlanLibraryInput["designs"]): Operation {
+function containerOperation(contract: LegacyComponentContract, designs: PlanLibraryInput["designs"]): Operation {
   const design = designFor(contract, designs);
   const cells = cartesian(contract.axes).map((values) => cellPlan(contract, design, values));
 

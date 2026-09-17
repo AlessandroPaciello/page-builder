@@ -33,11 +33,26 @@ describe("defineContract — ruolo di parte (Story 2.10, A)", () => {
     expect(() => defineContract(def as never)).toThrow(message);
   });
 
-  it("il ruolo entra nel fingerprint: cambiarlo cambia il payload", () => {
+  it("gli slot delle sezioni entrano nel fingerprint (Story 2.12): cambiarne allow o max cambia il payload", () => {
+    const section = {
+      name: "demo-section",
+      version: 1,
+      fields: {},
+      root: { id: "r", component: "demo-section", props: {} },
+      slots: [{ id: "body", allow: ["demo-chip"] as [string, ...string[]], max: 2 }],
+    };
+    const base = fingerprintPayload([], [section]);
+    expect(base).toContain('"slots":[{"allow":["demo-chip"],"id":"body","max":2}]');
+    expect(fingerprintPayload([], [{ ...section, slots: [{ ...section.slots[0]!, max: 3 }] }])).not.toBe(base);
+    expect(fingerprintPayload([], [{ ...section, slots: [{ ...section.slots[0]!, allow: ["badge"] as [string, ...string[]] }] }])).not.toBe(base);
+  });
+
+  it("il ruolo NON entra nel fingerprint (v2, Story 2.12): cambiarlo lascia il payload identico", () => {
     const text = fingerprintPayload([defineContract(valid)], []);
     const icon = fingerprintPayload([defineContract({ ...valid, partRoles: { root: "surface", label: "icon" } })], []);
-    expect(text).toContain(`"partRoles":{"label":"text","root":"surface"}`);
-    expect(icon).not.toBe(text);
+    expect(text).not.toContain("partRoles");
+    expect(text).not.toContain(`"parts"`);
+    expect(icon).toBe(text);
   });
 });
 

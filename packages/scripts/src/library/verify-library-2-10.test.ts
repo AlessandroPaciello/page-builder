@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 
-import { COMPONENT_CONTRACTS } from "@app/contracts";
 import { describe, expect, it } from "vitest";
 
+import { legacyContracts } from "../extract/component-reader";
 import { PATHS } from "../shared/paths";
 import { committedDesigns } from "./designs-loader";
 import type { ComponentDesign } from "./library-plan";
@@ -17,7 +17,7 @@ import { verifyLibrary } from "./verify-library";
  * proprietà fuori ruolo (A), `design-drift` (C), regola 10 per componente (B).
  */
 
-const contracts = Object.values(COMPONENT_CONTRACTS);
+const contracts = legacyContracts();
 const snapshot = (): LibrarySnapshot => parseLibrarySnapshot(JSON.parse(readFileSync(PATHS.librarySnapshotPath, "utf8")));
 
 function verify(input: LibrarySnapshot, designs?: Record<string, ComponentDesign>) {

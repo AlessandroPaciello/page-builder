@@ -3,9 +3,11 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writ
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 
-import { COMPONENT_CONTRACTS, defineContract, fingerprintPayload, SCHEMA_VERSION, SECTION_DEFINITIONS, type ComponentContract } from "@app/contracts";
+import { COMPONENT_CONTRACTS, defineContract, fingerprintPayload, SCHEMA_VERSION, SECTION_DEFINITIONS, type LegacyComponentContract } from "@app/contracts";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { legacyContracts } from "../extract/component-reader";
 import { BindingSchema } from "../emitter/binding-shadcn";
 import { FixtureSchema } from "../extract/recipe-schema";
 import { parseAdoptArgs } from "../cli/adopt-variant";
@@ -14,7 +16,7 @@ import { DEFAULT_PATHS, formatDiff, runAdopt, type AdoptPaths } from "./adopt-co
 import { readContractAxes } from "./adopt-variant";
 import type { LibrarySnapshot } from "./library-snapshot";
 
-const badge = COMPONENT_CONTRACTS.badge as ComponentContract;
+const badge = COMPONENT_CONTRACTS.badge as LegacyComponentContract;
 
 /** Copia dei cinque file in una directory temporanea: i test non scrivono mai nel repo. */
 function tempPaths(): AdoptPaths {
@@ -172,7 +174,7 @@ describe("adopt:variant (CLI e comando)", () => {
 
     // Secondo run sui file generati, col contratto adottato nel registry.
     log.mockClear();
-    const contracts = Object.values(COMPONENT_CONTRACTS).map((c) => (c.name === "badge" ? adopted : c));
+    const contracts = legacyContracts().map((c) => (c.name === "badge" ? adopted : c));
     const after = contents(paths);
     expect(await runAdopt({ component: "Badge", yes: true }, { paths, callTool, contracts })).toBe(0);
     expect(log.mock.calls.map((call: unknown[]) => String(call[0])).join("\n")).toContain("nulla da adottare");

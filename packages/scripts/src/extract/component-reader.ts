@@ -1,4 +1,4 @@
-import { COMPONENT_CONTRACTS, contractId, type ComponentContract } from "@app/contracts";
+import { COMPONENT_CONTRACTS, contractId, hasLegacyExtension, type ComponentContract, type LegacyComponentContract } from "@app/contracts";
 
 import { pascalCase } from "../shared/naming";
 import { readLibrarySnapshot, type ReadLibraryOptions } from "../library/library-reader";
@@ -26,12 +26,43 @@ export type ReadComponentOptions = ReadLibraryOptions;
  */
 export const PLUGIN_DATA_PATTERN = /^([a-z][a-z0-9-]*)@(\d+)$/;
 
-const CONTRACTS_BY_NAME = new Map<string, ComponentContract>(
-  Object.values(COMPONENT_CONTRACTS).map((contract) => [contract.name, contract]),
-);
+/**
+ * I contratti che la pipeline v1 vede (Story 2.12, CAP-1 in due tempi): SOLO
+ * quelli con l'estensione deprecata `parts` + `partRoles`. Un contratto
+ * ridotto della v2 (`product-card`) sta nel registry e nel fingerprint ma è
+ * invisibile qui: nessun container, nessuna ricetta, nessun gate v1 lo
+ * riguarda. È l'UNICO punto in cui la v1 sceglie i contratti; si cancella
+ * con la v1 (Story 2.16).
+ */
+const LEGACY_CONTRACTS: readonly LegacyComponentContract[] = (Object.values(COMPONENT_CONTRACTS) as readonly ComponentContract[]).filter(hasLegacyExtension);
 
-/** Contratto noto per nome kebab, o undefined — `COMPONENT_CONTRACTS` non è indicizzabile per stringa libera. */
-export function contractByName(name: string): ComponentContract | undefined {
+const CONTRACTS_BY_NAME = new Map<string, LegacyComponentContract>(LEGACY_CONTRACTS.map((contract) => [contract.name, contract]));
+
+/** I contratti v1 nell'ordine del registry (sostituisce `Object.values(COMPONENT_CONTRACTS)` nella v1). */
+export function legacyContracts(): readonly LegacyComponentContract[] {
+  return LEGACY_CONTRACTS;
+}
+
+/**
+ * I contratti su cui `adopt:variant` e `role:part` calcolano il fingerprint:
+ * TUTTO il registry (il fingerprint copre anche i contratti ridotti, es.
+ * `product-card`), con i contratti v1 passati dal chiamante al posto degli
+ * omonimi. Il fingerprint resta quello del test di `@app/contracts`.
+ */
+export function fingerprintComponents(overrides: readonly ComponentContract[]): readonly ComponentContract[] {
+  const names = new Set((Object.values(COMPONENT_CONTRACTS) as readonly ComponentContract[]).map((contract) => contract.name));
+  for (const override of overrides) {
+    if (!names.has(override.name)) {
+      throw new Error(`fingerprintComponents: override "${override.name}" non è nel registry di @app/contracts — il fingerprint segue il chiamante solo per nomi noti.`);
+    }
+  }
+  return (Object.values(COMPONENT_CONTRACTS) as readonly ComponentContract[]).map(
+    (contract) => overrides.find((candidate) => candidate.name === contract.name) ?? contract,
+  );
+}
+
+/** Contratto v1 noto per nome kebab, o undefined — `COMPONENT_CONTRACTS` non è indicizzabile per stringa libera. */
+export function contractByName(name: string): LegacyComponentContract | undefined {
   return CONTRACTS_BY_NAME.get(name);
 }
 

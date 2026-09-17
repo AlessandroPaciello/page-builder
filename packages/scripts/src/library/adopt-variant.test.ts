@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { COMPONENT_CONTRACTS, fingerprintPayload, SCHEMA_VERSION, SECTION_DEFINITIONS, type ComponentContract } from "@app/contracts";
+import { COMPONENT_CONTRACTS, fingerprintPayload, SCHEMA_VERSION, SECTION_DEFINITIONS, type ComponentContract, type LegacyComponentContract } from "@app/contracts";
 import { describe, expect, it, vi } from "vitest";
 
 import { BindingSchema } from "../emitter/binding-shadcn";
@@ -83,7 +83,7 @@ function readSources(name: string): AdoptionSources {
   };
 }
 
-function plan(contract: ComponentContract, snapshot: LibrarySnapshot, sources = readSources(contract.name)): AdoptionPlan {
+function plan(contract: LegacyComponentContract, snapshot: LibrarySnapshot, sources = readSources(contract.name)): AdoptionPlan {
   const design = JSON.parse(sources.design.text) as ComponentDesign;
   const binding = BindingSchema.parse(JSON.parse(sources.binding.text));
   return planAdoption(contract, snapshot, design, binding, sources);
@@ -94,7 +94,7 @@ function expectError(result: AdoptionPlan, ...fragments: string[]): void {
   if (result.kind === "error") for (const fragment of fragments) expect(result.message).toContain(fragment);
 }
 
-const badge = COMPONENT_CONTRACTS.badge as ComponentContract;
+const badge = COMPONENT_CONTRACTS.badge as LegacyComponentContract;
 const sha256 = (text: string) => createHash("sha256").update(text).digest("hex");
 /** Versione corrente e successiva, dal sorgente: i test reggono ogni bump futuro del catalogo. */
 const CURRENT = SCHEMA_VERSION;
@@ -186,7 +186,7 @@ describe("planAdoption — casi rifiutati (nessun file)", () => {
     ["input", "state", "hover"],
     ["accordion-item", "state", "half"],
   ])("asse non option (%s, %s) → errore mapping 1:1", (name, axis, value) => {
-    const contract = COMPONENT_CONTRACTS[name as keyof typeof COMPONENT_CONTRACTS] as ComponentContract;
+    const contract = COMPONENT_CONTRACTS[name as keyof typeof COMPONENT_CONTRACTS] as LegacyComponentContract;
     const snapshot = snapshotFrom(fixture(name));
     snapshot.components[0]!.axesValues[axis] = [...snapshot.components[0]!.axesValues[axis]!, value];
     expectError(plan(contract, snapshot), `asse "${axis}"`, value, "mapping 1:1");

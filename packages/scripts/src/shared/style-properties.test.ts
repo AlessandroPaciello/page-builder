@@ -1,20 +1,24 @@
-import { COMPONENT_CONTRACTS, PART_ROLES } from "@app/contracts";
+import { PART_ROLES as LEGACY_PART_ROLES } from "@app/contracts";
 import { describe, expect, it } from "vitest";
 
 import { committedComponents, loadFixture } from "../emitter/artifacts";
+import { contractByName } from "../extract/component-reader";
 import { loadPartAliases } from "../extract/extract-component";
 import type { StyleProperty } from "../library/library-plan";
 import {
   ICON_LAYER_KINDS,
+  PART_ROLES,
   ROLE_PROPERTIES,
   STYLE_PROPERTIES,
   layerTreeIssues,
   layerTreeProblems,
   lookupProperty,
   propertyProblem,
+  propertyDefinition,
   radiusCorners,
   registeredProperties,
   removalClasses,
+  roleAdmits,
 } from "./style-properties";
 import { utilityPrefixesFor } from "../theme/token-vocabulary";
 
@@ -41,8 +45,9 @@ describe("tabella ruolo → proprietà (Story 2.10, A)", () => {
   });
   const roles = { root: "surface", heading: "text", chevron: "icon", divider: "divider" } as const;
 
-  it("la tabella copre i quattro ruoli del vocabolario e nomina solo proprietà registrate", () => {
+  it("la tabella copre i cinque ruoli del vocabolario (i quattro v1 più image) e nomina solo proprietà registrate", () => {
     expect(Object.keys(ROLE_PROPERTIES).sort()).toEqual([...PART_ROLES].sort());
+    expect(PART_ROLES).toEqual([...LEGACY_PART_ROLES, "image"]);
     for (const properties of Object.values(ROLE_PROPERTIES)) {
       for (const property of properties) expect(registeredProperties()).toContain(property);
     }
@@ -99,7 +104,7 @@ describe("tabella ruolo → proprietà (Story 2.10, A)", () => {
   it("nessuna cella delle fixture committate viola la tabella (decisione 2026-09-15)", () => {
     for (const component of committedComponents()) {
       const fixture = loadFixture(component);
-      const contract = COMPONENT_CONTRACTS[fixture.contract.split("@")[0]! as keyof typeof COMPONENT_CONTRACTS];
+      const contract = contractByName(fixture.contract.split("@")[0]!)!;
       for (const cell of fixture.cells) {
         const outside = layerTreeIssues(cell.root, { component }, loadPartAliases(component), contract.partRoles).filter((issue) => issue.outsideRole);
         expect(outside, component).toEqual([]);
@@ -247,5 +252,87 @@ describe("registro — completezza rispetto a TYPE_UTILITY_PREFIXES", () => {
     // @ts-expect-error — strokeStyle è una parola chiave: non si lega a un token.
     const keyword: StyleProperty = "strokeStyle";
     expect([tokenProperty, blockedTokenProperty, keyword]).toHaveLength(3);
+  });
+});
+
+describe("layout, posizione e ruolo image (Story 2.12, CAP-3)", () => {
+  const LAYOUT = ["layoutDir", "layoutAlign", "layoutJustify", "layoutWrap", "rowGap", "columnGap"];
+  const POSITION = ["positionAbsolute", "positionX", "positionY", "zIndex"];
+
+  it("le righe nuove stanno in coda al registro: l'ordine delle righe v1 (chiavi di style delle fixture) è intatto", () => {
+    const names = registeredProperties();
+    expect(names.slice(-8)).toEqual(["layoutDir", "layoutAlign", "layoutJustify", "layoutWrap", "positionAbsolute", "positionX", "positionY", "zIndex"]);
+    expect(names.slice(0, 20)).toEqual([
+      "fill", "strokeColor", "strokeWidth", "strokeStyle", "strokeAlignment",
+      "borderRadiusTopLeft", "borderRadiusTopRight", "borderRadiusBottomRight", "borderRadiusBottomLeft",
+      "paddingTop", "paddingRight", "paddingBottom", "paddingLeft", "rowGap", "columnGap",
+      "fontSize", "fontWeight", "letterSpacing", "opacity", "shadow",
+    ]);
+  });
+
+  it("layout: parole chiave lette dal flex del board, supportate, con classi fisse per valore", () => {
+    expect(STYLE_PROPERTIES.layoutDir.read).toEqual({ source: "flexLayout", field: "dir" });
+    expect(STYLE_PROPERTIES.layoutDir.type).toEqual({ kind: "keyword", values: ["row", "column"], default: "row" });
+    expect(STYLE_PROPERTIES.layoutDir.emitter).toEqual({ emit: "keywordClass", classes: { row: "flex flex-row", column: "flex flex-col" } });
+    expect(STYLE_PROPERTIES.layoutAlign.emitter.classes.center).toBe("items-center");
+    expect(STYLE_PROPERTIES.layoutJustify.emitter.classes["space-between"]).toBe("justify-between");
+    expect(STYLE_PROPERTIES.layoutWrap.emitter.classes.wrap).toBe("flex-wrap");
+    for (const property of ["layoutDir", "layoutAlign", "layoutJustify", "layoutWrap"] as const) {
+      expect(STYLE_PROPERTIES[property].status).toEqual({ state: "supported" });
+      // Ogni valore della lista ha la sua classe: nessuna parola chiave senza mappatura.
+      expect(Object.keys(STYLE_PROPERTIES[property].emitter.classes).sort()).toEqual([...STYLE_PROPERTIES[property].type.values].sort());
+    }
+  });
+
+  it("posizione: absolute e zIndex a parole chiave, x/y token di spaziatura → left-*/top-*", () => {
+    expect(STYLE_PROPERTIES.positionAbsolute.read).toEqual({ source: "layoutChild", field: "absolute" });
+    expect(STYLE_PROPERTIES.positionAbsolute.emitter).toEqual({ emit: "keywordClass", classes: { static: "", absolute: "absolute" } });
+    expect(STYLE_PROPERTIES.positionX).toMatchObject({ read: { source: "layoutChild", field: "x" }, type: { kind: "token", tokenType: "spacing" }, emitter: { emit: "utility", prefix: "left" } });
+    expect(STYLE_PROPERTIES.positionY).toMatchObject({ read: { source: "layoutChild", field: "y" }, type: { kind: "token", tokenType: "spacing" }, emitter: { emit: "utility", prefix: "top" } });
+    expect(STYLE_PROPERTIES.zIndex.emitter.classes["10"]).toBe("z-10");
+    expect(utilityPrefixesFor("spacing")).toEqual(expect.arrayContaining(["top", "left"]));
+  });
+
+  it("verde: layoutDir column e positionX con token spacing sono usabili", () => {
+    expect(propertyProblem("layoutDir", { ...where, value: "column" })).toBeNull();
+    expect(propertyProblem("positionAbsolute", { ...where, value: "absolute" })).toBeNull();
+    expect(propertyProblem("positionX", { ...where, token: "spacing.2" })).toBeNull();
+    expect(lookupProperty("zIndex", { ...where, value: "10" })).toBe(propertyDefinition("zIndex"));
+  });
+
+  it("rosso: valore fuori lista (layoutDir diagonal) e parola chiave legata a un token restano problemi nominativi", () => {
+    expect(propertyProblem("layoutDir", { ...where, value: "diagonal" })).toMatch(/Valore fuori lista.*proprietà "layoutDir".*ammette solo \[row, column\]/);
+    expect(propertyProblem("positionAbsolute", { ...where, token: "spacing.1" })).toMatch(/parola chiave legata a un token.*"positionAbsolute"/);
+  });
+
+  it("ruolo → proprietà: surface e image ammettono layout e posizione; image non ammette fill né bordo", () => {
+    for (const property of [...LAYOUT, ...POSITION]) {
+      expect(roleAdmits("surface", property), property).toBe(true);
+      expect(roleAdmits("image", property), property).toBe(true);
+      expect(roleAdmits("text", property), property).toBe(false);
+      expect(roleAdmits("icon", property), property).toBe(false);
+      expect(roleAdmits("divider", property), property).toBe(false);
+    }
+    expect([...ROLE_PROPERTIES.image]).toEqual([
+      "borderRadiusTopLeft", "borderRadiusTopRight", "borderRadiusBottomRight", "borderRadiusBottomLeft", "opacity",
+      ...LAYOUT, ...POSITION,
+    ]);
+    for (const property of ["fill", "strokeColor", "strokeWidth", "shadow", "paddingTop", "fontSize"]) {
+      expect(roleAdmits("image", property), property).toBe(false);
+    }
+  });
+
+  it("rosso: un token fill su una parte image è fuori ruolo (outsideRole), con l'adattamento in ordine", () => {
+    const tree = {
+      name: "ProductCard",
+      tokens: {},
+      style: {},
+      children: [{ name: "image", tokens: { fill: "color.card", borderRadiusTopLeft: "radius.lg" }, style: {}, children: [] }],
+    };
+    const issues = layerTreeIssues(tree, { component: "ProductCard", cell: "promo=none|hover=off" }, {}, { root: "surface", image: "image" });
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toMatchObject({ blocked: false, outsideRole: true });
+    expect(issues[0]!.message).toContain(`parte "image", ruolo "image", proprietà "fill", token "color.card"`);
+    expect(issues[0]!.message).toMatch(/1\) designer/);
   });
 });

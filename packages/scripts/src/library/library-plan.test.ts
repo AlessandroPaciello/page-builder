@@ -1,8 +1,10 @@
 import { readFileSync } from "node:fs";
 
-import { COMPONENT_CONTRACTS, type ComponentContract } from "@app/contracts";
+import { COMPONENT_CONTRACTS, type LegacyComponentContract } from "@app/contracts";
+
 import { describe, expect, it } from "vitest";
 
+import { legacyContracts } from "../extract/component-reader";
 import { PATHS } from "../shared/paths";
 import { committedDesigns } from "./designs-loader";
 import { pascalCase } from "../shared/naming";
@@ -18,7 +20,7 @@ const designs: Record<string, ComponentDesign> = committedDesigns();
 
 // Il registry è l'unico elenco (Dev Note): i test usano i contratti reali,
 // NON ricopie degli assi/parts (review 2.4).
-const contracts = Object.values(COMPONENT_CONTRACTS);
+const contracts = legacyContracts();
 
 function plan(input: Partial<Parameters<typeof planLibrary>[0]> = {}): LibraryPlanResult {
   return planLibrary({
@@ -221,7 +223,7 @@ describe("additiva", () => {
         name: "select",
         version: 1,
         axes: [{ name: "state", type: "state", values: ["default"], default: "default" }],
-      } as ComponentContract,
+      } as LegacyComponentContract,
     ];
     const selectDesign: ComponentDesign = {
       parts: { root: {}, placeholder: { parent: "root", text: "Scegli" } },
@@ -292,7 +294,7 @@ describe("additiva", () => {
     const withOutline = {
       ...badge,
       axes: badge.axes.map((axis) => (axis.name === "variant" ? { ...axis, values: [...axis.values, "outline"] } : axis)),
-    } as ComponentContract;
+    } as LegacyComponentContract;
     const extended = contracts.map((c) => (c.name === "badge" ? withOutline : c));
     const baseDesign = designs.badge!;
     const outlineCell = (size: string) => ({
@@ -345,7 +347,7 @@ describe("additiva", () => {
 
     it("nessun addCell su un container a una versione vecchia del contratto (badge@1 vs badge@2): resta la differenza", () => {
       const snapshot = apply(emptySnapshot(), plan());
-      const bumped = extended.map((c) => (c.name === "badge" ? ({ ...c, version: 2 } as ComponentContract) : c));
+      const bumped = extended.map((c) => (c.name === "badge" ? ({ ...c, version: 2 } as LegacyComponentContract) : c));
       const result = plan({ mode: "additive", contracts: bumped, designs: outlineDesigns, snapshot });
       expect(result.operations.filter((op) => op.kind === "addCell")).toEqual([]);
       expect(result.differences.some((d) => d.expected.includes('"badge@2"') && d.found.includes('"badge@1"'))).toBe(true);

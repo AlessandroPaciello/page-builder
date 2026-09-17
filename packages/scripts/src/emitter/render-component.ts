@@ -336,6 +336,10 @@ function deriveClass(
       }
       return className;
     }
+    case "keywordClass":
+      // Righe di layout/posizione (Story 2.12): a parole chiave, quindi mai
+      // raggiunte qui (`definition.type.kind !== "token"` sopra); solo il render v2 le consuma.
+      fail(`proprietà "${property}" (parte "${part}", cella "${cellKey}") è una riga di layout/posizione della v2: l'emitter shadcn non la mappa.`);
     case "none":
       fail(`proprietà "${property}" (parte "${part}", cella "${cellKey}") non ha una mappatura nell'emitter shadcn.`);
   }

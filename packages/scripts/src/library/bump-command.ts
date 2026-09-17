@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 
-import { COMPONENT_CONTRACTS, type ComponentContract } from "@app/contracts";
+import type { LegacyComponentContract } from "@app/contracts";
 
+import { legacyContracts } from "../extract/component-reader";
 import { callPenpotTool, parseExecuteCodeEnvelope, resolveMcpEndpoint, type McpCallToolResult } from "../shared/mcp-client";
 import { bumpStep, planBump } from "./bump-contract";
 import { pascalCase } from "../shared/naming";
@@ -29,7 +30,7 @@ export interface BumpArgs {
   snapshotPath?: string;
 }
 
-export function resolveContract(name: string, contracts: readonly ComponentContract[]): ComponentContract {
+export function resolveContract(name: string, contracts: readonly LegacyComponentContract[]): LegacyComponentContract {
   const contract = contracts.find((c) => c.name === name || pascalCase(c.name) === name);
   if (!contract) {
     throw new Error(`Contratto "${name}" non trovato nel registry — contratti: ${contracts.map((c) => c.name).join(", ")}.`);
@@ -38,15 +39,15 @@ export function resolveContract(name: string, contracts: readonly ComponentContr
 }
 
 export interface BumpDeps {
-  /** Default: il registry `COMPONENT_CONTRACTS`. */
-  contracts?: readonly ComponentContract[];
+  /** Default: i contratti v1 del registry (`legacyContracts()`). */
+  contracts?: readonly LegacyComponentContract[];
   /** Seam per i test: transport mockato, zero rete. In produzione è assente. */
   callTool?: CallToolFn;
 }
 
 /** Corpo di `bump:contract`, con argomenti già parsati: ritorna l'exit code. */
 export async function runBump(args: BumpArgs, deps: BumpDeps = {}): Promise<number> {
-  const contract = resolveContract(args.component, deps.contracts ?? Object.values(COMPONENT_CONTRACTS));
+  const contract = resolveContract(args.component, deps.contracts ?? legacyContracts());
   const read = (): Promise<LibrarySnapshot> => readLibrarySnapshot(deps.callTool ? { callTool: deps.callTool } : {});
   let snapshot: LibrarySnapshot;
   if (args.snapshotPath) {

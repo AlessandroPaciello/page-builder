@@ -1,4 +1,4 @@
-import type { ComponentContract } from "@app/contracts";
+import { COMPONENT_CONTRACTS, type LegacyComponentContract } from "@app/contracts";
 
 import { VerdictCollector, type ComponentReport, type ComponentVerdict, type ProblemKind } from "../shared/component-report";
 import { partOfLayer, resolvePartAliases, type AliasSource } from "../extract/recipe-schema";
@@ -22,7 +22,7 @@ import { describeDrift, designDrift, liveDesignCells } from "./sync-design";
  */
 
 export interface VerifyLibraryInput {
-  readonly contracts: readonly ComponentContract[];
+  readonly contracts: readonly LegacyComponentContract[];
   readonly spec: LibrarySpec;
   readonly snapshot: LibrarySnapshot;
   /**
@@ -97,7 +97,7 @@ function walkLayers(root: SnapshotLayer, visit: (layer: SnapshotLayer) => void):
   for (const child of root.children) walkLayers(child, visit);
 }
 
-function cellKeyOf(contract: ComponentContract, variantProps: Record<string, string>): string {
+function cellKeyOf(contract: LegacyComponentContract, variantProps: Record<string, string>): string {
   return contract.axes.map((axis) => `${axis.name}=${variantProps[axis.name] ?? "?"}`).join("|");
 }
 
@@ -464,7 +464,9 @@ export function verifyLibrary(input: VerifyLibraryInput): VerifyResult {
   // Regola 11: ogni container che dichiara un contratto via plugin data deve
   // nominare un contratto del registry — un `alert@1` senza contratto `alert`
   // non è verificato da nessuna delle regole 1–7 e resterebbe un verde finto.
-  const registered = new Set(contracts.map((contract) => contract.name));
+  // Il registry COMPLETO, non i soli contratti v1: un container che dichiara un
+  // contratto ridotto (v2, es. `product-card@1`) è legittimo, non orfano.
+  const registered = new Set<string>(Object.values(COMPONENT_CONTRACTS).map((contract) => contract.name));
   for (const container of containers) {
     if (container.pluginData === null) continue;
     const declared = container.pluginData.split("@")[0] ?? "";

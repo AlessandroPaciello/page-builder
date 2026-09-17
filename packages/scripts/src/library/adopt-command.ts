@@ -1,8 +1,9 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { COMPONENT_CONTRACTS, SECTION_DEFINITIONS, type ComponentContract } from "@app/contracts";
+import { SECTION_DEFINITIONS, type LegacyComponentContract } from "@app/contracts";
 
+import { fingerprintComponents, legacyContracts } from "../extract/component-reader";
 import { PATHS } from "../shared/paths";
 import { BindingSchema } from "../emitter/binding-shadcn";
 import { bindingsDir } from "../emitter/artifacts";
@@ -41,8 +42,8 @@ export const DEFAULT_PATHS: AdoptPaths = {
 };
 
 export interface AdoptDeps {
-  /** Default: il registry `COMPONENT_CONTRACTS`. */
-  contracts?: readonly ComponentContract[];
+  /** Default: i contratti v1 del registry (`legacyContracts()`). */
+  contracts?: readonly LegacyComponentContract[];
   /** Default: contratti e sezioni del registry. */
   registry?: AdoptionRegistry;
   /** Seam per i test: transport mockato, zero rete. */
@@ -78,11 +79,11 @@ export function formatDiff(before: string, after: string): string {
 
 /** Corpo di `adopt:variant`, con argomenti già parsati: ritorna l'exit code. */
 export async function runAdopt(args: BumpArgs, deps: AdoptDeps = {}): Promise<number> {
-  const contracts = deps.contracts ?? Object.values(COMPONENT_CONTRACTS);
+  const contracts = deps.contracts ?? legacyContracts();
   const contract = resolveContract(args.component, contracts);
   const paths = deps.paths ?? DEFAULT_PATHS;
   const registry: AdoptionRegistry = deps.registry ?? {
-    components: contracts,
+    components: fingerprintComponents(contracts),
     sections: Object.values(SECTION_DEFINITIONS),
   };
 

@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 
-import { COMPONENT_CONTRACTS } from "@app/contracts";
 import { describe, expect, it } from "vitest";
 
+import { legacyContracts } from "../extract/component-reader";
 import { PATHS } from "../shared/paths";
 import { committedDesigns } from "./designs-loader";
 import { planLibrary, type Operation } from "./library-plan";
@@ -16,7 +16,7 @@ const seed: SemanticSeed = JSON.parse(
 
 const designs = committedDesigns();
 
-const contracts = Object.values(COMPONENT_CONTRACTS);
+const contracts = legacyContracts();
 
 /** Celle del prodotto cartesiano di un contratto: derivato, non a mano. */
 function cellCount(contract: (typeof contracts)[number]): number {

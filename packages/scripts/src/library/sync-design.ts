@@ -1,9 +1,9 @@
 import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { COMPONENT_CONTRACTS, type ComponentContract } from "@app/contracts";
+import type { LegacyComponentContract } from "@app/contracts";
 
-import { componentFixtureFromSnapshot } from "../extract/component-reader";
+import { componentFixtureFromSnapshot, legacyContracts } from "../extract/component-reader";
 import { loadPartAliases } from "../extract/extract-component";
 import { cellKeyOf, partBindings } from "../extract/recipe-schema";
 import { PATHS } from "../shared/paths";
@@ -47,7 +47,7 @@ interface CellLike {
  * mappate sono affare delle altre regole.
  */
 export function liveDesignCells(
-  contract: Pick<ComponentContract, "axes" | "parts">,
+  contract: Pick<LegacyComponentContract, "axes" | "parts">,
   cells: readonly CellLike[],
   aliases: Readonly<Record<string, string>> = {},
 ): DesignCells {
@@ -157,7 +157,7 @@ export function syncedDesignCells(committed: Readonly<DesignCells>, live: Readon
 // ---------------------------------------------------------------------------
 
 export interface SyncDesignDeps {
-  contracts?: readonly ComponentContract[];
+  contracts?: readonly LegacyComponentContract[];
   /** Seam per i test: transport mockato, zero rete. */
   callTool?: CallToolFn;
   designsDir?: string;
@@ -180,7 +180,7 @@ function writeAtomic(path: string, content: string): void {
 /** Corpo di `sync:design`, con argomenti già parsati: ritorna l'exit code. Un errore nominativo lancia. */
 export async function runSyncDesign(args: BumpArgs, deps: SyncDesignDeps = {}): Promise<number> {
   const print = deps.print ?? ((text: string) => console.log(text));
-  const contract = resolveContract(args.component, deps.contracts ?? Object.values(COMPONENT_CONTRACTS));
+  const contract = resolveContract(args.component, deps.contracts ?? legacyContracts());
   const componentName = pascalCase(contract.name);
   const designPath = resolve(deps.designsDir ?? PATHS.designsDir, `${contract.name}.design.json`);
   if (!existsSync(designPath)) {

@@ -42,7 +42,16 @@ function fieldsShape(fields: Readonly<Record<string, FieldDef>>, owner: string) 
   );
 }
 
-/** La stringa JSON canonica su cui si calcola lo sha256 del fingerprint. */
+/**
+ * La stringa JSON canonica su cui si calcola lo sha256 del fingerprint.
+ *
+ * Copre SOLO il contratto del page builder (AD-11 v2, Story 2.12): nome,
+ * versione, assi `option`, field e — per le sezioni — slot. L'estensione
+ * deprecata della v1 (`parts`, `partRoles`, assi `state`/`behavior`) è
+ * fuori dal fingerprint: cambiarla o cancellarla (Story 2.16) non muove
+ * `SCHEMA_VERSION`. Come si legge da Penpot e come si rende non lega le
+ * pagine salvate.
+ */
 export function fingerprintPayload(
   components: readonly ComponentContract[],
   sections: readonly SectionDefinition[],
@@ -51,20 +60,24 @@ export function fingerprintPayload(
     components: components.map((contract) => ({
       name: contract.name,
       version: contract.version,
-      axes: contract.axes.map((axis) => ({
-        name: axis.name,
-        type: axis.type,
-        values: axis.values,
-        default: axis.default,
-      })),
-      parts: contract.parts,
-      partRoles: contract.partRoles,
+      axes: contract.axes
+        .filter((axis) => axis.type === "option")
+        .map((axis) => ({
+          name: axis.name,
+          values: axis.values,
+          default: axis.default,
+        })),
       fields: fieldsShape(contract.fields, contract.name),
     })),
     sections: sections.map((section) => ({
       name: section.name,
       version: section.version,
       fields: fieldsShape(section.fields, section.name),
+      slots: section.slots.map((slot) => ({
+        id: slot.id,
+        allow: slot.allow,
+        ...(slot.max === undefined ? {} : { max: slot.max }),
+      })),
     })),
   };
   return JSON.stringify(canonical(payload));
