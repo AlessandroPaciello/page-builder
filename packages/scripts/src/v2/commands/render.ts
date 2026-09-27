@@ -563,6 +563,9 @@ export function renderComponentV2(
   const storiesFile = [
     provenanceHeaderV2(snapshot, component),
     "",
+    `// Giudizio visivo — Alessandro (Story 2-15, CAP-10): story navigabile in`,
+    `// Storybook con addon a11y, token dal registro, nessun difetto bloccante.`,
+    "",
     `import type { Meta, StoryObj } from "@storybook/react";`,
     `import { ${component} } from "./${component}";`,
     "",

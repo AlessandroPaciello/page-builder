@@ -1,6 +1,9 @@
 // @generated — DO NOT EDIT BY HAND.
-// Source: pipeline due contratti → istantanea → render (contract product-card@1, penpotComponentId container-productcard-seed, snapshotHash c5ce5b3bb421).
+// Source: pipeline due contratti → istantanea → render (contract product-card@1, penpotComponentId seed-productcard-2-15, snapshotHash c5ce5b3bb421).
 // Regenerate with: pnpm --filter @penpot-ds/scripts render -- ProductCard
+
+// Giudizio visivo — Alessandro (Story 2-15, CAP-10): story navigabile in
+// Storybook con addon a11y, token dal registro, nessun difetto bloccante.
 
 import type { Meta, StoryObj } from "@storybook/react";
 import { ProductCard } from "./ProductCard";

@@ -92,6 +92,14 @@ jobs:
       - name: Render gates (completezza, rigenerazione, conformità, a11y)
         run: pnpm --filter @penpot-ds/scripts gates:render
 
+      # Gate v2 (Story 2.15, CAP-9): `render --check --all` in memoria + suite
+      # ui con axe, report per componente su $GITHUB_STEP_SUMMARY. Convive con
+      # `gates:render` (v1) fino alla 2.16, entrambi a diff zero. Nessun comando
+      # live in CI: `extract`, `render` senza `--check`, `library` e `propose`
+      # non girano mai qui (solo `gates`, che legge gli artefatti committati).
+      - name: Gates v2 (render --check --all + suite ui + axe, report per componente)
+        run: pnpm --filter @penpot-ds/scripts gates
+
       # Verifica della library per componente (Story 2.8 parte B): offline
       # sullo snapshot committato (scritto dal vivo dallo sviluppatore con
       # `verify:library --write-snapshot`). Entrambi i passi scrivono il

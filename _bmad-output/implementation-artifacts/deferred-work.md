@@ -299,3 +299,12 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor
 - source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/2-14-extract-e-render-una-istantanea-quattro-file.md`
   summary: cablaggio del gate v2 in CI per snapshot e file generati.
   evidence: comando `gates` (CAP-9) è la Story 2.15; il cablaggio CI vive lì.
+- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/2-15-productcard-end-to-end-e-gate-in-ci.md`
+  summary: parametrizzare la nota Giudizio visivo per componente nel template di render invece del testo fisso ProductCard/2-15.
+  evidence: review 2-15 (Blind) — `renderComponentV2` emette il commento incondizionato; corretto con un solo componente, serve dal secondo (2.16+).
+- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/2-15-productcard-end-to-end-e-gate-in-ci.md`
+  summary: estendere `gates` alla verifica del barrel top-level `domains/index.ts` oltre ai barrel per dominio.
+  evidence: review 2-15 (Blind) — il top-level è scritto a mano per disegno; il gate copre solo `commerce/index.ts`; rivalutare col secondo componente (2.16).
+- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/2-15-productcard-end-to-end-e-gate-in-ci.md`
+  summary: popolare `failedFiles` della suite ui in `gates` con i nomi dei file falliti invece del solo exit code.
+  evidence: review 2-15 (Blind) — `defaultRunSuite` ritorna sempre lista vuota; il rosso via exit code basta, i nomi richiedono parsing output.

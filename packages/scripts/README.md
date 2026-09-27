@@ -54,6 +54,32 @@ Solo `extract` scrive l'istantanea (`data/components/<kebab>.json` con `contract
 
 Mappatura: `when`→condizionale, `repeat`→`map` (primo layer modello), `attribute`→attributo, `state`→prefissi (`hover:`), headless→elemento (card: `null`), layout/posizione dal registro, `content`→testo, `focusVisible`→`focus-visible:`. Errori nominativi (componente, cella, parte) con adattamenti designer → registro → contratto; una categoria per stadio nel log. `extract --help` / `render --help` stampano l'uso senza leggere né scrivere.
 
+### `gates` — gate v2 in CI (Story 2-15, CAP-9)
+
+`render --check --all` in memoria + suite `ui` con axe, report per componente
+su terminale e `$GITHUB_STEP_SUMMARY`. Un componente divergente nomina solo
+sé; gli altri vengono comunque verificati. Nessun comando live in CI.
+
+| Comando | Esempio | Cosa fa |
+|---|---|---|
+| `pnpm --filter @penpot-ds/scripts gates` | `GITHUB_STEP_SUMMARY=/tmp/s.md pnpm --filter @penpot-ds/scripts gates` | Da repo (CI-safe, mai live): verifica ogni istantanea committata contro i file `@generated` (rigenerazione a diff zero in memoria, barrel per dominio incluso), esige `axe(` nel test e la nota `Giudizio visivo` nella story, poi gira la suite `ui`. Exit 0 verde, exit 4 (`gate`) nominativo se una voce è rossa. |
+| `pnpm --filter @penpot-ds/scripts gates -- --json /tmp/gates.json` | — | Come sopra, più report JSON su file: stesso report del terminale, ogni problema con `severity`/`kind`/`message` (il `kind` decide il percorso della skill, mai il testo). |
+
+Tassonomia exit di `gates`: `1` (`input`, uso errato: argomento non atteso,
+`--json` senza valore o duplicato) contro `4` (`gate`, verifiche rosse con
+voce nominativa per componente o riga globale per la suite). Il seed live
+(`extract`/`library` su Penpot) vuole `PENPOT_MCP_URL`/`PENPOT_MCP_TOKEN`
+(vedi [Connessione a Penpot](#connessione-a-penpot)); `gates` è offline e non
+legge mai quelle variabili.
+
+Vincoli mai-in-CI: `extract`, `render` senza `--check`, `library` e `propose`
+non girano mai in CI né in build (sono live o scrivono); in CI gira solo
+`gates` (v2). Convivenza v1/v2 fino alla 2.16: in
+`.github/workflows/ci.yml` girano entrambi `gates:render` (v1) e `gates`
+(v2), entrambi a diff zero; un job rosso nomina il modulo nel log. La
+ProductCard end-to-end (seed MCP, istantanea reale, render, giudizio visivo
+in Storybook) è documentata in `data/components/product-card.seed.md`.
+
 ## Emitter shadcn e gate (Story 2.6)
 
 - **Basi committate** (decisione frozen): `data/bases/<kebab>/` contiene l'output di `shadcn add` eseguito UNA TANTUM per badge/input/accordion — le basi sono INPUT dell'emitter; il CLI shadcn non gira mai a runtime né in CI. `packages/ui/components.json` ha gli alias riallineati a `@penpot-ds/ui/domains` (Task 0).

@@ -159,6 +159,7 @@ describe("render — happy (4 file @generated con provenienza e mappatura, senza
     expect(stories).toContain("Commerce/ProductCard");
     expect(stories).toContain("EmptyTags");
     expect(stories).toContain("tags: []");
+    expect(stories).toContain("Giudizio visivo — Alessandro (Story 2-15, CAP-10)");
     expect(barrel).toContain('from "./ProductCard"');
     expect(logs.join("\n")).toMatch(/Scritto:/);
   });

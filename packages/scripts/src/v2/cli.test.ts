@@ -35,6 +35,7 @@ describe("entry v2 (src/v2/cli.ts)", { timeout: SMOKE_TIMEOUT }, () => {
     expect(result.output).toMatch(/propose <Comp>/);
     expect(result.output).toMatch(/extract <Comp>/);
     expect(result.output).toMatch(/render <Comp>\|--all/);
+    expect(result.output).toMatch(/gates \[--json <path>\]/);
     expect(result.code).toBe(1);
   });
 
@@ -93,6 +94,13 @@ describe("entry v2 (src/v2/cli.ts)", { timeout: SMOKE_TIMEOUT }, () => {
     const result = run(["render", "--help"]);
     expect(result.output).not.toMatch(RESOLUTION_ERROR);
     expect(result.output).toMatch(/Uso: render <Comp>\|--all \[--check\]/);
+    expect(result.code).toBe(0);
+  });
+
+  it("gates --help esce 0 con l'uso [--json], senza verifiche", () => {
+    const result = run(["gates", "--help"]);
+    expect(result.output).not.toMatch(RESOLUTION_ERROR);
+    expect(result.output).toMatch(/Uso: gates \[--json <path>\]/);
     expect(result.code).toBe(0);
   });
 
