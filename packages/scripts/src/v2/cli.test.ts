@@ -27,10 +27,12 @@ function run(args: readonly string[]): { code: number | null; output: string } {
 }
 
 describe("entry v2 (src/v2/cli.ts)", { timeout: SMOKE_TIMEOUT }, () => {
-  it("senza comando esce 1 con l'usage che elenca theme", () => {
+  it("senza comando esce 1 con l'usage che elenca i comandi reali", () => {
     const result = run([]);
     expect(result.output).not.toMatch(RESOLUTION_ERROR);
     expect(result.output).toMatch(/✖ input[\s\S]*comando mancante[\s\S]*theme \[--live\]/);
+    expect(result.output).toMatch(/library bootstrap\|add/);
+    expect(result.output).toMatch(/propose <Comp>/);
     expect(result.code).toBe(1);
   });
 
@@ -62,6 +64,20 @@ describe("entry v2 (src/v2/cli.ts)", { timeout: SMOKE_TIMEOUT }, () => {
     expect(result.output).toContain("Generati packages/tokens/src/tailwind-theme.css e tokens.generated.ts");
     expect(after.css).toBe(before.css);
     expect(after.ts).toBe(before.ts);
+  });
+
+  it("library --help esce 0 con l'uso bootstrap|add, senza scritture", () => {
+    const result = run(["library", "--help"]);
+    expect(result.output).not.toMatch(RESOLUTION_ERROR);
+    expect(result.output).toMatch(/Uso: library bootstrap\|add/);
+    expect(result.code).toBe(0);
+  });
+
+  it("propose --help esce 0 con l'uso, senza letture", () => {
+    const result = run(["propose", "--help"]);
+    expect(result.output).not.toMatch(RESOLUTION_ERROR);
+    expect(result.output).toMatch(/Uso: propose <Comp>/);
+    expect(result.code).toBe(0);
   });
 
   it("l'entry è l'unico file della v2 con process.exit", () => {

@@ -25,7 +25,21 @@ Dal correct-course del 2026-09-17 il package ospita **due pipeline**: la v1 (tut
 
 - **Due contratti, dipendenza in un verso solo.** Il contratto del page builder (`@app/contracts`, nel fingerprint) ha solo nome, versione, assi `option`, field e slot; `parts`/`partRoles`/assi `state`-`behavior` restano come **estensione deprecata** fuori dal fingerprint, letta solo dalla v1 (`legacyContracts()` in `src/extract/component-reader.ts`). Il **contratto di estrazione** (`src/v2/contracts/<nome>.extract.ts`, `defineExtraction`) importa il primo e dichiara parti con ruolo, albero (`parent`), `when`, `repeat`, `content`/`attribute`, assi di rendering, headless, a11y; contraddirlo è un errore a module load che nomina parte e campo ([vocabolario](../../_bmad-output/specs/spec-refactor-packages-scripts/extraction-contract.md)). Primo caso: `product-card.extract.ts`.
 - **Registro unico** (`src/shared/style-properties.ts`): impara `layout` (`layoutDir`/`layoutAlign`/`layoutJustify`/`layoutWrap`, gap in `rowGap`/`columnGap`) e `position` (`positionAbsolute`/`positionX`/`positionY`/`zIndex`) letti dal layer Penpot, e il ruolo `image` (raggio, opacità, layout, posizione, nessun `fill`). Il vocabolario dei 5 ruoli (`PART_ROLES`) vive qui.
-- **Un guscio, un errore** (`src/v2/shell.ts`, `src/v2/errors.ts`, entry `src/v2/cli.ts`): `ScriptError { kind, component?, cell?, part?, detail }` con exit `1` input · `2` penpot · `3` contract · `4` gate; `process.exit` solo nell'entry. Primo comando sul guscio: `pnpm --filter @penpot-ds/scripts theme [-- --live]` (stesso corpo di `generate:theme`, `src/theme/theme-command.ts`). I comandi `library`, `propose`, `extract`, `render`, `gates` arrivano con le Story 2.13–2.15 ([commands.md](../../_bmad-output/specs/spec-refactor-packages-scripts/commands.md)).
+- **Un guscio, un errore** (`src/v2/shell.ts`, `src/v2/errors.ts`, entry `src/v2/cli.ts`): `ScriptError { kind, component?, cell?, part?, detail }` con exit `1` input · `2` penpot · `3` contract · `4` gate; `process.exit` solo nell'entry. Primo comando sul guscio: `pnpm --filter @penpot-ds/scripts theme [-- --live]` (stesso corpo di `generate:theme`, `src/theme/theme-command.ts`). I comandi `extract`, `render`, `gates` arrivano con le Story 2.14–2.15 ([commands.md](../../_bmad-output/specs/spec-refactor-packages-scripts/commands.md)).
+
+### `library` e `propose` dal contratto di estrazione (Story 2.13, CAP-6/CAP-7)
+
+Solo `library` scrive su Penpot; `propose` è sola lettura. Entrambi live, **mai in CI né in build**.
+
+| Comando | Esempio | Cosa fa |
+|---|---|---|
+| `pnpm --filter @penpot-ds/scripts library -- bootstrap` | `pnpm --filter @penpot-ds/scripts library -- bootstrap --dry-run` | Su library vuota crea i set `palette`/`semantic`, i token del seed (inclusi `shadow.*`/`ring`) e i container v2; su library esistente rifiuta (exit 1) senza scrivere. |
+| `pnpm --filter @penpot-ds/scripts library -- add ProductCard` | `pnpm --filter @penpot-ds/scripts library -- add ProductCard --dry-run` | Crea il VariantContainer `ProductCard` (plugin data `product-card@1`, assi `promo`×`hover` = 6 board, layer delle 11 parti con alias `Badge/Label` e `Tag/Label`, token dal registro per ruolo). Rilanciato è idempotente: exit 0 senza scritture, differenze segnalate. `--dry-run` stampa il piano senza scrivere. |
+| `pnpm --filter @penpot-ds/scripts propose -- ProductCard` | `pnpm --filter @penpot-ds/scripts propose -- ProductCard` | Legge Penpot e stampa il diff sui due contratti con file e riga (`packages/contracts/src/components/product-card.ts`, `packages/scripts/src/v2/contracts/product-card.extract.ts`); non scrive mai né su Penpot né sui file. Sostituisce `adopt:variant`, `bump:contract`, `role:part`. |
+
+Nota: il `--` dopo il nome del package separa gli argomenti pnpm da quelli del comando (via `node --import tsx src/v2/cli.ts <comando>` si omette: `library bootstrap --dry-run`). `library --help` / `propose --help` stampano l'uso senza leggere né scrivere. Exit code: `1` input · `2` penpot · `3` contract · `4` gate. `--snapshot` non esiste in CLI: nei test il seam è la DI (`readSnapshot`/`callTool`), mai in CI né in build (entrambi live).
+
+`when` governa la presenza (`badge`/`badgeLabel` solo con `promo=offer|discount`): l'assenza attesa non è mai un errore né un diff.
 
 ## Emitter shadcn e gate (Story 2.6)
 
