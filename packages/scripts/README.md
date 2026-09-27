@@ -33,9 +33,11 @@ Solo `library` scrive su Penpot; `propose` è sola lettura. Entrambi live, **mai
 
 | Comando | Esempio | Cosa fa |
 |---|---|---|
-| `pnpm --filter @penpot-ds/scripts library -- bootstrap` | `library bootstrap --dry-run` | Su library vuota crea i set `palette`/`semantic`, i token del seed (inclusi `shadow.*`/`ring`) e i container v2; su library esistente rifiuta (exit 1) senza scrivere. |
-| `pnpm --filter @penpot-ds/scripts library -- add ProductCard` | `library add ProductCard --dry-run` | Crea il VariantContainer `ProductCard` (plugin data `product-card@1`, assi `promo`×`hover` = 6 board, layer delle 11 parti con alias `Badge/Label` e `Tag/Label`, token dal registro per ruolo). Rilanciato è idempotente: exit 0 senza scritture, differenze segnalate. `--dry-run` stampa il piano senza scrivere. |
-| `pnpm --filter @penpot-ds/scripts propose -- ProductCard` | `propose ProductCard` | Legge Penpot e stampa il diff sui due contratti con file e riga (`packages/contracts/src/components/product-card.ts`, `packages/scripts/src/v2/contracts/product-card.extract.ts`); non scrive mai né su Penpot né sui file. Sostituisce `adopt:variant`, `bump:contract`, `role:part`. |
+| `pnpm --filter @penpot-ds/scripts library -- bootstrap` | `pnpm --filter @penpot-ds/scripts library -- bootstrap --dry-run` | Su library vuota crea i set `palette`/`semantic`, i token del seed (inclusi `shadow.*`/`ring`) e i container v2; su library esistente rifiuta (exit 1) senza scrivere. |
+| `pnpm --filter @penpot-ds/scripts library -- add ProductCard` | `pnpm --filter @penpot-ds/scripts library -- add ProductCard --dry-run` | Crea il VariantContainer `ProductCard` (plugin data `product-card@1`, assi `promo`×`hover` = 6 board, layer delle 11 parti con alias `Badge/Label` e `Tag/Label`, token dal registro per ruolo). Rilanciato è idempotente: exit 0 senza scritture, differenze segnalate. `--dry-run` stampa il piano senza scrivere. |
+| `pnpm --filter @penpot-ds/scripts propose -- ProductCard` | `pnpm --filter @penpot-ds/scripts propose -- ProductCard` | Legge Penpot e stampa il diff sui due contratti con file e riga (`packages/contracts/src/components/product-card.ts`, `packages/scripts/src/v2/contracts/product-card.extract.ts`); non scrive mai né su Penpot né sui file. Sostituisce `adopt:variant`, `bump:contract`, `role:part`. |
+
+Nota: il `--` dopo il nome del package separa gli argomenti pnpm da quelli del comando (via `node --import tsx src/v2/cli.ts <comando>` si omette: `library bootstrap --dry-run`). `library --help` / `propose --help` stampano l'uso senza leggere né scrivere. Exit code: `1` input · `2` penpot · `3` contract · `4` gate. `--snapshot` non esiste in CLI: nei test il seam è la DI (`readSnapshot`/`callTool`), mai in CI né in build (entrambi live).
 
 `when` governa la presenza (`badge`/`badgeLabel` solo con `promo=offer|discount`): l'assenza attesa non è mai un errore né un diff.
 

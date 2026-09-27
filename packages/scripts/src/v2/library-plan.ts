@@ -1,7 +1,7 @@
 import { contractId } from "@app/contracts";
 
 import { pascalCase } from "../shared/naming";
-import type { PenpotTokenValue, TokenType } from "../shared/theme-generator";
+import { ScriptError } from "./errors";import type { PenpotTokenValue, TokenType } from "../shared/theme-generator";
 import type { LibrarySnapshot, SnapshotComponent } from "../library/library-snapshot";
 import type { SemanticSeed } from "../library/library-spec";
 import type { ExtractionContract } from "./extraction";
@@ -212,17 +212,36 @@ function kindOf(role: string): PartKind {
 /** Parti attese nella cella, nell'ordine del contratto di estrazione. */
 export function partsForCell(extraction: ExtractionContract, variantProps: Readonly<Record<string, string>>): ContainerPartPlan[] {
   const out: ContainerPartPlan[] = [];
+  const seen = new Set<string>();
   for (const [name, part] of Object.entries(extraction.parts)) {
     if (!partInCell(extraction, name, variantProps)) continue;
-    const tokens = (PRODUCT_CARD_TOKENS as Record<string, Record<string, string>>)[name] ?? {};
+    const parent = (part.parent ?? null) as string | null;
+    if (parent !== null && parent !== "root" && !seen.has(parent)) {
+      throw new ScriptError({
+        kind: "contract",
+        component: extraction.penpot.container,
+        part: name,
+        detail: `parte "${name}" prima del genitore "${parent}" nel contratto di estrazione: il writer assume genitori primi — riordina le parti.`,
+      });
+    }
+    const tokens = (PRODUCT_CARD_TOKENS as Record<string, Record<string, string>>)[name];
+    if (tokens === undefined) {
+      throw new ScriptError({
+        kind: "contract",
+        component: extraction.penpot.container,
+        part: name,
+        detail: `parte "${name}" senza token nel piano: aggiungi la voce in PRODUCT_CARD_TOKENS (o il registro) invece di zeri silenziosi.`,
+      });
+    }
     out.push({
       name,
       layer: part.layer,
       kind: kindOf(part.role),
-      parent: (part.parent ?? null) as string | null,
+      parent,
       ...(part.role === "text" && SAMPLE_TEXT[name] !== undefined ? { text: SAMPLE_TEXT[name] } : {}),
       tokens: { ...tokens },
     });
+    seen.add(name);
   }
   return out;
 }
@@ -281,7 +300,8 @@ function tokensOf(cell: SnapshotComponent["cells"][number], layerName: string): 
   return out;
 }
 
-function sameTokens(a: Readonly<Record<string, string>>, b: Readonly<Record<string, string>>): boolean {
+/** Uguaglianza token (condivisa con propose-diff: un'unica definizione). */
+export function sameTokens(a: Readonly<Record<string, string>>, b: Readonly<Record<string, string>>): boolean {
   const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
   for (const key of keys) {
     if (a[key] !== b[key]) return false;
@@ -347,6 +367,7 @@ export function diffContainer(extraction: ExtractionContract, component: Snapsho
   // `variantError` si segnala comunque).
   const expectedKeys = new Set(expectedCells(extraction).map((cell) => cellKey(cell.variantProps, axes)));
   const actualByKey = new Map<string, SnapshotComponent["cells"][number]>();
+  const actualKeyCounts = new Map<string, number>();
   component.cells.forEach((cell, index) => {
     if (cell.variantError !== null) {
       const label = cell.variantProps === null ? `cella #${index}` : `cella ${cellKey(cell.variantProps, axes)}`;
@@ -357,6 +378,8 @@ export function diffContainer(extraction: ExtractionContract, component: Snapsho
       });
     }
     if (cell.variantProps === null) return;
+    const dupKey = cellKey(cell.variantProps, axes.map((axis) => ({ name: axis.name })));
+    actualKeyCounts.set(dupKey, (actualKeyCounts.get(dupKey) ?? 0) + 1);
     for (const extra of Object.keys(cell.variantProps)
       .filter((name) => !expectedNames.includes(name))
       .sort()) {
@@ -368,6 +391,15 @@ export function diffContainer(extraction: ExtractionContract, component: Snapsho
     }
     actualByKey.set(cellKey(cell.variantProps, axes.map((axis) => ({ name: axis.name }))), cell);
   });
+  for (const [key, count] of [...actualKeyCounts.entries()].sort(([a], [b]) => (a < b ? -1 : 1))) {
+    if (count > 1) {
+      differences.push({
+        subject: `container ${containerName}, cella ${key}`,
+        expected: "una sola cella per variantProps",
+        found: `${count} celle duplicate`,
+      });
+    }
+  }
   const actualKeys = new Set(actualByKey.keys());
   for (const key of [...expectedKeys].filter((candidate) => !actualKeys.has(candidate)).sort()) {
     differences.push({ subject: `container ${containerName}, cella ${key}`, expected: "cella presente", found: "assente" });
@@ -549,9 +581,11 @@ export function planBootstrap(input: PlanBootstrapInput): LibraryPlanResult {
   for (const extraction of extractions) {
     const expected = pascalCase(extraction.contract.name);
     if (extraction.penpot.container !== expected) {
-      throw new Error(
-        `Contratto "${extraction.contract.name}": il container "${extraction.penpot.container}" non corrisponde — atteso "${expected}" (plugin data "${contractId(extraction.contract)}").`,
-      );
+      throw new ScriptError({
+        kind: "contract",
+        component: extraction.penpot.container,
+        detail: `Contratto "${extraction.contract.name}": il container "${extraction.penpot.container}" non corrisponde — atteso "${expected}" (plugin data "${contractId(extraction.contract)}").`,
+      });
     }
   }
   return {

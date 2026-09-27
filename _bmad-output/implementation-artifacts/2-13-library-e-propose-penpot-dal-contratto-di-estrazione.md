@@ -135,3 +135,30 @@ Review 2026-09-17 su `/tmp/bmad-2-13-review-1789680416.patch` (96.531 byte): `bl
 - `pnpm --filter @penpot-ds/scripts render:check` -- expected: 4/4 diff zero (v1 intatta)
 - `pnpm --filter @penpot-ds/scripts verify:library -- --snapshot data/library.snapshot.json` -- expected: exit 0 invariato
 - `node --import tsx packages/scripts/src/v2/cli.ts library --help` -- expected: uso con `bootstrap|add`, senza scritture
+
+### Review Findings (code review 2026-09-27, full, diff 552c692..9bf74ea, 15 file, 2380 righe)
+
+- [x] [Review][Patch] Seed validation incompleta — loadSeed valida solo array palette/semantic, non shape entries; seed iniettato bypassa [packages/scripts/src/v2/commands/library.ts:50-64]
+- [x] [Review][Patch] Error nudo rompe ScriptError — planBootstrap e ramo add lanciano Error invece di ScriptError [packages/scripts/src/v2/library-plan.ts:549-556]
+- [x] [Review][Patch] Token hardcoded con fallback silenzioso — PRODUCT_CARD_TOKENS + ?? {} senza registro, parte ignota = zero token [packages/scripts/src/v2/library-plan.ts:76-217]
+- [x] [Review][Patch] propose hardcoded a ProductCard — REL/abs/contractLines fissi, secondo componente cita file sbagliati [packages/scripts/src/v2/propose-diff.ts:17-26]
+- [x] [Review][Patch] propose sottoinsieme di diffContainer — mancano extra-prop, parentela, style senza binding, duplicati [packages/scripts/src/v2/propose-diff.ts:144-221]
+- [x] [Review][Patch] diffContainer rami fini senza test — variantError, extra, duplicati, parent, root, style non fissati [packages/scripts/src/v2/library-plan.ts:297-493]
+- [x] [Review][Patch] diffPropose valori token senza test — confronto valori mai mosso in-ruolo [packages/scripts/src/v2/propose-diff.ts:204-221]
+- [x] [Review][Patch] execute_code solo sintassi — AsyncFunction non ispeziona markers runtime/dati [packages/scripts/src/v2/library-writer.ts:70-235]
+- [x] [Review][Patch] Alias kebab mai esercitato — product-card senza prova [packages/scripts/src/v2/registry.ts:26-30]
+- [x] [Review][Patch] Dry-run diverge dal piano — usa expectedCells invece di plan.operations[0].cells [packages/scripts/src/v2/commands/library.ts:189-196]
+- [x] [Review][Patch] Ordine parti fragile — Object.entries senza topo-sort, writer assume genitori primi [packages/scripts/src/v2/library-plan.ts:213-228]
+- [x] [Review][Patch] findLine fallback :1 silenzioso — file illeggibile/regex miss cita riga fuorviante [packages/scripts/src/v2/propose-diff.ts:28-36]
+- [x] [Review][Patch] sameTokens duplicato — due definizioni library-plan/propose-diff possono divergere [packages/scripts/src/v2/library-plan.ts:284-290]
+- [x] [Review][Patch] Prefisso multi-container ambiguo — solo [name], duplicati omonimi indistinguibili [packages/scripts/src/v2/commands/propose.ts:72]
+- [x] [Review][Patch] README incoerente — -- separator/--help/exit codes non spiegati [packages/scripts/README.md:36-38]
+- [x] [Review][Patch] RegExp parti non escapata — partLines senza escapeRegExp [packages/scripts/src/v2/propose-diff.ts:52-55]
+- [x] [Review][Patch] Writer senza guardie null — createBoard/mainInstance non controllati (createText sì) [packages/scripts/src/v2/library-writer.ts:78-209]
+- [x] [Review][Patch] Celle duplicate collassano — actualByKey.set sovrascrive senza segnale [packages/scripts/src/v2/library-plan.ts:369]
+- [x] [Review][Defer] Live runtime incerto — delay 150ms e const top-level senza IIFE [packages/scripts/src/v2/library-writer.ts:174-175] — deferred: non decidibile senza run live; si osserva il live add, se flakya si passa a poll/IIFE
+
+Rejected:
+- false: add idempotente senza repair — by design, AC richiede exit 0 + differenze segnalate, additiva non corregge.
+- low rejected: rollback mid-run — run una tantum + dry-run, pulizia manuale accettabile, fix complesso.
+- low rejected: overlap secondo container (x/step hardcoded) — singolo componente oggi, offset per-container a 2.16+, fix aggiunge params.

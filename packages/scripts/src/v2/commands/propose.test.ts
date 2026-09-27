@@ -160,6 +160,49 @@ describe("propose — diff puro sui due contratti (file e riga, mai scritture)",
     });
     expect(diffPropose(EXTRACTION, snapshot.components[0]!)).toEqual([]);
   });
+
+  it("drift di valore in-ruolo: token attesi contro trovati", () => {
+    const snapshot = conformantSnapshot();
+    const target = snapshot.components[0]!.cells.find((cell) => cell.variantProps?.promo === "offer" && cell.variantProps?.hover === "off")!;
+    const visit = (layer: SnapshotLayer): void => {
+      if (layer.name === "Price") layer.tokens = { ...layer.tokens, fill: "color.primary" };
+      for (const child of layer.children) visit(child);
+    };
+    visit(target.root);
+    expect(diffPropose(EXTRACTION, snapshot.components[0]!).join("\n")).toMatch(/token attesi[\s\S]*trovati/);
+  });
+
+  it("propose specchia library: extra-prop, parentela, style senza binding, duplicati", () => {
+    const extra = conformantSnapshot();
+    extra.components[0]!.cells[0]!.variantProps = { ...extra.components[0]!.cells[0]!.variantProps!, extra: "x" };
+    expect(diffPropose(EXTRACTION, extra.components[0]!).join("\n")).toMatch(/extra/);
+    const parent = conformantSnapshot();
+    const move = (layer: SnapshotLayer): void => {
+      if (layer.name === "Body") {
+        const price = layer.children.find((child) => child.name === "Price");
+        if (price) {
+          layer.children = layer.children.filter((child) => child !== price);
+          parent.components[0]!.cells[0]!.root.children.push(price);
+        }
+      }
+      for (const child of layer.children) move(child);
+    };
+    for (const cell of parent.components[0]!.cells) move(cell.root);
+    expect(diffPropose(EXTRACTION, parent.components[0]!).join("\n")).toMatch(/genitore/);
+    const style = conformantSnapshot();
+    const withStyle = (layer: SnapshotLayer): void => {
+      if (layer.name === "Price") {
+        layer.style = { fill: "#fff" };
+        layer.tokens = {};
+      }
+      for (const child of layer.children) withStyle(child);
+    };
+    for (const cell of style.components[0]!.cells) withStyle(cell.root);
+    expect(diffPropose(EXTRACTION, style.components[0]!).join("\n")).toMatch(/senza binding/);
+    const dup = conformantSnapshot();
+    dup.components[0]!.cells.push({ ...dup.components[0]!.cells[0]! });
+    expect(diffPropose(EXTRACTION, dup.components[0]!).join("\n")).toMatch(/duplicate/);
+  });
 });
 
 describe("propose — comando (sola lettura, exit code)", () => {
@@ -241,6 +284,14 @@ describe("propose — comando (sola lettura, exit code)", () => {
     const command = proposeCommandWith({ readSnapshot: async () => conformantSnapshot(), log: () => undefined });
     expect(await runShell(["propose", "Foo"], [command], shell)).toBe(1);
     expect(shell.errLogs.join("\n")).toMatch(/✖ input[\s\S]*"Foo"[\s\S]*ProductCard/);
+  });
+
+  it("alias kebab-case product-card risolve come ProductCard", async () => {
+    const shell = io();
+    const logs: string[] = [];
+    const command = proposeCommandWith({ readSnapshot: async () => conformantSnapshot(), log: (text) => logs.push(text) });
+    expect(await runShell(["propose", "product-card"], [command], shell)).toBe(0);
+    expect(logs.join("\n")).toMatch(/nessun diff/i);
   });
 
   it("rosso (penpot, exit 2): lettura MCP fallita", async () => {

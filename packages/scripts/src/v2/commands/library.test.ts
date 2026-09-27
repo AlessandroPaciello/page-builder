@@ -152,6 +152,32 @@ describe("library — piano puro (container, assi, 6 celle, layer, token)", () =
     expect(plan.operations).toEqual([]);
     expect(plan.differences).toEqual([]);
   });
+
+  it("diffContainer: variantError, prop extra, duplicati, parent, root, style senza binding", () => {
+    const text = (snapshot: LibrarySnapshot): string =>
+      planAdd(EXTRACTION, snapshot)
+        .differences.map((difference) => `${difference.subject} :: ${difference.expected} :: ${difference.found}`)
+        .join("\n");
+    const variantError = conformantSnapshot();
+    variantError.components[0]!.cells[0]!.variantError = "dup";
+    expect(text(variantError)).toMatch(/variantError/);
+    const extra = conformantSnapshot();
+    extra.components[0]!.cells[1]!.variantProps = { ...extra.components[0]!.cells[1]!.variantProps!, extra: "x" };
+    expect(text(extra)).toMatch(/extra/);
+    const dupCell = conformantSnapshot();
+    dupCell.components[0]!.cells.push({ ...dupCell.components[0]!.cells[0]! });
+    expect(text(dupCell)).toMatch(/duplicate/);
+    const dupLayer = conformantSnapshot();
+    dupLayer.components[0]!.cells[0]!.root.children.push({ ...dupLayer.components[0]!.cells[0]!.root.children[0]! });
+    expect(text(dupLayer)).toMatch(/duplicati/);
+    const rootDrift = conformantSnapshot();
+    rootDrift.components[0]!.cells[0]!.root.tokens = { fill: "color.primary" };
+    expect(text(rootDrift)).toMatch(/"root"/);
+    const styleDrift = conformantSnapshot();
+    styleDrift.components[0]!.cells[0]!.root.children[0]!.style = { fill: "#fff" };
+    styleDrift.components[0]!.cells[0]!.root.children[0]!.tokens = {};
+    expect(text(styleDrift)).toMatch(/senza binding/);
+  });
 });
 
 describe("library — comando (exit code, dry-run, idempotenza, rifiuti)", () => {
@@ -282,6 +308,40 @@ describe("library — comando (exit code, dry-run, idempotenza, rifiuti)", () =>
     expect(logs.join("\n")).toContain("shadow.ring");
   });
 
+  it("rosso (input, exit 1): seed iniettato malformato o file illeggibile", async () => {
+    let shell = io();
+    const badSeed = libraryCommandWith({
+      seed: { palette: [{ name: "", type: "color", value: "#fff" }], semantic: [] } as unknown as SemanticSeed,
+      readSnapshot: async () => emptySnapshot(),
+      log: () => undefined,
+    });
+    expect(await runShell(["library", "bootstrap"], [badSeed], shell)).toBe(1);
+    expect(shell.errLogs.join("\n")).toMatch(/✖ input[\s\S]*seed malformato/);
+    shell = io();
+    const missingFile = libraryCommandWith({
+      seedPath: "/nonexistent/seed.json",
+      readSnapshot: async () => emptySnapshot(),
+      log: () => undefined,
+    });
+    expect(await runShell(["library", "bootstrap"], [missingFile], shell)).toBe(1);
+    expect(shell.errLogs.join("\n")).toMatch(/✖ input[\s\S]*seed non leggibile/);
+  });
+
+  it("alias kebab-case product-card risolve come ProductCard", async () => {
+    const shell = io();
+    const writes: string[] = [];
+    const command = libraryCommandWith({
+      readSnapshot: async () => emptySnapshot(),
+      writeCode: async (step) => {
+        writes.push(step.description);
+        return {};
+      },
+      log: () => undefined,
+    });
+    expect(await runShell(["library", "add", "product-card"], [command], shell)).toBe(0);
+    expect(writes).toHaveLength(7);
+  });
+
   it("rosso (input, exit 1): nome ignoto nomina il componente e i contratti v2 noti", async () => {
     const shell = io();
     const command = libraryCommandWith({ readSnapshot: async () => emptySnapshot(), log: () => undefined });
@@ -405,5 +465,18 @@ describe("library — writer: il codice execute_code compila", () => {
     for (const step of operationsToSteps(plan.operations)) {
       expect(() => new AsyncFunction(step.code), step.description).not.toThrow();
     }
+  });
+
+  it("step add: markers runtime e dati del piano (binding, board, plugin data)", () => {
+    const plan = planAdd(EXTRACTION, emptySnapshot());
+    const steps = operationsToSteps(plan.operations);
+    const cellStep = steps[0]!;
+    expect(cellStep.code).toContain("applyPartTokens");
+    expect(cellStep.code).toContain("createComponent");
+    expect(cellStep.code).toContain("ProductCard promo=none|hover=off");
+    const containerStep = steps.at(-1)!;
+    expect(containerStep.code).toContain("createVariantContainer");
+    expect(containerStep.code).toContain("setSharedPluginData");
+    expect(containerStep.code).toContain("product-card@1");
   });
 });

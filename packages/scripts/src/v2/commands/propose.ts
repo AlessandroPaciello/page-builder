@@ -2,7 +2,7 @@ import { readLibrarySnapshot, type CallToolFn } from "../../library/library-read
 import type { LibrarySnapshot } from "../../library/library-snapshot";
 import { ScriptError } from "../errors";
 import { findContainers } from "../library-plan";
-import { diffPropose, EXTRACTION_REL, PAGE_BUILDER_REL, contractLines } from "../propose-diff";
+import { diffPropose, contractLines, extractionRel, pageBuilderRel } from "../propose-diff";
 import { knownExtractionNames, resolveExtraction } from "../registry";
 import { parseArgs, type Command } from "../shell";
 
@@ -69,14 +69,16 @@ export function proposeCommandWith(deps: ProposeDeps = {}): Command {
       // Un solo container dichiara il contratto nella pratica; se ce ne sono
       // più, il diff li copre tutti senza scrivere (ogni riga col suo container).
       const lines = contractLines(extraction);
-      const findings = containers.flatMap((container) => diffPropose(extraction, container, lines).map((finding) => `[${container.name}] ${finding}`));
+      const findings = containers.flatMap((container) =>
+        diffPropose(extraction, container, lines).map((finding) => `[${container.name}|${container.pluginData ?? "?"}] ${finding}`),
+      );
       if (findings.length === 0) {
         log(`Propose ${extraction.penpot.container}: nessun diff — Penpot è allineato ai contratti.`);
         return 0;
       }
       log(`Propose ${extraction.penpot.container} — Penpot davanti ai contratti (sola lettura, nessuna scrittura):`);
-      log(`  page builder: ${PAGE_BUILDER_REL}:${lines.pageBuilderPromo}`);
-      log(`  estrazione: ${EXTRACTION_REL}:${lines.extractionHover} (parti: ${EXTRACTION_REL}:${lines.extractionParts})`);
+      log(`  page builder: ${pageBuilderRel(extraction)}:${lines.pageBuilderPromo}`);
+      log(`  estrazione: ${extractionRel(extraction)}:${lines.extractionHover} (parti: ${extractionRel(extraction)}:${lines.extractionParts})`);
       for (const finding of findings) {
         log(`  - ${finding}`);
       }

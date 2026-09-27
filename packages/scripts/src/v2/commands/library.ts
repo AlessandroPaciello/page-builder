@@ -6,7 +6,7 @@ import { readLibrarySnapshot, type CallToolFn } from "../../library/library-read
 import type { LibrarySnapshot } from "../../library/library-snapshot";
 import type { SemanticSeed } from "../../library/library-spec";
 import { ScriptError } from "../errors";
-import { expectedCells, planAdd, planBootstrap } from "../library-plan";
+import { planAdd, planBootstrap } from "../library-plan";
 import { operationsToSteps, type WriteStep } from "../library-writer";
 import { knownExtractionNames, resolveExtraction, EXTRACTION_CONTRACTS } from "../registry";
 import { parseArgs, type Command } from "../shell";
@@ -47,8 +47,23 @@ function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+function validateSeedEntries(seed: { palette?: unknown; semantic?: unknown }, seedPath: string): asserts seed is SemanticSeed {
+  for (const set of ["palette", "semantic"] as const) {
+    const tokens = seed[set] as Array<{ name?: unknown; type?: unknown; value?: unknown }> | undefined;
+    if (!Array.isArray(tokens)) continue;
+    for (const [index, token] of tokens.entries()) {
+      if (typeof token?.name !== "string" || token.name.length === 0 || typeof token?.type !== "string" || token.type.length === 0 || token?.value === undefined) {
+        throw new ScriptError({ kind: "input", detail: `seed malformato (${seedPath}): token #${index} in "${set}" senza name/type/value.` });
+      }
+    }
+  }
+}
+
 function loadSeed(deps: LibraryDeps): SemanticSeed {
-  if (deps.seed !== undefined) return deps.seed;
+  if (deps.seed !== undefined) {
+    validateSeedEntries(deps.seed as { palette?: unknown; semantic?: unknown }, "<injected>");
+    return deps.seed;
+  }
   const seedPath = deps.seedPath ?? PATHS.semanticSeedPath;
   let parsed: unknown;
   try {
@@ -60,6 +75,7 @@ function loadSeed(deps: LibraryDeps): SemanticSeed {
   if (!Array.isArray(seed?.palette) || !Array.isArray(seed?.semantic)) {
     throw new ScriptError({ kind: "input", detail: `seed malformato (${seedPath}): attesi array "palette" e "semantic".` });
   }
+  validateSeedEntries(seed, seedPath);
   return seed as unknown as SemanticSeed;
 }
 
@@ -187,10 +203,10 @@ export function libraryCommandWith(deps: LibraryDeps = {}): Command {
       }
       if (dryRun) {
         const container = plan.operations[0]!;
-        if (container.kind !== "createContainer") throw new Error("Piano incoerente: add produce solo createContainer.");
+        if (container.kind !== "createContainer") throw new ScriptError({ kind: "input", detail: "Piano incoerente: add produce solo createContainer." });
         log(`Piano (add ${extraction.penpot.container}): 1 container, ${container.cells.length} celle, nessuna scrittura (--dry-run).`);
         log(`  - createContainer "${container.containerName}" (${container.cells.length} celle, plugin data ${container.pluginData})`);
-        for (const cell of expectedCells(extraction)) {
+        for (const cell of container.cells) {
           const layers = cell.parts.filter((part) => part.name !== "root").map((part) => part.layer);
           log(`  - cella ${Object.entries(cell.variantProps).map(([axis, value]) => `${axis}=${value}`).join("|")}: layer [${layers.join(", ")}]`);
         }

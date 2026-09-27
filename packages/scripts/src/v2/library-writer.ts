@@ -76,6 +76,7 @@ function makeShape(part) {
     return text;
   }
   const board = penpot.createBoard();
+  if (!board) throw new Error("createBoard ha restituito null: impossibile creare la board di cella");
   if (part.size) board.resize(part.size[0], part.size[1]);
   // Le board nuove nascono con un fill bianco di default: senza token "fill"
   // nel piano il fill va rimosso, altrimenti resta una proprietà di stile
@@ -206,7 +207,9 @@ if (existingContainer) throw new Error("VariantContainer \\"" + ${JSON.stringify
 const shapes = entries.map((entry) => {
   const component = penpot.library.local.components.find((c) => c.name === entry.name);
   if (!component) throw new Error("Componente \\"" + entry.name + "\\" non trovato in library.local: l'operazione della cella lo presuppone creato.");
-  return { shape: component.mainInstance(), properties: entry.properties };
+  const shape = component.mainInstance();
+  if (!shape) throw new Error("mainInstance ha restituito null per \\"" + entry.name + "\\": impossibile agganciare la cella al container");
+  return { shape, properties: entry.properties };
 });
 const container = penpotUtils.createVariantContainer(shapes);
 container.name = ${JSON.stringify(containerName)};

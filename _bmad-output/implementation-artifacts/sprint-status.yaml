@@ -1,5 +1,5 @@
 # generated: 2026-07-26
-# last_updated: 2026-09-17 (code-review 2.12: 9 patch applicate, suite verdi, 2.12 → done) (bmad-build 2.12: fondamenta v2 implementate e riviste → story in review; review parziale, 2 layer interrotti dal limite di spesa)
+# last_updated: 2026-09-27 (code-review 2.13: 18 patch applicate, suite verdi, 2.13 → done) (2026-09-17 (code-review 2.12: 9 patch applicate, suite verdi, 2.12 → done) (bmad-build 2.12: fondamenta v2 implementate e riviste → story in review; review parziale, 2 layer interrotti dal limite di spesa)
 # project: page-builder
 # project_key: NOKEY
 # tracking_system: file-system
@@ -70,7 +70,7 @@ development_status:
   2-10-fedelta-live-ed-estrazione-guidata-dal-contratto: done
   2-11-storybook-del-design-system: review
   2-12-fondamenta-v2-due-contratti-registro-guscio: done
-  2-13-library-e-propose-penpot-dal-contratto-di-estrazione: review
+  2-13-library-e-propose-penpot-dal-contratto-di-estrazione: done
   2-14-extract-e-render-una-istantanea-quattro-file: backlog
   2-15-productcard-end-to-end-e-gate-in-ci: backlog
   2-16-rimozione-della-v1-e-rigenerazione-dei-quattro-componenti: backlog
