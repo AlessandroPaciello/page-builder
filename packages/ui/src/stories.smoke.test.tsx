@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import { render } from "@testing-library/react";
+import { cleanup, render } from "@testing-library/react";
 import { composeStories } from "@storybook/react";
 import type { ComponentType } from "react";
 import { describe, expect, it } from "vitest";
@@ -19,6 +19,13 @@ const modules = import.meta.glob("./domains/**/*.stories.tsx", { eager: true }) 
   Record<string, unknown> & { default?: { title?: string; component?: { displayName?: string; name?: string } } }
 >;
 // Glob speculare a apps/storybook/.storybook/main.ts (runtime diversi, nessuna costante condivisa).
+// Parità verificata da apps/storybook/.storybook/main.test.ts: se i due glob divergono, quella suite è rossa.
+
+function hasArgs(story: unknown): boolean {
+  if (story === null || typeof story !== "object" || !("args" in story)) return false;
+  const args = (story as { args?: unknown }).args;
+  return typeof args === "object" && args !== null && !Array.isArray(args);
+}
 
 function componentNameOf(path: string, mod: (typeof modules)[string]): string {
   const fromMeta = mod.default?.component?.displayName ?? mod.default?.component?.name;
@@ -32,6 +39,14 @@ describe("stories smoke — ogni story CSF3 con args e rende via composeStories"
     expect(Object.keys(modules).length).toBeGreaterThan(0);
   });
 
+  it("red-proof: la vecchia forma (props al primo livello, senza args) non passa il gate", () => {
+    const oldForm = { label: "Etichetta", variant: "default" };
+    expect(hasArgs(oldForm)).toBe(false);
+    expect(hasArgs({ args: null })).toBe(false);
+    expect(hasArgs({ args: [] })).toBe(false);
+    expect(hasArgs({ args: {} })).toBe(true);
+  });
+
   for (const [path, mod] of Object.entries(modules).sort(([a], [b]) => (a < b ? -1 : 1))) {
     const componentName = componentNameOf(path, mod);
     const storyNames = Object.keys(mod)
@@ -42,11 +57,8 @@ describe("stories smoke — ogni story CSF3 con args e rende via composeStories"
       it("ogni story dichiara `args` (CSF3)", () => {
         expect(storyNames.length).toBeGreaterThan(0);
         for (const storyName of storyNames) {
-          const story = mod[storyName] as { args?: unknown } | null | undefined;
-          const args = story !== null && typeof story === "object" && "args" in story ? (story as { args?: unknown }).args : undefined;
-          const hasArgs = typeof args === "object" && args !== null;
           expect(
-            hasArgs,
+            hasArgs(mod[storyName]),
             `${componentName} — story "${storyName}" senza \`args\`: le props devono stare in \`args\` (CSF3), non al primo livello.`,
           ).toBe(true);
         }
@@ -58,13 +70,17 @@ describe("stories smoke — ogni story CSF3 con args e rende via composeStories"
         for (const [storyName, Story] of Object.entries(composed)) {
           const StoryComponent = Story as ComponentType;
           let unmount: (() => void) | undefined;
-          expect(
-            () => {
-              ({ unmount } = render(<StoryComponent />));
-            },
-            `${componentName} — story "${storyName}" non rende via composeStories.`,
-          ).not.toThrow();
-          unmount?.();
+          try {
+            expect(
+              () => {
+                ({ unmount } = render(<StoryComponent />));
+              },
+              `${componentName} — story "${storyName}" non rende via composeStories.`,
+            ).not.toThrow();
+          } finally {
+            unmount?.();
+            cleanup();
+          }
         }
       });
     });

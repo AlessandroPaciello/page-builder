@@ -3,7 +3,7 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "types": ["node"]
+    "types": ["node", "vite/client"]
   },
   "include": [".storybook/**/*.ts", "global.d.ts", "../../packages/ui/src/domains/**/*.stories.tsx"],
   "exclude": ["node_modules", "storybook-static"]

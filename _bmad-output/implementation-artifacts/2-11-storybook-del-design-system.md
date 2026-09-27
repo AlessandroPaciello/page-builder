@@ -129,3 +129,26 @@ Decisioni registrate: `apps/storybook` perché è un'app con output statico (con
 - `pnpm --filter @penpot-ds/scripts render:check` -- expected: diff zero dopo la rigenerazione
 - `pnpm --filter storybook build-storybook` -- expected: statico prodotto senza errori
 - `pnpm check-types` + `pnpm lint` -- expected: verdi senza skip
+
+## Review Findings — Loop 2 (2026-09-27, branch story/2.11-storybook-del-design-system, diff 327897b..ae82e94, 2553 righe)
+
+- [x] [Review][Patch] Suite reale in apps/storybook: glob vuoto e addon droppato restano verdi [apps/storybook/package.json:11-12 + .storybook/main.ts:5-6]
+- [x] [Review][Patch] Parità glob main.ts ↔ smoke + estensioni allineate [apps/storybook/.storybook/main.ts:5 + packages/ui/src/stories.smoke.test.tsx:17]
+- [x] [Review][Patch] Smoke args rifiuta anche array [packages/ui/src/stories.smoke.test.tsx:47]
+- [x] [Review][Patch] Smoke render con cleanup in finally (leak su throw) [packages/ui/src/stories.smoke.test.tsx:60-67]
+- [x] [Review][Patch] Red-proof dello smoke con fixture old-form [packages/ui/src/stories.smoke.test.tsx]
+- [x] [Review][Patch] tsconfig types vite/client + declare CSS mirato [apps/storybook/tsconfig.json:6 + global.d.ts:1]
+- [x] [Review][Patch] .gitignore storybook-static scoped [/.gitignore:21]
+- [x] [Review][Defer] storyName senza sanitizzazione [packages/scripts/src/emitter/render-component.ts:1232] — deferred: pre-esistente (identica nella vecchia forma), nessun contratto attuale la viola; già in deferred-work.md (ECH1), da valutare alla prima estensione degli assi.
+
+### Rejected
+- false — nome package `storybook` ambiguo: `pnpm --filter` seleziona solo workspace, build verde lo prova (Loop1 BH2).
+- false — preview senza params a11y: addon attivo di default, params opzionali.
+- false — Accordion senza defaultValue: apribile al click, nessun AC richiede stato aperto.
+- false — Alert con placeholder: nessun AC richiede contenuti realistici.
+- false — headless undefined crasha: BindingSchema headless nullable required, undefined impossibile via validazione.
+- false — import headless mancante silenzioso: extractImport fail() loud a riga 589.
+- false — rootProps non-empty senza copertura: nessun binding odierno li ha.
+- false — __namedExportsOrder trattato da story: nessun file lo emette.
+- false — red-proof emitter su letterale insufficiente: asserzioni positive StoryObj/args intercettano la regressione (Loop1 BH13).
+- low rejected — enumerare tutti i fallimenti per-story nel loop: gate comunque rosso, altri moduli girano via describe; ristruttura il test per un di più diagnostico (Loop1 ECH4/ECH5).
