@@ -18,7 +18,7 @@ node_modules
 # Build outputs
 dist
 build
-storybook-static
+apps/storybook/storybook-static
 *.tsbuildinfo
 .next
 
