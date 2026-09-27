@@ -284,3 +284,18 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor
 ## Deferred from: code review of 2-13-library-e-propose-penpot-dal-contratto-di-estrazione (2026-09-27)
 
 - **Live runtime incerto** — `packages/scripts/src/v2/library-writer.ts:174-175`: delay fisso 150ms e `const` top-level senza IIFE nel `execute_code`. Non decidibile senza run live (maybe-false, sarebbe medium). Si osserva il live `add`: se flakya/mancano binding o redeclaration errors, si passa a poll su `shape.tokens` / IIFE.
+
+## Deferred from: code review of 2-14-extract-e-render-una-istantanea-quattro-file (2026-09-27)
+
+- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/2-14-extract-e-render-una-istantanea-quattro-file.md`
+  summary: generalizzare il render oltre l'asse hover quando arriverà un secondo asse di rendering.
+  evidence: `classesForPart` in `packages/scripts/src/v2/commands/render.ts` diffonde solo i valori hover; un secondo asse state/behavior richiederebbe mappatura generica (2.16+).
+- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/2-14-extract-e-render-una-istantanea-quattro-file.md`
+  summary: campionamento generico degli args di test/story dai field del contratto invece degli helper specifici ProductCard.
+  evidence: `sampleArgsFor*` in `packages/scripts/src/v2/commands/render.ts` hardcodano i field della card; serve solo dal secondo componente (2.16+).
+- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/2-14-extract-e-render-una-istantanea-quattro-file.md`
+  summary: alt informativo dell'immagine via nuovo field del contratto invece di alt vuoto.
+  evidence: `img alt=""` nel template di `render.ts`; richiede decisione di design sul field (2.15 disegno MCP).
+- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/2-14-extract-e-render-una-istantanea-quattro-file.md`
+  summary: cablaggio del gate v2 in CI per snapshot e file generati.
+  evidence: comando `gates` (CAP-9) è la Story 2.15; il cablaggio CI vive lì.

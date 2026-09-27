@@ -38,6 +38,8 @@ export const PATHS = {
   designsDir: resolve(dataDir, "designs"),
   /** Snapshot della library committato (`verify:library --snapshot`). */
   librarySnapshotPath: resolve(dataDir, "library.snapshot.json"),
+  /** Istantanee v2 `data/components/<kebab>.json`: scritte solo da `extract` (tmp + rename). */
+  componentsDir: resolve(dataDir, "components"),
   /** Valori del bootstrap della library (palette + semantic). */
   semanticSeedPath: resolve(dataDir, "semantic-tokens.seed.json"),
   /** `packages/tokens/src`: `generate:theme` scrive qui il tema. */

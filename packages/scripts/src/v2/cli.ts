@@ -1,6 +1,8 @@
 import { isDirectInvocation } from "../shared/direct-invocation";
+import { extractCommand } from "./commands/extract";
 import { libraryCommand } from "./commands/library";
 import { proposeCommand } from "./commands/propose";
+import { renderCommand } from "./commands/render";
 import { themeCommand } from "./commands/theme";
 import { runShell, type Command } from "./shell";
 
@@ -11,7 +13,7 @@ import { runShell, type Command } from "./shell";
  * `library`/`propose` dalla 2.13, `extract`/`render` 2.14, `gates` 2.15); in
  * `package.json` ogni comando è `node --import tsx src/v2/cli.ts <comando>`.
  */
-export const COMMANDS: readonly Command[] = [themeCommand, libraryCommand, proposeCommand];
+export const COMMANDS: readonly Command[] = [themeCommand, libraryCommand, proposeCommand, extractCommand, renderCommand];
 
 export function main(argv: readonly string[] = process.argv.slice(2)): Promise<number> {
   return runShell(argv, COMMANDS);
