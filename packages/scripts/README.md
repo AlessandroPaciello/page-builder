@@ -25,7 +25,7 @@ Dal correct-course del 2026-09-17 il package ospita **due pipeline**: la v1 (tut
 
 - **Due contratti, dipendenza in un verso solo.** Il contratto del page builder (`@app/contracts`, nel fingerprint) ha solo nome, versione, assi `option`, field e slot; `parts`/`partRoles`/assi `state`-`behavior` restano come **estensione deprecata** fuori dal fingerprint, letta solo dalla v1 (`legacyContracts()` in `src/extract/component-reader.ts`). Il **contratto di estrazione** (`src/v2/contracts/<nome>.extract.ts`, `defineExtraction`) importa il primo e dichiara parti con ruolo, albero (`parent`), `when`, `repeat`, `content`/`attribute`, assi di rendering, headless, a11y; contraddirlo è un errore a module load che nomina parte e campo ([vocabolario](../../_bmad-output/specs/spec-refactor-packages-scripts/extraction-contract.md)). Primo caso: `product-card.extract.ts`.
 - **Registro unico** (`src/shared/style-properties.ts`): impara `layout` (`layoutDir`/`layoutAlign`/`layoutJustify`/`layoutWrap`, gap in `rowGap`/`columnGap`) e `position` (`positionAbsolute`/`positionX`/`positionY`/`zIndex`) letti dal layer Penpot, e il ruolo `image` (raggio, opacità, layout, posizione, nessun `fill`). Il vocabolario dei 5 ruoli (`PART_ROLES`) vive qui.
-- **Un guscio, un errore** (`src/v2/shell.ts`, `src/v2/errors.ts`, entry `src/v2/cli.ts`): `ScriptError { kind, component?, cell?, part?, detail }` con exit `1` input · `2` penpot · `3` contract · `4` gate; `process.exit` solo nell'entry. Primo comando sul guscio: `pnpm --filter @penpot-ds/scripts theme [-- --live]` (stesso corpo di `generate:theme`, `src/theme/theme-command.ts`). I comandi `extract`, `render`, `gates` arrivano con le Story 2.14–2.15 ([commands.md](../../_bmad-output/specs/spec-refactor-packages-scripts/commands.md)).
+- **Un guscio, un errore** (`src/v2/shell.ts`, `src/v2/errors.ts`, entry `src/v2/cli.ts`): `ScriptError { kind, component?, cell?, part?, detail }` con exit `1` input · `2` penpot · `3` contract · `4` gate; `process.exit` solo nell'entry. Comandi sul guscio: `theme` (2.12), `library`/`propose` (2.13), `extract`/`render` (2.14), `gates` (2.15) ([commands.md](../../_bmad-output/specs/spec-refactor-packages-scripts/commands.md)).
 
 ### `library` e `propose` dal contratto di estrazione (Story 2.13, CAP-6/CAP-7)
 
@@ -40,6 +40,19 @@ Solo `library` scrive su Penpot; `propose` è sola lettura. Entrambi live, **mai
 Nota: il `--` dopo il nome del package separa gli argomenti pnpm da quelli del comando (via `node --import tsx src/v2/cli.ts <comando>` si omette: `library bootstrap --dry-run`). `library --help` / `propose --help` stampano l'uso senza leggere né scrivere. Exit code: `1` input · `2` penpot · `3` contract · `4` gate. `--snapshot` non esiste in CLI: nei test il seam è la DI (`readSnapshot`/`callTool`), mai in CI né in build (entrambi live).
 
 `when` governa la presenza (`badge`/`badgeLabel` solo con `promo=offer|discount`): l'assenza attesa non è mai un errore né un diff.
+
+### `extract` e `render` — una istantanea, quattro file (Story 2.14, CAP-4/CAP-5)
+
+Solo `extract` scrive l'istantanea (`data/components/<kebab>.json` con `contract`, `provenance`, `cells` per 6 celle, tmp + rename); solo `library` scrive su Penpot; `render` genera da istantanea + estrazione + registro i quattro file `@generated` senza basi. Nessun comando live gira mai in CI: l'unico passo v2 in CI è `render --check --all` dentro `gates`, e l'esito sta solo nell'exit code (0 ok, 4 diff).
+
+| Comando | Esempio | Cosa fa |
+|---|---|---|
+| `pnpm --filter @penpot-ds/scripts extract -- ProductCard` | `pnpm --filter @penpot-ds/scripts extract -- ProductCard --snapshot /tmp/library.json` | Live di default: legge il container, valida nei 5 stadi `penpot → contract → parts → properties → write` e scrive `data/components/product-card.json`. `--snapshot <file>` è il seam di lettura/test (mai scrittura live). |
+| `pnpm --filter @penpot-ds/scripts extract -- ProductCard --check` | `pnpm --filter @penpot-ds/scripts extract -- ProductCard --check --snapshot /tmp/library.json` | Confronta senza scrivere: exit 0 se identica, exit 4 (`gate`) con diff nominativo se diverge. |
+| `pnpm --filter @penpot-ds/scripts render -- ProductCard` | `pnpm --filter @penpot-ds/scripts render -- ProductCard --check` | Da istantanea committata genera `<Comp>.tsx`, `.test.tsx`, `.stories.tsx` e barrel in `packages/ui/src/domains/commerce/` (`@generated` con provenienza). `--check` non scrive (diff zero). Un file senza marker non è mai sovrascritto (skip, non errore). |
+| `pnpm --filter @penpot-ds/scripts render -- --all` | `pnpm --filter @penpot-ds/scripts render -- --check --all` | Tutte le istantanee committate (`data/components/*.json`): i fallimenti si accumulano e si elencano alla fine (exit 4 se uno diverge o fallisce). |
+
+Mappatura: `when`→condizionale, `repeat`→`map` (primo layer modello), `attribute`→attributo, `state`→prefissi (`hover:`), headless→elemento (card: `null`), layout/posizione dal registro, `content`→testo, `focusVisible`→`focus-visible:`. Errori nominativi (componente, cella, parte) con adattamenti designer → registro → contratto; una categoria per stadio nel log. `extract --help` / `render --help` stampano l'uso senza leggere né scrivere.
 
 ## Emitter shadcn e gate (Story 2.6)
 

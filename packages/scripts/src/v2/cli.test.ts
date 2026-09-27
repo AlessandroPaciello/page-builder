@@ -33,6 +33,8 @@ describe("entry v2 (src/v2/cli.ts)", { timeout: SMOKE_TIMEOUT }, () => {
     expect(result.output).toMatch(/✖ input[\s\S]*comando mancante[\s\S]*theme \[--live\]/);
     expect(result.output).toMatch(/library bootstrap\|add/);
     expect(result.output).toMatch(/propose <Comp>/);
+    expect(result.output).toMatch(/extract <Comp>/);
+    expect(result.output).toMatch(/render <Comp>\|--all/);
     expect(result.code).toBe(1);
   });
 
@@ -77,6 +79,20 @@ describe("entry v2 (src/v2/cli.ts)", { timeout: SMOKE_TIMEOUT }, () => {
     const result = run(["propose", "--help"]);
     expect(result.output).not.toMatch(RESOLUTION_ERROR);
     expect(result.output).toMatch(/Uso: propose <Comp>/);
+    expect(result.code).toBe(0);
+  });
+
+  it("extract --help esce 0 con l'uso <Comp> [--check] [--snapshot], senza scritture", () => {
+    const result = run(["extract", "--help"]);
+    expect(result.output).not.toMatch(RESOLUTION_ERROR);
+    expect(result.output).toMatch(/Uso: extract <Comp> \[--check\] \[--snapshot <file>\]/);
+    expect(result.code).toBe(0);
+  });
+
+  it("render --help esce 0 con l'uso <Comp>|--all [--check], senza scritture", () => {
+    const result = run(["render", "--help"]);
+    expect(result.output).not.toMatch(RESOLUTION_ERROR);
+    expect(result.output).toMatch(/Uso: render <Comp>\|--all \[--check\]/);
     expect(result.code).toBe(0);
   });
 

@@ -35,8 +35,13 @@ describe("PATHS", () => {
   });
 
   it("i dati committati stanno fuori da src/", () => {
-    for (const key of ["catalogPath", "recipesDir", "judgmentsDir", "bindingsDir", "basesDir", "designsDir", "librarySnapshotPath", "semanticSeedPath"] as const) {
+    for (const key of ["catalogPath", "recipesDir", "judgmentsDir", "bindingsDir", "basesDir", "designsDir", "librarySnapshotPath", "semanticSeedPath", "componentsDir"] as const) {
       expect(PATHS[key].startsWith(`${PATHS.dataDir}${sep}`), `PATHS.${key} → ${PATHS[key]}`).toBe(true);
     }
+  });
+
+  it("componentsDir riusa domainsRoot come radice dei generati (fondazione path v2)", () => {
+    expect(PATHS.componentsDir).toBe(join(PATHS.dataDir, "components"));
+    expect(PATHS.domainsRoot.endsWith(join("ui", "src", "domains"))).toBe(true);
   });
 });

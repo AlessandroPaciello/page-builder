@@ -1,0 +1,492 @@
+{
+  "contract": "product-card@1",
+  "provenance": {
+    "penpotComponentId": "container-productcard-seed",
+    "readAt": "2026-09-27T13:37:39.809Z",
+    "snapshotHash": "c5ce5b3bb421"
+  },
+  "cells": {
+    "promo=discount|hover=off": {
+      "badge": {
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "fill": "color.primary",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.2",
+        "paddingRight": "spacing.2",
+        "paddingTop": "spacing.1"
+      },
+      "badgeLabel": {
+        "fill": "color.primary-foreground",
+        "fontSize": "text.xs",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "body": {
+        "fill": "color.card",
+        "paddingBottom": "spacing.4",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingTop": "spacing.4",
+        "rowGap": "spacing.3"
+      },
+      "description": {
+        "fill": "color.muted-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.regular",
+        "letterSpacing": "tracking.none"
+      },
+      "image": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md"
+      },
+      "media": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md",
+        "fill": "color.muted"
+      },
+      "price": {
+        "fill": "color.foreground",
+        "fontSize": "text.lg",
+        "fontWeight": "font-weight.bold",
+        "letterSpacing": "tracking.none"
+      },
+      "root": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md",
+        "fill": "color.card",
+        "paddingBottom": "spacing.4",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingTop": "spacing.4",
+        "strokeColor": "color.border",
+        "strokeWidth": "border-width.default"
+      },
+      "tag": {
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "fill": "color.secondary",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.2",
+        "paddingRight": "spacing.2",
+        "paddingTop": "spacing.1"
+      },
+      "tagLabel": {
+        "fill": "color.secondary-foreground",
+        "fontSize": "text.xs",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "tags": {
+        "columnGap": "spacing.2",
+        "rowGap": "spacing.2"
+      }
+    },
+    "promo=discount|hover=on": {
+      "badge": {
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "fill": "color.primary",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.2",
+        "paddingRight": "spacing.2",
+        "paddingTop": "spacing.1"
+      },
+      "badgeLabel": {
+        "fill": "color.primary-foreground",
+        "fontSize": "text.xs",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "body": {
+        "fill": "color.card",
+        "paddingBottom": "spacing.4",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingTop": "spacing.4",
+        "rowGap": "spacing.3"
+      },
+      "description": {
+        "fill": "color.muted-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.regular",
+        "letterSpacing": "tracking.none"
+      },
+      "image": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md"
+      },
+      "media": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md",
+        "fill": "color.muted"
+      },
+      "price": {
+        "fill": "color.foreground",
+        "fontSize": "text.lg",
+        "fontWeight": "font-weight.bold",
+        "letterSpacing": "tracking.none"
+      },
+      "root": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md",
+        "fill": "color.card",
+        "paddingBottom": "spacing.4",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingTop": "spacing.4",
+        "strokeColor": "color.border",
+        "strokeWidth": "border-width.default"
+      },
+      "tag": {
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "fill": "color.secondary",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.2",
+        "paddingRight": "spacing.2",
+        "paddingTop": "spacing.1"
+      },
+      "tagLabel": {
+        "fill": "color.secondary-foreground",
+        "fontSize": "text.xs",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "tags": {
+        "columnGap": "spacing.2",
+        "rowGap": "spacing.2"
+      }
+    },
+    "promo=none|hover=off": {
+      "body": {
+        "fill": "color.card",
+        "paddingBottom": "spacing.4",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingTop": "spacing.4",
+        "rowGap": "spacing.3"
+      },
+      "description": {
+        "fill": "color.muted-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.regular",
+        "letterSpacing": "tracking.none"
+      },
+      "image": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md"
+      },
+      "media": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md",
+        "fill": "color.muted"
+      },
+      "price": {
+        "fill": "color.foreground",
+        "fontSize": "text.lg",
+        "fontWeight": "font-weight.bold",
+        "letterSpacing": "tracking.none"
+      },
+      "root": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md",
+        "fill": "color.card",
+        "paddingBottom": "spacing.4",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingTop": "spacing.4",
+        "strokeColor": "color.border",
+        "strokeWidth": "border-width.default"
+      },
+      "tag": {
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "fill": "color.secondary",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.2",
+        "paddingRight": "spacing.2",
+        "paddingTop": "spacing.1"
+      },
+      "tagLabel": {
+        "fill": "color.secondary-foreground",
+        "fontSize": "text.xs",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "tags": {
+        "columnGap": "spacing.2",
+        "rowGap": "spacing.2"
+      }
+    },
+    "promo=none|hover=on": {
+      "body": {
+        "fill": "color.card",
+        "paddingBottom": "spacing.4",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingTop": "spacing.4",
+        "rowGap": "spacing.3"
+      },
+      "description": {
+        "fill": "color.muted-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.regular",
+        "letterSpacing": "tracking.none"
+      },
+      "image": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md"
+      },
+      "media": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md",
+        "fill": "color.muted"
+      },
+      "price": {
+        "fill": "color.foreground",
+        "fontSize": "text.lg",
+        "fontWeight": "font-weight.bold",
+        "letterSpacing": "tracking.none"
+      },
+      "root": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md",
+        "fill": "color.card",
+        "paddingBottom": "spacing.4",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingTop": "spacing.4",
+        "strokeColor": "color.border",
+        "strokeWidth": "border-width.default"
+      },
+      "tag": {
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "fill": "color.secondary",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.2",
+        "paddingRight": "spacing.2",
+        "paddingTop": "spacing.1"
+      },
+      "tagLabel": {
+        "fill": "color.secondary-foreground",
+        "fontSize": "text.xs",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "tags": {
+        "columnGap": "spacing.2",
+        "rowGap": "spacing.2"
+      }
+    },
+    "promo=offer|hover=off": {
+      "badge": {
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "fill": "color.primary",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.2",
+        "paddingRight": "spacing.2",
+        "paddingTop": "spacing.1"
+      },
+      "badgeLabel": {
+        "fill": "color.primary-foreground",
+        "fontSize": "text.xs",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "body": {
+        "fill": "color.card",
+        "paddingBottom": "spacing.4",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingTop": "spacing.4",
+        "rowGap": "spacing.3"
+      },
+      "description": {
+        "fill": "color.muted-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.regular",
+        "letterSpacing": "tracking.none"
+      },
+      "image": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md"
+      },
+      "media": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md",
+        "fill": "color.muted"
+      },
+      "price": {
+        "fill": "color.foreground",
+        "fontSize": "text.lg",
+        "fontWeight": "font-weight.bold",
+        "letterSpacing": "tracking.none"
+      },
+      "root": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md",
+        "fill": "color.card",
+        "paddingBottom": "spacing.4",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingTop": "spacing.4",
+        "strokeColor": "color.border",
+        "strokeWidth": "border-width.default"
+      },
+      "tag": {
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "fill": "color.secondary",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.2",
+        "paddingRight": "spacing.2",
+        "paddingTop": "spacing.1"
+      },
+      "tagLabel": {
+        "fill": "color.secondary-foreground",
+        "fontSize": "text.xs",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "tags": {
+        "columnGap": "spacing.2",
+        "rowGap": "spacing.2"
+      }
+    },
+    "promo=offer|hover=on": {
+      "badge": {
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "fill": "color.primary",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.2",
+        "paddingRight": "spacing.2",
+        "paddingTop": "spacing.1"
+      },
+      "badgeLabel": {
+        "fill": "color.primary-foreground",
+        "fontSize": "text.xs",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "body": {
+        "fill": "color.card",
+        "paddingBottom": "spacing.4",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingTop": "spacing.4",
+        "rowGap": "spacing.3"
+      },
+      "description": {
+        "fill": "color.muted-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.regular",
+        "letterSpacing": "tracking.none"
+      },
+      "image": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md"
+      },
+      "media": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md",
+        "fill": "color.muted"
+      },
+      "price": {
+        "fill": "color.foreground",
+        "fontSize": "text.lg",
+        "fontWeight": "font-weight.bold",
+        "letterSpacing": "tracking.none"
+      },
+      "root": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md",
+        "fill": "color.card",
+        "paddingBottom": "spacing.4",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingTop": "spacing.4",
+        "strokeColor": "color.border",
+        "strokeWidth": "border-width.default"
+      },
+      "tag": {
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "fill": "color.secondary",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.2",
+        "paddingRight": "spacing.2",
+        "paddingTop": "spacing.1"
+      },
+      "tagLabel": {
+        "fill": "color.secondary-foreground",
+        "fontSize": "text.xs",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "tags": {
+        "columnGap": "spacing.2",
+        "rowGap": "spacing.2"
+      }
+    }
+  }
+}

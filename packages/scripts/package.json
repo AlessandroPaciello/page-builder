@@ -22,6 +22,8 @@
     "theme": "node --import tsx src/v2/cli.ts theme",
     "library": "node --import tsx src/v2/cli.ts library",
     "propose": "node --import tsx src/v2/cli.ts propose",
+    "extract": "node --import tsx src/v2/cli.ts extract",
+    "render": "node --import tsx src/v2/cli.ts render",
     "validate:recipe": "node --import tsx src/cli/extract-component.ts validate",
     "verify:library": "node --import tsx src/cli/library.ts verify"
   },
