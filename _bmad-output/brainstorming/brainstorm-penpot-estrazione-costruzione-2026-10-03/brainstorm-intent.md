@@ -34,3 +34,13 @@ Nuovo sistema di estrazione e costruzione design Penpot→React senza script rig
 1. Designer: card su Penpot fedele allo screenshot, oppure problemi segnalati esplicitamente.
 2. Dev: estrazione React coerente a Penpot, con legame componente-token verificato.
 3. Manutenzione: nessun metadato manuale; sistema non degrada con crescita di regole o complessità design.
+
+## Decisioni consolidate — 2026-10-03 (da walkthrough spec)
+- MCP: lettura struttura/token/screenshot + scrittura/proposta in Penpot.
+- Profili headless+token versionati nel repo con default ragionevoli.
+- Allineamento token applicato solo dopo conferma esplicita, mai auto-apply.
+- Fedeltà screenshot→Penpot giudicata da umano con segnalazione esplicita, nessuno score pixel-perfect.
+- Roadmap confermata L0 Token, L1 Atomi, L2 Molecole, L3 Organismi; sblocco quando ogni entità passa check+gate+fedeltà.
+- Convenzione nomi atomic canonizzata in docs nel repo.
+- Contratto verso Puck via Tailwind theme (variabili CSS mappate in `@theme` / `tailwind.config`).
+- Riferimento card opzionale (non vincolante) in `_bmad-output/specs/spec-penpot-estrazione-costruzione/assets/card-reference/` (`screenshot.png` + `penpot-link.md`); se assente si procede con segnalazione.
