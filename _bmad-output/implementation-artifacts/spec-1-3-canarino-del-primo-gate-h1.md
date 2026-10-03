@@ -14,7 +14,7 @@ context: []
 
 **Problem:** Senza osservare il primo loop di conferma H1 sul piano-diff della Story 1.2, non si sa se il gate convenzionale (AD-2) regge o viene saltato in silenzio con effetti senza sì esplicito.
 
-**Approach:** Chiedere H1 sul piano-diff numerato P1–P4 della Story 1.2 con le due opzioni registrate (a: Penpot sorgente, b: proceed esplicito con codice esistente), osservare tenuta/frizioni/tentativi di skip senza applicare nulla senza sì, e registrare l'esito nel memlog SPEC come osservazione canarino; il sì esecutivo non persiste oltre la sessione.
+**Approach:** Chiedere H1 sul piano-diff numerato P1–P4 della Story 1.2 con i tre esiti registrati (a: Penpot sorgente, b: prosecuzione esplicita con codice esistente, no: nessun apply), osservare tenuta/frizioni/tentativi di skip senza applicare nulla prima del sì, e registrare l'esito nel memlog SPEC come osservazione canarino; il sì esecutivo vale solo per questo piano nella sessione e non persiste oltre.
 
 </frozen-after-approval>
 
@@ -60,3 +60,4 @@ context: []
 - (bmad-review) Structure MOVE/MERGE/CONDENSE + prose → patched: verdict in testa, duplicati fusi, byte count rimosso, via→tramite; memlog a puntatore rifiutato (doppio percorso di accesso); righe false storiche conservate per audit.
 - (bmad-review) Edge deletion/claims → niente da segnalare: nessuna rimozione sostanziale, nessun claim falsificato.
 - (bmad-review) Prose "proceed esplicito" in Intent → non applicabile (blocco congelato); nota: se (b) è label verbatim H1 va tenuto e glossato.
+- (rinegoziazione umana 2026-10-03) Intent ricongelato su approvazione esplicita: tre esiti H1 (a/b/no) al posto di "due opzioni"; "prosecuzione esplicita"; "prima del sì"; scope "solo per questo piano nella sessione" promosso in Approach; dettaglio Esiti resta operativo in Notes.
