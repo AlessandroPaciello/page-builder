@@ -6,6 +6,8 @@ inputDocuments:
   - "_bmad-output/specs/spec-penpot-estrazione-costruzione/extraction-flow.md"
   - "_bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-10-03/ARCHITECTURE-SPINE.md"
   - "_bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md"
+  - "_bmad-output/specs/spec-penpot-estrazione-costruzione/.memlog.md"
+  - "_bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-10-03/.memlog.md"
 ---
 
 # penpot-estrazione-costruzione - Epic Breakdown
@@ -14,7 +16,7 @@ inputDocuments:
 
 Questo documento decompone i requisiti dello SPEC (spec-kernel, in sostituzione del PRD), delle sue companion e della Architecture Spine dedicata in story implementabili. Il sistema è uno **strato agentico senza runtime**: gli step sono eseguiti dalla skill via MCP + repo, con la conferma umana in conversazione come unico gate (eccezione di scope ad AD-11 parent). Lo scope è token → organismi con livelli L0-L3 sequenziali; template e pagine restano a Puck via Tailwind theme.
 
-> **Nota di percorso:** i Functional Requirements derivano 1:1 dalle capability dello SPEC (CAP-1…10); i vincoli tecnici (NFR/Additional) derivano dai constraint dello SPEC e dai 9 Architecture Decision (AD-1…AD-9) della spine dedicata, che eredita AD-3/AD-5/AD-6/AD-11 dalla parent. Ogni story eredita gli AD pertinenti come vincolo. File separato da `epics.md` (page-builder) per vita propria della slice.
+> **Nota di percorso:** i Functional Requirements derivano 1:1 dalle capability dello SPEC (CAP-1…10); i vincoli tecnici (NFR/Additional) derivano dai constraint dello SPEC e dai 9 Architecture Decision (AD-1…AD-9) della spine dedicata, che eredita AD-3/AD-5/AD-6/AD-11 dalla parent. Ogni story eredita gli AD pertinenti come vincolo. File separato da `epics.md` (page-builder) per vita propria della slice. Decision record: [memlog SPEC](../specs/spec-penpot-estrazione-costruzione/.memlog.md) · [memlog spine](architecture/architecture-page-builder-2026-10-03/.memlog.md).
 
 ## Requirements Inventory
 
