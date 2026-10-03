@@ -323,3 +323,16 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor
 - source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/spec-1-4-tracciante-verticale-su-un-token.md`
   summary: Primo atomo Epic 2 disegnato da umano per completare la prova del loop su design indipendente.
   evidence: review 1.4 (Adversarial) — il tracciante 1.4 è autoreferenziale (AI ha disegnato via MCP e poi allineato su rinegoziazione); H1 prevedeva disegno umano.
+
+## Deferred from: code review of epic-1-fondamenta-vive (1-1, 1-3, 1-4) (2026-10-03)
+
+- source_spec: `_bmad-output/implementation-artifacts/epic-1-context.md`
+  summary: Provenienza rigenerabile di `epic-1-context.md` (commit sorgente, comando/data di compilazione, enum AD-1…AD-9, regola naming-convention).
+  evidence: review epic-1 (Blind) — l'header dice solo "Compiled from planning artifacts" + slice sorgente, senza commit, data, comando né enum AD; da aggiungere alla prossima rigenerazione con compile-epic-context.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-4-tracciante-verticale-su-un-token.md`
+  summary: Verificare se `runTheme --live` ha dry-run/diff/conferma contro il wipe da live a 1 token (maybe-false, sarebbe medium).
+  evidence: review epic-1 (Blind) — il divieto di rigenerazione è solo prosa in spec; si dirime leggendo `packages/scripts/src/theme/theme-command.ts`; se assente, documentare l'invocazione sicura o aggiungere `--dry-run` prima della Epic 2.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-3-canarino-del-primo-gate-h1.md`
+  summary: Checklist del gate a 4 controlli (contratto esistente, ruoli ammessi, token nel vocabolario, nomi in convenzione) con esito go/no-go per voce negli H1 di Epic 2.
+  evidence: review epic-1 (Acceptance) — H1 1.3 verbatim a 3 opzioni senza checklist registrata; la sostanza era coperta in 1.4 per piano a live vuoto, ma dal primo token di specie serve il gate esplicito.
+- D1 collisione chiavi `1-1…1-4`: nessuna nuova voce — già tracciata sopra (review 1.1, riga collisione tracking). Reason odierna: richiede schema condiviso prima di rinominare.
