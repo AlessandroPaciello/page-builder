@@ -345,3 +345,9 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor
 - source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/spec-2-16-rimozione-della-v1-e-rigenerazione-dei-quattro-componenti.md`
   summary: Aggiungere provenienza rigenerabile ai seed v2 (SHA baseline, comandi, timestamp) oltre alla provenance negli snapshot.
   evidence: review 2-16 (Blind) — `seed-library.json` con id `seed-*-2-16` e `seed.md` con i passi ma senza SHA/comandi/timestamp per ripetere SEED-MCP alla lettera.
+
+## Deferred from: decisione live-track 2-16 con Alessandro (2026-10-03)
+
+- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/spec-2-16-rimozione-della-v1-e-rigenerazione-dei-quattro-componenti.md`
+  summary: Disegno live in Penpot dei 5 container (ProductCard + Badge, Input, Alert, AccordionItem) rinviato alle story guidate dalla skill (2.17/2.18): i container nascono con `library add` nel flusso [PC], poi `extract` live e confronto a diff zero con gli snapshot seed.
+  evidence: decisione Alessandro 2026-10-03 — MCP punta al file scratch (solo set `tracer`); il file library non esiste ancora e `library add` fallisce senza i set token. Fino al live, gli snapshot `seed-*-2-16` fanno fede e i gate provano solo coerenza interna. Precondizioni: ripuntare MCP sul file vero, set token via bootstrap, skill riscritta (2.17).
