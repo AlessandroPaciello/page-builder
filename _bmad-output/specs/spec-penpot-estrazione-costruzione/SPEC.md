@@ -3,6 +3,7 @@ id: SPEC-penpot-estrazione-costruzione
 companions:
   - ./scope-roadmap.md
   - ./extraction-flow.md
+  - ../../planning-artifacts/architecture/architecture-page-builder-2026-10-03/ARCHITECTURE-SPINE.md
 sources:
   - ../../brainstorming/brainstorm-penpot-estrazione-costruzione-2026-10-03/brainstorm-intent.md
 ---
