@@ -40,8 +40,8 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
-generated: 2026-07-26
-last_updated: "2026-09-27 (bmad-build 2.15: review superata, story → review) 2026-09-27 (bmad-build 2.15: spec approvata, story → in-progress) 2026-09-27 (2.14 extract e render → done: PR #48 mergiata in develop come 0b91421) 2026-09-27 (bmad-build 2.14: review superata, story → review) 2026-09-27 (bmad-build 2.14: story → in-progress) 2026-09-27 (code-review 2.11 Loop 2: 7 patch applicate, suite verdi, 2.11 → done) 2026-09-17 (bmad-build 2.13: review superata, story → review) (bmad-build 2.13: story → in-progress) (bmad-build 2.11: story → in-progress) (correct-course pipeline v2: 2.10 → done dopo la PR #43; Storybook anticipato a 2.11; nuove 2.12–2.17 per CAP-1…11 dello SPEC-refactor-packages-scripts; libreria → 2.18; Epic 2 da 12 a 18 story) (2026-09-15 bmad-build 2.10: spec approvata, story → in-progress) (correct-course elasticità dell'estrazione: nuova Story 2.10, libreria → 2.11, Storybook → 2.12; Epic 2 da 11 a 12 story)"
+generated: '2026-07-26'
+last_updated: "10-03-2026 16:05"
 project: page-builder
 project_key: NOKEY
 tracking_system: file-system
@@ -55,19 +55,23 @@ development_status:
   1-4-autenticazione-con-ruoli-admin-editor-cliente: done
   1-5-context-orpc-con-principal-e-policy-deny-by-default: done
   1-6-envelope-docker-e-migration-in-release: done
+  1-1-prima-lettura-live-con-disciplina: backlog
+  1-2-diff-token-e-proposta-in-un-colpo: backlog
+  1-3-canarino-del-primo-gate-h1: backlog
+  1-4-tracciante-verticale-su-un-token: backlog
   epic-1-retrospective: done
 
   epic-2: in-progress
   2-1-pipeline-token-penpot-codice: done
   2-2-estrazione-componenti-e-schema-delle-ricette: done
-  2-3-package-dei-contratti: done
+  2-3-package-dei-contratti-badge-input-accordion: done
   2-4-bootstrap-della-library-penpot-sui-contratti: done
-  2-5-estrazione-adeguata-ricette-per-parti-e-token: done
+  2-5-estrazione-adeguata-ricette-per-parti-e-token-validate-contr: done
   2-6-emitter-shadcn-deterministico-e-gate-ci: done
-  2-7-pipeline-pronta-per-piu-componenti: done
-  2-8-registro-delle-proprieta-e-blocco-per-componente: done
-  2-9-skill-pds-component: done
-  2-10-fedelta-live-ed-estrazione-guidata-dal-contratto: done
+  2-7-pipeline-pronta-per-più-componenti: done
+  2-8-registro-delle-proprietà-e-blocco-per-componente: done
+  2-9-skill-pds-component-creare-e-sincronizzare-i-componenti: done
+  2-10-fedeltà-live-ed-estrazione-guidata-dal-contratto: done
   2-11-storybook-del-design-system: done
   2-12-fondamenta-v2-due-contratti-registro-guscio: done
   2-13-library-e-propose-penpot-dal-contratto-di-estrazione: done
@@ -76,6 +80,10 @@ development_status:
   2-16-rimozione-della-v1-e-rigenerazione-dei-quattro-componenti: backlog
   2-17-skill-pds-sui-sei-comandi: backlog
   2-18-libreria-componenti-accessibile: backlog
+  2-1-primo-profilo-headless-token-proposto-e-ratificato: backlog
+  2-2-gate-a-4-controlli-con-auto-proposta-penpot: backlog
+  2-3-prima-generazione-con-h2-e-update-solo-diff: backlog
+  2-4-reuse-test-del-pattern-profilo: backlog
   epic-2-retrospective: optional
 
   epic-3: backlog
@@ -84,13 +92,20 @@ development_status:
   3-3-classifier-structure-content-esteso-a-tutti-i-contratti: backlog
   3-4-definizioni-di-sezione-da-penpot: backlog
   3-5-composizioni-dell-editor: backlog
+  3-1-checklist-di-fedeltà-scritta-a-freddo-e-ratificata: backlog
+  3-2-giudizio-di-fedeltà-su-atomo-con-la-checklist: backlog
+  3-3-verifica-coerenza-penpot-react-a-h2: backlog
   epic-3-retrospective: optional
 
   epic-4: backlog
   4-1-shell-editor-con-canvas-puck: backlog
   4-2-salvataggio-bozza-con-snapshot-immutabile: backlog
-  4-3-pipeline-payload-server-validazione-structure-content-sanitizzazione-xss: backlog
+  4-3-pipeline-payload-server-validazione-structure-content-saniti: backlog
   4-4-autosave-con-indicatore-di-stato: backlog
+  4-1-precondizione-card-riferimento-o-proceed-with-flag: backlog
+  4-2-prima-molecola-con-gate-e-reuse: backlog
+  4-3-card-validata-end-to-end-con-checklist: backlog
+  4-4-vocabolario-theme-pronto-per-puck: backlog
   epic-4-retrospective: optional
 
   epic-5: backlog
@@ -106,29 +121,45 @@ development_status:
   6-3-port-commerceprovider-e-adapter-di-riferimento: backlog
   6-4-blocchi-commerce-data-driven: backlog
   epic-6-retrospective: optional
-
 action_items:
   - epic: 1
-    action: "Aggiungere test automatici rosso/verde per gli script check-boundaries.mjs (packages/ui, packages/domain, packages/api), oggi verificati solo con canary manuali"
+    action: "Aggiungere test automatici rosso/verde per gli script check-boundaries.mjs
+      (packages/ui, packages/domain, packages/api), oggi verificati solo con canary
+      manuali"
     owner: "Charlie (Dev)"
     status: open
   - epic: 1
-    action: "Estendere la disciplina 'test del gate, non solo canary' ai 5 gate CI di Story 2.6 (completezza artefatti, rigenerazione, a11y vitest-axe, conformità al contratto, drift fixture vs Penpot) fin dalla loro introduzione — aggiornato dal correct-course 2026-09-12"
+    action: "Estendere la disciplina 'test del gate, non solo canary' ai 5 gate CI
+      di Story 2.6 (completezza artefatti, rigenerazione, a11y vitest-axe, conformità
+      al contratto, drift fixture vs Penpot) fin dalla loro introduzione — aggiornato
+      dal correct-course 2026-09-12"
     owner: "Charlie (Dev)"
     status: open
   - epic: 1
-    action: "Criterio di stop meccanizzato in RecipeSchema (Story 2.5): una parte annidata con assi propri fa fallire lo schema — serve un test rosso/verde dedicato, non la sorveglianza manuale. Sostituisce la sorveglianza 'Accordion albero annidato' della vecchia Story 2.3 (correct-course 2026-09-12)"
+    action: "Criterio di stop meccanizzato in RecipeSchema (Story 2.5): una parte
+      annidata con assi propri fa fallire lo schema — serve un test rosso/verde dedicato,
+      non la sorveglianza manuale. Sostituisce la sorveglianza 'Accordion albero annidato'
+      della vecchia Story 2.3 (correct-course 2026-09-12)"
     owner: "Amelia (Dev)"
     status: open
   - epic: 1
-    action: "Correggere gli alias shadcn in components.json (puntano al barrel editor/index.ts invece che a una directory) in Story 2.6 (Task 0), quando l'emitter inizia a usare il CLI shadcn per davvero — ex Story 2.3, rinumerata dal correct-course 2026-09-12. Senza oggetto: shadcn e components.json escono con la v1 nella Story 2.16 (correct-course 2026-09-17)"
+    action: "Correggere gli alias shadcn in components.json (puntano al barrel editor/index.ts
+      invece che a una directory) in Story 2.6 (Task 0), quando l'emitter inizia a
+      usare il CLI shadcn per davvero — ex Story 2.3, rinumerata dal correct-course
+      2026-09-12. Senza oggetto: shadcn e components.json escono con la v1 nella Story
+      2.16 (correct-course 2026-09-17)"
     owner: "Dev"
     status: done
   - epic: 1
-    action: "Rivalutare la robustezza del dropdown-menu scritto a mano (focus trap, portal, ARIA) quando Story 2.16 rigenera l'AccordionItem via Base UI (ex 2.4, poi 2.7, 2.9, 2.10, 2.11 — correct-course 2026-09-17)"
+    action: "Rivalutare la robustezza del dropdown-menu scritto a mano (focus trap,
+      portal, ARIA) quando Story 2.16 rigenera l'AccordionItem via Base UI (ex 2.4,
+      poi 2.7, 2.9, 2.10, 2.11 — correct-course 2026-09-17)"
     owner: "Dev"
     status: open
   - epic: 2
-    action: "Installare BMad Builder e creare il modulo BMad penpot-ds (skill di bootstrap/additiva Penpot) per la Story 2.4 (correct-course 2026-09-12). Builder installato il 2026-09-12 (bmb v2.2.2, ca2055c); il modulo (codice pds) si crea nella Story 2.4, Task 6"
+    action: "Installare BMad Builder e creare il modulo BMad penpot-ds (skill di bootstrap/additiva
+      Penpot) per la Story 2.4 (correct-course 2026-09-12). Builder installato il
+      2026-09-12 (bmb v2.2.2, ca2055c); il modulo (codice pds) si crea nella Story
+      2.4, Task 6"
     owner: "Dev (Story 2.4)"
     status: done
