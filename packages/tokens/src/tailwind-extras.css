@@ -1,5 +1,6 @@
 /*
- * Variabili scritte a mano, senza corrispondenza nel catalogo token Penpot.
+ * Variabili scritte a mano (di norma senza corrispondenza nel catalogo token
+ * Penpot — un'eccezione registrata sotto per il tracciante 1.4).
  * `generate:theme` importa questo file ma non lo tocca mai: non porta il
  * marker `@generated` e non viene mai sovrascritto dalla rigenerazione.
  *
@@ -8,6 +9,12 @@
  * lo stack di sistema, nessun valore "creativo" inventato.
  * --leading-1..5: scala di line-height, non modellata in Penpot come token —
  * valori della scala convenzionale Tailwind (none/tight/normal/relaxed/loose).
+ *
+ * --color-tracer-primary (Story 1.4, tracciante verticale): unico token con
+ * corrispondenza live (`tracer.primary #0E5A3C`, set `tracer` via MCP su
+ * autorizzazione umana 2026-10-03). Apply additivo per non wipare il generato
+ * (76 vars) con rigenerazione dal live a 1 token — eccezione registrata, non
+ * precedente per altri token.
  */
 @theme {
   --font-utility: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -17,4 +24,6 @@
   --leading-3: 1.5;
   --leading-4: 1.75;
   --leading-5: 2;
+
+  --color-tracer-primary: #0E5A3C;
 }
