@@ -314,3 +314,12 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor
 - source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/spec-1-1-prima-lettura-live-con-disciplina.md`
   summary: Canonizzare pattern/pathscope del `git grep` metadati-manuali-per-componente dell'AC Story 1.1 (Epic penpot-estrazione-costruzione).
   evidence: review 1.1 (Blind) — AC dice solo "vuoto" senza pattern né scope; questa story usa `git grep -n "profiles/" -- packages/scripts` + assenza `packages/scripts/profiles/`; da fissare come regola riusabile prima della Epic 2.
+- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/spec-1-4-tracciante-verticale-su-un-token.md`
+  summary: Copertura automatica del mapping live→codice per il tracciante (oggi solo verifica manuale MCP+grep).
+  evidence: review 1.4 — happy path coperto da comandi manuali eseguiti e verdi (tokenOverview + grep), come in 1-1/1-2/1-3; un test eseguibile in CI richiede Penpot raggiungibile in pipeline, da disegnare prima della Epic 2.
+- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/spec-1-4-tracciante-verticale-su-un-token.md`
+  summary: Decidere adozione o ritiro del set/token tracer live prima del gate 2.2.
+  evidence: review 1.4 (Adversarial) — set `tracer` + token `tracer.primary` restano nella library live; il gate 2.2 (contratto esistente, token nel vocabolario) li incontrerà come estranei alla specie in modellazione.
+- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/spec-1-4-tracciante-verticale-su-un-token.md`
+  summary: Primo atomo Epic 2 disegnato da umano per completare la prova del loop su design indipendente.
+  evidence: review 1.4 (Adversarial) — il tracciante 1.4 è autoreferenziale (AI ha disegnato via MCP e poi allineato su rinegoziazione); H1 prevedeva disegno umano.

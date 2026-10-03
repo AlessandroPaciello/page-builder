@@ -178,4 +178,4 @@ Il codice sta in `src/`, diviso per area; i dati committati stanno in `data/`, f
 
 ## Cosa non toccare
 
-`packages/tokens/src/tailwind-extras.css` non ha corrispondenza nel catalogo Penpot: la generazione non lo tocca mai, va editato a mano.
+`packages/tokens/src/tailwind-extras.css` di norma non ha corrispondenza nel catalogo Penpot (unica eccezione: `--color-tracer-primary`, tracciante Story 1.4): la generazione non lo tocca mai, va editato a mano.
