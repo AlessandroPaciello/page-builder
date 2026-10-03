@@ -308,3 +308,9 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor
 - source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/2-15-productcard-end-to-end-e-gate-in-ci.md`
   summary: popolare `failedFiles` della suite ui in `gates` con i nomi dei file falliti invece del solo exit code.
   evidence: review 2-15 (Blind) — `defaultRunSuite` ritorna sempre lista vuota; il rosso via exit code basta, i nomi richiedono parsing output.
+- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/spec-1-1-prima-lettura-live-con-disciplina.md`
+  summary: Sciogliere la collisione di tracking `1-1…1-4` tra Epic 1 page-builder (done) e nuovo slice penpot-estrazione-costruzione nella stessa mappa `epic-1` di sprint-status.
+  evidence: review 1.1 (Blind) — due `1-1` diversi coesistono (`1-1-scaffolding…` done + `1-1-prima-lettura…` in-progress); la chiave piena disambigua oggi, ma automazione e story_key resolution restano ambigue; richiede decisione su chiavi con prefisso slice.
+- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/spec-1-1-prima-lettura-live-con-disciplina.md`
+  summary: Canonizzare pattern/pathscope del `git grep` metadati-manuali-per-componente dell'AC Story 1.1 (Epic penpot-estrazione-costruzione).
+  evidence: review 1.1 (Blind) — AC dice solo "vuoto" senza pattern né scope; questa story usa `git grep -n "profiles/" -- packages/scripts` + assenza `packages/scripts/profiles/`; da fissare come regola riusabile prima della Epic 2.
