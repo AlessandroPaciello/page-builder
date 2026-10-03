@@ -1,14 +1,14 @@
 # Pipeline Penpot → codice
 
-Companion di [SPEC.md](./SPEC.md). Descrive **cosa** fa la pipeline design→codice e le regole di aderenza. Il transport verso Penpot **è un server MCP**, confermato in AD-11. Il contratto di ogni componente (assi, valori, tipo di asse, parti) è del page builder e vive in `@app/contracts`; **Penpot è la sorgente di valori e aspetto** — disegna gli assi del contratto, non li decide. La generazione è data-driven; i valori sono fedeli al design; il **comportamento accessibile non è disegnabile in Penpot** e arriva da un primitivo headless dichiarato (AD-11). *(Rivisto dai correct-course 2026-09-12, 2026-09-13, 2026-09-15 e 2026-09-17.)*
+Companion di [SPEC.md](./SPEC.md). Descrive **cosa** fa la pipeline design→codice e le regole di aderenza. Il transport verso Penpot **è un server MCP**, confermato in AD-11. Il contratto di ogni componente (nome, versione, assi `option`, field) è del page builder e vive in `@app/contracts`; **Penpot è la sorgente di valori e aspetto** — disegna gli assi del contratto, non li decide. La generazione è data-driven; i valori sono fedeli al design; il **comportamento accessibile non è disegnabile in Penpot** e arriva da un primitivo headless dichiarato (AD-11). *(Rivisto dai correct-course 2026-09-12, 2026-09-13, 2026-09-15 e 2026-09-17; Stadio 2 v1 cancellato nella Story 2.16.)*
 
-> **Due pipeline in servizio (2026-09-17 → CAP-11).** Lo Stadio 0 (contratto e library) e lo Stadio 1 (token) valgono per entrambe. Lo **Stadio 2** esiste in due versioni: la **v1** (fixture → ricetta → emitter shadcn), in servizio e verde finché la ProductCard non passa; la **v2** (due contratti → istantanea → render headless), che la sostituisce. Dove i due confliggono prevale [SPEC-refactor-packages-scripts](../spec-refactor-packages-scripts/SPEC.md). Alla chiusura di CAP-11 (Story 2.16) la sezione v1 **si cancella, non si aggiorna**.
+> **Pipeline unica v2 (dalla Story 2.16, CAP-11 chiuso).** Lo Stadio 0 (contratto e library) e lo Stadio 1 (token) restano come prima. Lo **Stadio 2** è solo la **v2** (due contratti → istantanea → render headless) da [SPEC-refactor-packages-scripts](../spec-refactor-packages-scripts/SPEC.md). La sezione v1 (fixture → ricetta → emitter shadcn) è stata **cancellata** con la 2.16, non aggiornata.
 
 ## Principio guida
 
 Questo è un progetto di **design system**: la coerenza coi token e i componenti esistenti viene prima della creazione di nuovi elementi. Penpot è la single source of truth dei valori. Aderenza stretta: usare **esattamente** i valori del design; non inventare valori mancanti (in assenza, default neutri — mai colori casuali). I nomi di token/componenti Penpot restano allineati 1:1 a quelli in codice, così la mappatura non diverge.
 
-**Il designer di riferimento è non tecnico**: lavora in Penpot da solo e consegna il file finito o quasi. Far passare la pipeline (ricetta, binding, emitter) è compito dello **sviluppatore**; il designer torna in Penpot solo per scelte di design vere (es. un colore senza token), mai per esigenze della pipeline.
+**Il designer di riferimento è non tecnico**: lavora in Penpot da solo e consegna il file finito o quasi. Far passare la pipeline (contratto di estrazione, istantanea, render) è compito dello **sviluppatore**; il designer torna in Penpot solo per scelte di design vere (es. un colore senza token), mai per esigenze della pipeline.
 
 - Token semantici con nomi alla shadcn (`primary`, `muted`, `destructive`, `border`, `ring`…) e anatomia dei componenti allineata agli assi del contratto; valori e stile restano del designer. *(Supera la decisione del 2026-09-05 "contratto CSS Penpot-native, non nomi shadcn".)*
 - Ogni VariantContainer porta `pagebuilder/contract = nome@versione` (SharedPluginData): fonte primaria del legame componente→contratto; il nome del container è il controllo incrociato.
@@ -86,92 +86,6 @@ render (istantanea + contratto di estrazione + registro)
 
 **Cosa cambia:** `judgments/`, `bindings/`, `designs/`, `bases/`, `recipes/` e la coppia fixture+ricetta spariscono — l'istantanea li sostituisce tutti, e il suo diff in PR **è** la review del design. Il ruolo di parte esce dal contratto del page builder ed entra nel contratto di estrazione; il page builder tiene solo assi `option`, field e slot. Il drift non è più un gate a sé: `extract --check` confronta Penpot live senza scrivere. `propose` sostituisce `adopt:variant`, `bump:contract` e `role:part`: stampa il diff sui due contratti, lo sviluppatore lo applica a mano. Le basi shadcn e Radix escono; il primitivo headless è Base UI, dichiarato per parte.
 
-## Stadio 2 (v1) — Estrazione e generazione COMPONENTI  [in servizio fino a CAP-11 / Story 2.16, poi cancellata]
-
-L'estrazione è **per-componente e su richiesta** ("estrai Input"), non un batch di pagina.
-
-```
-@app/contracts (assi tipizzati, valori, parti)
-        │
-Penpot (VariantContainer + plugin data) ──MCP──► <comp>.fixture.json   [deterministico, committato, validato vs contratto]
-        │  parti, matrice varianti, token binding, CSS raw
-        ▼
-   code agent ──────────────────────────────► <comp>.recipe.json    [giudizio, committato, validato]
-        │  parti (profondità 1) × assi tipizzati → celle proprietà→token · requisiti a11y
-        ▼
-   emitter <lib> + <comp>.binding (<lib>) ───► <Comp>.tsx · .test.tsx · .stories.tsx · index.ts   [@generated]
-```
-
-### Fixture — cosa fissa
-
-Istantanea firmata del design al momento dell'estrazione. Committata: il suo diff mostra **cosa è cambiato nel design**, ed è ciò contro cui il gate di drift confronta Penpot live. L'estrazione legge il plugin data e **fallisce** su contratto dichiarato da due container, nome incoerente, contratto senza container; la fixture deve coprire **esattamente** assi e valori del contratto.
-
-### Ricetta — l'unico passo di giudizio
-
-L'agent decide la fattorizzazione per parti e i requisiti a11y. Vincoli:
-
-- la ricetta è una **mappa di parti a profondità 1**; ogni cella è `proprietà → token` (es. `fill: destructive`, `padding: spacing.2`) per parte × valore d'asse — nessuna classe di una libreria; ogni **valore** (colore, misura, spessore, opacità, ombra) ha un token; gli stili a **parola chiave** di una lista chiusa (es. tratteggio `solid`/`dashed`/`dotted`) sono ammessi senza token;
-- ogni token referenziato esiste nel catalogo dello Stadio 1 — un valore literal **non passa la validazione**. È l'attuazione di "never assume missing values": un test, non una raccomandazione;
-- una parte annidata con assi propri fa **fallire lo schema**: la composizione (più item, sezioni) è una definizione di sezione, non una ricetta;
-- la **geometria delle icone** (path) è ignorata — l'icona in codice viene dalla libreria icone;
-- `a11y.role` è un role unico **oppure** una mappa per un asse `option` (`{ "axis": "status", "values": { "info": "status", "success": "status", "warning": "alert", "error": "alert" } }`): ogni valore dell'asse ha il suo role ARIA valido, l'emitter lo emette per variante e il gate a11y verifica ogni variante (prova rosso/verde); una mappa su un asse `state`/`behavior` o incompleta è rifiutata dallo schema (correct-course 2026-09-15, Story 2.10);
-- i binding token espliciti (colore/radius/font) e il layout/spacing/sizing dal CSS raw restano responsabilità separate, per non emettere stili in conflitto;
-- l'agent si rievoca solo se cambia la **struttura** del componente. Un token diverso o una nuova variante (già nel contratto) passano per fixture → render, senza agent.
-
-### Emitter per libreria e binding
-
-Un emitter per libreria; **una sola libreria per installazione**, scelta a build time. La **tabella di binding** per componente e per libreria (committata) dichiara: componente base, parti della ricetta → parti della libreria, headless, valori d'asse → API della libreria.
-
-L'**emitter shadcn** (riferimento) non genera componenti React da zero: parte da `npx shadcn add <comp>` (struttura, parti Radix, comportamento, a11y) e instrada gli assi per tipo — `option` → varianti `cva`; `state` → prefissi `focus-visible:`/`aria-invalid:`/`disabled:`; `behavior` → `data-[state=…]:`. Deriva le classi dalla stessa funzione di nome dello Stadio 1, poi test e story. Emette `@generated` con la provenienza (`penpotComponentId` + `fixtureHash`). Stesso input → stesso output, byte per byte.
-
-### Registro delle proprietà e fedeltà
-
-Le proprietà di stile Penpot che la pipeline conosce vivono in un **registro unico**, letto da reader, `verify:library` ed emitter: per ognuna, la lettura, il tipo (token o lista di parole chiave), lo stato (**supportata** o **bloccata**) e la mappatura dell'emitter. Solo due stati: **nessuno skip** — una proprietà o genera codice fedele o blocca il componente; una proprietà Penpot assente dal registro blocca anch'essa. Sbloccarne una = una riga del registro + la mappatura + un test rosso/verde (delle proprietà un tempo "silenziose", tratteggio e allineamento dello stroke **bloccano** finché un componente reale non li richiede, mentre spessore e opacità sono **coperte dalla base**: verificate contro la base shadcn, senza classi emesse — decisione del 2026-09-13). Il refactor che introduce il registro lascia l'output attuale identico byte per byte.
-
-**Il registro in pratica** (`packages/scripts/src/shared/style-properties.ts`, Story 2.8 parte A). Ogni riga dice: `read` (come la legge `styleOf` nel reader, che riceve le liste iniettate dal registro), `type` (`token` col suo tipo di token, oppure `keyword` con la lista chiusa e il valore di default), `status` (`supported` | `blocked` con motivo) e `emitter` (prefisso utility, eventualmente per tipo di layer; angolo del radius; `coveredByBase`; `none` per le bloccate). Estrazione (`buildRecipe`), `verify:library` (regola 7) ed emitter chiedono tutti al registro con lo stesso errore nominativo, che dice componente, parte, cella, proprietà e token o valore: **non registrata**, **valore fuori lista** oppure **bloccata**. Gli stati di oggi:
-- **supportate**: `fill`, `strokeColor`, i quattro radius, padding, `rowGap`/`columnGap`, `fontSize`/`fontWeight`/`letterSpacing` e `shadow`, che emettono classi. Poi `strokeWidth` e `opacity`, **coperte dalla base** (decisione di Alessandro, 2026-09-13): non emettono classi, ma il valore del token deve coincidere con quello che la base shadcn già esprime per quella parte con lo stesso prefisso di stato (`border`/`border-b`/`border-t` = 1px, `disabled:opacity-50` = 0.5). Un valore diverso, ad esempio `border-width.thick`, oppure una base che non esprime nulla per la parte, blocca il componente;
-- **bloccate**: `strokeStyle` (lista `solid`/`dashed`/`dotted`, letto solo se diverso da `solid`), `strokeAlignment` (lista `inner`/`center`/`outer`, letto solo se diverso da `inner`, l'unico valore che corrisponde al bordo CSS) e `fontFamilies`, che `applyToken` non supporta;
-- **regola icona**: `strokeWidth` sui layer `path`/`vector`/`ellipse`/`line` è geometria dell'icona e si ignora per una regola dichiarata nella riga, non per omissione.
-
-**Sbloccare una proprietà** richiede tre cose nella stessa PR: la riga del registro (stato `supported`), la mappatura dell'emitter e un test rosso/verde, cioè un input che prima bloccava e ora genera codice fedele, più un caso che deve restare rosso. È una decisione umana presa quando un componente reale la richiede.
-
-Quando l'emitter non sa esprimere un design valido fatto con i token, si estende l'emitter **una volta per tutte** — non per componente né a mano sul generato (primo caso: una variante senza una proprietà che il default ha, come l'outline senza fill: la proprietà assente entra nelle classi per variante, non nella base `cva`). Condizione: adeguarsi deve restare semplice per lo sviluppatore. Una proprietà che varia con due assi resta non esprimibile finché l'emitter non guadagna le `compoundVariants` (stesso principio).
-
-**Mai generare in silenzio una versione infedele.** Ciò che non è esprimibile blocca **solo quel componente**, con un messaggio che nomina il problema; gli altri proseguono. Attriti di organizzazione del file: maiuscole, spazi e ordine degli assi sono normalizzati dalla pipeline; un layer con un nome diverso dalla parte è un **alias nel binding** (a cura dello sviluppatore); una cella mancante blocca il componente e chiede al designer — mai inventata. Una variante aggiunta in Penpot blocca solo quel componente, che resta all'ultima versione buona, finché lo sviluppatore non la adotta (skill `pds-component` / `adopt:variant`); i componenti in attesa sono visibili nel report di PR/CI, non solo nel terminale.
-
-### Ruolo di parte — il contratto come riferimento dell'estrazione
-
-Ogni parte del contratto dichiara un **ruolo** (AD-11): `surface`, `text`, `icon`, `divider`. Accanto al registro delle proprietà, in `packages/scripts`, una **tabella ruolo → proprietà ammesse** dice quali proprietà del registro può portare una parte con quel ruolo (es. `text`: colore su `fill`, tipografia; `surface`: `fill`, `strokeColor`, radius, padding, gap, ombra; `icon`: colore su `strokeColor` o `fill`). Estrazione e `verify:library` confrontano ogni cella con la tabella: una proprietà che il ruolo non ammette **blocca solo quel componente** (stato **in attesa**) con un messaggio che nomina componente, cella, parte, ruolo, proprietà e token, e propone l'adattamento in quest'ordine:
-
-1. **al designer** — sposta il token sulla proprietà attesa (es. da `strokeColor` a `fill` su un testo); il messaggio è leggibile senza conoscere la pipeline;
-2. **allo sviluppatore, se il design è voluto** — il ruolo impara la proprietà: una riga della tabella + la mappatura dell'emitter + un test rosso/verde, **una volta per tutte**; il contratto non cambia;
-3. **allo sviluppatore, se la parte è d'altro tipo** — cambio di ruolo nel contratto (cambio compatibile: solo `SCHEMA_VERSION`), con un comando che propone il diff e scrive con `--yes`, come `adopt:variant`.
-
-Il ruolo sostituisce il `kind` del design committato come fonte: `designs/*.design.json` lo eredita dal contratto. (Correct-course 2026-09-15, Story 2.10.)
-
-### Confine contratto / fixture / ricetta / emitter — la regola
-
-> **Contratto** = il vocabolario che il page builder espone (e che le pagine salvano).
-> **Fixture** = tutto ciò che si legge da Penpot **senza sapere cosa sia React**.
-> **Ricetta** = la fattorizzazione per parti e l'accessibilità, **senza sapere quale libreria** la renderà.
-> **Emitter + binding** = tutto ciò che dipende dalla libreria.
-
-| Dato | Dove | Perché |
-|---|---|---|
-| assi, valori ammessi, tipo di asse (`option`/`state`/`behavior`), ruolo di parte (`surface`/`text`/`icon`/`divider`) | contratto | vocabolario del page builder |
-| `height: 32px`, `border-color → border` | fixture | fatto misurabile / binding esplicito del designer |
-| celle `proprietà → token` per parte × asse | ricetta | fattorizzazione = giudizio |
-| `aria-invalid` sullo stato error | ricetta | l'a11y non è disegnabile |
-| `h-8`, `bg-destructive`, `<input>` invece di `<div>` | emitter (shadcn) | dipende dalla libreria |
-| `@radix-ui/react-accordion`, parte → `AccordionTrigger` | binding (per libreria) | Penpot non conosce le librerie headless |
-
-### Skip protettivo
-
-Se un artefatto esiste con marker `@generated` → rigenerato. Senza marker (editato a mano) → sempre preservato. Un componente si "sgancia" dalla pipeline semplicemente togliendogli il marker.
-
-### La categoria `custom` si restringe, non sparisce
-
-L'headless si dichiara nel binding componente per componente: non esiste più una tabella statica da mantenere, e cade la maggior parte degli esclusi del legacy. Restano fuori solo i componenti **senza headless disponibile e con logica propria** (Table con sorting, Carousel) e i componenti complessi (3D, mappe, configuratori): scritti a mano, senza marker, ignorati dalla pipeline. Hanno comunque un **contratto completo**; in Penpot esistono come **segnaposto** (dimensioni, immagine/etichetta, plugin data) usato per posizionarli nelle sezioni, non estratto come stile. Stima 3-4 su ~28.
 
 ## Sezioni
 

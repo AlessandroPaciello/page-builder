@@ -67,10 +67,10 @@ jobs:
       - name: Build
         run: pnpm build
 
-      # Storybook del design system (Story 2.11): build statico dei 4
-      # componenti (Badge, Input, Alert, AccordionItem) con addon a11y. Solo
-      # build in CI, mai deploy o pubblicazione: un errore di bundling è un
-      # job rosso col modulo nel log, il dev resta usabile.
+      # Storybook del design system (Story 2.11, 2.16): build statico dei 5
+      # componenti v2 (ProductCard, Badge, Input, Alert, AccordionItem su Base
+      # UI) con addon a11y. Solo build in CI, mai deploy o pubblicazione: un
+      # errore di bundling è un job rosso col modulo nel log, il dev resta usabile.
       - name: Storybook static build
         run: pnpm --filter storybook build-storybook
 
@@ -83,31 +83,13 @@ jobs:
       - name: Test
         run: pnpm test
 
-      # Gate del regime design→codice (Story 2.6, AC #2): completezza
-      # artefatti, rigenerazione a diff zero (render:check incluso), conformità
-      # al contratto e a11y (suite ui con assert axe) — bloccanti. Il gate
-      # drift gira dentro gates:render ma è bloccante SE E SOLO SE il runner
-      # raggiunge il server MCP Penpot: qui non lo raggiunge → skip
-      # documentato nel log (mai verde finto), riesecuzione manuale/nightly.
-      - name: Render gates (completezza, rigenerazione, conformità, a11y)
-        run: pnpm --filter @penpot-ds/scripts gates:render
-
-      # Gate v2 (Story 2.15, CAP-9): `render --check --all` in memoria + suite
-      # ui con axe, report per componente su $GITHUB_STEP_SUMMARY. Convive con
-      # `gates:render` (v1) fino alla 2.16, entrambi a diff zero. Nessun comando
-      # live in CI: `extract`, `render` senza `--check`, `library` e `propose`
-      # non girano mai qui (solo `gates`, che legge gli artefatti committati).
+      # Gate v2 unico: `render --check --all` in memoria + suite ui con axe,
+      # report per componente su $GITHUB_STEP_SUMMARY. Diff zero dal primo
+      # commit. Nessun comando live in CI né in build: `extract`, `render`
+      # senza `--check`, `library` e `propose` non girano mai qui (solo
+      # `gates`, che legge gli artefatti committati).
       - name: Gates v2 (render --check --all + suite ui + axe, report per componente)
         run: pnpm --filter @penpot-ds/scripts gates
-
-      # Verifica della library per componente (Story 2.8 parte B): offline
-      # sullo snapshot committato (scritto dal vivo dallo sviluppatore con
-      # `verify:library --write-snapshot`). Entrambi i passi scrivono il
-      # report per componente (ok / rosso / in attesa) in
-      # $GITHUB_STEP_SUMMARY; il job fallisce solo per voci rosse, i
-      # componenti in attesa restano visibili nel riepilogo del job.
-      - name: Library verify (snapshot committato, report per componente)
-        run: pnpm --filter @penpot-ds/scripts verify:library --snapshot data/library.snapshot.json
 
       # Drift check schema↔migrations (voce 1-3, Story 1.6): un schema.prisma
       # che evolve senza migration committata diventa un gate rosso QUI, non

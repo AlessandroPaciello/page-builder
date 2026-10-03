@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
 @source "../../../../apps/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
 
@@ -120,7 +119,7 @@
 
 /*
  * Tema dei token Penpot (generato da `generate:theme`), importato DOPO il
- * blocco `@theme inline` di shadcn: sui nomi in comune vincono i valori di
+ * blocco `@theme inline` (ex shadcn, rimosso con la v1 — Story 2.16): sui nomi in comune vincono i valori di
  * Penpot, e i token che shadcn non ha (info, success, warning,
  * destructive-foreground, font-weight, tracking…) generano le loro utility.
  * Lo verifica `generated-classes.test.ts`.

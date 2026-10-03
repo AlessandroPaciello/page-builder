@@ -1,0 +1,220 @@
+{
+  "sets": [],
+  "componentCount": 1,
+  "components": [
+    {
+      "id": "seed-accordionitem-2-16",
+      "name": "AccordionItem",
+      "pluginData": "accordion-item@1",
+      "axes": [
+        "state"
+      ],
+      "axesValues": {
+        "state": [
+          "closed",
+          "open"
+        ]
+      },
+      "cells": [
+        {
+          "variantProps": {
+            "state": "closed"
+          },
+          "variantError": null,
+          "root": {
+            "name": "AccordionItem state=closed",
+            "kind": "board",
+            "tokens": {
+              "fill": "color.card",
+              "borderRadiusTopLeft": "radius.md",
+              "borderRadiusTopRight": "radius.md",
+              "borderRadiusBottomRight": "radius.md",
+              "borderRadiusBottomLeft": "radius.md"
+            },
+            "style": {
+              "layoutDir": "column",
+              "layoutAlign": "start"
+            },
+            "children": [
+              {
+                "name": "Trigger",
+                "kind": "board",
+                "tokens": {
+                  "paddingTop": "spacing.3",
+                  "paddingBottom": "spacing.3",
+                  "paddingLeft": "spacing.4",
+                  "paddingRight": "spacing.4",
+                  "columnGap": "spacing.2"
+                },
+                "style": {
+                  "layoutDir": "row",
+                  "layoutAlign": "center"
+                },
+                "children": [
+                  {
+                    "name": "Label",
+                    "kind": "text",
+                    "tokens": {
+                      "fill": "color.foreground",
+                      "fontSize": "text.sm",
+                      "fontWeight": "font-weight.medium",
+                      "letterSpacing": "tracking.none"
+                    },
+                    "style": {},
+                    "children": []
+                  },
+                  {
+                    "name": "Chevron",
+                    "kind": "board",
+                    "tokens": {
+                      "strokeColor": "color.foreground",
+                      "strokeWidth": "border-width.default"
+                    },
+                    "style": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "Content",
+                "kind": "board",
+                "tokens": {
+                  "paddingLeft": "spacing.4",
+                  "paddingRight": "spacing.4",
+                  "paddingBottom": "spacing.4"
+                },
+                "style": {
+                  "layoutDir": "column",
+                  "layoutAlign": "start"
+                },
+                "children": [
+                  {
+                    "name": "Body",
+                    "kind": "text",
+                    "tokens": {
+                      "fill": "color.muted-foreground",
+                      "fontSize": "text.sm",
+                      "fontWeight": "font-weight.regular",
+                      "letterSpacing": "tracking.none"
+                    },
+                    "style": {},
+                    "children": []
+                  },
+                  {
+                    "name": "Divider",
+                    "kind": "board",
+                    "tokens": {
+                      "strokeColor": "color.border",
+                      "strokeWidth": "border-width.default"
+                    },
+                    "style": {},
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "variantProps": {
+            "state": "open"
+          },
+          "variantError": null,
+          "root": {
+            "name": "AccordionItem state=open",
+            "kind": "board",
+            "tokens": {
+              "fill": "color.card",
+              "borderRadiusTopLeft": "radius.md",
+              "borderRadiusTopRight": "radius.md",
+              "borderRadiusBottomRight": "radius.md",
+              "borderRadiusBottomLeft": "radius.md"
+            },
+            "style": {
+              "layoutDir": "column",
+              "layoutAlign": "start"
+            },
+            "children": [
+              {
+                "name": "Trigger",
+                "kind": "board",
+                "tokens": {
+                  "paddingTop": "spacing.3",
+                  "paddingBottom": "spacing.3",
+                  "paddingLeft": "spacing.4",
+                  "paddingRight": "spacing.4",
+                  "columnGap": "spacing.2"
+                },
+                "style": {
+                  "layoutDir": "row",
+                  "layoutAlign": "center"
+                },
+                "children": [
+                  {
+                    "name": "Label",
+                    "kind": "text",
+                    "tokens": {
+                      "fill": "color.foreground",
+                      "fontSize": "text.sm",
+                      "fontWeight": "font-weight.medium",
+                      "letterSpacing": "tracking.none"
+                    },
+                    "style": {},
+                    "children": []
+                  },
+                  {
+                    "name": "Chevron",
+                    "kind": "board",
+                    "tokens": {
+                      "strokeColor": "color.foreground",
+                      "strokeWidth": "border-width.default"
+                    },
+                    "style": {},
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "name": "Content",
+                "kind": "board",
+                "tokens": {
+                  "paddingLeft": "spacing.4",
+                  "paddingRight": "spacing.4",
+                  "paddingBottom": "spacing.4"
+                },
+                "style": {
+                  "layoutDir": "column",
+                  "layoutAlign": "start"
+                },
+                "children": [
+                  {
+                    "name": "Body",
+                    "kind": "text",
+                    "tokens": {
+                      "fill": "color.muted-foreground",
+                      "fontSize": "text.sm",
+                      "fontWeight": "font-weight.regular",
+                      "letterSpacing": "tracking.none"
+                    },
+                    "style": {},
+                    "children": []
+                  },
+                  {
+                    "name": "Divider",
+                    "kind": "board",
+                    "tokens": {
+                      "strokeColor": "color.border",
+                      "strokeWidth": "border-width.default"
+                    },
+                    "style": {},
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

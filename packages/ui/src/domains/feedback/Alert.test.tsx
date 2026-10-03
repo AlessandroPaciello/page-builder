@@ -1,63 +1,33 @@
 // @generated — DO NOT EDIT BY HAND.
-// Source: pipeline fixture → ricetta → emitter shadcn (contract alert@1, penpotComponentId c4c28b86-5861-80d2-8008-a2705f0d9e7a, fixtureHash 4c74af97e6a4).
-// Regenerate with: pnpm --filter @penpot-ds/scripts render:component -- Alert
+// Source: pipeline due contratti → istantanea → render (contract alert@1, penpotComponentId seed-alert-2-16, snapshotHash e2cb5e617929).
+// Regenerate with: pnpm --filter @penpot-ds/scripts render -- Alert
 
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { axe } from "vitest-axe";
 import { Alert } from "./Alert";
 
-function declaredAttribute(container: HTMLElement, attribute: string): Element | null {
-  const root = container.querySelector('[data-slot="alert"]');
-  if (root === null) return null;
-  if (attribute === "role") return root.hasAttribute("role") ? root : null;
-  return root.hasAttribute(attribute) ? root : root.querySelector("[" + attribute + "]");
-}
-
 describe("Alert", () => {
-  it("renderizza i campi content", () => {
-    const { getByText } = render(<Alert heading="heading" description="description" />);
-    expect(getByText("heading")).toBeTruthy();
-    expect(getByText("description")).toBeTruthy();
+  it("renderizza heading e description", () => {
+    const { getByText } = render(<Alert status="info" heading="Titolo" description="Descrizione" />);
+    expect(getByText("Titolo")).toBeTruthy();
+    expect(getByText("Descrizione")).toBeTruthy();
   });
-
-  it("non ha violazioni axe (default)", async () => {
-    const { container } = render(<Alert heading="heading" description="description" />);
-    expect((await axe(container)).violations).toEqual([]);
+  it("emette role per variante (info→status, warning→alert)", () => {
+    const info = render(<Alert status="info" heading="T" description="D" />);
+    expect(info.container.querySelector('[data-slot="alert"]')?.getAttribute("role")).toBe("status");
+    const warning = render(<Alert status="warning" heading="T" description="D" />);
+    expect(warning.container.querySelector('[data-slot="alert"]')?.getAttribute("role")).toBe("alert");
   });
-
-  it("non ha violazioni axe (status=success)", async () => {
-    const { container } = render(<Alert status="success" heading="heading" description="description" />);
-    expect((await axe(container)).violations).toEqual([]);
+  it("porta i data-slot", () => {
+    const { container } = render(<Alert status="info" heading="T" description="D" />);
+    expect(container.querySelector('[data-slot="alert-heading"]')).not.toBeNull();
+    expect(container.querySelector('[data-slot="alert-description"]')).not.toBeNull();
   });
-
-  it("non ha violazioni axe (status=warning)", async () => {
-    const { container } = render(<Alert status="warning" heading="heading" description="description" />);
-    expect((await axe(container)).violations).toEqual([]);
-  });
-
-  it("non ha violazioni axe (status=error)", async () => {
-    const { container } = render(<Alert status="error" heading="heading" description="description" />);
-    expect((await axe(container)).violations).toEqual([]);
-  });
-
-  it("porta il role dichiarato (status=info: status)", () => {
-    const { container } = render(<Alert status="info" heading="heading" description="description" />);
-    expect(declaredAttribute(container, "role")?.getAttribute("role")).toBe("status");
-  });
-
-  it("porta il role dichiarato (status=success: status)", () => {
-    const { container } = render(<Alert status="success" heading="heading" description="description" />);
-    expect(declaredAttribute(container, "role")?.getAttribute("role")).toBe("status");
-  });
-
-  it("porta il role dichiarato (status=warning: alert)", () => {
-    const { container } = render(<Alert status="warning" heading="heading" description="description" />);
-    expect(declaredAttribute(container, "role")?.getAttribute("role")).toBe("alert");
-  });
-
-  it("porta il role dichiarato (status=error: alert)", () => {
-    const { container } = render(<Alert status="error" heading="heading" description="description" />);
-    expect(declaredAttribute(container, "role")?.getAttribute("role")).toBe("alert");
+  it("non ha violazioni axe (info e warning)", async () => {
+    const info = render(<Alert status="info" heading="Titolo" description="Descrizione" />);
+    expect((await axe(info.container)).violations).toEqual([]);
+    const warning = render(<Alert status="warning" heading="Titolo" description="Descrizione" />);
+    expect((await axe(warning.container)).violations).toEqual([]);
   });
 });

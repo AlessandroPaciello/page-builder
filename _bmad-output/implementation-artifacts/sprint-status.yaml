@@ -44,7 +44,7 @@
 #   la chiusura review no (1-2 done prima). Precondizione Epic 2 = 1-4-tracciante, non 1-2.
 
 generated: '2026-07-26'
-last_updated: "2026-10-03T18:14+02:00"
+last_updated: "2026-10-03T19:34+02:00"
 project: page-builder
 project_key: NOKEY
 tracking_system: file-system
@@ -80,7 +80,7 @@ development_status:
   2-13-library-e-propose-penpot-dal-contratto-di-estrazione: done
   2-14-extract-e-render-una-istantanea-quattro-file: done
   2-15-productcard-end-to-end-e-gate-in-ci: review
-  2-16-rimozione-della-v1-e-rigenerazione-dei-quattro-componenti: backlog
+  2-16-rimozione-della-v1-e-rigenerazione-dei-quattro-componenti: review
   2-17-skill-pds-sui-sei-comandi: backlog
   2-18-libreria-componenti-accessibile: backlog
   2-1-primo-profilo-headless-token-proposto-e-ratificato: backlog

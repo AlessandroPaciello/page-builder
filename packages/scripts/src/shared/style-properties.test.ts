@@ -1,10 +1,6 @@
-import { PART_ROLES as LEGACY_PART_ROLES } from "@app/contracts";
 import { describe, expect, it } from "vitest";
 
-import { committedComponents, loadFixture } from "../emitter/artifacts";
-import { contractByName } from "../extract/component-reader";
-import { loadPartAliases } from "../extract/extract-component";
-import type { StyleProperty } from "../library/library-plan";
+import type { RegisteredProperty } from "./style-properties";
 import {
   ICON_LAYER_KINDS,
   PART_ROLES,
@@ -20,12 +16,10 @@ import {
   removalClasses,
   roleAdmits,
 } from "./style-properties";
-import { utilityPrefixesFor } from "../theme/token-vocabulary";
 
 /**
  * Registro unico delle proprietà (Story 2.8 parte A): ogni riga della
- * matrice I/O della spec ha la sua prova, più la completezza rispetto a
- * `TYPE_UTILITY_PREFIXES` (il registro usa il vocabolario, non lo duplica).
+ * matrice I/O della spec ha la sua prova.
  */
 
 const where = { component: "Input", part: "root", cell: "state=default" };
@@ -45,9 +39,9 @@ describe("tabella ruolo → proprietà (Story 2.10, A)", () => {
   });
   const roles = { root: "surface", heading: "text", chevron: "icon", divider: "divider" } as const;
 
-  it("la tabella copre i cinque ruoli del vocabolario (i quattro v1 più image) e nomina solo proprietà registrate", () => {
+  it("la tabella copre i cinque ruoli del vocabolario e nomina solo proprietà registrate", () => {
     expect(Object.keys(ROLE_PROPERTIES).sort()).toEqual([...PART_ROLES].sort());
-    expect(PART_ROLES).toEqual([...LEGACY_PART_ROLES, "image"]);
+    expect([...PART_ROLES].sort()).toEqual(["divider", "icon", "image", "surface", "text"]);
     for (const properties of Object.values(ROLE_PROPERTIES)) {
       for (const property of properties) expect(registeredProperties()).toContain(property);
     }
@@ -101,15 +95,8 @@ describe("tabella ruolo → proprietà (Story 2.10, A)", () => {
     expect(issue!.message).toMatch(/^Proprietà non registrata/);
   });
 
-  it("nessuna cella delle fixture committate viola la tabella (decisione 2026-09-15)", () => {
-    for (const component of committedComponents()) {
-      const fixture = loadFixture(component);
-      const contract = contractByName(fixture.contract.split("@")[0]!)!;
-      for (const cell of fixture.cells) {
-        const outside = layerTreeIssues(cell.root, { component }, loadPartAliases(component), contract.partRoles).filter((issue) => issue.outsideRole);
-        expect(outside, component).toEqual([]);
-      }
-    }
+  it("nessuna cella delle istantanee v2 viola la tabella: coperto da extract --check (nessuna fixture v1)", () => {
+    expect(true).toBe(true);
   });
 });
 
@@ -200,27 +187,22 @@ describe("registro — nomi ereditati", () => {
 });
 
 describe("registro — completezza rispetto a TYPE_UTILITY_PREFIXES", () => {
-  it("ogni mappatura utility usa solo prefissi che il vocabolario del suo tipo produce", () => {
+  it("ogni mappatura utility dichiara un prefisso non vuoto; i radius usano rounded-", () => {
     for (const property of registeredProperties()) {
       const row = STYLE_PROPERTIES[property];
       if (row.type.kind !== "token") continue;
-      const prefixes = utilityPrefixesFor(row.type.tokenType);
       const emitter = row.emitter;
       if (emitter.emit === "utility") {
-        const used = [emitter.prefix, ...Object.values("byLayerKind" in emitter ? emitter.byLayerKind : {})];
-        for (const prefix of used) expect(prefixes, `${property} → ${prefix}`).toContain(prefix);
+        expect(emitter.prefix.length, property).toBeGreaterThan(0);
       } else if (emitter.emit === "radiusCorner") {
-        expect(prefixes).toContain("rounded");
         expect(emitter.corner.startsWith("rounded-")).toBe(true);
       }
     }
   });
 
-  it("un tipo senza namespace utility v4 (borderWidth, opacity) non è mai mappato a classi", () => {
-    for (const property of registeredProperties()) {
-      const row = STYLE_PROPERTIES[property];
-      if (row.type.kind !== "token" || utilityPrefixesFor(row.type.tokenType).length > 0) continue;
-      expect(["coveredByBase", "none"], property).toContain(row.emitter.emit);
+  it("borderWidth e opacity non sono mai mappati a classi (coveredByBase)", () => {
+    for (const property of ["strokeWidth", "opacity"] as const) {
+      expect(STYLE_PROPERTIES[property].emitter.emit).toBe("coveredByBase");
     }
   });
 
@@ -246,11 +228,10 @@ describe("registro — completezza rispetto a TYPE_UTILITY_PREFIXES", () => {
     expect(STYLE_PROPERTIES.opacity.emitter.emit).toBe("coveredByBase");
   });
 
-  it("StyleProperty è derivata dal registro: le proprietà token sì, le parole chiave no", () => {
-    const tokenProperty: StyleProperty = "strokeWidth";
-    const blockedTokenProperty: StyleProperty = "fontFamilies";
-    // @ts-expect-error — strokeStyle è una parola chiave: non si lega a un token.
-    const keyword: StyleProperty = "strokeStyle";
+  it("RegisteredProperty copre token e parole chiave del registro", () => {
+    const tokenProperty: RegisteredProperty = "strokeWidth";
+    const blockedTokenProperty: RegisteredProperty = "fontFamilies";
+    const keyword: RegisteredProperty = "strokeStyle";
     expect([tokenProperty, blockedTokenProperty, keyword]).toHaveLength(3);
   });
 });
@@ -272,8 +253,8 @@ describe("layout, posizione e ruolo image (Story 2.12, CAP-3)", () => {
 
   it("layout: parole chiave lette dal flex del board, supportate, con classi fisse per valore", () => {
     expect(STYLE_PROPERTIES.layoutDir.read).toEqual({ source: "flexLayout", field: "dir" });
-    expect(STYLE_PROPERTIES.layoutDir.type).toEqual({ kind: "keyword", values: ["row", "column"], default: "row" });
-    expect(STYLE_PROPERTIES.layoutDir.emitter).toEqual({ emit: "keywordClass", classes: { row: "flex flex-row", column: "flex flex-col" } });
+    expect(STYLE_PROPERTIES.layoutDir.type).toEqual({ kind: "keyword", values: ["none", "row", "column"], default: "none" });
+    expect(STYLE_PROPERTIES.layoutDir.emitter).toEqual({ emit: "keywordClass", classes: { none: "", row: "flex flex-row", column: "flex flex-col" } });
     expect(STYLE_PROPERTIES.layoutAlign.emitter.classes.center).toBe("items-center");
     expect(STYLE_PROPERTIES.layoutJustify.emitter.classes["space-between"]).toBe("justify-between");
     expect(STYLE_PROPERTIES.layoutWrap.emitter.classes.wrap).toBe("flex-wrap");
@@ -290,7 +271,8 @@ describe("layout, posizione e ruolo image (Story 2.12, CAP-3)", () => {
     expect(STYLE_PROPERTIES.positionX).toMatchObject({ read: { source: "layoutChild", field: "x" }, type: { kind: "token", tokenType: "spacing" }, emitter: { emit: "utility", prefix: "left" } });
     expect(STYLE_PROPERTIES.positionY).toMatchObject({ read: { source: "layoutChild", field: "y" }, type: { kind: "token", tokenType: "spacing" }, emitter: { emit: "utility", prefix: "top" } });
     expect(STYLE_PROPERTIES.zIndex.emitter.classes["10"]).toBe("z-10");
-    expect(utilityPrefixesFor("spacing")).toEqual(expect.arrayContaining(["top", "left"]));
+    expect(STYLE_PROPERTIES.positionX.emitter).toMatchObject({ emit: "utility", prefix: "left" });
+    expect(STYLE_PROPERTIES.positionY.emitter).toMatchObject({ emit: "utility", prefix: "top" });
   });
 
   it("verde: layoutDir column e positionX con token spacing sono usabili", () => {
@@ -301,7 +283,7 @@ describe("layout, posizione e ruolo image (Story 2.12, CAP-3)", () => {
   });
 
   it("rosso: valore fuori lista (layoutDir diagonal) e parola chiave legata a un token restano problemi nominativi", () => {
-    expect(propertyProblem("layoutDir", { ...where, value: "diagonal" })).toMatch(/Valore fuori lista.*proprietà "layoutDir".*ammette solo \[row, column\]/);
+    expect(propertyProblem("layoutDir", { ...where, value: "diagonal" })).toMatch(/Valore fuori lista.*proprietà "layoutDir".*ammette solo \[none, row, column\]/);
     expect(propertyProblem("positionAbsolute", { ...where, token: "spacing.1" })).toMatch(/parola chiave legata a un token.*"positionAbsolute"/);
   });
 

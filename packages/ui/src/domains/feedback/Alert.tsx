@@ -1,61 +1,9 @@
 // @generated — DO NOT EDIT BY HAND.
-// Source: pipeline fixture → ricetta → emitter shadcn (contract alert@1, penpotComponentId c4c28b86-5861-80d2-8008-a2705f0d9e7a, fixtureHash 4c74af97e6a4).
-// Regenerate with: pnpm --filter @penpot-ds/scripts render:component -- Alert
+// Source: pipeline due contratti → istantanea → render (contract alert@1, penpotComponentId seed-alert-2-16, snapshotHash e2cb5e617929).
+// Regenerate with: pnpm --filter @penpot-ds/scripts render -- Alert
 
 import { cn } from "@penpot-ds/ui/lib/utils";
-import { cva } from "class-variance-authority";
 import * as React from "react";
-
-const alertVariants = cva(
-  "relative grid w-full grid-cols-[0_1fr] items-start gap-y-0.5 has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-[>svg]:gap-x-3 [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current bg-card pb-4 pl-4 pr-4 pt-4 rounded-lg",
-  {
-    variants: {
-      status: {
-        info: "",
-        success: "",
-        warning: "",
-        error: "",
-      },
-    },
-    defaultVariants: {
-      status: "info",
-    },
-  },
-);
-
-const alertHeadingVariants = cva(
-  "col-start-2 line-clamp-1 min-h-4 font-semibold text-info text-sm tracking-none",
-  {
-    variants: {
-      status: {
-        info: "",
-        success: "text-success",
-        warning: "text-warning",
-        error: "text-destructive",
-      },
-    },
-    defaultVariants: {
-      status: "info",
-    },
-  },
-);
-
-const alertDescriptionVariants = cva(
-  "col-start-2 grid justify-items-start gap-1 [&_p]:leading-relaxed font-regular text-card-foreground text-sm tracking-none",
-  {
-    variants: {
-      status: {
-        info: "",
-        success: "text-card-foreground",
-        warning: "text-muted-foreground",
-        error: "text-card-foreground",
-      },
-    },
-    defaultVariants: {
-      status: "info",
-    },
-  },
-);
 
 const alertRoles = { info: "status", success: "status", warning: "alert", error: "alert" } as const;
 
@@ -63,19 +11,33 @@ export type AlertProps = React.ComponentProps<"div"> & {
   status?: "info" | "success" | "warning" | "error";
   heading?: string;
   description?: string;
-}
+};
 
-function Alert({ className, status, heading, description, ...props }: AlertProps) {
+const headingVariantClasses = {
+  "error": "font-semibold text-destructive text-sm tracking-none",
+  "info": "font-semibold text-info text-sm tracking-none",
+  "success": "font-semibold text-sm text-success tracking-none",
+  "warning": "font-semibold text-sm text-warning tracking-none",
+} as const;
+
+const descriptionVariantClasses = {
+  "error": "font-regular text-card-foreground text-sm tracking-none",
+  "info": "font-regular text-card-foreground text-sm tracking-none",
+  "success": "font-regular text-card-foreground text-sm tracking-none",
+  "warning": "font-regular text-muted-foreground text-sm tracking-none",
+} as const;
+
+function Alert({ className, status = "info", heading = "", description = "", ...props }: AlertProps) {
   return (
-    <div data-slot="alert" className={cn(alertVariants({ status }), className)} role={alertRoles[status ?? "info"]} {...props}>
-      <div data-slot="alert-heading" className={cn(alertHeadingVariants({ status }))}>
+    <div data-slot="alert" className={cn("bg-card flex flex-col items-start pb-4 pl-4 pr-4 pt-4 rounded-lg", className)} role={alertRoles[status]} {...props}>
+      <div data-slot="alert-heading" className={headingVariantClasses[status]}>
         {heading}
       </div>
-      <div data-slot="alert-description" className={cn(alertDescriptionVariants({ status }))}>
+      <div data-slot="alert-description" className={descriptionVariantClasses[status]}>
         {description}
       </div>
     </div>
   );
 }
 
-export { Alert, alertVariants, alertHeadingVariants, alertDescriptionVariants };
+export { Alert };

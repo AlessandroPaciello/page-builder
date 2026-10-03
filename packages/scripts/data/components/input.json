@@ -1,0 +1,72 @@
+{
+  "contract": "input@1",
+  "provenance": {
+    "penpotComponentId": "seed-input-2-16",
+    "readAt": "2026-10-03T16:53:13.449Z",
+    "snapshotHash": "5b6d690b0623"
+  },
+  "cells": {
+    "state=default": {
+      "root": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md",
+        "fill": "color.background",
+        "paddingBottom": "spacing.2",
+        "paddingLeft": "spacing.3",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.2",
+        "strokeColor": "color.border",
+        "strokeWidth": "border-width.default"
+      }
+    },
+    "state=disabled": {
+      "root": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md",
+        "fill": "color.background",
+        "opacity": "opacity.disabled",
+        "paddingBottom": "spacing.2",
+        "paddingLeft": "spacing.3",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.2",
+        "strokeColor": "color.border",
+        "strokeWidth": "border-width.default"
+      }
+    },
+    "state=error": {
+      "root": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md",
+        "fill": "color.background",
+        "paddingBottom": "spacing.2",
+        "paddingLeft": "spacing.3",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.2",
+        "strokeColor": "color.destructive",
+        "strokeWidth": "border-width.default"
+      }
+    },
+    "state=focus": {
+      "root": {
+        "borderRadiusBottomLeft": "radius.md",
+        "borderRadiusBottomRight": "radius.md",
+        "borderRadiusTopLeft": "radius.md",
+        "borderRadiusTopRight": "radius.md",
+        "fill": "color.background",
+        "paddingBottom": "spacing.2",
+        "paddingLeft": "spacing.3",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.2",
+        "shadow": "shadow.ring",
+        "strokeColor": "color.ring",
+        "strokeWidth": "border-width.default"
+      }
+    }
+  }
+}

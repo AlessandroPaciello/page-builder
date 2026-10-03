@@ -100,14 +100,14 @@ describe("checkBoundaries: verde", () => {
     expect(report.violations.some((v) => v.specifier === "@penpot-ds/ui" && v.file === join("data", "bases", "x", "x.tsx")), JSON.stringify(report)).toBe(true);
   });
 
-  it("il package reale packages/scripts è verde", () => {
+  it("il package reale packages/scripts è verde (pipeline unica, senza basi v1)", () => {
     const report = checkBoundaries({ packageRoot: REAL_PACKAGE_ROOT });
     expect(report.violations).toEqual([]);
     expect(report.scanErrors).toEqual([]);
     expect(report.scannedFileCount).toBeGreaterThan(0);
-    // Anche le basi in data/bases/ sono scansionate.
+    // Senza data/bases/ (v1 cancellata, Story 2.16): solo src/ viene scansionato.
     const srcCount = readdirSync(join(REAL_PACKAGE_ROOT, "src"), { recursive: true }).filter((entry) => /\.tsx?$/.test(String(entry))).length;
-    expect(report.scannedFileCount).toBeGreaterThan(srcCount);
+    expect(report.scannedFileCount).toBe(srcCount);
   });
 });
 

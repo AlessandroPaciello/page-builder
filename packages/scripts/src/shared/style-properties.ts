@@ -322,9 +322,9 @@ export const STYLE_PROPERTIES = {
   // ---- quello delle chiavi di `style` nelle fixture v1 (byte-identiche).
   layoutDir: {
     read: { source: "flexLayout", field: "dir" },
-    type: { kind: "keyword", values: ["row", "column"], default: "row" },
+    type: { kind: "keyword", values: ["none", "row", "column"], default: "none" },
     status: SUPPORTED,
-    emitter: { emit: "keywordClass", classes: { row: "flex flex-row", column: "flex flex-col" } },
+    emitter: { emit: "keywordClass", classes: { none: "", row: "flex flex-row", column: "flex flex-col" } },
   },
   layoutAlign: {
     read: { source: "flexLayout", field: "alignItems" },

@@ -9,8 +9,8 @@ import { accordion } from "./sections/accordion";
 
 /**
  * Unico punto che elenca i contratti: classifier, fingerprint e test leggono
- * da qui. La pipeline v1 filtra con `hasLegacyExtension`: un contratto
- * ridotto (`product-card`) è nel fingerprint ma invisibile alla v1.
+ * da qui. Tutti i contratti sono ridotti (v2, solo assi `option`): stanno
+ * interamente nel fingerprint, senza estensioni fuori fingerprint.
  */
 export const COMPONENT_CONTRACTS = {
   [badge.name]: badge,

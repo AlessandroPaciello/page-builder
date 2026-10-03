@@ -11,8 +11,6 @@ export const alert = defineContract({
   name: "alert",
   version: 1,
   axes: [{ name: "status", type: "option", values: ["info", "success", "warning", "error"], default: "info" }],
-  parts: ["root", "heading", "description"],
-  partRoles: { root: "surface", heading: "text", description: "text" },
   fields: {
     heading: { schema: z.string(), kind: "content" },
     description: { schema: z.string(), kind: "content" },

@@ -1,0 +1,136 @@
+{
+  "contract": "badge@1",
+  "provenance": {
+    "penpotComponentId": "seed-badge-2-16",
+    "readAt": "2026-10-03T16:53:07.557Z",
+    "snapshotHash": "dbb9e4da76a2"
+  },
+  "cells": {
+    "variant=default|size=md": {
+      "label": {
+        "fill": "color.primary-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "root": {
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "fill": "color.primary",
+        "layoutAlign": "center",
+        "layoutDir": "row",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.3",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.1"
+      }
+    },
+    "variant=default|size=sm": {
+      "label": {
+        "fill": "color.primary-foreground",
+        "fontSize": "text.xs",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "root": {
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "fill": "color.primary",
+        "layoutAlign": "center",
+        "layoutDir": "row",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.2",
+        "paddingRight": "spacing.2",
+        "paddingTop": "spacing.1"
+      }
+    },
+    "variant=destructive|size=md": {
+      "label": {
+        "fill": "color.destructive-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "root": {
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "fill": "color.destructive",
+        "layoutAlign": "center",
+        "layoutDir": "row",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.3",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.1"
+      }
+    },
+    "variant=destructive|size=sm": {
+      "label": {
+        "fill": "color.destructive-foreground",
+        "fontSize": "text.xs",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "root": {
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "fill": "color.destructive",
+        "layoutAlign": "center",
+        "layoutDir": "row",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.2",
+        "paddingRight": "spacing.2",
+        "paddingTop": "spacing.1"
+      }
+    },
+    "variant=secondary|size=md": {
+      "label": {
+        "fill": "color.secondary-foreground",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "root": {
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "fill": "color.secondary",
+        "layoutAlign": "center",
+        "layoutDir": "row",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.3",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.1"
+      }
+    },
+    "variant=secondary|size=sm": {
+      "label": {
+        "fill": "color.secondary-foreground",
+        "fontSize": "text.xs",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.none"
+      },
+      "root": {
+        "borderRadiusBottomLeft": "radius.full",
+        "borderRadiusBottomRight": "radius.full",
+        "borderRadiusTopLeft": "radius.full",
+        "borderRadiusTopRight": "radius.full",
+        "fill": "color.secondary",
+        "layoutAlign": "center",
+        "layoutDir": "row",
+        "paddingBottom": "spacing.1",
+        "paddingLeft": "spacing.2",
+        "paddingRight": "spacing.2",
+        "paddingTop": "spacing.1"
+      }
+    }
+  }
+}

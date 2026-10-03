@@ -17,7 +17,7 @@ l'istantanea; `render`/`gates` leggono gli artefatti committati.
 ## 2. Riempimento via `execute_code` (live)
 
 I passi sotto sono gli stessi che `library add ProductCard` traduce in
-`execute_code` (`src/v2/library-writer.ts`, una operazione per chiamata).
+`execute_code` (`src/library-writer.ts`, una operazione per chiamata).
 Rieseguirli in Penpot equivale a ricreare il disegno da zero; un errore live
 nomina l'operazione fallita.
 
@@ -26,7 +26,7 @@ nomina l'operazione fallita.
 2. `library add ProductCard` — crea le 6 board
    (`ProductCard promo=none|hover=off`, …, `promo=discount|hover=on`) con le
    parti e i token del registro (`PRODUCT_CARD_TOKENS` in
-   `src/v2/library-plan.ts`): `surface` con fill/radius/padding/gap, `text`
+   `src/library-plan.ts`): `surface` con fill/radius/padding/gap, `text`
    con fill/tipografia, `image` solo raggio (nessun `fill`: il contenuto
    arriva dal field `image`).
 3. Verifica in Penpot, cella per cella:

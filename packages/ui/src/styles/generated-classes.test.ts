@@ -53,7 +53,7 @@ function cvaCalls(source: string): string[] {
   }
 }
 
-/** Classi di un file generato: stringhe di cva (varianti sì, chiavi e `defaultVariants` no) e `className` letterali. */
+/** Classi di un file generato: stringhe di cva (v1, varianti sì, chiavi e `defaultVariants` no), lookup v2 `*VariantClasses` (Story 2.16, senza cva) e `className` letterali. */
 export function classesOf(source: string): string[] {
   const lists: string[] = [];
   for (const call of cvaCalls(source)) {
@@ -61,6 +61,11 @@ export function classesOf(source: string): string[] {
     for (const match of withoutDefaults.matchAll(/"((?:[^"\\]|\\.)*)"(\s*:)?/g)) {
       if (match[2] === undefined) lists.push(match[1]!);
     }
+  }
+  // Lookup v2 senza cva (Story 2.16): `const xVariantClasses = { "opt": "classi", ... }`.
+  for (const block of source.matchAll(/VariantClasses\s*=\s*\{([^}]*)\}/g)) {
+    for (const match of block[1]!.matchAll(/"\s*:\s*"([^"]*)"/g)) lists.push(match[1]!);
+    for (const match of block[1]!.matchAll(/:\s*"([^"]*)"/g)) lists.push(match[1]!);
   }
   for (const match of source.matchAll(/className="([^"]*)"/g)) lists.push(match[1]!);
   for (const match of source.matchAll(/\bcn\(\s*"([^"]*)"/g)) lists.push(match[1]!);
