@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cantiere Vivo — Brainstorm Penpot × React · 3 ott 2026</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --carta:#f4efe4; --inchiostro:#16130e; --ruggine:#c9501f; --ottone:#b98a1f;
+    --salvia:#5d7a5e; --notte:#12100c; --notte2:#1c1813;
+    --blu:#1e4fd8; --rosa:#e34d7a;
+  }
+  html{scroll-behavior:smooth}
+  body{background:var(--carta);color:var(--inchiostro);font-family:Georgia,'Times New Roman',serif;line-height:1.6;overflow-x:hidden}
+  .mono{font-family:'Courier New',Courier,monospace}
+  /* ---------- HERO : cantiere / blueprint ---------- */
+  header.hero{min-height:96vh;position:relative;display:flex;flex-direction:column;justify-content:center;padding:6rem 6vw 4rem;
+    background:
+      radial-gradient(circle at 80% 15%, rgba(185,138,31,.25), transparent 40%),
+      radial-gradient(circle at 10% 85%, rgba(201,80,31,.18), transparent 40%),
+      repeating-linear-gradient(0deg, transparent 0 39px, rgba(22,19,14,.08) 39px 40px),
+      repeating-linear-gradient(90deg, transparent 0 39px, rgba(22,19,14,.08) 39px 40px),
+      #efe7d3;}
+  .timbro{display:inline-block;border:2px solid var(--ruggine);color:var(--ruggine);padding:.25rem .9rem;transform:rotate(-3deg);
+    font-family:'Courier New',monospace;font-size:.8rem;letter-spacing:.25em;text-transform:uppercase;margin-bottom:1.2rem}
+  h1{font-size:clamp(2.6rem,7vw,5.6rem);line-height:.95;font-weight:900;letter-spacing:-.02em;max-width:14ch}
+  h1 em{font-style:italic;color:var(--ruggine)}
+  .sottotitolo{margin-top:1.2rem;max-width:60ch;font-size:1.15rem;font-style:italic}
+  .meta{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.8rem;font-family:'Courier New',monospace;font-size:.8rem}
+  .meta span{border:1px solid var(--inchiostro);border-radius:999px;padding:.35rem .9rem;background:#fff8}
+  .meta b{color:var(--ruggine)}
+  .filo{margin-top:2.2rem;border-left:3px solid var(--inchiostro);padding-left:1.2rem;max-width:62ch}
+  .filo p{font-size:1.02rem}
+  .indice{margin-top:2rem;display:flex;flex-wrap:wrap;gap:.5rem}
+  .indice a{text-decoration:none;color:var(--carta);background:var(--inchiostro);padding:.55rem 1rem;border-radius:999px;
+    font-family:'Courier New',monospace;font-size:.78rem;letter-spacing:.04em;transition:.2s}
+  .indice a:hover{background:var(--ruggine);transform:translateY(-2px)}
+  .gru{position:absolute;right:4vw;top:2rem;font-family:'Courier New',monospace;font-size:.7rem;opacity:.55;text-align:right;line-height:1.5}
+  .scroll-hint{position:absolute;bottom:1.2rem;left:50%;transform:translateX(-50%);font-family:'Courier New',monospace;font-size:.75rem;letter-spacing:.3em;animation:bob 2s infinite}
+  @keyframes bob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,8px)}}
+  section{padding:5rem 6vw;position:relative}
+  .kicker{font-family:'Courier New',monospace;font-size:.78rem;letter-spacing:.3em;text-transform:uppercase;margin-bottom:.6rem;display:flex;align-items:center;gap:.7rem}
+  .kicker::after{content:"";height:1px;flex:1;background:currentColor;opacity:.35}
+  h2{font-size:clamp(1.9rem,4.5vw,3.2rem);line-height:1.02;letter-spacing:-.01em;max-width:20ch}
+  h2 i{font-weight:400}
+  .lede{margin-top:.8rem;max-width:64ch;font-style:italic;opacity:.9}
+  /* ---------- 1 ROUND ROBIN : orbitale ---------- */
+  #round{background:#16130e;color:#f4efe4;overflow:hidden}
+  #round h2 em{color:#f0b429;font-style:italic}
+  .orbita-wrap{display:grid;grid-template-columns:1fr 1fr;gap:2.5rem;margin-top:2.5rem;align-items:start}
+  @media(max-width:900px){.orbita-wrap{grid-template-columns:1fr}}
+  .piatto{position:relative;aspect-ratio:1;max-width:520px;margin:0 auto;width:100%;border:1px dashed #ffffff33;border-radius:50%}
+  .piatto .centro{position:absolute;inset:31%;border-radius:50%;background:#f0b429;color:#16130e;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:1rem;font-family:'Courier New',monospace}
+  .centro .giro{font-size:2.2rem;font-weight:900;line-height:1}
+  .centro small{font-size:.65rem;letter-spacing:.2em}
+  .sat{position:absolute;width:23%;aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;
+    font-family:'Courier New',monospace;font-size:.62rem;line-height:1.25;padding:.5rem;cursor:pointer;border:2px solid transparent;transition:.25s}
+  .sat.utente{background:#f4efe4;color:#16130e;border-color:#f0b429}
+  .sat.coach{background:#c9501f;color:#fff;border-color:#fff}
+  .sat b{display:block;font-size:.85rem}
+  .sat.attivo{transform:scale(1.15);box-shadow:0 0 0 4px #f0b42988, 0 12px 30px #0008;z-index:3}
+  .passi{display:flex;flex-direction:column;gap:.7rem}
+  .passo{border:1px solid #ffffff2a;border-radius:14px;padding:.9rem 1.1rem;background:#ffffff08;cursor:pointer;transition:.2s}
+  .passo:hover{background:#ffffff12}
+  .passo.aperta{background:#f4efe4;color:#16130e}
+  .passo .chi{font-family:'Courier New',monospace;font-size:.68rem;letter-spacing:.2em;text-transform:uppercase}
+  .passo.utente .chi{color:var(--ottone)} .passo.coach .chi{color:var(--ruggine)}
+  .passo.aperta .chi{color:inherit}
+  .passo .dett{display:none;margin-top:.4rem;font-size:.95rem}
+  .passo.aperta .dett{display:block}
+  .passo strong.titolo{display:block;font-size:1.02rem;margin:.15rem 0}
+  /* ---------- 2 ROLE PLAYING : palcoscenico ---------- */
+  #ruoli{background:linear-gradient(180deg,#2b0f14,#12100c 70%);color:#f7e8d5}
+  #ruoli h2 em{color:#ff9db4;font-style:italic}
+  .sipario{margin-top:2rem;border:3px solid #b98a1f;border-radius:18px;overflow:hidden;background:#1c1813}
+  .luci{display:flex;gap:.4rem;justify-content:center;padding:.7rem;background:#0c0a08}
+  .luci i{width:10px;height:10px;border-radius:50%;background:#f0b429;box-shadow:0 0 12px #f0b429;animation:lamp 1.6s infinite alternate}
+  .luci i:nth-child(2){animation-delay:.3s;background:#ff9db4;box-shadow:0 0 12px #ff9db4}
+  .luci i:nth-child(3){animation-delay:.6s;background:#7fd0a0;box-shadow:0 0 12px #7fd0a0}
+  @keyframes lamp{to{opacity:.35}}
+  .cast{display:flex;flex-wrap:wrap;gap:.6rem;padding:1rem 1.2rem}
+  .cast button{flex:1;min-width:180px;border:1px solid #ffffff33;background:transparent;color:#f7e8d5;border-radius:999px;padding:.8rem 1rem;
+    font-family:Georgia,serif;font-size:1rem;cursor:pointer;transition:.2s}
+  .cast button.on{background:#f0b429;color:#16130e;font-weight:700;border-color:#f0b429}
+  .palco{padding:1.5rem 1.6rem 2rem;min-height:300px}
+  .battuta{display:none;animation:entra .45s ease}
+  .battuta.on{display:grid;grid-template-columns:120px 1fr;gap:1.2rem;align-items:start}
+  @keyframes entra{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @media(max-width:640px){.battuta.on{grid-template-columns:1fr}}
+  .maschera{width:120px;height:140px;border-radius:60px 60px 18px 18px;background:#f4efe4;color:#16130e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:2.6rem}
+  .maschera small{font-family:'Courier New',monospace;font-size:.6rem;letter-spacing:.15em;margin-top:.3rem}
+  .copione{background:#fffdf4;color:#16130e;border-radius:12px;padding:1.1rem 1.3rem;position:relative}
+  .copione::before{content:"“";position:absolute;left:-.4rem;top:-1.4rem;font-size:4rem;color:#b98a1f}
+  .copione ul{margin:.6rem 0 .2rem 1.1rem}
+  .copione li{margin:.3rem 0}
+  .tag{display:inline-block;font-family:'Courier New',monospace;font-size:.65rem;letter-spacing:.15em;background:#16130e;color:#f0b429;border-radius:999px;padding:.2rem .7rem;margin-right:.4rem}
+  .tag.paura{background:#c9501f;color:#fff}
+  .tag.svolta{background:#5d7a5e;color:#fff}
+  /* ---------- 3 FIRST PRINCIPLES : stratigrafia ---------- */
+  #principi{background:#e9e0c9}
+  #principi h2 em{color:var(--salvia);font-style:italic}
+  .scavo{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:2rem;align-items:start}
+  @media(max-width:900px){.scavo{grid-template-columns:1fr}}
+  .strati{border:2px solid var(--inchiostro);border-radius:16px;overflow:hidden;background:#fffdf4}
+  .strato{padding:1rem 1.2rem;border-bottom:2px dashed #16130e33;transition:.5s;position:relative}
+  .strato:last-child{border-bottom:none}
+  .strato .nome{font-family:'Courier New',monospace;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;opacity:.6}
+  .strato strong{font-size:1.15rem}
+  .strato p{font-size:.95rem}
+  .strato.da-buttare.rimosso{transform:translateX(110%);opacity:0;height:0;padding:0;overflow:hidden;border:none}
+  .strato.nocciolo{background:#16130e;color:#f4efe4}
+  .strato.nocciolo .nome{color:#9fe0b3;opacity:1}
+  .pannello-comandi{background:#16130e;color:#f4efe4;border-radius:16px;padding:1.5rem}
+  .pannello-comandi button{background:#c9501f;color:#fff;border:none;border-radius:999px;padding:.8rem 1.4rem;font-size:1rem;cursor:pointer;font-family:Georgia,serif;margin-right:.6rem;margin-top:.6rem}
+  .pannello-comandi button.second{background:transparent;border:1px solid #fff}
+  .live-demo{margin-top:1rem;background:#0c0a08;border-radius:12px;padding:1rem;font-family:'Courier New',monospace;font-size:.82rem;line-height:1.6;min-height:190px}
+  .live-demo .ok{color:#9fe0b3}.live-demo .warn{color:#f0b429}.live-demo .dim{color:#888}
+  .cursor{display:inline-block;width:.6em;height:1em;background:#9fe0b3;vertical-align:-2px;animation:blink 1s infinite}
+  @keyframes blink{50%{opacity:0}}
+  /* ---------- 4 REVERSE : laboratorio del sabotaggio ---------- */
+  #reverse{background:#0d0d12;color:#e8e6f0;position:relative;overflow:hidden}
+  #reverse::before{content:"SABOTAGGIO";position:absolute;top:2rem;right:-2rem;font-size:6rem;font-weight:900;opacity:.06;transform:rotate(8deg);letter-spacing:.05em}
+  #reverse h2 em{color:#8b7bff;font-style:italic}
+  .interruttore{display:flex;align-items:center;gap:1rem;margin-top:1.4rem;font-family:'Courier New',monospace;font-size:.85rem}
+  .switch{width:84px;height:38px;border-radius:999px;background:#c9501f;position:relative;cursor:pointer;border:2px solid #fff3;transition:.3s;flex-shrink:0}
+  .switch::after{content:"☠";position:absolute;top:2px;left:4px;width:30px;height:30px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;transition:.3s}
+  body.antidoto .switch, #reverse.antidoto .switch{background:#3fae6a}
+  body.antidoto .switch::after, #reverse.antidoto .switch::after{left:46px;content:"✚"}
+  .schede-sabotaggio{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin-top:1.6rem}
+  .sab{border:1px solid #ff5d5d66;border-radius:14px;padding:1.1rem;background:linear-gradient(180deg,#2a1214,#171318);position:relative;overflow:hidden}
+  .sab::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(-45deg,transparent 0 10px,#ff5d5d11 10px 20px);pointer-events:none}
+  .sab h3{font-family:'Courier New',monospace;font-size:.8rem;letter-spacing:.15em;color:#ff8b8b}
+  .sab p{margin:.4rem 0 .6rem}
+  .sab .ant{border-top:1px dashed #ffffff33;padding-top:.6rem;font-size:.92rem;display:none}
+  #reverse.antidoto .sab{border-color:#3fae6a88;background:linear-gradient(180deg,#12281a,#121410)}
+  #reverse.antidoto .sab h3{color:#9fe0b3}
+  #reverse.antidoto .sab .ant{display:block;animation:entra .4s ease}
+  #reverse.antidoto .sab .veleno{opacity:.45;text-decoration:line-through}
+  .glitch{font-family:'Courier New',monospace;text-shadow:2px 0 #ff004c, -2px 0 #00e5ff}
+  /* ---------- 5 FAILURE : bacheca del detective ---------- */
+  #failure{background:#f7f1e2;background-image:radial-gradient(#16130e22 1px, transparent 1px);background-size:22px 22px}
+  #failure h2 em{color:var(--blu);font-style:italic}
+  .bacheca{margin-top:2rem;background:#fdfaf0;border:2px solid var(--inchiostro);border-radius:6px;padding:1.6rem;position:relative;box-shadow:8px 8px 0 #16130e;transform:rotate(-.4deg)}
+  .puntina{position:absolute;width:16px;height:16px;border-radius:50%;background:var(--ruggine);box-shadow:inset -2px -2px 0 #0006;top:-8px}
+  .triangolo{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:.6rem;align-items:stretch;margin-top:1.2rem}
+  @media(max-width:800px){.triangolo{grid-template-columns:1fr}.freccia{transform:rotate(90deg);text-align:center}}
+  .foto-card{border:1px solid var(--inchiostro);background:#fff;border-radius:8px;padding:.9rem;font-size:.9rem}
+  .foto-card.rotta{border:2px dashed var(--ruggine);background:#fff5ef}
+  .foto-card.fedele{border:2px solid var(--salvia);background:#f0f7f0}
+  .foto-card h4{font-family:'Courier New',monospace;font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;margin-bottom:.4rem}
+  .mini-mock{border:1px solid #16130e33;border-radius:6px;padding:.6rem;margin:.5rem 0;background:#fafafa;font-family:'Courier New',monospace;font-size:.7rem;line-height:1.5}
+  .mini-mock .barra{height:8px;border-radius:99px;background:#ddd;margin:.3rem 0}
+  .freccia{align-self:center;font-size:1.6rem;font-family:'Courier New',monospace}
+  .nastro{font-family:'Courier New',monospace;font-size:.7rem;background:#f0b429;padding:.2rem .7rem;display:inline-block;transform:rotate(-2deg);margin-bottom:.4rem}
+  .verdetto{margin-top:1.2rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  @media(max-width:700px){.verdetto{grid-template-columns:1fr}}
+  .verdetto div{border-radius:10px;padding:1rem 1.2rem}
+  .verdetto .v1{background:#16130e;color:#f4efe4}
+  .verdetto .v2{background:#1e4fd8;color:#fff}
+  /* ---------- SINTESI : climax ---------- */
+  #sintesi{background:radial-gradient(ellipse at 50% 0%, #3a2c10 0%, #16130e 55%, #0c0a08 100%);color:#f4efe4;text-align:center;overflow:hidden}
+  #sintesi h2{max-width:24ch;margin:0 auto}
+  #sintesi h2 em{color:#f0b429;font-style:italic}
+  .pilastri{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:1rem;margin:2.5rem auto 0;max-width:1100px;align-items:end}
+  @media(max-width:860px){.pilastri{grid-template-columns:1fr}}
+  .pilastro{border-radius:18px 18px 8px 8px;padding:1.6rem 1.3rem;background:#ffffff0d;border:1px solid #ffffff22}
+  .pilastro.must{background:linear-gradient(180deg,#f0b429,#c9501f);color:#16130e;border:none;transform:scale(1.06);box-shadow:0 20px 60px #c9501f66;padding:2.2rem 1.5rem;position:relative}
+  .pilastro.must::before{content:"MUST ASSOLUTO ★";position:absolute;top:-14px;left:50%;transform:translateX(-50%) rotate(-2deg);background:#16130e;color:#f0b429;font-family:'Courier New',monospace;font-size:.65rem;letter-spacing:.2em;padding:.3rem .9rem;border-radius:999px;white-space:nowrap}
+  .pilastro h3{font-size:1.3rem;line-height:1.15}
+  .pilastro p{font-size:.93rem;margin-top:.5rem}
+  .pilastro .lettera{font-family:'Courier New',monospace;font-size:3rem;font-weight:900;opacity:.9;line-height:1}
+  .confine{margin:2.5rem auto 0;max-width:900px;border:1px solid #f0b42966;border-radius:14px;padding:1.3rem;display:grid;grid-template-columns:1fr auto 1fr;gap:1rem;align-items:center;background:#f0b4290d}
+  @media(max-width:700px){.confine{grid-template-columns:1fr}}
+  .confine .muro{font-size:2rem}
+  .confine strong{font-family:'Courier New',monospace;letter-spacing:.1em}
+  .card-guida{margin:2.5rem auto 0;max-width:640px;background:#f4efe4;color:#16130e;border-radius:16px;padding:1.8rem;transform:rotate(.6deg);box-shadow:0 20px 60px #000a;text-align:left}
+  .card-guida h3{font-size:1.4rem}
+  .sigillo{margin:2.5rem auto 0;display:inline-block;border:2px solid #f0b429;color:#f0b429;border-radius:999px;padding:.6rem 1.6rem;font-family:'Courier New',monospace;letter-spacing:.25em;font-size:.75rem;transform:rotate(-2deg)}
+  footer{padding:2.5rem 6vw;background:#0c0a08;color:#8a8474;font-family:'Courier New',monospace;font-size:.72rem;display:flex;flex-wrap:wrap;gap:1rem;justify-content:space-between}
+  .top{position:fixed;right:1rem;bottom:1rem;background:#16130e;color:#f4efe4;border:1px solid #f0b429;border-radius:999px;width:46px;height:46px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:1.2rem;z-index:50}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="gru">PENPOT × REACT<br>SESSIONE PARTNER · MEMLOG<br>2026-10-03 · ORE 13:52</div>
+  <span class="timbro">keepsake · brainstorming nº 1</span>
+  <h1>Il cantiere <em>vivo:</em> estrarre &amp; costruire senza gabbie.</h1>
+  <p class="sottotitolo">Un pomeriggio a smontare lo «script rigido» che vincolava il design — e a reimmaginare un attrezzo che <b>legge, propone, disegna</b> invece di bloccare. Cinque tecniche, un'unica direzione: dal disegno al componente, in diretta.</p>
+  <div class="meta">
+    <span>tema · <b>sistema nuovo di estrazione e costruzione Penpot→React</b></span>
+    <span>obiettivo · <b>superare rigidità · manutenibile · non vincola il design</b></span>
+    <span>modo · <b>partner</b></span>
+    <span>stato · <b>complete ✓</b></span>
+  </div>
+  <div class="filo">
+    <p><b>La scintilla (voce tua):</b> «il sistema è troppo rigido, gli script sono poco manutenibili e vincolano il design — ripartiamo da zero». Da lì: uno strumento che <b>costruisce da zero o da headless (Base&nbsp;UI)</b>, <b>applica regole</b> come token e semantica, e <b>valuta se ci sono i requisiti</b> per estrarre. Il coach ha rilanciato ogni volta con un <i>yes-and</i>: e se lo strumento scegliesse da solo? e se proponesse fix? e se disegnasse lui ciò che manca?</p>
+  </div>
+  <nav class="indice">
+    <a href="#round">① Round Robin</a>
+    <a href="#ruoli">② Role Playing</a>
+    <a href="#principi">③ First Principles</a>
+    <a href="#reverse">④ Reverse</a>
+    <a href="#failure">⑤ Failure · la card</a>
+    <a href="#sintesi">★ Sintesi</a>
+  </nav>
+  <div class="scroll-hint">▼ SCORRI IL CANTIERE ▼</div>
+</header>
+
+<!-- ============ 1 ============ -->
+<section id="round">
+  <div class="kicker">Tecnica ① · Brain Writing Round Robin — il ping-pong delle idee</div>
+  <h2>Un tavolo rotondo <em>che gira:</em> tu servi, il coach rilancia.</h2>
+  <p class="lede">Batch da 5, in modalità Creative Partner. A sinistra l'orbita dei 5 round — tocca un satellite per rileggere il passaggio. A destra il verbale: clicca per aprire il <i>yes-and</i> del coach. Legenda: <b style="color:#f0b429">chiaro = tua idea</b>, <b style="color:#ff9d7a">ruggine = rilancio coach</b>.</p>
+  <div class="orbita-wrap">
+    <div class="piatto" id="piatto">
+      <div class="centro"><small>ROUND</small><span class="giro" id="giro">1/5</span><small>tocca i satelliti</small></div>
+    </div>
+    <div class="passi" id="passi">
+      <div class="passo utente" data-r="0"><div class="chi">① tu · idea madre</div><strong class="titolo">Costruire da zero o da headless?</strong><div class="dett">Lo strumento costruisce componenti React <b>da zero oppure da una libreria headless tipo Base UI</b>, partendo dal design Penpot.<br><span class="mono" style="font-size:.8rem">→ yes-and coach: il tool <b>sceglie da solo</b> da-zero vs headless leggendo il segnale del design via MCP.</span></div></div>
+      <div class="passo utente" data-r="1"><div class="chi">② tu · regole</div><strong class="titolo">Regole come token e semantica</strong><div class="dett">Lo strumento <b>applica regole</b> sui componenti React: token, costruzioni semantiche.<br><span class="mono" style="font-size:.8rem">→ yes-and coach: token e semantica <b>letti da Penpot come contratto vivo</b>; se qualcosa non torna, propone il fix invece di bloccare.</span></div></div>
+      <div class="passo utente" data-r="2"><div class="chi">③ tu · gate requisiti</div><strong class="titolo">Ci sono i requisiti per estrarre?</strong><div class="dett">Lo strumento <b>valuta se ci sono i requisiti</b> per estrarre in componente.<br><span class="mono" style="font-size:.8rem">→ yes-and coach: se i requisiti mancano, <b>li disegna lui in Penpot via MCP</b> invece di fallire.</span></div></div>
+      <div class="passo utente" data-r="3"><div class="chi">④ tu · configurabilità</div><strong class="titolo">Base UI configurabile, o suggerita</strong><div class="dett">La semantica headless + token è <b>configurabile</b>; se manca configurazione, <b>lo strumento la suggerisce</b>.<br><span class="mono" style="font-size:.8rem">→ yes-and coach: <b>profili headless+token con default ragionevoli</b>; propone il setup mancante leggendo il design via MCP.</span></div></div>
+      <div class="passo utente" data-r="4"><div class="chi">⑤ tu · check &amp; diff</div><strong class="titolo">Check iniziale + diff token + auto-fix</strong><div class="dett">Check iniziale di config headless e semantica token prima di estrarre → verifica esistenza definizioni → <b>confronta i token</b> → se non coincidono, <b>propone lui la correzione</b>.<br><span class="mono" style="font-size:.8rem">→ yes-and coach: scansiona <b>Penpot via MCP + repo</b>, propone setup applicabile in un colpo; diff Penpot-vs-codice con proposta di allineamento, mai errore secco.</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="ruoli">
+  <div class="kicker">Tecnica ② · Role Playing — tre voci, un palcoscenico</div>
+  <h2>Tre maschere <em>in scena:</em> designer, dev, manutentori.</h2>
+  <p class="lede">Scegli una maschera dal cast: il copione mostra cosa ha detto quel ruolo — e il rilancio <i>yes-and</i> del coach. Il filo rosso: livelli che si sbloccano, e un confine netto a quota organismi.</p>
+  <div class="sipario">
+    <div class="luci"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="cast">
+      <button data-palco="d" class="on">◉ Designer — la roadmap a livelli</button>
+      <button data-palco="r">◉ Dev React — il confine Puck</button>
+      <button data-palco="m">◉ Manutentori — le due paure</button>
+    </div>
+    <div class="palco">
+      <div class="battuta on" id="palco-d">
+        <div class="maschera">✏️<small>DESIGNER</small></div>
+        <div class="copione">
+          <span class="tag">fase 1</span><span class="tag">fase 2</span><span class="tag svolta">svolta coach</span>
+          <p><b>Voce designer:</b> «Fase 1 — costruisco su Penpot la <b>struttura token basilare: palette ecc.</b> Fase 2 — disegno i <b>componenti basilari: button, switch, checkbox, select… fino a card, tabelle, header, footer, sidebar, dashboard, hero, carousel</b>.»</p>
+          <ul><li><b>Yes-and coach:</b> roadmap a livelli — <b>token → atomi → organismi</b>; ogni livello sblocca l'estrazione del successivo via MCP.</li></ul>
+        </div>
+      </div>
+      <div class="battuta" id="palco-r">
+        <div class="maschera">⚛️<small>DEV REACT</small></div>
+        <div class="copione">
+          <span class="tag">atomic design</span><span class="tag svolta">svolta coach</span>
+          <p><b>Voce dev:</b> «Estraggo <b>token, poi atomi, poi organismi</b> in atomic design — e mi fermo: <b>stop agli organismi, perché template e pagine si fanno con Puck</b>.»</p>
+          <ul><li><b>Yes-and coach:</b> confine netto — <b>Penpot fino agli organismi, Puck per template e pagine</b>; tra i due, un contratto fatto di token.</li></ul>
+        </div>
+      </div>
+      <div class="battuta" id="palco-m">
+        <div class="maschera">🛠️<small>MANUTENTORI ×2</small></div>
+        <div class="copione">
+          <span class="tag paura">paura designer</span><span class="tag paura">paura dev</span>
+          <p><b>Manutentore-designer teme:</b> «il progetto cresce e <b>troppe regole</b> lo rendono difficile.»</p>
+          <p><b>Manutentore-dev teme:</b> «il <b>design troppo complesso</b>, alla lunga difficile da mantenere.»</p>
+          <ul><li>Le due paure restano aperte nel keepsake come <b>bussola</b>: ogni regola futura dovrà alleggerire, non appesantire. (Eco diretta verso «zero metadati» e «contratto vivo».)</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="principi">
+  <div class="kicker">Tecnica ③ · First Principles Thinking — l'archeologia</div>
+  <h2>Spela tutto <em>fino all'osso:</em> via i metadati.</h2>
+  <p class="lede">Due sole mosse prime, radicali. Premi <b>«Demolisci gli strati»</b> per buttare via ciò che è scritto a mano e tenere solo ciò che è vivo. Poi guarda l'estrazione live della card compiersi nel terminale.</p>
+  <div class="scavo">
+    <div class="strati" id="strati">
+      <div class="strato da-buttare"><div class="nome">strato 04 · da buttare</div><strong>🗑️ Script rigidi poco manutenibili</strong><p>Vincolano il design. Si demoliscono.</p></div>
+      <div class="strato da-buttare"><div class="nome">strato 03 · da buttare</div><strong>🗑️ Metadati scritti a mano per singolo componente</strong><p>La tua mossa: «buttare via <b>tutti i metadati</b> per singolo componente».</p></div>
+      <div class="strato da-buttare"><div class="nome">strato 02 · da buttare</div><strong>🗑️ Cache dell'estrazione</strong><p>Niente foto sbiadite di ieri: si legge <b>adesso</b>.</p></div>
+      <div class="strato nocciolo"><div class="nome">☀ nocciolo · ciò che resta</div><strong>Segnali vivi via MCP + convenzioni atomic + token</strong><p><i>Yes-and coach:</i> zero metadati scritti a mano — solo ciò che Penpot dice in diretta, più convenzioni condivise.</p></div>
+      <div class="strato nocciolo"><div class="nome">☀ nocciolo · il gesto</div><strong>«Estrai card» → legge via MCP e prende tutto</strong><p>Forme, token, figli — in quel momento. <i>Yes-and coach:</i> <b>on-demand, senza cache</b>: genera dal vero, ogni volta.</p></div>
+    </div>
+    <div class="pannello-comandi">
+      <div class="mono" style="font-size:.7rem;letter-spacing:.25em;color:#f0b429">PANNELLO DI SCAVO</div>
+      <h3 style="font-size:1.5rem;margin:.3rem 0">Quanto teniamo in piedi?</h3>
+      <p style="opacity:.85;font-size:.95rem">La demolizione è reversibile: puoi ricostruire gli strati e ridemolire. Il terminale sotto simula la lettura MCP della card.</p>
+      <button id="btn-demolisci">⛏ Demolisci gli strati</button>
+      <button id="btn-ricostruisci" class="second">↺ Ricostruisci</button>
+      <button id="btn-estrazione" class="second">▶ Simula «estrai card» via MCP</button>
+      <div class="live-demo" id="live-demo"><span class="dim">$ in attesa… premi «Simula estrazione»</span><span class="cursor"></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="reverse">
+  <div class="kicker">Tecnica ④ · Reverse Brainstorming — il laboratorio del sabotaggio ☠</div>
+  <h2>Come <span class="glitch">distruggeremmo</span> <em>questo sistema?</em></h2>
+  <p class="lede">Prima si sabota con gusto, poi si ribalta: ogni veleno ha il suo antidoto. Aziona l'interruttore per passare dal mondo sabotato al mondo curato.</p>
+  <div class="interruttore"><span>MONDO: <b id="stato-mondo">SABOTATO ☠</b></span><div class="switch" id="switch" title="ribalta"></div><span style="opacity:.7">tocca per somministrare l'antidoto</span></div>
+  <div class="schede-sabotaggio">
+    <div class="sab"><h3>☠ SABOTAGGIO 1 · token a caso</h3><p class="veleno">Colori e spazi pescati a sorte, ogni componente per sé.</p><p class="ant">✚ <b>Antidoto (inverso coach):</b> check token con <b>proposta di allineamento</b> — mai errore secco.</p></div>
+    <div class="sab"><h3>☠ SABOTAGGIO 2 · nomi incoerenti</h3><p class="veleno">BtnPrimario, bottone_blu, CTA-7… il caos dei nomi.</p><p class="ant">✚ <b>Antidoto:</b> convenzione <b>nomi atomic</b> condivisa tra Penpot e codice.</p></div>
+    <div class="sab"><h3>☠ SABOTAGGIO 3 · componenti orfani dei token</h3><p class="veleno">Componenti non legati ai token: belli oggi, irriconoscibili domani.</p><p class="ant">✚ <b>Antidoto:</b> <b>gate legame componente-token</b> prima di estrarre.</p></div>
+    <div class="sab"><h3>☠ PAURA 1 · componente mal interpretato</h3><p class="veleno">Il tool fraintende il flusso e genera l'oggetto sbagliato.</p><p class="ant">✚ <b>Antidoto:</b> <b>conferma dell'interpretazione</b> prima di generare.</p></div>
+    <div class="sab"><h3>☠ PAURA 2 · update che travolge tutto</h3><p class="veleno">Aggiornare un componente già presente in React spazza via il lavoro fatto.</p><p class="ant">✚ <b>Antidoto:</b> <b>update diff</b>, mai sovrascrittura cieca.</p></div>
+  </div>
+  <p class="mono" style="margin-top:1.2rem;font-size:.75rem;opacity:.6">nota di metodo: sabotaggi e paure sono voci tue · gli antidoti sono gli «inversi» del coach</p>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="failure">
+  <div class="kicker">Tecnica ⑤ · Failure Analysis — la bacheca del detective</div>
+  <h2>Il caso della <em>card mancata,</em> spillo dopo spillo.</h2>
+  <p class="lede">Un fallimento vero, tuo: la card non è riuscita né su Penpot né in React a mano. La bacheca ricostruisce il triangolo spezzato — e il doppio contratto che lo ricuce.</p>
+  <div class="bacheca">
+    <span class="puntina" style="left:12%"></span><span class="puntina" style="left:50%"></span><span class="puntina" style="left:88%"></span>
+    <span class="nastro">★ REPERTO Nº 1 · «la card che non venne» ★</span>
+    <div class="triangolo">
+      <div class="foto-card"><h4>📷 ① screenshot — l'originale</h4><div class="mini-mock"><div class="barra" style="width:90%;background:#16130e"></div><div class="barra" style="width:60%"></div><div class="barra" style="width:75%;background:#c9501f"></div>foto + titolo + prezzo<br>↓ il contratto visivo</div><p>Il riferimento vero. Tutto doveva somigliargli.</p></div>
+      <div class="freccia">→</div>
+      <div class="foto-card rotta"><h4>🖌 ② Penpot — l'alberatura spoglia</h4><div class="mini-mock">▢ frame<br>└ ▢ frame<br>&nbsp;&nbsp;└ ▢ rect<br><span style="color:#c9501f">«solo alberatura poco chiara, senza grafica»</span></div><p><b>Fallimento:</b> non sei riuscito a ricostruire la card voluta — fatica a strutturarla.</p></div>
+      <div class="freccia">→</div>
+      <div class="foto-card rotta"><h4>⚛ ③ React — il gemello infedele</h4><div class="mini-mock">&lt;div class="card?"&gt;<br>&nbsp;&nbsp;{/* diverso da Penpot */}<br>&lt;/div&gt;<br><span style="color:#c9501f">«diverso da Penpot e incoerente con l'immagine»</span></div><p><b>Fallimento:</b> anche a mano, fatica a strutturarla in React.</p></div>
+    </div>
+    <div class="verdetto">
+      <div class="v1"><span class="mono" style="font-size:.65rem;letter-spacing:.2em;color:#f0b429">LEZIONE DEL COACH</span><br><b>Manca la fedeltà-screenshot come contratto visivo</b> tra immagine, Penpot e React. Senza quel terzo vertice, nessuno può accorgersi del tradimento.</div>
+      <div class="v2"><span class="mono" style="font-size:.65rem;letter-spacing:.2em;opacity:.8">DOPPIO CONTRATTO · IL SUCCESSO</span><br><b>Designer:</b> card fedele allo screenshot — e se qualcosa non torna, <b>lo segnala</b>.<br><b>Dev:</b> estrazione React <b>coerente con Penpot</b>.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SINTESI ============ -->
+<section id="sintesi">
+  <div class="kicker" style="justify-content:center">★ Sintesi · il climax del cantiere ★</div>
+  <h2>Un <em>must</em> che porta, due pilastri che sorreggono.</h2>
+  <p class="lede" style="margin:1rem auto 0;text-align:center">Decisione tua, clusters del coach. Il verdetto: <b style="color:#f0b429">must assoluto il cluster A</b> — costruzione live via MCP; B e C a supporto.</p>
+  <div class="pilastri">
+    <div class="pilastro"><div class="lettera">B</div><h3>Contratto vivo, senza metadati</h3><p>Token e semantica letti da Penpot come <b>contratto vivo</b>. Niente metadati scritti a mano. Il tool <b>propone fix</b>, chiede <b>conferma prima di generare</b> — mai un blocco secco.</p><p class="mono" style="font-size:.7rem;opacity:.7;margin-top:.6rem">SUPPORTO · check iniziale · diff token · gate requisiti</p></div>
+    <div class="pilastro must"><div class="lettera">A ★</div><h3>Costruzione live via MCP</h3><p>Il tool <b>legge il design in diretta via MCP</b> e costruisce: <b>da zero o da headless (Base&nbsp;UI)</b>. Profili con default ragionevoli, <b>check iniziale</b> e setup proposto <b>in un colpo solo</b>.</p><p class="mono" style="font-size:.72rem;margin-top:.7rem">★ MUST ASSOLUTO · da-zero ∨ headless · on-demand senza cache ★</p></div>
+    <div class="pilastro"><div class="lettera">C</div><h3>Doppio contratto di fedeltà</h3><p><b>Fedeltà allo screenshot</b> con segnalazione + <b>coerenza Penpot→React</b>. Aggiornamenti solo come <b>update diff</b>, mai sovrascrittura cieca.</p><p class="mono" style="font-size:.7rem;opacity:.7;margin-top:.6rem">SUPPORTO · screenshot ⇔ Penpot ⇔ React</p></div>
+  </div>
+  <div class="confine">
+    <div><strong>PENPOT</strong><br><span style="font-size:.9rem;opacity:.8">token → atomi → organismi</span></div>
+    <div class="muro">🧱<br><span class="mono" style="font-size:.65rem;letter-spacing:.2em">CONFINE A QUOTA ORGANISMI</span></div>
+    <div><strong>PUCK</strong><br><span style="font-size:.9rem;opacity:.8">template + pagine · contratto via token</span></div>
+  </div>
+  <div class="card-guida">
+    <span class="mono" style="font-size:.65rem;letter-spacing:.25em;color:#c9501f">— CASO GUIDA · LA CARD —</span>
+    <h3>La card che fallì diventa la prima pietra.</h3>
+    <p style="font-size:.95rem;margin-top:.4rem">Il primo organismo da far nascere col sistema nuovo sarà <b>lei</b>: fedele allo screenshot, estratta live via MCP, coerente in React. Se il cantiere sa far nascere una card vera, saprà far nascere tutto: <i>button, switch, checkbox, select, tabelle, header, footer, sidebar, dashboard, hero, carousel.</i></p>
+  </div>
+  <div><span class="sigillo">✦ CANTIERE APERTO · DAL DISEGNO AL COMPONENTE, IN DIRETTA ✦</span></div>
+</section>
+
+<footer>
+  <span>keepsake generato dal memlog · brainstorm-penpot-estrazione-costruzione-2026-10-03 · sole source .memlog.md</span>
+  <span>5 tecniche · partner mode · 2026-10-03</span>
+</footer>
+<a class="top" href="#">↑</a>
+
+<script>
+(function(){
+  // --- 1. orbita round robin ---
+  var piatto = document.getElementById('piatto');
+  var giroEl = document.getElementById('giro');
+  var passi = Array.prototype.slice.call(document.querySelectorAll('#passi .passo'));
+  var sats = [];
+  var labels = ['da-zero ∨\nheadless','token &\nsemantica','gate\nrequisiti','profili &\nconfig','check · diff\nfix'];
+  labels.forEach(function(t,i){
+    var d = document.createElement('div');
+    d.className = 'sat ' + (i%2? 'coach':'utente');
+    d.innerHTML = '<span><b>R'+(i+1)+'</b>'+t.replace(/\n/g,'<br>')+'</span>';
+    var a = (i/labels.length)*Math.PI*2 - Math.PI/2;
+    d.style.left = (50 + 38.5*Math.cos(a)) + '%';
+    d.style.top = (50 + 38.5*Math.sin(a)) + '%';
+    d.style.transform = 'translate(-50%,-50%)';
+    d.addEventListener('click', function(){ attiva(i); });
+    piatto.appendChild(d); sats.push(d);
+  });
+  function attiva(i){
+    sats.forEach(function(s,j){ s.classList.toggle('attivo', j===i); });
+    passi.forEach(function(p,j){ p.classList.toggle('aperta', j===i); });
+    giroEl.textContent = (i+1) + '/5';
+  }
+  passi.forEach(function(p){
+    p.addEventListener('click', function(){ attiva(parseInt(p.dataset.r,10)); });
+  });
+  attiva(0);
+  var idx = 0;
+  setInterval(function(){ idx = (idx+1)%5; attiva(idx); }, 6000);
+
+  // --- 2. palcoscenico ---
+  var btns = document.querySelectorAll('.cast button');
+  btns.forEach(function(b){
+    b.addEventListener('click', function(){
+      btns.forEach(function(x){x.classList.remove('on')});
+      b.classList.add('on');
+      document.querySelectorAll('.battuta').forEach(function(s){s.classList.remove('on')});
+      document.getElementById('palco-'+b.dataset.palco).classList.add('on');
+    });
+  });
+
+  // --- 3. scavo + terminale ---
+  var daButtare = document.querySelectorAll('.strato.da-buttare');
+  document.getElementById('btn-demolisci').addEventListener('click', function(){
+    daButtare.forEach(function(s,i){ setTimeout(function(){s.classList.add('rimosso')}, i*220); });
+  });
+  document.getElementById('btn-ricostruisci').addEventListener('click', function(){
+    daButtare.forEach(function(s){ s.classList.remove('rimosso'); });
+  });
+  var righe = [
+    '$ mcp penpot.leggi --nodo card',
+    '<span class="ok">✓ frame card · 3 figli · auto-layout</span>',
+    '$ mcp penpot.token --nodo card',
+    '<span class="ok">✓ palette.bg #FAFAF8 · radius.md 12px · gap.sm 8px</span>',
+    '<span class="warn">! token ombra mancante → profilo default proposto</span>',
+    '$ genera --da headless=base-ui --conferma',
+    '<span class="ok">✓ Card.tsx generata · nessun metadato scritto a mano</span>'
+  ];
+  document.getElementById('btn-estrazione').addEventListener('click', function(){
+    var box = document.getElementById('live-demo'); box.innerHTML='';
+    var i = 0;
+    (function prossima(){
+      if(i >= righe.length){ box.innerHTML += '<br><span class="ok">■ estrazione live completata — on-demand, senza cache</span><span class="cursor"></span>'; return; }
+      box.innerHTML += righe[i] + '<br>';
+      i++; setTimeout(prossima, 650);
+    })();
+  });
+
+  // --- 4. interruttore reverse ---
+  var sw = document.getElementById('switch');
+  sw.addEventListener('click', function(){
+    var rev = document.getElementById('reverse');
+    rev.classList.toggle('antidoto');
+    var on = rev.classList.contains('antidoto');
+    document.getElementById('stato-mondo').textContent = on ? 'CURATO ✚' : 'SABOTATO ☠';
+  });
+})();
+</script>
+</body>
+</html>

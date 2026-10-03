@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deck — Architettura estrazione Penpot→React</title>
+<style>
+  :root { --bg:#0f1419; --card:#1a222c; --ink:#e8eef4; --mut:#9fb0c0; --acc:#4cc38a; --warn:#f0b429; --line:#2b3743; }
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--ink); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; margin:0; line-height:1.55; }
+  header, section { max-width:960px; margin:0 auto; padding:32px 24px; }
+  header { padding-top:56px; }
+  nav { position:sticky; top:0; background:#0c1116ee; border-bottom:1px solid var(--line); z-index:10; }
+  nav div { max-width:960px; margin:0 auto; padding:10px 24px; display:flex; gap:16px; flex-wrap:wrap; font-size:14px; }
+  nav a { color:var(--mut); text-decoration:none; } nav a:hover { color:var(--ink); }
+  h1 { font-size:2rem; margin:.2em 0; } h2 { color:var(--acc); border-bottom:1px solid var(--line); padding-bottom:8px; }
+  .sub { color:var(--mut); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; }
+  .card h3 { margin:.1em 0 .4em; font-size:1.05rem; }
+  .card p { margin:.3em 0; color:var(--mut); font-size:.95rem; }
+  .tag { display:inline-block; font-size:12px; padding:2px 10px; border-radius:999px; border:1px solid var(--acc); color:var(--acc); margin-bottom:6px; }
+  .tag.exc { border-color:var(--warn); color:var(--warn); }
+  .flow { display:flex; gap:0; flex-wrap:wrap; align-items:stretch; margin:16px 0; }
+  .step { background:var(--card); border:1px solid var(--line); padding:12px 14px; flex:1 1 140px; font-size:.9rem; }
+  .step b { display:block; color:var(--acc); }
+  .gate { background:#2a2410; border:1px solid var(--warn); padding:12px 14px; flex:1 1 140px; font-size:.9rem; }
+  .gate b { display:block; color:var(--warn); }
+  table { width:100%; border-collapse:collapse; font-size:.92rem; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--mut); font-weight:600; }
+  footer { max-width:960px; margin:0 auto; padding:24px; color:var(--mut); font-size:.85rem; }
+  code { background:#0c1116; padding:1px 6px; border-radius:6px; font-size:.88em; }
+</style>
+</head>
+<body>
+<nav><div>
+  <a href="#contesto">Contesto</a><a href="#paradigma">Paradigma</a><a href="#ad">Invarianti</a>
+  <a href="#mappa">Mappa CAP</a><a href="#stack">Stack</a><a href="#deferred">Deferred</a><a href="#next">Next</a>
+</div></nav>
+
+<header>
+  <span class="tag">ARCHITECTURE SPINE · feature · 2026-10-03</span>
+  <h1>Estrazione e costruzione Penpot→React</h1>
+  <p class="sub">Sistema live via MCP, guidato dalla skill, senza runtime dedicato. La conferma umana in conversazione è l'unico gate. Eredita la parent spine page-builder 2026-07-25 con un'eccezione di scope dichiarata.</p>
+</header>
+
+<section id="contesto">
+  <h2>1 · Contesto e decisioni dell'utente</h2>
+  <div class="grid">
+    <div class="card"><h3>Input</h3><p>SPEC penpot-estrazione-costruzione: 10 capability, 0 open. Parent spine 2026-07-25 (esagonale, AD-1…AD-13). Repo brownfield: scripts v2, Tailwind 4.3.2, MCP configurato, Puck non installato.</p></div>
+    <div class="card"><h3>Niente script, guida la skill</h3><p>Nessun package o modulo runtime. Il flusso è una sequenza di step eseguiti dall'agente via MCP + repo.</p></div>
+    <div class="card"><h3>Niente codice, strato agentico</h3><p>Nessuna logica in script dedicati: solo step da seguire sotto guida della skill.</p></div>
+    <div class="card"><h3>Basta una conferma</h3><p>Gate = sì umano in conversazione. Nessuna traccia persistente del verdetto.</p></div>
+  </div>
+</section>
+
+<section id="paradigma">
+  <h2>2 · Paradigma: pipes-and-filters agentica</h2>
+  <p class="sub">Ogni stadio legge stato live e produce output visibile; lo stadio dopo consuma solo quell'output. Base congelata: la rilettura successiva invalida, mai base mista.</p>
+  <div class="flow">
+    <div class="step"><b>check</b>MCP + repo, fotografia live</div>
+    <div class="step"><b>diff</b>token/design vs codice, base congelata</div>
+    <div class="step"><b>proposta</b>fix applicabile in un colpo</div>
+    <div class="gate"><b>H1 · conferma</b>allineamento + disegno Penpot</div>
+    <div class="step"><b>disegno / estrazione</b>su Penpot o nei file</div>
+    <div class="gate"><b>H2 · conferma</b>generazione file</div>
+    <div class="step"><b>verifica</b>doppio contratto fedeltà</div>
+  </div>
+</section>
+
+<section id="ad">
+  <h2>3 · Invarianti (AD-1…AD-9)</h2>
+  <div class="grid">
+    <div class="card"><span class="tag">AD-1</span><h3>Nessun runtime, zero metadati</h3><p>Niente nuovo package; niente file di metadati per componente. Verità per-istanza in Penpot, profili per specie versionate.</p></div>
+    <div class="card"><span class="tag exc">AD-2 · eccezione AD-11</span><h3>Conferma umana = unico gate</h3><p>H1 allineamento+Penpot, H2 generazione. Un sì = un piano-diff numerato; i sì esecutivi non persistono. Garanzia convenzionale, non eseguibile.</p></div>
+    <div class="card"><span class="tag">AD-3</span><h3>Base congelata</h3><p>La fotografia dello stadio è l'unica base decisionale; rilettura = solo invalidazione. Mai cache o fixture.</p></div>
+    <div class="card"><span class="tag">AD-4</span><h3>Profili versionati</h3><p>JSON in <code>packages/scripts/profiles/&lt;nome&gt;.json</code>, campi <code>name/version/headless/tokens</code>. Default proposti, umano ratifica.</p></div>
+    <div class="card"><span class="tag">AD-5</span><h3>Mani solo su hand-owned</h3><p>Mai su <code>@generated</code>. Precedenza shadcn &lt; extras &lt; generato: extras solo additivo. Un token, un solo proprietario.</p></div>
+    <div class="card"><span class="tag">AD-6</span><h3>Un solo vocabolario: Tailwind theme</h3><p>Token → variabili <code>@theme</code> v4 per Puck. Mai struttura oltre gli organismi.</p></div>
+    <div class="card"><span class="tag">AD-7</span><h3>Fedeltà = giudizio umano</h3><p>Contratto 1 giudicato, mai score. Contratto 2 verificato a H2 contro lettura congelata. Riferimento card opzionale.</p></div>
+    <div class="card"><span class="tag">AD-8</span><h3>Il gate ha un contenuto</h3><p>4 controlli mostrati prima del sì: contratto esistente, ruoli ammessi, token nel vocabolario, nomi in convenzione.</p></div>
+    <div class="card"><span class="tag">AD-9</span><h3>Livelli sequenziali</h3><p>L0→L1→L2→L3; il successivo si apre solo a precedente completo. Deroghe solo esplicite e registrate.</p></div>
+  </div>
+</section>
+
+<section id="mappa">
+  <h2>4 · Capability → architettura</h2>
+  <table>
+    <tr><th>CAP</th><th>Vive in</th><th>Governato da</th></tr>
+    <tr><td>CAP-1 live MCP</td><td>step check + MCP</td><td>AD-1, AD-3</td></tr>
+    <tr><td>CAP-2 scelta headless, profili</td><td>config profili + step</td><td>AD-4, AD-3</td></tr>
+    <tr><td>CAP-3 check + diff + proposta</td><td>step + conferma</td><td>AD-2, AD-3, AD-5</td></tr>
+    <tr><td>CAP-4 zero metadati</td><td>segnali live, nessun file</td><td>AD-1</td></tr>
+    <tr><td>CAP-5/6 fix + auto-proposta + gate</td><td>step + H1/H2</td><td>AD-8, AD-2</td></tr>
+    <tr><td>CAP-7/10 fedeltà + card</td><td>giudizio + verifica H2</td><td>AD-7, AD-2</td></tr>
+    <tr><td>CAP-8 update diff</td><td>piano numerato</td><td>AD-5, AD-2</td></tr>
+    <tr><td>CAP-9 L0-L3, Puck via theme</td><td>roadmap + <code>@theme</code></td><td>AD-9, AD-6, AD-5</td></tr>
+  </table>
+</section>
+
+<section id="stack">
+  <h2>5 · Stack seed (verificato 2026-10-03)</h2>
+  <table>
+    <tr><th>Nome</th><th>Versione / nota</th></tr>
+    <tr><td>Tailwind CSS CSS-first</td><td>^4.3.2 installato · <code>@theme</code> corrente</td></tr>
+    <tr><td><code>@base-ui/react</code> headless</td><td>^1.8.0 · non installato → installare a L1</td></tr>
+    <tr><td><code>@puckeditor/core</code></td><td>0.23.x · non installato → differito, riconfermare</td></tr>
+    <tr><td>Penpot + MCP ufficiale</td><td>setup repo esistente (<code>PENPOT_MCP_TOKEN</code>)</td></tr>
+  </table>
+</section>
+
+<section id="deferred">
+  <h2>6 · Deferred (con condizione di revisit)</h2>
+  <div class="grid">
+    <div class="card"><h3>Contenuto primo profilo</h3><p>Schema deciso; i valori alla prima authoring (skill propone, umano ratifica).</p></div>
+    <div class="card"><h3>Puck + config blocchi</h3><p>A Epic 3/4, con riconferma versione.</p></div>
+    <div class="card"><h3>Verifier eseguibili</h3><p>Se AD-2 convenzionale dovesse mordersi: check di lettura, skill resta driver.</p></div>
+    <div class="card"><h3>Dismissione scripts</h3><p>Se il live rende superflui gli script: correct-course separata.</p></div>
+  </div>
+</section>
+
+<section id="next">
+  <h2>7 · Prossimi passi</h2>
+  <p>1. Adottare questa spine come companion della SPEC (via <code>bmad-spec</code>, ID AD stabili). 2. Scomporre L0→L3 in epics/stories. 3. Eseguire a partire da L0 Token, con primo profilo reale come banco di prova di AD-4.</p>
+</section>
+
+<footer>Deck di accompagnamento — il contratto build è <code>ARCHITECTURE-SPINE.md</code> nella stessa cartella. Documento generato 2026-10-03.</footer>
+</body>
+</html>
