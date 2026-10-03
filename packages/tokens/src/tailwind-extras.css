@@ -14,7 +14,9 @@
  * corrispondenza live (`tracer.primary #0E5A3C`, set `tracer` via MCP su
  * autorizzazione umana 2026-10-03). Apply additivo per non wipare il generato
  * (76 vars) con rigenerazione dal live a 1 token — eccezione registrata, non
- * precedente per altri token.
+ * precedente per altri token. Il nome `tracer.*` resta riservato hand-owned
+ * finché vive qui: un futuro token generato omonimo creerebbe un doppio
+ * proprietario (AD-5) — in quel caso ritirare prima la var da extras.
  */
 @theme {
   --font-utility: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
