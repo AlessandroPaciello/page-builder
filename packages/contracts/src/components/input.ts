@@ -2,13 +2,15 @@ import { z } from "zod";
 
 import { defineContract } from "../contract";
 
-/** Gli stati cambiano lo stile in Penpot, ma in codice sono pseudo-classi/attributi: nessuna prop. */
+/**
+ * Input ridotto (Story 2.16, v2): gli stati (`default`, `focus`, `error`,
+ * `disabled`) sono assi di RENDERING (`state`) nel contratto di estrazione
+ * (`packages/scripts/src/contracts/input.extract.ts`) e non producono prop.
+ */
 export const input = defineContract({
   name: "input",
   version: 1,
-  axes: [{ name: "state", type: "state", values: ["default", "focus", "error", "disabled"], default: "default" }],
-  parts: ["root", "placeholder"],
-  partRoles: { root: "surface", placeholder: "text" },
+  axes: [],
   fields: {
     placeholder: { schema: z.string(), kind: "content" },
   },

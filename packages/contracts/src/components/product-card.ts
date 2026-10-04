@@ -6,7 +6,7 @@ import { defineContract } from "../contract";
  * ProductCard (Story 2.12, primo contratto ridotto della v2): SOLO ciò che
  * l'editor e le pagine salvate usano. Niente parti, ruoli o assi di
  * rendering: stanno nel contratto di estrazione
- * (`packages/scripts/src/v2/contracts/product-card.extract.ts`).
+ * (`packages/scripts/src/contracts/product-card.extract.ts`).
  *
  * `badgeLabel` è un field del page builder (decisione dello SPEC v2): il
  * testo del badge (`Offerta`/`Sconto`) lo scrive l'editor, non è testo

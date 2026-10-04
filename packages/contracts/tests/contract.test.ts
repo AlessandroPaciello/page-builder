@@ -7,30 +7,19 @@ import { fingerprintPayload } from "../src/fingerprint";
 const valid = {
   name: "demo-chip",
   version: 1,
-  axes: [
-    { name: "tone", type: "option", values: ["neutral", "loud"], default: "neutral" },
-    { name: "state", type: "state", values: ["default", "focus"], default: "default" },
-  ],
-  parts: ["root", "label"],
-  partRoles: { root: "surface", label: "text" },
+  axes: [{ name: "tone", type: "option", values: ["neutral", "loud"], default: "neutral" }],
   fields: { label: { schema: z.string(), kind: "content" } },
 } as const;
 
-describe("defineContract — ruolo di parte (Story 2.10, A)", () => {
-  it("verde: ogni parte ha un ruolo del vocabolario", () => {
-    expect(() => defineContract({ ...valid, partRoles: { root: "surface", label: "icon" } })).not.toThrow();
+describe("defineContract — contratto ridotto v2 (Story 2.16, niente parti/ruoli)", () => {
+  it("verde: un contratto ridotto senza parts/partRoles è accettato", () => {
+    expect(() => defineContract(valid)).not.toThrow();
   });
 
-  it.each([
-    ["parte senza ruolo", { ...valid, partRoles: { root: "surface" } }, /demo-chip.*parte "label" senza ruolo/],
-    ["ruolo fuori vocabolario", { ...valid, partRoles: { root: "surface", label: "heading" } }, /demo-chip.*parte "label", ruolo "heading" non è nel vocabolario/],
-    [
-      "ruolo di una parte che il contratto non ha",
-      { ...valid, partRoles: { root: "surface", label: "text", badge: "text" } },
-      /demo-chip.*partRoles nomina la parte "badge"/,
-    ],
-  ])("rosso: %s", (_label, def, message) => {
-    expect(() => defineContract(def as never)).toThrow(message);
+  it("rosso: parts/partRoles in eccesso vengono rifiutati come chiavi ignote dal tipo (runtime: ignorati, ma il test di registro li vieta)", () => {
+    // A runtime le chiavi extra non sono validate dal tipo ridotto; il confine
+    // è il test components.test.ts che asserisce "parts" assente.
+    expect("parts" in defineContract(valid)).toBe(false);
   });
 
   it("gli slot delle sezioni entrano nel fingerprint (Story 2.12): cambiarne allow o max cambia il payload", () => {
@@ -47,12 +36,12 @@ describe("defineContract — ruolo di parte (Story 2.10, A)", () => {
     expect(fingerprintPayload([], [{ ...section, slots: [{ ...section.slots[0]!, allow: ["badge"] as [string, ...string[]] }] }])).not.toBe(base);
   });
 
-  it("il ruolo NON entra nel fingerprint (v2, Story 2.12): cambiarlo lascia il payload identico", () => {
-    const text = fingerprintPayload([defineContract(valid)], []);
-    const icon = fingerprintPayload([defineContract({ ...valid, partRoles: { root: "surface", label: "icon" } })], []);
-    expect(text).not.toContain("partRoles");
-    expect(text).not.toContain(`"parts"`);
-    expect(icon).toBe(text);
+  it("il payload non contiene parts/partRoles/state/behavior (contratto ridotto)", () => {
+    const payload = fingerprintPayload([defineContract(valid)], []);
+    expect(payload).not.toContain("partRoles");
+    expect(payload).not.toContain(`"parts"`);
+    expect(payload).not.toContain("state");
+    expect(payload).not.toContain("behavior");
   });
 });
 
@@ -83,12 +72,6 @@ describe("defineContract", () => {
       { ...valid, axes: [{ ...valid.axes[0], default: "quiet" }] },
       /demo-chip.*asse "tone".*default "quiet"/,
     ],
-    ["parte duplicata", { ...valid, parts: ["root", "root"] }, /demo-chip.*parte "root".*duplicat/],
-    [
-      "parte con nome non valido",
-      { ...valid, parts: ["root", "root label"] },
-      /demo-chip.*parte "root label".*nome non valido/,
-    ],
     [
       "asse con nome non valido",
       { ...valid, axes: [{ ...valid.axes[0], name: "bad axis" }] },
@@ -98,11 +81,6 @@ describe("defineContract", () => {
       "field che collide con un asse option",
       { ...valid, fields: { ...valid.fields, tone: { schema: z.string(), kind: "content" } } },
       /demo-chip.*field "tone".*collide con l'asse "tone" \(option\)/,
-    ],
-    [
-      "field che collide con un asse non-option",
-      { ...valid, fields: { ...valid.fields, state: { schema: z.string(), kind: "content" } } },
-      /demo-chip.*field "state".*collide con l'asse "state" \(state\)/,
     ],
     [
       "field con nome non valido",
@@ -223,16 +201,12 @@ describe("defineContract", () => {
     expect(() => defineContract(def as never)).toThrow(message);
   });
 
-  it("accetta assi state/behavior con nomi riservati: non diventano prop", () => {
-    const def = {
-      ...valid,
-      axes: [
-        ...valid.axes,
-        { name: "value", type: "state", values: ["v"], default: "v" },
-        { name: "children", type: "behavior", values: ["b"], default: "b" },
-      ],
-    } as const;
-    expect(() => defineContract(def)).not.toThrow();
+  it("rifiuta assi state/behavior: stanno nel contratto di estrazione, non nel page builder", () => {
+    for (const type of ["state", "behavior"] as const) {
+      expect(() =>
+        defineContract({ ...valid, axes: [...valid.axes, { name: "extra", type, values: ["a", "b"], default: "a" }] } as never),
+      ).toThrow(/demo-chip.*asse "extra" di tipo.*/);
+    }
   });
 
   it("accetta field che somigliano ma non sono attributi globali né handler (subtitle, placeholder, label, online, one)", () => {
@@ -262,7 +236,7 @@ describe("defineContract", () => {
 describe("propsSchema", () => {
   const schema = propsSchema(defineContract(valid));
 
-  it("trasforma gli assi option in enum con default e ignora gli assi state/behavior", () => {
+  it("trasforma gli assi option in enum con default", () => {
     expect(schema.parse({ label: "x" })).toEqual({ tone: "neutral", label: "x" });
     expect(Object.keys(schema.shape)).toEqual(["tone", "label"]);
   });

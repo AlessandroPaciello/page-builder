@@ -24,25 +24,13 @@ export const PATHS = {
   /** Radice del monorepo. */
   repoRoot: dirname(packagesRoot),
   dataDir,
-  /** Catalogo token Stadio 1 committato (`generate:theme` lo legge; con `--live` lo riscrive). */
+  /** Catalogo token Stadio 1 committato (`theme` lo legge; con `--live` lo riscrive). */
   catalogPath: resolve(dataDir, "penpot-catalog.json"),
-  /** `<comp>.fixture.json` e `<comp>.recipe.json`. */
-  recipesDir: resolve(dataDir, "recipes"),
-  /** `judgments/<contratto>.json`: il giudizio scritto a mano. */
-  judgmentsDir: resolve(dataDir, "recipes/judgments"),
-  /** `<kebab>.binding.json`: tabelle di binding dell'emitter shadcn. */
-  bindingsDir: resolve(dataDir, "bindings"),
-  /** `<base>/*.tsx`: basi shadcn committate, input dell'emitter. */
-  basesDir: resolve(dataDir, "bases"),
-  /** `<contratto>.design.json`: il disegno di partenza della library. */
-  designsDir: resolve(dataDir, "designs"),
-  /** Snapshot della library committato (`verify:library --snapshot`). */
-  librarySnapshotPath: resolve(dataDir, "library.snapshot.json"),
   /** Istantanee v2 `data/components/<kebab>.json`: scritte solo da `extract` (tmp + rename). */
   componentsDir: resolve(dataDir, "components"),
   /** Valori del bootstrap della library (palette + semantic). */
   semanticSeedPath: resolve(dataDir, "semantic-tokens.seed.json"),
-  /** `packages/tokens/src`: `generate:theme` scrive qui il tema. */
+  /** `packages/tokens/src`: `theme` scrive qui il tema. */
   tokensSrcDir: resolve(packagesRoot, "tokens/src"),
   contractsRoot,
   /** `packages/contracts/src`: `components/<nome>.ts` e `schema-version.ts`. */

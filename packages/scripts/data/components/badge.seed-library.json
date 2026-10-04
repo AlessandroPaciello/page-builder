@@ -1,0 +1,268 @@
+{
+  "sets": [],
+  "componentCount": 1,
+  "components": [
+    {
+      "id": "seed-badge-2-16",
+      "name": "Badge",
+      "pluginData": "badge@1",
+      "axes": [
+        "variant",
+        "size"
+      ],
+      "axesValues": {
+        "variant": [
+          "default",
+          "secondary",
+          "destructive"
+        ],
+        "size": [
+          "sm",
+          "md"
+        ]
+      },
+      "cells": [
+        {
+          "variantProps": {
+            "variant": "default",
+            "size": "sm"
+          },
+          "variantError": null,
+          "root": {
+            "name": "Badge variant=default|size=sm",
+            "kind": "board",
+            "tokens": {
+              "fill": "color.primary",
+              "borderRadiusTopLeft": "radius.full",
+              "borderRadiusTopRight": "radius.full",
+              "borderRadiusBottomRight": "radius.full",
+              "borderRadiusBottomLeft": "radius.full",
+              "paddingTop": "spacing.1",
+              "paddingBottom": "spacing.1",
+              "paddingLeft": "spacing.2",
+              "paddingRight": "spacing.2"
+            },
+            "style": {
+              "layoutDir": "row",
+              "layoutAlign": "center"
+            },
+            "children": [
+              {
+                "name": "Label",
+                "kind": "text",
+                "tokens": {
+                  "fill": "color.primary-foreground",
+                  "fontSize": "text.xs",
+                  "fontWeight": "font-weight.medium",
+                  "letterSpacing": "tracking.none"
+                },
+                "style": {},
+                "children": []
+              }
+            ]
+          }
+        },
+        {
+          "variantProps": {
+            "variant": "default",
+            "size": "md"
+          },
+          "variantError": null,
+          "root": {
+            "name": "Badge variant=default|size=md",
+            "kind": "board",
+            "tokens": {
+              "fill": "color.primary",
+              "borderRadiusTopLeft": "radius.full",
+              "borderRadiusTopRight": "radius.full",
+              "borderRadiusBottomRight": "radius.full",
+              "borderRadiusBottomLeft": "radius.full",
+              "paddingTop": "spacing.1",
+              "paddingBottom": "spacing.1",
+              "paddingLeft": "spacing.3",
+              "paddingRight": "spacing.3"
+            },
+            "style": {
+              "layoutDir": "row",
+              "layoutAlign": "center"
+            },
+            "children": [
+              {
+                "name": "Label",
+                "kind": "text",
+                "tokens": {
+                  "fill": "color.primary-foreground",
+                  "fontSize": "text.sm",
+                  "fontWeight": "font-weight.medium",
+                  "letterSpacing": "tracking.none"
+                },
+                "style": {},
+                "children": []
+              }
+            ]
+          }
+        },
+        {
+          "variantProps": {
+            "variant": "secondary",
+            "size": "sm"
+          },
+          "variantError": null,
+          "root": {
+            "name": "Badge variant=secondary|size=sm",
+            "kind": "board",
+            "tokens": {
+              "fill": "color.secondary",
+              "borderRadiusTopLeft": "radius.full",
+              "borderRadiusTopRight": "radius.full",
+              "borderRadiusBottomRight": "radius.full",
+              "borderRadiusBottomLeft": "radius.full",
+              "paddingTop": "spacing.1",
+              "paddingBottom": "spacing.1",
+              "paddingLeft": "spacing.2",
+              "paddingRight": "spacing.2"
+            },
+            "style": {
+              "layoutDir": "row",
+              "layoutAlign": "center"
+            },
+            "children": [
+              {
+                "name": "Label",
+                "kind": "text",
+                "tokens": {
+                  "fill": "color.secondary-foreground",
+                  "fontSize": "text.xs",
+                  "fontWeight": "font-weight.medium",
+                  "letterSpacing": "tracking.none"
+                },
+                "style": {},
+                "children": []
+              }
+            ]
+          }
+        },
+        {
+          "variantProps": {
+            "variant": "secondary",
+            "size": "md"
+          },
+          "variantError": null,
+          "root": {
+            "name": "Badge variant=secondary|size=md",
+            "kind": "board",
+            "tokens": {
+              "fill": "color.secondary",
+              "borderRadiusTopLeft": "radius.full",
+              "borderRadiusTopRight": "radius.full",
+              "borderRadiusBottomRight": "radius.full",
+              "borderRadiusBottomLeft": "radius.full",
+              "paddingTop": "spacing.1",
+              "paddingBottom": "spacing.1",
+              "paddingLeft": "spacing.3",
+              "paddingRight": "spacing.3"
+            },
+            "style": {
+              "layoutDir": "row",
+              "layoutAlign": "center"
+            },
+            "children": [
+              {
+                "name": "Label",
+                "kind": "text",
+                "tokens": {
+                  "fill": "color.secondary-foreground",
+                  "fontSize": "text.sm",
+                  "fontWeight": "font-weight.medium",
+                  "letterSpacing": "tracking.none"
+                },
+                "style": {},
+                "children": []
+              }
+            ]
+          }
+        },
+        {
+          "variantProps": {
+            "variant": "destructive",
+            "size": "sm"
+          },
+          "variantError": null,
+          "root": {
+            "name": "Badge variant=destructive|size=sm",
+            "kind": "board",
+            "tokens": {
+              "fill": "color.destructive",
+              "borderRadiusTopLeft": "radius.full",
+              "borderRadiusTopRight": "radius.full",
+              "borderRadiusBottomRight": "radius.full",
+              "borderRadiusBottomLeft": "radius.full",
+              "paddingTop": "spacing.1",
+              "paddingBottom": "spacing.1",
+              "paddingLeft": "spacing.2",
+              "paddingRight": "spacing.2"
+            },
+            "style": {
+              "layoutDir": "row",
+              "layoutAlign": "center"
+            },
+            "children": [
+              {
+                "name": "Label",
+                "kind": "text",
+                "tokens": {
+                  "fill": "color.destructive-foreground",
+                  "fontSize": "text.xs",
+                  "fontWeight": "font-weight.medium",
+                  "letterSpacing": "tracking.none"
+                },
+                "style": {},
+                "children": []
+              }
+            ]
+          }
+        },
+        {
+          "variantProps": {
+            "variant": "destructive",
+            "size": "md"
+          },
+          "variantError": null,
+          "root": {
+            "name": "Badge variant=destructive|size=md",
+            "kind": "board",
+            "tokens": {
+              "fill": "color.destructive",
+              "borderRadiusTopLeft": "radius.full",
+              "borderRadiusTopRight": "radius.full",
+              "borderRadiusBottomRight": "radius.full",
+              "borderRadiusBottomLeft": "radius.full",
+              "paddingTop": "spacing.1",
+              "paddingBottom": "spacing.1",
+              "paddingLeft": "spacing.3",
+              "paddingRight": "spacing.3"
+            },
+            "style": {
+              "layoutDir": "row",
+              "layoutAlign": "center"
+            },
+            "children": [
+              {
+                "name": "Label",
+                "kind": "text",
+                "tokens": {
+                  "fill": "color.destructive-foreground",
+                  "fontSize": "text.sm",
+                  "fontWeight": "font-weight.medium",
+                  "letterSpacing": "tracking.none"
+                },
+                "style": {},
+                "children": []
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

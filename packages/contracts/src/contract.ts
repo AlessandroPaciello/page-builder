@@ -10,25 +10,10 @@ import { z } from "zod";
 /**
  * Tipo d'asse, dichiarato nel contratto e mai in Penpot. Nel contratto del
  * page builder (v2, AD-11) esiste solo `option`: prop scelta dall'editor,
- * stile per variante. `state` (stato del browser, nessuna prop) e `behavior`
- * (stato dell'headless, nessuna prop) sono assi di RENDERING e vivono nel
- * contratto di estrazione (`packages/scripts`); qui restano accettati solo
- * come estensione deprecata della v1, fuori dal fingerprint, fino alla
- * Story 2.16.
+ * stile per variante. Gli assi di RENDERING (`state`/`behavior`) vivono nel
+ * contratto di estrazione (`packages/scripts`).
  */
-export type AxisType = "option" | "state" | "behavior";
-
-/**
- * Ruolo di parte della v1 (AD-11, Story 2.10). Nella v2 il ruolo è dichiarato
- * nel contratto di estrazione e il vocabolario (con `image`) vive nel registro
- * delle proprietà di `packages/scripts`. Qui resta solo per l'estensione
- * deprecata `partRoles`, letta dalla v1 fino alla Story 2.16.
- * @deprecated estensione v1: si cancella con `parts`/`partRoles` (Story 2.16).
- */
-export const PART_ROLES = ["surface", "text", "icon", "divider"] as const;
-
-/** @deprecated estensione v1 (Story 2.16). */
-export type PartRole = (typeof PART_ROLES)[number];
+export type AxisType = "option";
 
 /** Classificazione di un campo: `structure` bloccata nelle sezioni, `content` modificabile e sanitizzato. */
 export type FieldKind = "structure" | "content";
@@ -61,40 +46,6 @@ export interface ComponentContract {
   readonly version: number;
   readonly axes: readonly Axis[];
   readonly fields: Readonly<Record<string, FieldDef>>;
-  /**
-   * Estensione deprecata della v1: lista piatta delle parti. Fuori dal
-   * fingerprint e dal formato canonico; letta solo dalla pipeline v1
-   * (`hasLegacyExtension`). Si cancella con la v1 (Story 2.16).
-   * @deprecated
-   */
-  readonly parts?: readonly [string, ...string[]];
-  /**
-   * Estensione deprecata della v1: il ruolo di ogni parte. Va insieme a
-   * `parts` (entrambi o nessuno). Si cancella con la v1 (Story 2.16).
-   * @deprecated
-   */
-  readonly partRoles?: Readonly<Record<string, PartRole>>;
-}
-
-/**
- * Un contratto con l'estensione v1 presente: l'unica forma che la pipeline v1
- * (`packages/scripts`, fuori da `src/v2`) accetta. Con la v1 sparisce anche
- * questo tipo, senza toccare il fingerprint.
- * @deprecated estensione v1 (Story 2.16).
- */
-export type LegacyComponentContract = ComponentContract & {
-  readonly parts: readonly [string, ...string[]];
-  readonly partRoles: Readonly<Record<string, PartRole>>;
-};
-
-/**
- * `true` se il contratto porta l'estensione v1 (`parts` + `partRoles`): è il
- * solo modo in cui la v1 sceglie i contratti su cui lavorare. Un contratto
- * ridotto (v2) è invisibile alla v1.
- * @deprecated estensione v1 (Story 2.16).
- */
-export function hasLegacyExtension(contract: ComponentContract): contract is LegacyComponentContract {
-  return contract.parts !== undefined && contract.partRoles !== undefined;
 }
 
 /** Stesso formato del `nome` nel plugin data Penpot `pagebuilder/contract = nome@versione`. */
@@ -190,67 +141,26 @@ export function defineContract<const C extends ComponentContract>(def: C): C {
   for (const name of duplicates(def.axes.map((axis) => axis.name))) fail(`asse "${name}" duplicato`);
   for (const axis of def.axes) {
     if (!IDENTIFIER.test(axis.name)) fail(`asse "${axis.name}" ha un nome non valido (identificatore minuscolo)`);
-    // Solo gli assi `option` diventano prop (`propsSchema`): `state` e
-    // `behavior` non toccano l'elemento, ma un asse option riservato
+    if (axis.type !== "option") {
+      fail(
+        `asse "${axis.name}" di tipo "${axis.type}": il contratto del page builder ha solo assi "option" — "state" e "behavior" sono assi di rendering e vivono nel contratto di estrazione (packages/scripts)`,
+      );
+    }
+    // Gli assi `option` diventano prop (`propsSchema`): un asse option riservato
     // ombreggia l'attributo/la prop sull'elemento generato, come un field.
-    if (axis.type === "option") {
-      if (REACT_RESERVED_PROPS.has(axis.name.toLowerCase()) || /^on[A-Z]/.test(axis.name)) {
-        fail(
-          `asse "${axis.name}" collide con una prop riservata di React o con il role emesso sulla radice (role, children, key, ref, dangerouslySetInnerHTML, value, on…): rinominalo`,
-        );
-      }
-      if (HTML_GLOBAL_ATTRIBUTES.has(axis.name.toLowerCase())) {
-        fail(
-          `asse "${axis.name}" coincide con l'attributo HTML globale "${axis.name.toLowerCase()}" — ombreggerebbe l'attributo sull'elemento generato: rinominalo`,
-        );
-      }
+    if (REACT_RESERVED_PROPS.has(axis.name.toLowerCase()) || /^on[A-Z]/.test(axis.name)) {
+      fail(
+        `asse "${axis.name}" collide con una prop riservata di React o con il role emesso sulla radice (role, children, key, ref, dangerouslySetInnerHTML, value, on…): rinominalo`,
+      );
+    }
+    if (HTML_GLOBAL_ATTRIBUTES.has(axis.name.toLowerCase())) {
+      fail(
+        `asse "${axis.name}" coincide con l'attributo HTML globale "${axis.name.toLowerCase()}" — ombreggerebbe l'attributo sull'elemento generato: rinominalo`,
+      );
     }
     for (const value of duplicates(axis.values)) fail(`asse "${axis.name}", valore "${value}" duplicato`);
     if (!axis.values.includes(axis.default)) {
       fail(`asse "${axis.name}", default "${axis.default}" non è tra i values (${axis.values.join(", ")})`);
-    }
-  }
-
-  // Estensione deprecata della v1 (`parts` + `partRoles`, Story 2.16): un
-  // contratto ridotto non la porta; se c'è, deve essere coerente come prima —
-  // entrambi i campi, parti valide, ogni parte con un ruolo del vocabolario.
-  if ((def.parts === undefined) !== (def.partRoles === undefined)) {
-    fail(
-      `estensione v1 incoerente: "parts" e "partRoles" vanno insieme (entrambi o nessuno) — un contratto ridotto non li ha, uno v1 li ha entrambi`,
-    );
-  }
-  const hasExtension = def.parts !== undefined && def.partRoles !== undefined;
-  if (!hasExtension) {
-    // Contratto ridotto (v2): gli assi di rendering vivono nel contratto di
-    // estrazione, non qui. Con l'estensione v1 restano tollerati fino alla 2.16.
-    for (const axis of def.axes) {
-      if (axis.type !== "option") {
-        fail(
-          `asse "${axis.name}" di tipo "${axis.type}": il contratto del page builder ha solo assi "option" — "state" e "behavior" sono assi di rendering e vivono nel contratto di estrazione (packages/scripts)`,
-        );
-      }
-    }
-  }
-  if (def.parts !== undefined && def.partRoles !== undefined) {
-    for (const part of def.parts) {
-      if (!IDENTIFIER.test(part)) fail(`parte "${part}" ha un nome non valido (identificatore minuscolo)`);
-    }
-    for (const part of duplicates(def.parts)) fail(`parte "${part}" duplicata`);
-
-    // Ruolo di parte (AD-11): ogni parte ne ha uno, del vocabolario chiuso, e
-    // `partRoles` non nomina parti che il contratto non ha.
-    const roles: Readonly<Record<string, unknown>> = def.partRoles;
-    for (const part of def.parts) {
-      if (!Object.hasOwn(roles, part)) {
-        fail(`parte "${part}" senza ruolo in partRoles (ruoli: ${PART_ROLES.join(", ")})`);
-      }
-      const role = roles[part];
-      if (!(PART_ROLES as readonly unknown[]).includes(role)) {
-        fail(`parte "${part}", ruolo ${JSON.stringify(role)} non è nel vocabolario (${PART_ROLES.join(", ")})`);
-      }
-    }
-    for (const part of Object.keys(roles)) {
-      if (!def.parts.includes(part)) fail(`partRoles nomina la parte "${part}", che il contratto non ha`);
     }
   }
 
@@ -270,7 +180,7 @@ export function defineContract<const C extends ComponentContract>(def: C): C {
     }
     if (!(def_.schema instanceof z.ZodType)) fail(`field "${field}" non ha uno schema Zod`);
     const axis = def.axes.find((a) => a.name === field);
-    if (axis) fail(`field "${field}" collide con l'asse "${axis.name}" (${axis.type})`);
+    if (axis) fail(`field "${field}" collide con l'asse "${axis.name}" (option)`);
   }
 
   return def;
@@ -278,8 +188,7 @@ export function defineContract<const C extends ComponentContract>(def: C): C {
 
 /**
  * Schema Zod delle props. Gli assi `option` diventano enum con default (e sono
- * `structure` d'ufficio, vedi `classifier.ts`); `state` e `behavior` non
- * producono props. L'oggetto è `loose`: i campi ignoti (es. `id` di Puck)
+ * `structure` d'ufficio, vedi `classifier.ts`). L'oggetto è `loose`: i campi ignoti (es. `id` di Puck)
  * passano intatti, così il payload fa round-trip lossless (AD-6) e un campo
  * ignoto arriva al classifier come `content` invece di sparire. Rifiutarli è
  * una decisione del core, non del contratto.
@@ -287,7 +196,7 @@ export function defineContract<const C extends ComponentContract>(def: C): C {
 export function propsSchema(contract: ComponentContract) {
   const shape: Record<string, z.ZodType> = {};
   for (const axis of contract.axes) {
-    if (axis.type === "option") shape[axis.name] = z.enum(axis.values).default(axis.default);
+    shape[axis.name] = z.enum(axis.values).default(axis.default);
   }
   for (const [name, field] of Object.entries(contract.fields)) shape[name] = field.schema;
   return z.looseObject(shape);

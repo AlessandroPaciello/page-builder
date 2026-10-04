@@ -1,67 +1,43 @@
 // @generated — DO NOT EDIT BY HAND.
-// Source: pipeline fixture → ricetta → emitter shadcn (contract badge@1, penpotComponentId 062d2e96-d208-8096-8008-a0a45aefa682, fixtureHash 4c74af97e6a4).
-// Regenerate with: pnpm --filter @penpot-ds/scripts render:component -- Badge
+// Source: pipeline due contratti → istantanea → render (contract badge@1, penpotComponentId seed-badge-2-16, snapshotHash dbb9e4da76a2).
+// Regenerate with: pnpm --filter @penpot-ds/scripts render -- Badge
 
 import { cn } from "@penpot-ds/ui/lib/utils";
-import { cva } from "class-variance-authority";
 import * as React from "react";
-
-const badgeVariants = cva(
-  "inline-flex w-fit shrink-0 items-center justify-center overflow-hidden border border-transparent whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 bg-primary pb-1 pl-3 pr-3 pt-1 rounded-full",
-  {
-    variants: {
-      variant: {
-        default: "",
-        secondary: "bg-secondary",
-        destructive: "bg-destructive",
-      },
-      size: {
-        sm: "pl-2 pr-2",
-        md: "",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "md",
-    },
-  },
-);
-
-const badgeLabelVariants = cva(
-  "font-medium text-primary-foreground text-sm tracking-none",
-  {
-    variants: {
-      variant: {
-        default: "",
-        secondary: "text-secondary-foreground",
-        destructive: "text-destructive-foreground",
-      },
-      size: {
-        sm: "text-xs",
-        md: "",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "md",
-    },
-  },
-);
 
 export type BadgeProps = React.ComponentProps<"span"> & {
   variant?: "default" | "secondary" | "destructive";
   size?: "sm" | "md";
   label?: string;
-}
+};
 
-function Badge({ className, variant, size, label, ...props }: BadgeProps) {
+const rootVariantClasses = {
+  "variant=default|size=md": "bg-primary flex flex-row items-center pb-1 pl-3 pr-3 pt-1 rounded-full",
+  "variant=default|size=sm": "bg-primary flex flex-row items-center pb-1 pl-2 pr-2 pt-1 rounded-full",
+  "variant=destructive|size=md": "bg-destructive flex flex-row items-center pb-1 pl-3 pr-3 pt-1 rounded-full",
+  "variant=destructive|size=sm": "bg-destructive flex flex-row items-center pb-1 pl-2 pr-2 pt-1 rounded-full",
+  "variant=secondary|size=md": "bg-secondary flex flex-row items-center pb-1 pl-3 pr-3 pt-1 rounded-full",
+  "variant=secondary|size=sm": "bg-secondary flex flex-row items-center pb-1 pl-2 pr-2 pt-1 rounded-full",
+} as const;
+
+const labelVariantClasses = {
+  "variant=default|size=md": "font-medium text-primary-foreground text-sm tracking-none",
+  "variant=default|size=sm": "font-medium text-primary-foreground text-xs tracking-none",
+  "variant=destructive|size=md": "font-medium text-destructive-foreground text-sm tracking-none",
+  "variant=destructive|size=sm": "font-medium text-destructive-foreground text-xs tracking-none",
+  "variant=secondary|size=md": "font-medium text-secondary-foreground text-sm tracking-none",
+  "variant=secondary|size=sm": "font-medium text-secondary-foreground text-xs tracking-none",
+} as const;
+
+function Badge({ className, variant = "default", size = "md", label = "", ...props }: BadgeProps) {
+  const key = `variant=${variant}|size=${size}` as keyof typeof rootVariantClasses;
   return (
-    <span data-slot="badge" className={cn(badgeVariants({ variant, size }), className)} {...props}>
-      <span data-slot="badge-label" className={cn(badgeLabelVariants({ variant, size }))}>
+    <span data-slot="badge" {...props} className={cn(rootVariantClasses[key], className)}>
+      <span data-slot="badge-label" className={labelVariantClasses[key as unknown as keyof typeof labelVariantClasses]}>
         {label}
       </span>
     </span>
   );
 }
 
-export { Badge, badgeVariants, badgeLabelVariants };
+export { Badge };

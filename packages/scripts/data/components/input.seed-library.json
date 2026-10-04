@@ -1,0 +1,126 @@
+{
+  "sets": [],
+  "componentCount": 1,
+  "components": [
+    {
+      "id": "seed-input-2-16",
+      "name": "Input",
+      "pluginData": "input@1",
+      "axes": [
+        "state"
+      ],
+      "axesValues": {
+        "state": [
+          "default",
+          "focus",
+          "error",
+          "disabled"
+        ]
+      },
+      "cells": [
+        {
+          "variantProps": {
+            "state": "default"
+          },
+          "variantError": null,
+          "root": {
+            "name": "Input state=default",
+            "kind": "board",
+            "tokens": {
+              "fill": "color.background",
+              "strokeColor": "color.border",
+              "strokeWidth": "border-width.default",
+              "borderRadiusTopLeft": "radius.md",
+              "borderRadiusTopRight": "radius.md",
+              "borderRadiusBottomRight": "radius.md",
+              "borderRadiusBottomLeft": "radius.md",
+              "paddingTop": "spacing.2",
+              "paddingBottom": "spacing.2",
+              "paddingLeft": "spacing.3",
+              "paddingRight": "spacing.3"
+            },
+            "style": {},
+            "children": []
+          }
+        },
+        {
+          "variantProps": {
+            "state": "focus"
+          },
+          "variantError": null,
+          "root": {
+            "name": "Input state=focus",
+            "kind": "board",
+            "tokens": {
+              "fill": "color.background",
+              "strokeColor": "color.ring",
+              "strokeWidth": "border-width.default",
+              "borderRadiusTopLeft": "radius.md",
+              "borderRadiusTopRight": "radius.md",
+              "borderRadiusBottomRight": "radius.md",
+              "borderRadiusBottomLeft": "radius.md",
+              "paddingTop": "spacing.2",
+              "paddingBottom": "spacing.2",
+              "paddingLeft": "spacing.3",
+              "paddingRight": "spacing.3",
+              "shadow": "shadow.ring"
+            },
+            "style": {},
+            "children": []
+          }
+        },
+        {
+          "variantProps": {
+            "state": "error"
+          },
+          "variantError": null,
+          "root": {
+            "name": "Input state=error",
+            "kind": "board",
+            "tokens": {
+              "fill": "color.background",
+              "strokeColor": "color.destructive",
+              "strokeWidth": "border-width.default",
+              "borderRadiusTopLeft": "radius.md",
+              "borderRadiusTopRight": "radius.md",
+              "borderRadiusBottomRight": "radius.md",
+              "borderRadiusBottomLeft": "radius.md",
+              "paddingTop": "spacing.2",
+              "paddingBottom": "spacing.2",
+              "paddingLeft": "spacing.3",
+              "paddingRight": "spacing.3"
+            },
+            "style": {},
+            "children": []
+          }
+        },
+        {
+          "variantProps": {
+            "state": "disabled"
+          },
+          "variantError": null,
+          "root": {
+            "name": "Input state=disabled",
+            "kind": "board",
+            "tokens": {
+              "fill": "color.background",
+              "strokeColor": "color.border",
+              "strokeWidth": "border-width.default",
+              "borderRadiusTopLeft": "radius.md",
+              "borderRadiusTopRight": "radius.md",
+              "borderRadiusBottomRight": "radius.md",
+              "borderRadiusBottomLeft": "radius.md",
+              "paddingTop": "spacing.2",
+              "paddingBottom": "spacing.2",
+              "paddingLeft": "spacing.3",
+              "paddingRight": "spacing.3",
+              "opacity": "opacity.disabled"
+            },
+            "style": {},
+            "children": []
+          }
+        }
+      ]
+    }
+  ]
+}

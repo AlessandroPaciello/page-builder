@@ -1,12 +1,15 @@
 // @generated — DO NOT EDIT BY HAND.
-// Source: pipeline fixture → ricetta → emitter shadcn (contract accordion-item@1, penpotComponentId 062d2e96-d208-8096-8008-a0a47165506d, fixtureHash 4c74af97e6a4).
-// Regenerate with: pnpm --filter @penpot-ds/scripts render:component -- AccordionItem
+// Source: pipeline due contratti → istantanea → render (contract accordion-item@1, penpotComponentId seed-accordionitem-2-16, snapshotHash 763d0076e7e6).
+// Regenerate with: pnpm --filter @penpot-ds/scripts render -- AccordionItem
+
+// Giudizio visivo — Alessandro (Story 2-16, CAP-11): story navigabile in
+// Storybook con addon a11y, token dal registro, nessun difetto bloccante.
 
 import type { Meta, StoryObj } from "@storybook/react";
-import * as AccordionPrimitive from "@radix-ui/react-accordion";
+import { Accordion } from "@base-ui/react/accordion";
 import { AccordionItem } from "./AccordionItem";
 
 const meta = { component: AccordionItem, title: "Layout/AccordionItem" } satisfies Meta<typeof AccordionItem>;
 export default meta;
 
-export const Default: StoryObj<typeof AccordionItem> = { args: { value: "item", label: "Etichetta", body: "Contenuto" }, decorators: [(Story) => (<AccordionPrimitive.Root collapsible type="single"><Story /></AccordionPrimitive.Root>)] };
+export const Default: StoryObj<typeof AccordionItem> = { args: { value: "item", label: "Etichetta", body: "Contenuto" }, decorators: [(Story) => (<Accordion.Root><Story /></Accordion.Root>)] };

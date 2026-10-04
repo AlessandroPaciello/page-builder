@@ -11,15 +11,16 @@ import { productCard } from "../src/components/product-card";
 import { contractId, propsSchema, type ComponentContract } from "../src/contract";
 import { COMPONENT_CONTRACTS } from "../src/registry";
 
-describe("badge@1", () => {
-  it("ha assi, tipi, valori, default e parti del prototipo", () => {
+describe("badge@1 (ridotto, Story 2.16)", () => {
+  it("ha assi option, nessun parts/partRoles, un field content", () => {
     expect(badge.name).toBe("badge");
     expect(badge.version).toBe(1);
     expect(badge.axes).toEqual([
       { name: "variant", type: "option", values: ["default", "secondary", "destructive"], default: "default" },
       { name: "size", type: "option", values: ["sm", "md"], default: "md" },
     ]);
-    expect(badge.parts).toEqual(["root", "label"]);
+    expect("parts" in badge).toBe(false);
+    expect("partRoles" in badge).toBe(false);
     expect(Object.keys(badge.fields)).toEqual(["label"]);
     expect(badge.fields.label.kind).toBe("content");
   });
@@ -37,14 +38,13 @@ describe("badge@1", () => {
   });
 });
 
-describe("input@1", () => {
-  it("ha solo l'asse state di tipo state", () => {
+describe("input@1 (ridotto, Story 2.16: state nel contratto di estrazione)", () => {
+  it("ha zero assi option, nessun parts/partRoles, un field content", () => {
     expect(input.name).toBe("input");
     expect(input.version).toBe(1);
-    expect(input.axes).toEqual([
-      { name: "state", type: "state", values: ["default", "focus", "error", "disabled"], default: "default" },
-    ]);
-    expect(input.parts).toEqual(["root", "placeholder"]);
+    expect(input.axes).toEqual([]);
+    expect("parts" in input).toBe(false);
+    expect("partRoles" in input).toBe(false);
     expect(Object.keys(input.fields)).toEqual(["placeholder"]);
     expect(input.fields.placeholder.kind).toBe("content");
   });
@@ -54,14 +54,13 @@ describe("input@1", () => {
   });
 });
 
-describe("accordion-item@1", () => {
-  it("ha l'asse state di tipo behavior e parti piatte", () => {
+describe("accordion-item@1 (ridotto, Story 2.16: behavior nel contratto di estrazione)", () => {
+  it("ha zero assi option, nessun parts/partRoles, due field content", () => {
     expect(accordionItem.name).toBe("accordion-item");
     expect(accordionItem.version).toBe(1);
-    expect(accordionItem.axes).toEqual([
-      { name: "state", type: "behavior", values: ["closed", "open"], default: "closed" },
-    ]);
-    expect(accordionItem.parts).toEqual(["root", "trigger", "label", "chevron", "content", "body", "divider"]);
+    expect(accordionItem.axes).toEqual([]);
+    expect("parts" in accordionItem).toBe(false);
+    expect("partRoles" in accordionItem).toBe(false);
     expect(Object.keys(accordionItem.fields)).toEqual(["label", "body"]);
     expect(accordionItem.fields.label.kind).toBe("content");
     expect(accordionItem.fields.body.kind).toBe("content");
@@ -69,6 +68,20 @@ describe("accordion-item@1", () => {
 
   it("non espone lo stato come prop", () => {
     expect(Object.keys(propsSchema(accordionItem).shape)).toEqual(["label", "body"]);
+  });
+});
+
+describe("alert@1 (ridotto, Story 2.16)", () => {
+  it("ha un asse option status, nessun parts/partRoles", async () => {
+    const { alert } = await import("../src/components/alert");
+    expect(alert.name).toBe("alert");
+    expect(alert.version).toBe(1);
+    expect(alert.axes).toEqual([
+      { name: "status", type: "option", values: ["info", "success", "warning", "error"], default: "info" },
+    ]);
+    expect("parts" in alert).toBe(false);
+    expect("partRoles" in alert).toBe(false);
+    expect(Object.keys(alert.fields).sort()).toEqual(["description", "heading"]);
   });
 });
 

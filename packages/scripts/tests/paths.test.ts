@@ -35,7 +35,7 @@ describe("PATHS", () => {
   });
 
   it("i dati committati stanno fuori da src/", () => {
-    for (const key of ["catalogPath", "recipesDir", "judgmentsDir", "bindingsDir", "basesDir", "designsDir", "librarySnapshotPath", "semanticSeedPath", "componentsDir"] as const) {
+    for (const key of ["catalogPath", "semanticSeedPath", "componentsDir"] as const) {
       expect(PATHS[key].startsWith(`${PATHS.dataDir}${sep}`), `PATHS.${key} → ${PATHS[key]}`).toBe(true);
     }
   });
