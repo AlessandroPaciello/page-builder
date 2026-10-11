@@ -1,8 +1,16 @@
 # Spike penpot-ai-kit — dettaglio delle prove
 
-Prove svolte il 2026-10-10, in ordine. Sintesi, decisioni e punti aperti stanno nel [README](README.md).
+Prove svolte il 2026-10-10 e 11, in ordine. Sintesi, decisioni e punti aperti stanno nel [README](README.md); i due casi d'uso presentabili in [`test-v3/`](test-v3/README.md): [Carousel](test-v3/carousel/README.md) e [ShopCard](test-v3/shop-card/README.md).
 
-Ambiente: worktree temporaneo su `develop` (`999ba13`), perso il 2026-10-11 e conservato in [`test-v3/`](test-v3/README.md), kit penpot-ai-kit v0.5.1 letto da un clone e seguito a mano (non installato), Penpot 2.17.2 fino alla prova C e 2.18.3 dopo.
+| Prova | Argomento |
+|---|---|
+| A | il kit da un file vuoto fino a `render` (Badge) |
+| B, verifica 2.18.3, C | tema Tailwind da CSS a Penpot e ritorno; variante di brand |
+| D | componente nuovo (ShopCard) e composizione con istanze |
+| E (T1–T6) | modello v3 sulla ShopCard: collegamento, generatore generico, decisione 11, cambio di aspetto e di struttura |
+| F | **simulazione completa delle skill sul Carousel** |
+
+Ambiente: kit penpot-ai-kit v0.5.1 letto da un clone e seguito a mano (non installato); Penpot 2.17.2 fino alla prova C e 2.18.3 dopo. Codice: worktree temporaneo su `develop` (`999ba13`) fino a T4b-1 (perso con il riavvio del 2026-10-11), poi il working tree del branch `spike/penpot-ai-kit`; a fine prove il codice è stato tolto dal branch e vive solo in [`test-v3/`](test-v3/README.md).
 
 ---
 
@@ -108,6 +116,8 @@ Componente "nuovo" `ShopCard` (`shop-card`), per non collidere con la ProductCar
 
 ## Prova E — test v3: collegamento, verifica e generatore generici
 
+Caso d'uso riassunto in [`test-v3/shop-card/README.md`](test-v3/shop-card/README.md).
+
 Modello nuovo provato sulla ShopCard già disegnata. File in [`test-v3/`](test-v3/README.md).
 
 | Passo | Esito |
@@ -117,7 +127,7 @@ Modello nuovo provato sulla ShopCard già disegnata. File in [`test-v3/`](test-v
 | T2 Verifica | 0 blocchi, 0 avvisi; la lettura contiene layout flex (reader corretto) e l'istanza `badge@1` solo nelle celle `discount` |
 | T3 Generazione | `ShopCard.tsx` + 4 story **senza una riga specifica per la card**: prop da assi e field, elementi e field dal collegamento, `{image && <img>}`, `{promo === "discount" && <Badge variant="destructive" size="sm" label={badgeLabel ?? ""} />}` con import, classi per cella. Da migliorare: tabelle ripetute sugli assi che non cambiano, `pl-4 pr-4` non compattato, test non generati |
 | T4 Storybook, primo giro | struttura, badge-istanza, colori, testi, spaziature fedeli; mancano font (token con solo `"Inter"`), bordo (spessore senza classe: `strokeWidth` è `coveredByBase` nel registro, residuo v1), dimensionamento "fill" (non letto: footer stretto) |
-| T4 Storybook, dopo le correzioni | lista completa dei font nel seme, `border-(length:--border-width-…)`, lettura di `layoutChild` → `self-stretch`/`flex-1`, tolto l'override del font nel `@theme inline` di shadcn (stesso bug C-6): **molto vicino a Penpot** (foto in [`test-v3/storybook/`](test-v3/storybook/)) |
+| T4 Storybook, dopo le correzioni | lista completa dei font nel seme, `border-(length:--border-width-…)`, lettura di `layoutChild` → `self-stretch`/`flex-1`, tolto l'override del font nel `@theme inline` di shadcn (stesso bug C-6): **molto vicino a Penpot** (foto in [`test-v3/shop-card/storybook/`](test-v3/shop-card/storybook/)) |
 | Vincolo tra script | la correzione di `href` ha fatto fallire `theme`, che non c'entra con le card: la CLI carica all'avvio tutti i contratti di estrazione e quello vecchio della ShopCard pretendeva `z.url()` |
 
 | T4b-1 Agganci per le modifiche a mano | **A comportamento:** `behavior: ["image"]` nel collegamento; `ShopCard.behavior.ts` scritto a mano (immagine lazy, nascosta se rotta); il generato importa `useShopCardBehavior`, esporta i tipi `ShopCardState`/`ShopCardBehavior` e aggiunge `{...behavior.image}` prima di `className` (l'aspetto resta di Penpot). **B a11y:** campo `aria` per parte (solo `aria-*`/`role`): `aria-hidden` sulla CTA. **E eject:** GC salta il file senza `@generated`, VC avvisa "staccato"; VC blocca se manca il file di comportamento o la parte non esiste. Typecheck di `ui` e `scripts` e confini di `ui` verdi; diff del generato limitato ai quattro punti attesi |
@@ -128,7 +138,7 @@ Il worktree è andato perso con il riavvio del 2026-10-11 (stava in `/tmp`): lo 
 
 | T5 Cambio di aspetto in Penpot | `radius.xl` → `radius.2xl` sui quattro angoli delle 4 celle (via MCP). `styles` dalla lettura dal vivo: VC 0 blocchi; diff di **una riga** in `ShopCard.styles.ts` (`rounded-xl` → `rounded-2xl` nella base di `root`); `ShopCard.tsx` modificato a mano **intatto**; typecheck verde |
 
-| T6 Cambio di struttura in Penpot | Il designer (via MCP) aggiunge `Category` ("Scarpe", `text.xs`, `color.muted-foreground`, `font-weight.medium`, larghezza fill) in `Header` prima di `Title`, nelle 4 celle. **VC** dal vivo: 2 blocchi (testo senza field — alzato da avviso a blocco — e `data-slot` mancante nel file dello sviluppatore); niente generato. **MS:** proposta `category` nel contratto e nel collegamento; Alessandro: obbligatoria, `span`. Il gate dei contratti rifiuta di riscrivere la voce 5 → `SCHEMA_VERSION` 6 (nessuna migrazione registrata). **AC:** `styles.ts` rigenerato con la voce `category` (corretta la CLI: i blocchi sui `data-slot` li risolve AC, non fermano gli stili); diff proposto per `ShopCard.tsx` (prop, default, `<span data-slot="shop-card-category" className={s.category(axes)}>`), approvato e applicato: le modifiche a mano restano. VC 0 blocchi, typecheck e confini verdi, test dei contratti 137/137, Storybook corretto (`storybook/t6-*.png`) |
+| T6 Cambio di struttura in Penpot | Il designer (via MCP) aggiunge `Category` ("Scarpe", `text.xs`, `color.muted-foreground`, `font-weight.medium`, larghezza fill) in `Header` prima di `Title`, nelle 4 celle. **VC** dal vivo: 2 blocchi (testo senza field — alzato da avviso a blocco — e `data-slot` mancante nel file dello sviluppatore); niente generato. **MS:** proposta `category` nel contratto e nel collegamento; Alessandro: obbligatoria, `span`. Il gate dei contratti rifiuta di riscrivere la voce 5 → `SCHEMA_VERSION` 6 (nessuna migrazione registrata). **AC:** `styles.ts` rigenerato con la voce `category` (corretta la CLI: i blocchi sui `data-slot` li risolve AC, non fermano gli stili); diff proposto per `ShopCard.tsx` (prop, default, `<span data-slot="shop-card-category" className={s.category(axes)}>`), approvato e applicato: le modifiche a mano restano. VC 0 blocchi, typecheck e confini verdi, test dei contratti 137/137, Storybook corretto (`test-v3/shop-card/storybook/t6-*.png`) |
 
 Prove concluse. Note: MS e il diff di AC li ha fatti l'agente come li farebbe la skill (non sono script); la story generata ha esempi cablati per nome di field (`category: "Scarpe"`), da rendere generici.
 
@@ -136,7 +146,7 @@ Prove concluse. Note: MS e il diff di AC li ha fatti l'agente come li farebbe la
 
 ## Prova F — Carousel: simulazione completa della skill (2026-10-11)
 
-Componente nuovo dal contratto, guidato dai prompt di Alessandro come con le skill vere; operazioni reali su Penpot e sul codice. Ricetta in [`recipes/carousel.md`](recipes/carousel.md), codice in [`test-v3/codice/`](test-v3/README.md), lettura in `test-v3/lettura-penpot-carousel.json`.
+Componente nuovo dal contratto, guidato dai prompt di Alessandro come con le skill vere; operazioni reali su Penpot e sul codice. **Caso d'uso da presentare: [`test-v3/carousel/README.md`](test-v3/carousel/README.md)** (percorso, immagini, codice). Ricetta in [`recipes/carousel.md`](recipes/carousel.md), codice in [`test-v3/codice/`](test-v3/README.md), lettura in `test-v3/carousel/lettura-penpot.json`.
 
 | Step | Prompt | Esito |
 |---|---|---|
@@ -148,7 +158,7 @@ Componente nuovo dal contratto, guidato dai prompt di Alessandro come con le ski
 | F-6 Prova del designer | (Alessandro in Penpot) | con una card scontata le card non restano allineate. Correzione di design: istanze in `Slides` ad altezza **fill**, `Content` della ShopCard ad altezza **fill** (il footer resta in fondo) |
 | F-7 GC primo giro | `/pds-code GC Carousel` | VC 0 blocchi; `styles.ts`, scaffold, story (6 ShopCard dai figli di default). **Giudizio negativo** in Storybook: il reader non legge ritaglio, dimensioni fisse, posizione degli assoluti |
 | F-8 A: pipeline | `A poi B` | reader: `clipContent` → `overflow-hidden`, dimensioni fisse in scala (`size-8`, `size-2`, `h-40`), posizione degli assoluti dai **vincoli** del designer (`left-2 top-1/2 -translate-y-1/2`), genitore `relative`, "fill" verticale (`flex-1`/`self-stretch`); D2 ignora dimensionamento e geometria dell'istanza. Vincoli delle frecce impostati in Penpot |
-| F-9 B: comportamento | approvato | diff proposto e applicato al `Carousel.tsx` dello sviluppatore: scroll-snap, `basis` per `perView` (responsive), frecce disabilitate ai bordi, pallini cliccabili, tastiera, autoplay con pause (mouse, focus, `prefers-reduced-motion`), a11y della ricetta. Verificato con Chrome via DevTools: next → slide 2, pallino 6 → fine (next disabilitata), ← → indietro. Foto in `test-v3/storybook/carousel-*.png` |
+| F-9 B: comportamento | approvato | diff proposto e applicato al `Carousel.tsx` dello sviluppatore: scroll-snap, `basis` per `perView` (responsive), frecce disabilitate ai bordi, pallini cliccabili, tastiera, autoplay con pause (mouse, focus, `prefers-reduced-motion`), a11y della ricetta. Verificato con Chrome via DevTools: next → slide 2, pallino 6 → fine (next disabilitata), ← → indietro. Foto in `test-v3/carousel/storybook/`, disegno in `test-v3/carousel/penpot/` |
 
 **Emerso dalla prova**
 

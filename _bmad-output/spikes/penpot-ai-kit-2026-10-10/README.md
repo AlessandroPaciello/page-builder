@@ -1,8 +1,8 @@
 # Spike — penpot-ai-kit e la pipeline Penpot → codice
 
-- **Data:** 2026-10-10 · **Branch:** `spike/penpot-ai-kit` (da `develop`, `999ba13`)
+- **Data:** 2026-10-10/11 · **Branch:** `spike/penpot-ai-kit` (da `develop`, `999ba13`)
 - **Kit valutato:** [penpot/penpot-ai-kit](https://github.com/penpot/penpot-ai-kit) v0.5.1 (`fe4f99e`, 2026-10-07), CC BY 4.0
-- **Stato:** prove A–E svolte, tutte le prove svolte (A–F: T4b-2, T5, T6, simulazione completa sul Carousel): pronto per la forgia
+- **Stato:** prove A–F concluse (F = simulazione completa delle skill sul Carousel); pronto per la forgia
 - **Alimenta:** `bmad-forge-idea` (poi `bmad-module-builder`, ed eventualmente `bmad-correct-course` per AD-11)
 
 ## Contenuto della cartella
@@ -10,10 +10,10 @@
 | File | Cosa |
 |---|---|
 | **README.md** | questo documento: sintesi, decisioni, modello proposto, problemi, punti aperti |
-| [prove.md](prove.md) | dettaglio delle prove A–E, in ordine |
-| [recipes/](recipes/) | ricetta della Card ricavata dal sorgente shadcn `base-nova` |
+| [prove.md](prove.md) | dettaglio delle prove A–F, in ordine |
+| [recipes/](recipes/) | ricette ricavate dai sorgenti shadcn: [Card](recipes/card.md) (`base-nova`), [Carousel](recipes/carousel.md) (`base`) |
 | [tailwind-to-penpot/](tailwind-to-penpot/) | seme del tema (`theme.css`), convertitore CSS → token, estrazione per tema, output d'esempio |
-| [test-v3/](test-v3/README.md) | test del modello nuovo sulla ShopCard: **tutto il codice dello spike** (file nuovi in `codice/`, modifiche ai file esistenti in `patch/`), lettura di Penpot, foto di Storybook |
+| [test-v3/](test-v3/README.md) | il modello nuovo su due casi d'uso — **[Carousel](test-v3/carousel/README.md)** (simulazione completa delle skill, da presentare) e [ShopCard](test-v3/shop-card/README.md) — e **tutto il codice dello spike** (`codice/`, `patch/`) |
 
 ## Sintesi
 
@@ -21,7 +21,9 @@
 2. **Il tema può nascere da un CSS Tailwind.** Seme `theme.css` (Tailwind v4 + ruoli shadcn) → token Penpot → di nuovo CSS, comprese le varianti di brand: il giro si chiude senza perdite e il codice generato torna idiomatico (`bg-primary`, `text-sm`).
 3. **La composizione funziona.** Un Badge dentro una card è un'istanza in Penpot e diventa `<Badge />` nel codice, con variante scelta dal designer e override vietati.
 4. **Un generatore generico è possibile.** Il prototipo v3 genera la ShopCard da due contratti piccoli e dalla lettura di Penpot, senza una riga specifica per quel componente, con un risultato molto vicino al disegno.
-5. **La pipeline attuale ha bug seri**, il più grave dei quali è che **il tema Penpot non arriva nel CSS compilato** (vedi Problemi).
+5. **Stili generati, componente dello sviluppatore** (decisione 11). Il generatore scrive solo l'aspetto (`<Comp>.styles.ts`); il componente React è codice libero. Un cambio di aspetto in Penpot diventa una riga di `styles.ts`, un cambio di struttura una proposta da approvare; il codice scritto a mano non viene mai riscritto.
+6. **Il percorso delle skill regge su un componente nuovo e complesso.** La [simulazione sul Carousel](test-v3/carousel/README.md) va dal primo prompt al componente funzionante in 8 passi e 4 approvazioni: ricetta → contratti → disegno in Penpot → codice, con una sezione con slot e molto comportamento.
+7. **La pipeline attuale ha bug seri**, il più grave dei quali è che **il tema Penpot non arriva nel CSS compilato** (vedi Problemi).
 
 ## Decisioni di Alessandro
 
@@ -38,6 +40,8 @@
 | 9 | Contratto dell'editor della ShopCard corretto: link relativi, immagine e testo del badge facoltativi |
 | 10 | Penpot locale fissato a **2.18.3** (compose, con backup prima della migrazione) |
 | 11 | **Stili generati, componente tuo:** il generatore scrive solo `<Comp>.styles.ts`; `<Comp>.tsx` è dello sviluppatore dopo lo scaffold (più elasticità sul codice) |
+| 12 | Il **Carousel** è una **sezione** con slot di `shop-card` (come l'Accordion): `perView` 1–3, `autoplay` e `interval` impostabili da chi compone, solo orizzontale; il Button arriverà dopo |
+| 13 | La **categoria** della ShopCard (T6) è obbligatoria ed è uno `span`; come ogni cambio del contratto dell'editor passa da un aumento di `SCHEMA_VERSION` (il gate rifiuta di riscrivere una voce): 6 per `category`, 7 per `carousel` |
 
 ## Il modello proposto
 
@@ -53,22 +57,22 @@
 | | MS | Modifica struttura: diff sui contratti → approvazione |
 | **pds-code** | ET | Estrai tema |
 | | VC | Verifica: blocca solo per struttura, il resto sono avvisi |
-| | GC | Genera `styles.ts` e story; scaffold del componente se non esiste; giudizio in Storybook |
+| | GC | Genera `styles.ts` e story; scaffold del componente se non esiste; giudizio in Storybook; propone il comportamento come diff |
 | | AC | Rigenera `styles.ts`, riassume i cambi; per la struttura propone il diff del componente |
 | | GA | Gate: typecheck, test, tema nel CSS, contrasto |
 
 Strade: *dal contratto* `CN → DC → GC`; *dal design* `DC (libera) → CD → GC`. Modifiche: aspetto → `AC`; struttura → `MS → AC`.
 
-### I contratti di un componente
+### I contratti di un componente (o di una sezione)
 
 | | Contratto dell'editor | Collegamento |
 |---|---|---|
-| File | `packages/contracts/src/components/<nome>.ts` | `packages/scripts/src/contracts/<nome>.binding.ts` |
-| Contiene | varianti e field per chi compone le pagine | elemento HTML, parte → field, componenti annidati, `when`, a11y, dominio |
+| File | `packages/contracts/src/components/<nome>.ts`, oppure `sections/<nome>.ts` per una sezione con slot | `packages/scripts/src/contracts/<nome>.binding.ts` |
+| Contiene | varianti e field per chi compone le pagine; per una sezione anche slot e figli di default | elemento HTML, parte → field, componenti annidati, `when`, a11y, dominio; per una sezione `slot`, `repeat`, `icon` e quali field sono assi delle celle Penpot |
 | Scritto da | la skill (CN/CD), approvato | la skill (CN/CD), approvato |
 | Versione | `SCHEMA_VERSION` + fingerprint (pagine salvate) | — |
 
-Esempio: [contratto dell'editor](test-v3/codice/packages/contracts/src/components/shop-card.ts) e [collegamento](test-v3/codice/packages/scripts/src/contracts/shop-card.binding.ts).
+Esempi: ShopCard ([contratto](test-v3/codice/packages/contracts/src/components/shop-card.ts), [collegamento](test-v3/codice/packages/scripts/src/contracts/shop-card.binding.ts)); Carousel ([sezione](test-v3/codice/packages/contracts/src/sections/carousel.ts), [collegamento](test-v3/codice/packages/scripts/src/contracts/carousel.binding.ts)).
 
 ### Gli script: 5, tutti generici
 
@@ -76,9 +80,9 @@ Esempio: [contratto dell'editor](test-v3/codice/packages/contracts/src/component
 |---|---|---|
 | `css-to-tokens` (seme → token) | TB, TV | prototipo ✅ |
 | estrazione del tema (Penpot → CSS per tema) | ET | prototipo ✅ (`theme` da estendere) |
-| reader Penpot (celle, token, layout, dimensionamento, istanze) | CD, MS, VC, GC, AC | esiste; corretto nel prototipo |
-| verifica (struttura = blocco, aspetto = avviso) | VC, GC, AC, MS | prototipo ✅ |
-| generatore | GC, AC | prototipo ✅ |
+| reader Penpot (celle, token, layout, dimensionamento, istanze, ritaglio, dimensioni, vincoli) | CD, MS, VC, GC, AC | esiste; corretto nel prototipo |
+| verifica (struttura = blocco, aspetto = avviso; parti ↔ `data-slot`) | VC, GC, AC, MS | prototipo ✅ |
+| generatore (`styles.ts`, scaffold, story) | GC, AC | prototipo ✅ |
 
 In creazione non c'è nessuno script nostro (kit + skill). Divisione dei ruoli: lo script trova i fatti, la skill li spiega e propone cosa fare.
 
@@ -98,7 +102,7 @@ commerce/
 | il tuo codice (stato, eventi, a11y, elementi in più, wrapper) | lo scrivi nel componente: nessun aggancio |
 | struttura in Penpot | VC confronta le parti con i `data-slot`: parte mancante nel codice = blocco, elemento solo del codice = avviso; una parte tolta sparisce da `styles.ts` e TypeScript la segnala; AC propone il diff del JSX da approvare |
 
-Provato sulla ShopCard (prove.md, T4b-2): file modificato a mano rimasto identico dopo la rigenerazione. Superati gli agganci provati prima (`behavior.ts`, `aria`, eject: T4b-1). Esempio: [`ShopCard.tsx`](test-v3/codice/packages/ui/src/domains/commerce/ShopCard.tsx) e [`ShopCard.styles.ts`](test-v3/codice/packages/ui/src/domains/commerce/ShopCard.styles.ts).
+Provato sulla ShopCard (prove.md, T4b-2, T5, T6: file modificato a mano rimasto identico dopo le rigenerazioni) e sul Carousel (prova F: comportamento proposto dalla skill e approvato). Superati gli agganci provati prima (`behavior.ts`, `aria`, eject: T4b-1). Esempi: [`ShopCard.tsx`](test-v3/codice/packages/ui/src/domains/commerce/ShopCard.tsx), [`Carousel.tsx`](test-v3/codice/packages/ui/src/domains/layout/Carousel.tsx) e i rispettivi `styles.ts`.
 
 ## Problemi trovati
 
@@ -158,6 +162,7 @@ Provato sulla ShopCard (prove.md, T4b-2): file modificato a mano rimasto identic
 |---|---|
 | Penpot "Nuovo File 5" | prova A (vocabolario del kit, due container Badge) |
 | Penpot "tailwind" | set `tailwind`, `semantic`, `brand/ocean`; temi `mode/light`, `brand/default`, `brand/ocean`; container `Badge` e `ShopCard` (con istanze del Badge; raggio `radius.2xl` e parte `Category` dopo T5/T6, `Content` in fill), `Carousel` (`perView` 1/2/3, istanze di ShopCard) |
-| Codice dello spike | applicato sul branch `spike/penpot-ai-kit` (working tree, non committato); copia in [`test-v3/`](test-v3/README.md). Nessun worktree (perso il 2026-10-11, rimosso con `git worktree prune`) |
-| `docker/penpot/docker-compose.yml` | Penpot 2.18.3, non committato |
+| Codice dello spike | **solo** in [`test-v3/`](test-v3/README.md) (`codice/` + `patch/`); `packages/` sul branch è pulito, le patch si applicano. Nessun worktree (perso il 2026-10-11) |
+| Branch `spike/penpot-ai-kit` | `4feaedb` (spike), `6cded58` (prova F) e il riordino dei casi d'uso |
+| `docker/penpot/docker-compose.yml` | Penpot 2.18.3, committato in `4feaedb` |
 | Backup Penpot | `~/Scrivania/projects/penpot-backups/2026-10-10-pre-2.18.3/` |
