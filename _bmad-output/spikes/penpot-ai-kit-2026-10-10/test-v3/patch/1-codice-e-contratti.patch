@@ -1,5 +1,5 @@
 diff --git a/packages/contracts/src/index.ts b/packages/contracts/src/index.ts
-index 1413c28..f5ad682 100644
+index 1413c28..185e786 100644
 --- a/packages/contracts/src/index.ts
 +++ b/packages/contracts/src/index.ts
 @@ -4,6 +4,7 @@ export { alert } from "./components/alert";
@@ -10,11 +10,16 @@ index 1413c28..f5ad682 100644
  export {
    type Axis,
    type AxisType,
+@@ -27,3 +28,4 @@ export {
+   validateSectionDefinition,
+ } from "./section";
+ export { accordion } from "./sections/accordion";
++export { carousel } from "./sections/carousel";
 diff --git a/packages/contracts/src/registry.ts b/packages/contracts/src/registry.ts
-index eba7be9..eb10a39 100644
+index eba7be9..44420e2 100644
 --- a/packages/contracts/src/registry.ts
 +++ b/packages/contracts/src/registry.ts
-@@ -3,6 +3,7 @@ import { alert } from "./components/alert";
+@@ -3,9 +3,11 @@ import { alert } from "./components/alert";
  import { badge } from "./components/badge";
  import { input } from "./components/input";
  import { productCard } from "./components/product-card";
@@ -22,7 +27,11 @@ index eba7be9..eb10a39 100644
  import type { ComponentContract } from "./contract";
  import type { SectionDefinition } from "./section";
  import { accordion } from "./sections/accordion";
-@@ -18,6 +19,7 @@ export const COMPONENT_CONTRACTS = {
++import { carousel } from "./sections/carousel";
+ 
+ /**
+  * Unico punto che elenca i contratti: classifier, fingerprint e test leggono
+@@ -18,9 +20,11 @@ export const COMPONENT_CONTRACTS = {
    [accordionItem.name]: accordionItem,
    [alert.name]: alert,
    [productCard.name]: productCard,
@@ -30,33 +39,71 @@ index eba7be9..eb10a39 100644
  } as const satisfies Readonly<Record<string, ComponentContract>>;
  
  /** Unico punto che elenca le definizioni di sezione. */
+ export const SECTION_DEFINITIONS = {
+   [accordion.name]: accordion,
++  [carousel.name]: carousel,
+ } as const satisfies Readonly<Record<string, SectionDefinition>>;
 diff --git a/packages/contracts/src/schema-version.ts b/packages/contracts/src/schema-version.ts
-index 6221d1e..1229c25 100644
+index 6221d1e..c6875bd 100644
 --- a/packages/contracts/src/schema-version.ts
 +++ b/packages/contracts/src/schema-version.ts
-@@ -7,5 +7,8 @@
+@@ -7,5 +7,9 @@
   * (assi `option`, field, slot) ed entra `product-card`. L'estensione v1
   * (`parts`, `partRoles`, assi `state`/`behavior`) è fuori dal fingerprint:
   * la sua cancellazione (Story 2.16) NON è un nuovo bump.
 + *
 + * 5 (spike 2026-10-10): entra `shop-card`. 6 (spike 2026-10-11, T6): field
 + * obbligatorio `category` della ShopCard, aggiunto dal designer in Penpot.
++ * 7 (spike 2026-10-11): entra la sezione `carousel` (slot di shop-card).
   */
 -export const SCHEMA_VERSION = 4;
-+export const SCHEMA_VERSION = 6;
++export const SCHEMA_VERSION = 7;
 diff --git a/packages/contracts/tests/contracts.fingerprint.json b/packages/contracts/tests/contracts.fingerprint.json
-index 6fe867a..f7f90bb 100644
+index 6fe867a..45f4a30 100644
 --- a/packages/contracts/tests/contracts.fingerprint.json
 +++ b/packages/contracts/tests/contracts.fingerprint.json
-@@ -2,5 +2,7 @@
+@@ -2,5 +2,8 @@
    "1": "05ca6aceeaa588384d74dd5626e4eb22fe9d3cf09a15f7492faa1f65a910d332",
    "2": "59628230d831d08619b69dee8d7308c6365bd17aeda77777749a7927a0bf8d85",
    "3": "75e1dce962257a812e9e677c0049dda6c4fc48a01fcc15f5e82c0d28414ed817",
 -  "4": "d71a057eb119c3970cc699d7f8ead0bba5698dad8bd872b9382a26a3097bc712"
 +  "4": "d71a057eb119c3970cc699d7f8ead0bba5698dad8bd872b9382a26a3097bc712",
 +  "5": "586b2b12b2ef7136f8bcf96d1eccedb3d760cdba3f5606e24c82ce233c9f91ec",
-+  "6": "2518a38e23c664b0a043e6601acc67bcd3c1ec9965aadddfd9960ef4eaf6ad72"
++  "6": "2518a38e23c664b0a043e6601acc67bcd3c1ec9965aadddfd9960ef4eaf6ad72",
++  "7": "bdba8b159cd59cd8acfcd4497e32cea44c368aeb05816d93e0a5de269f64f0a0"
  }
+diff --git a/packages/contracts/tests/section.test.ts b/packages/contracts/tests/section.test.ts
+index 97fd120..ae0045d 100644
+--- a/packages/contracts/tests/section.test.ts
++++ b/packages/contracts/tests/section.test.ts
+@@ -4,6 +4,7 @@ import { z } from "zod";
+ import { SECTION_DEFINITIONS } from "../src/registry";
+ import { type SectionDefinition, type SectionNode, SectionDefinitionSchema, validateSectionDefinition } from "../src/section";
+ import { accordion } from "../src/sections/accordion";
++import { carousel } from "../src/sections/carousel";
+ 
+ /** Sezione di test con `max: 1`, per non dipendere dall'Accordion (che non ha `max`). */
+ function demoList(overrides: Partial<SectionDefinition> = {}): SectionDefinition {
+@@ -48,7 +49,7 @@ describe("Accordion Root", () => {
+   });
+ 
+   it("è elencata nel registry delle sezioni", () => {
+-    expect(SECTION_DEFINITIONS).toEqual({ accordion });
++    expect(SECTION_DEFINITIONS.accordion).toBe(accordion);
+   });
+ 
+   it("ogni sezione del registry è valida (iterazione, come il classifier)", () => {
+@@ -166,3 +167,10 @@ describe("validateSectionDefinition", () => {
+     expect(errors.join("\n")).toMatch(/più profondo di 100 livelli/);
+   });
+ });
++
++describe("Carousel (spike 2026-10-11)", () => {
++  it("è una definizione valida, con uno slot di sole shop-card", () => {
++    expect(validateSectionDefinition(carousel)).toEqual({ valid: true });
++    expect(carousel.slots).toEqual([{ id: "slides", allow: ["shop-card"] }]);
++  });
++});
 diff --git a/packages/scripts/src/commands/extract.ts b/packages/scripts/src/commands/extract.ts
 index 63ad143..8b93037 100644
 --- a/packages/scripts/src/commands/extract.ts
@@ -213,10 +260,10 @@ index d94a104..88f5748 100644
        name,
        layer: part.layer,
 diff --git a/packages/scripts/src/library/library-reader.ts b/packages/scripts/src/library/library-reader.ts
-index 375037a..584ad95 100644
+index 375037a..2288902 100644
 --- a/packages/scripts/src/library/library-reader.ts
 +++ b/packages/scripts/src/library/library-reader.ts
-@@ -86,6 +86,20 @@ function styleOf(shape) {
+@@ -86,6 +86,42 @@ function styleOf(shape) {
    }
    if (typeof shape.opacity === "number" && Math.abs(shape.opacity - 1) > 1e-6) style[${single("opacity")}] = shape.opacity;
    if (Array.isArray(shape.shadows) && shape.shadows.length > 0) style[${single("shadows")}] = JSON.parse(JSON.stringify(shape.shadows));
@@ -233,11 +280,33 @@ index 375037a..584ad95 100644
 +  if (shape.layoutChild) {
 +    if (typeof shape.layoutChild.horizontalSizing === "string") style.sizingH = shape.layoutChild.horizontalSizing;
 +    if (typeof shape.layoutChild.verticalSizing === "string") style.sizingV = shape.layoutChild.verticalSizing;
++    // Spike 2026-10-11 (Carousel): fuori dal flusso del layout (frecce), con i vincoli
++    // del designer (left/right/center…) e le distanze dai bordi del genitore.
++    if (shape.layoutChild.absolute === true && shape.parent) {
++      const p = shape.parent;
++      style.position = "absolute";
++      style.constraintH = shape.constraintsHorizontal;
++      style.constraintV = shape.constraintsVertical;
++      style.left = Math.round(shape.x - p.x);
++      style.top = Math.round(shape.y - p.y);
++      style.right = Math.round(p.x + p.width - shape.x - shape.width);
++      style.bottom = Math.round(p.y + p.height - shape.y - shape.height);
++    }
++  }
++  // Spike 2026-10-11 (Carousel): ritaglio del contenuto, dimensioni fisse e dimensionamento del proprio layout.
++  if (shape.type === "board" && shape.clipContent === true) style.clip = true;
++  if (shape.type !== "text" && shape.type !== "path") {
++    style.width = Math.round(shape.width);
++    style.height = Math.round(shape.height);
++  }
++  if (shape.flex) {
++    if (typeof shape.flex.horizontalSizing === "string") style.ownSizingH = shape.flex.horizontalSizing;
++    if (typeof shape.flex.verticalSizing === "string") style.ownSizingV = shape.flex.verticalSizing;
 +  }
    return style;
  }
  `;
-@@ -103,13 +117,44 @@ function isVariantContainerShape(shape) {
+@@ -103,13 +139,58 @@ function isVariantContainerShape(shape) {
    }
  }
  ${STYLE_OF_SOURCE}
@@ -253,18 +322,32 @@ index 375037a..584ad95 100644
 +    try { contract = container ? (container.getSharedPluginData("pagebuilder", "contract") || null) : null; } catch (error) { contract = null; }
 +    const props = JSON.parse(JSON.stringify(comp.variantProps ?? {}));
 +    const overrides = [];
-+    const diff = (a, b, path) => {
++    // Spike 2026-10-11 (Carousel): il dimensionamento dell'istanza nel layout del
++    // genitore (sizingH/V) dice come occupa il posto, non come appare: non è un
++    // override di stile (D2) e resta nello stile del layer, per il contenitore.
++    // Geometria (dimensioni, distanze) = risultato del layout, mai un override di stile.
++    const GEOMETRY = ["width", "height", "left", "top", "right", "bottom"];
++    const placement = (style, isRoot) => {
++      const out = {};
++      for (const [k, v] of Object.entries(style)) {
++        if (GEOMETRY.includes(k)) continue;
++        if (isRoot && ["sizingH", "sizingV", "ownSizingH", "ownSizingV", "position", "constraintH", "constraintV"].includes(k)) continue;
++        out[k] = v;
++      }
++      return out;
++    };
++    const diff = (a, b, path, isRoot) => {
 +      if (!b) { overrides.push(path + ": layer senza corrispettivo nel componente"); return; }
 +      const ta = JSON.stringify(a.tokens ?? {});
 +      const tb = JSON.stringify(b.tokens ?? {});
 +      if (ta !== tb) overrides.push(path + ": token " + ta + " invece di " + tb);
-+      const sa = JSON.stringify(styleOf(a));
-+      const sb = JSON.stringify(styleOf(b));
++      const sa = JSON.stringify(placement(styleOf(a), isRoot));
++      const sb = JSON.stringify(placement(styleOf(b), isRoot));
 +      if (sa !== sb) overrides.push(path + ": stile " + sa + " invece di " + sb);
 +      const cb = b.children || [];
-+      (a.children || []).forEach((child, index) => diff(child, cb[index], path + "/" + child.name));
++      (a.children || []).forEach((child, index) => diff(child, cb[index], path + "/" + child.name, false));
 +    };
-+    diff(shape, main, shape.name);
++    diff(shape, main, shape.name, true);
 +    return { contract, props, overrides };
 +  } catch (error) {
 +    return null;
@@ -283,7 +366,7 @@ index 375037a..584ad95 100644
    };
  }
  const catalog = penpot.library.local.tokens;
-@@ -278,11 +323,21 @@ function parseLayer(raw: unknown, context: string): LibrarySnapshot["components"
+@@ -278,11 +359,21 @@ function parseLayer(raw: unknown, context: string): LibrarySnapshot["components"
      }
      tokens[property] = tokenName;
    }

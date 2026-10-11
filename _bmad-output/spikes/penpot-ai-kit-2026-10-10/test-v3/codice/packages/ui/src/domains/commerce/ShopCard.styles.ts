@@ -8,19 +8,19 @@ export type ShopCardAxes = { size: "default" | "sm"; promo: "none" | "discount" 
 
 /** Classi per parte (token Penpot → Tailwind). */
 export const shopCardStyles = {
-  root: cva("bg-card border-(length:--border-width-default) border-border flex flex-col items-start pl-0 pr-0 pt-0 rounded-2xl", {
+  root: cva("bg-card border-(length:--border-width-default) border-border flex flex-col items-start overflow-hidden pl-0 pr-0 pt-0 rounded-2xl", {
     variants: {
       size: { default: "gap-y-4 pb-4", sm: "gap-y-3 pb-3" },
       promo: { none: "", discount: "" },
     },
   }),
-  image: cva("rounded-xl self-stretch", {
+  image: cva("overflow-hidden rounded-xl self-stretch", {
     variants: {
-      size: { default: "", sm: "" },
+      size: { default: "h-40", sm: "h-32" },
       promo: { none: "", discount: "" },
     },
   }),
-  header: cva("flex flex-col gap-y-1 items-start pb-0 pt-0 self-stretch", {
+  header: cva("flex flex-col gap-y-1 items-start overflow-hidden pb-0 pt-0 self-stretch", {
     variants: {
       size: { default: "pl-4 pr-4", sm: "pl-3 pr-3" },
       promo: { none: "", discount: "" },
@@ -44,7 +44,7 @@ export const shopCardStyles = {
       promo: { none: "", discount: "" },
     },
   }),
-  content: cva("flex flex-col items-start pb-0 pt-0 self-stretch", {
+  content: cva("flex flex-1 flex-col items-start overflow-hidden pb-0 pt-0 self-stretch", {
     variants: {
       size: { default: "pl-4 pr-4", sm: "pl-3 pr-3" },
       promo: { none: "", discount: "" },
@@ -56,7 +56,7 @@ export const shopCardStyles = {
       promo: { none: "", discount: "" },
     },
   }),
-  footer: cva("bg-muted flex flex-row items-center self-stretch", {
+  footer: cva("bg-muted flex flex-row items-center overflow-hidden self-stretch", {
     variants: {
       size: { default: "pb-4 pl-4 pr-4 pt-4", sm: "pb-3 pl-3 pr-3 pt-3" },
       promo: { none: "", discount: "" },

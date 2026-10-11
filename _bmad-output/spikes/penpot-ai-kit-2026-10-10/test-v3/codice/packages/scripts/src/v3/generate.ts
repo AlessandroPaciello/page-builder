@@ -69,6 +69,9 @@ function buildTemplate(container: SnapshotComponent, contract: ComponentContract
   return root;
 }
 
+/** Esempi degli slot (figli in Penpot), per cella: servono agli stili dell'elemento che avvolge ogni figlio. */
+export const slotExamples = new WeakMap<TemplateNode, Map<string, SnapshotLayer[]>>();
+
 export function walk(node: TemplateNode, visit: (n: TemplateNode, parent: TemplateNode | null) => void, parent: TemplateNode | null = null): void {
   visit(node, parent);
   for (const child of node.children) walk(child, visit, node);
@@ -101,6 +104,23 @@ export function verify(binding: Binding, container: SnapshotComponent | undefine
   for (const key of actualKeys) if (!expectedKeys.includes(key)) findings.push({ level: "blocco", where: `cella ${key}`, message: "cella in più in Penpot (valore non previsto dal contratto)" });
 
   const template = buildTemplate(container, contract);
+  // Spike 2026-10-11 — slot: i figli in Penpot sono esempi (istanze dei componenti ammessi).
+  walk(template, (n) => {
+    const def = binding.parts[n.part];
+    if (def?.slot === undefined) return;
+    const allow = binding.slots?.find((s) => s.id === def.slot)?.allow ?? [];
+    const examples = new Map<string, SnapshotLayer[]>();
+    for (const [key, layer] of n.byCell) {
+      examples.set(key, layer.children);
+      for (const child of layer.children) {
+        const name = (child.instance?.contract ?? "").split("@")[0]!;
+        if (child.instance === undefined || !allow.includes(name)) findings.push({ level: "blocco", where: `slot ${def.slot}, cella ${key}`, message: `"${child.name}" non è un'istanza di ${allow.join(" | ")}` });
+        else for (const o of child.instance.overrides) findings.push({ level: "blocco", where: `slot ${def.slot}, cella ${key}`, message: `override sull'esempio (D2): ${o.split(": ")[0]}` });
+      }
+    }
+    slotExamples.set(n, examples);
+    n.children.splice(0);
+  });
   const byPart = new Map<string, TemplateNode>();
   walk(template, (n) => byPart.set(n.part, n));
 
@@ -158,7 +178,7 @@ export function verify(binding: Binding, container: SnapshotComponent | undefine
       for (const prop of Object.keys(layer.style)) {
         const def = propertyDefinition(prop);
         if (def !== undefined && def.type.kind === "keyword") continue;
-        if (prop === "sizingH" || prop === "sizingV") continue;
+        if (["sizingH", "sizingV", "ownSizingH", "ownSizingV", "position", "constraintH", "constraintV", "left", "top", "right", "bottom", "width", "height", "clip"].includes(prop)) continue;
         if (layer.tokens[prop] === undefined) findings.push({ level: "avviso", where: `parte ${n.part}, cella ${key}`, message: `"${prop}" senza token: non arriverà nel codice` });
       }
     }
@@ -167,11 +187,44 @@ export function verify(binding: Binding, container: SnapshotComponent | undefine
 }
 
 /** Token o parola chiave → classe Tailwind, con il registro. `parentDir` serve al dimensionamento "fill". */
-export function classesOf(layer: SnapshotLayer, catalog: TokenCatalog, parentDir?: string): string[] {
+/** Distanza/dimensione in px → passo della scala Tailwind (4px), o null se fuori scala. */
+const step = (px: unknown): string | null => (typeof px === "number" && Number.isInteger(px * 2 / 4) ? String(px / 4) : null);
+
+export function classesOf(layer: SnapshotLayer, catalog: TokenCatalog, parentDir?: string, isRoot = false): string[] {
   const out: string[] = [];
+  const st = layer.style;
+  // Spike 2026-10-11: ritaglio, dimensioni fisse (solo se né "fill" né "auto"), posizione degli assoluti.
+  if (st["clip"] === true) out.push("overflow-hidden");
+  // Figli in posizione assoluta: il genitore fa da riferimento.
+  if (layer.children.some((k) => k.style["position"] === "absolute")) out.push("relative");
+  if (!isRoot) {
+    // Tutti i figli in "fill" su un asse: Penpot impone "fix" al genitore, ma la misura la decide il contenuto.
+    const kids = layer.children;
+    const fillW = kids.length > 0 && kids.every((k) => k.style["sizingH"] === "fill");
+    const fillH = kids.length > 0 && kids.every((k) => k.style["sizingV"] === "fill");
+    const fixW = !fillW && st["sizingH"] !== "fill" && st["sizingH"] !== "auto" && st["ownSizingH"] !== "auto" ? step(st["width"]) : null;
+    const fixH = !fillH && st["sizingV"] !== "fill" && st["sizingV"] !== "auto" && st["ownSizingV"] !== "auto" ? step(st["height"]) : null;
+    if (fixW !== null && fixW === fixH) out.push(`size-${fixW}`);
+    else {
+      if (fixW !== null) out.push(`w-${fixW}`);
+      if (fixH !== null) out.push(`h-${fixH}`);
+    }
+  }
+  if (st["position"] === "absolute") {
+    const at = (side: string, px: unknown): string => (step(px) !== null ? `${side}-${step(px)}` : `${side}-[${String(px)}px]`);
+    const h = st["constraintH"];
+    out.push(h === "right" ? at("right", st["right"]) : h === "center" ? "left-1/2 -translate-x-1/2" : at("left", st["left"]));
+    const v = st["constraintV"];
+    out.push(v === "bottom" ? at("bottom", st["bottom"]) : v === "center" ? "top-1/2 -translate-y-1/2" : at("top", st["top"]));
+  }
   // Spike: "fill" nel genitore → si allarga (colonna) o cresce (riga).
   if (parentDir === "column" && layer.style["sizingH"] === "fill") out.push("self-stretch");
   if (parentDir === "row" && layer.style["sizingH"] === "fill") out.push("flex-1");
+  if (layer.style["position"] === "absolute") out.push("absolute");
+  // (le classi con spazi, es. "left-1/2 -translate-x-1/2", si spezzano qui sotto)
+  // Spike 2026-10-11: "fill" in verticale → cresce (colonna) o si allunga (riga).
+  if (parentDir === "column" && layer.style["sizingV"] === "fill") out.push("flex-1");
+  if (parentDir === "row" && layer.style["sizingV"] === "fill") out.push("self-stretch");
   const typeOf = (token: string): TokenType | undefined => {
     for (const set of catalog.sets) for (const t of set.tokens) if (t.name === token) return t.type as TokenType;
     return undefined;
@@ -184,7 +237,8 @@ export function classesOf(layer: SnapshotLayer, catalog: TokenCatalog, parentDir
     if (type === undefined) continue;
     if (rule.emit === "utility") {
       let prefix = rule.prefix;
-      if (rule.byLayerKind !== undefined && layer.kind === "text" && rule.byLayerKind["text"] !== undefined) prefix = rule.byLayerKind["text"]!;
+      // Spike 2026-10-11: il prefisso per tipo di layer vale per tutti i tipi (es. tratto di un'icona → stroke-*).
+      if (rule.byLayerKind?.[layer.kind] !== undefined) prefix = rule.byLayerKind[layer.kind]!;
       out.push(`${prefix}-${varSuffix(token, type)}`);
     } else if (rule.emit === "radiusCorner") out.push(`${rule.corner}-${varSuffix(token, type)}`);
     // Spike: lo spessore del bordo nel registro è "coveredByBase" (residuo v1): qui diventa una classe.
@@ -198,6 +252,7 @@ export function classesOf(layer: SnapshotLayer, catalog: TokenCatalog, parentDir
     if (cls) out.push(...cls.split(" ").filter(Boolean));
   }
   // Quattro angoli uguali → rounded-<sfx>.
+  out.splice(0, out.length, ...out.flatMap((c) => c.split(" ")));
   const corners = ["rounded-tl-", "rounded-tr-", "rounded-br-", "rounded-bl-"].map((p) => out.find((c) => c.startsWith(p)));
   if (corners.every(Boolean) && new Set(corners.map((c) => c!.split("-").slice(2).join("-"))).size === 1) {
     const sfx = corners[0]!.split("-").slice(2).join("-");

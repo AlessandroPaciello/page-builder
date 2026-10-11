@@ -2,7 +2,7 @@
 
 - **Data:** 2026-10-10 · **Branch:** `spike/penpot-ai-kit` (da `develop`, `999ba13`)
 - **Kit valutato:** [penpot/penpot-ai-kit](https://github.com/penpot/penpot-ai-kit) v0.5.1 (`fe4f99e`, 2026-10-07), CC BY 4.0
-- **Stato:** prove A–E svolte, tutte le prove svolte (A–E, T4b-2, T5, T6): pronto per la forgia
+- **Stato:** prove A–E svolte, tutte le prove svolte (A–F: T4b-2, T5, T6, simulazione completa sul Carousel): pronto per la forgia
 - **Alimenta:** `bmad-forge-idea` (poi `bmad-module-builder`, ed eventualmente `bmad-correct-course` per AD-11)
 
 ## Contenuto della cartella
@@ -116,6 +116,10 @@ Provato sulla ShopCard (prove.md, T4b-2): file modificato a mano rimasto identic
 | Render scritto a mano per componente | ogni componente nuovo richiede codice | `render.ts` | D, E |
 | Contratti di estrazione caricati tutti all'avvio della CLI | un contratto cambia, si rompe `theme` | `registry.ts` | E |
 | Template dei test cablati; log di `extract` | test fragili, messaggi fuorvianti | `render.ts`, `extract.ts` | A-14, A-15 |
+| Il reader non leggeva ritaglio, dimensioni fisse, posizione degli assoluti, "fill" verticale | frecce e pallini senza misura, card fuori dal contenitore | `library-reader.ts`, generatore (corretto nel prototipo) | F-7, F-8 |
+| D2 contava come override il dimensionamento di un'istanza | blocco su card in "fill" dentro uno slot | `instanceInfo` del reader (corretto nel prototipo) | F-6, F-8 |
+| La pipeline conosce solo contratti di componente | una sezione con slot non si legge né si genera | prototipo: `sectionContract`, `slot`/`repeat`/`icon` | F-3 |
+| Test di `scripts` rotti dallo spike | 45 rossi: fixture col catalogo vecchio, confini violati da `v3/` | catalogo, `v3/` | F |
 
 ### Limiti di Penpot, del kit e dell'ambiente
 
@@ -128,6 +132,8 @@ Provato sulla ShopCard (prove.md, T4b-2): file modificato a mano rimasto identic
 | Il plugin perde lo `storage` al ricollegamento | ritrovare gli elementi da nomi e plugin data |
 | `switchVariant` su un'istanza con override rinomina il layer | riconoscere le istanze anche dal componente, non solo dal nome |
 | Gli override non sono esposti dall'API | confronto con l'istanza principale |
+| Altezza "come la più alta": con tutti i figli in fill Penpot fissa il genitore; Stretch incoerente | regola del generatore: misura fissa ignorata se tutti i figli riempiono l'asse |
+| Board con ritaglio attivo per default | `overflow-hidden` quasi ovunque: decidere quando leggerlo |
 | Scheda Penpot sospesa dal browser | documentare: finestra visibile o flag `--disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows` |
 
 ## Punti aperti per la forgia
@@ -141,13 +147,17 @@ Provato sulla ShopCard (prove.md, T4b-2): file modificato a mano rimasto identic
 7. **Larghezza dei componenti** (fissa in Penpot, non un token) e caricamento del webfont.
 8. **Render generico prima della 2.18** (libreria dei sei domini).
 9. **AD-11 e i "sei comandi" della v2** cambiano: correct-course.
+10. **Sezioni nella pipeline** (prova F): sezione come contratto con assi (`sectionContract`), concetti `slot`/`repeat`/`icon` nel collegamento, story con i figli di default; chiarire la differenza tra componente con slot e sezione (AD-11 "Composizione ≠ ricetta").
+11. **Comportamento proposto dalla skill** dopo lo scaffold (prova F, B): come la skill lo scrive e lo mostra, e quando ripropone (cambi di struttura).
+12. **Geometria in Penpot**: dimensioni fisse fuori scala, vincoli degli assoluti, ritaglio di default, "fill" sul genitore auto.
+13. **Test dello spike**: riallineare le fixture al catalogo Tailwind e portare `v3/` dentro i confini prima di riapplicare il codice.
 
 ## Stato
 
 | Dove | Cosa c'è |
 |---|---|
 | Penpot "Nuovo File 5" | prova A (vocabolario del kit, due container Badge) |
-| Penpot "tailwind" | set `tailwind`, `semantic`, `brand/ocean`; temi `mode/light`, `brand/default`, `brand/ocean`; container `Badge` e `ShopCard` (con istanze del Badge; raggio `radius.2xl` e parte `Category` dopo T5/T6) |
+| Penpot "tailwind" | set `tailwind`, `semantic`, `brand/ocean`; temi `mode/light`, `brand/default`, `brand/ocean`; container `Badge` e `ShopCard` (con istanze del Badge; raggio `radius.2xl` e parte `Category` dopo T5/T6, `Content` in fill), `Carousel` (`perView` 1/2/3, istanze di ShopCard) |
 | Codice dello spike | applicato sul branch `spike/penpot-ai-kit` (working tree, non committato); copia in [`test-v3/`](test-v3/README.md). Nessun worktree (perso il 2026-10-11, rimosso con `git worktree prune`) |
 | `docker/penpot/docker-compose.yml` | Penpot 2.18.3, non committato |
 | Backup Penpot | `~/Scrivania/projects/penpot-backups/2026-10-10-pre-2.18.3/` |

@@ -9,7 +9,8 @@ Tutto il codice dello spike, in un'unica copia aggiornata. Il worktree in cui è
 | `patch/2-file-generati.patch` | artefatti rigenerati durante le prove (catalogo token, tema CSS/TS, Badge) |
 | `lettura-penpot-shop-card.json` | lettura di Penpot usata per T2–T4 (solo per la demo; vedi punto aperto 5 del README) |
 | `lettura-penpot-shop-card-t6.json` | lettura dopo T5 (raggio `2xl`) e T6 (categoria) |
-| `storybook/` | foto delle 4 story dopo le correzioni (`sc3-*`, T4) e dopo la categoria (`t6-*`, T6) |
+| `lettura-penpot-carousel.json` | lettura completa dopo la prova F (Carousel + ShopCard) |
+| `storybook/` | foto delle 4 story dopo le correzioni (`sc3-*`, T4) e dopo la categoria (`t6-*`, T6); Carousel (`carousel-*`, prova F: scaffold, perView 3, telefono, fine scorrimento) |
 
 La variante di brand (`packages/tokens/src/themes/brand-ocean.css`) è identica a [`../tailwind-to-penpot/out/themes/brand-ocean.css`](../tailwind-to-penpot/out/themes/brand-ocean.css) e non è ripetuta qui.
 
@@ -37,6 +38,10 @@ cp _bmad-output/spikes/penpot-ai-kit-2026-10-10/tailwind-to-penpot/out/themes/br
 | `packages/ui/src/domains/commerce/ShopCard.styles.ts` | `@generated`: aspetto letto da Penpot |
 | `packages/ui/src/domains/commerce/ShopCard.tsx` | **dello sviluppatore**: scaffold di GC poi modificato a mano (immagine lazy con segnaposto, `aria-hidden` sulla CTA) |
 | `packages/ui/src/domains/commerce/ShopCard.stories.tsx` | `@generated` |
+| `packages/contracts/src/sections/carousel.ts` | sezione Carousel (prova F) |
+| `packages/scripts/src/contracts/carousel.binding.ts` | collegamento del Carousel: `slot`, `repeat`, `icon`, `sectionContract` |
+| `packages/ui/src/domains/layout/Carousel.styles.ts`, `.stories.tsx` | `@generated` |
+| `packages/ui/src/domains/layout/Carousel.tsx` | **dello sviluppatore**: scaffold + comportamento proposto dalla skill (prova F, B) |
 | `packages/scripts/src/contracts/shop-card.extract.ts` | contratto di estrazione v2 (prova D; superato dal collegamento, tolto dal registro) |
 | `packages/scripts/data/components/shop-card.json` | istantanea della prova D (`extract` v2 con composizione) |
 
@@ -44,11 +49,11 @@ cp _bmad-output/spikes/penpot-ai-kit-2026-10-10/tailwind-to-penpot/out/themes/br
 
 | File | Modifica | Perché |
 |---|---|---|
-| `packages/scripts/src/library/library-reader.ts` | lettura del layout flex, del dimensionamento nel layout (`sizingH/V`) e delle istanze (contratto d'origine, variante, override) | A-13; composizione; "fill" |
+| `packages/scripts/src/library/library-reader.ts` | lettura del layout flex, del dimensionamento nel layout (`sizingH/V`) e delle istanze (contratto d'origine, variante, override); prova F: ritaglio, dimensioni, posizione e vincoli degli assoluti; D2 senza dimensionamento e geometria | A-13; composizione; "fill"; F-8 |
 | `packages/scripts/src/library/library-snapshot.ts` | campo `instance` sul layer | composizione |
 | `packages/scripts/src/extraction.ts`, `commands/extract.ts` | parte `component`/`fields`; controlli istanza (D1–D2); istantanea con `$component` | composizione (prototipo su `extract`) |
 | `packages/scripts/src/library-plan.ts` | la struttura non dipende più da `COMPONENT_TOKENS` | D-4 |
 | `packages/scripts/src/shared/style-properties.ts` | riga `fontFamily` | V-2 |
-| `packages/contracts/src/{index,registry,schema-version}.ts`, `tests/contracts.fingerprint.json` | registrazione `shop-card`, `SCHEMA_VERSION` 5 | componente nuovo |
+| `packages/contracts/src/{index,registry,schema-version}.ts`, `tests/contracts.fingerprint.json`, `tests/section.test.ts` | registrazione `shop-card` e della sezione `carousel`; `SCHEMA_VERSION` 5 → 6 (`category`, T6) → 7 (`carousel`, F) | componenti nuovi |
 | `packages/tokens/package.json` | export `./themes/brand-ocean.css` | prova C |
 | `packages/ui/src/styles/globals.css` | import del tema in cima; via le mappature `--color-*`, `--radius-*`, `--font-*` dal `@theme inline` shadcn | C-6 |

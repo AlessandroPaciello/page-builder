@@ -11,6 +11,7 @@ import { dirname, join, resolve } from "node:path";
 
 import { COMPONENT_CONTRACTS } from "@app/contracts";
 
+import { carouselBinding } from "../contracts/carousel.binding";
 import { shopCardBinding } from "../contracts/shop-card.binding";
 import { parseLibrarySnapshot, readLibrarySnapshot } from "../library/library-reader";
 import type { LibrarySnapshot } from "../library/library-snapshot";
@@ -18,11 +19,11 @@ import { PATHS } from "../shared/paths";
 import type { TokenCatalog } from "../shared/theme-generator";
 import type { Binding } from "./binding";
 import { findContainer, generate, verify } from "./generate";
-import { checkSlots, generateStyles, scaffold } from "./styles";
+import { checkSlots, generateStyles, scaffold, sectionStories } from "./styles";
 
-const BINDINGS: Record<string, Binding> = { ShopCard: shopCardBinding as unknown as Binding };
+const BINDINGS: Record<string, Binding> = { ShopCard: shopCardBinding as unknown as Binding, Carousel: carouselBinding as unknown as Binding };
 /** Cartella dei componenti già esistenti (per gli import dei componenti annidati). */
-const DOMAINS: Record<string, string> = { badge: "data-display", input: "inputs", alert: "feedback", "accordion-item": "layout", "product-card": "commerce", "shop-card": "commerce" };
+const DOMAINS: Record<string, string> = { badge: "data-display", input: "inputs", alert: "feedback", "accordion-item": "layout", "product-card": "commerce", "shop-card": "commerce", carousel: "layout" };
 
 async function main(): Promise<number> {
   const [command, comp, ...rest] = process.argv.slice(2);
@@ -68,11 +69,11 @@ async function main(): Promise<number> {
     return 3;
   }
   const catalog = JSON.parse(readFileSync(PATHS.catalogPath, "utf8")) as TokenCatalog;
-  const full = generate({ binding, template, catalog, contracts, domains: DOMAINS });
+  const stories = binding.slots !== undefined ? sectionStories({ binding, domains: DOMAINS }) : generate({ binding, template, catalog, contracts, domains: DOMAINS })[1]!;
   const files =
     command === "styles"
-      ? [generateStyles({ binding, template, catalog, contracts }), ...(owned ? [] : [scaffold({ binding, template, contracts, domains: DOMAINS })]), full[1]!]
-      : full;
+      ? [generateStyles({ binding, template, catalog, contracts }), ...(owned ? [] : [scaffold({ binding, template, contracts, domains: DOMAINS })]), stories]
+      : generate({ binding, template, catalog, contracts, domains: DOMAINS });
   if (owned) console.log(`[GC] ${comp2}.tsx esiste: è tuo, non lo tocco`);
   const toAlign = slotFindings.filter((f) => f.level === "blocco");
   if (toAlign.length > 0) console.log(`[AC] da allineare nel tuo ${comp2}.tsx (proposta di diff): ${toAlign.map((f) => f.where).join(", ")}`);

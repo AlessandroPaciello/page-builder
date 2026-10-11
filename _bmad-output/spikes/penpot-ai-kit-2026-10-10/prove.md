@@ -131,3 +131,33 @@ Il worktree è andato perso con il riavvio del 2026-10-11 (stava in `/tmp`): lo 
 | T6 Cambio di struttura in Penpot | Il designer (via MCP) aggiunge `Category` ("Scarpe", `text.xs`, `color.muted-foreground`, `font-weight.medium`, larghezza fill) in `Header` prima di `Title`, nelle 4 celle. **VC** dal vivo: 2 blocchi (testo senza field — alzato da avviso a blocco — e `data-slot` mancante nel file dello sviluppatore); niente generato. **MS:** proposta `category` nel contratto e nel collegamento; Alessandro: obbligatoria, `span`. Il gate dei contratti rifiuta di riscrivere la voce 5 → `SCHEMA_VERSION` 6 (nessuna migrazione registrata). **AC:** `styles.ts` rigenerato con la voce `category` (corretta la CLI: i blocchi sui `data-slot` li risolve AC, non fermano gli stili); diff proposto per `ShopCard.tsx` (prop, default, `<span data-slot="shop-card-category" className={s.category(axes)}>`), approvato e applicato: le modifiche a mano restano. VC 0 blocchi, typecheck e confini verdi, test dei contratti 137/137, Storybook corretto (`storybook/t6-*.png`) |
 
 Prove concluse. Note: MS e il diff di AC li ha fatti l'agente come li farebbe la skill (non sono script); la story generata ha esempi cablati per nome di field (`category: "Scarpe"`), da rendere generici.
+
+---
+
+## Prova F — Carousel: simulazione completa della skill (2026-10-11)
+
+Componente nuovo dal contratto, guidato dai prompt di Alessandro come con le skill vere; operazioni reali su Penpot e sul codice. Ricetta in [`recipes/carousel.md`](recipes/carousel.md), codice in [`test-v3/codice/`](test-v3/README.md), lettura in `test-v3/lettura-penpot-carousel.json`.
+
+| Step | Prompt | Esito |
+|---|---|---|
+| F-1 Apertura | `/pds-design` | menu TB TV CN DC CD MS, stato del file Penpot |
+| F-2 CN ricetta | `CN, vorrei un carousel` | ricetta dal Carousel shadcn `base` (embla, Button, `orientation`); 7 domande con proposta |
+| F-3 CN risposte | slide = shop-card, solo shop-card, max 3 visibili, autoplay impostabile, Button dopo, solo orizzontale, "vedi tu" | **sezione** `carousel` (come l'Accordion): field `perView` (`structure`), `autoplay`/`interval`/`label` (`content`), slot `slides` di `shop-card`, 3 figli di default; collegamento con tre concetti nuovi: `slot`, `repeat`, `icon`, e `sectionContract` (gli `enum` della sezione come assi delle celle). Approvato |
+| F-4 CN scrittura | — | `sections/carousel.ts` registrata, test della sezione, `SCHEMA_VERSION` 7, `carousel.binding.ts`; test dei contratti 138/138 |
+| F-5 DC | `DC` | container `Carousel` (`perView` 1/2/3, plugin data `carousel@1`) via MCP: `Previous`/`Next` assoluti con chevron lucide (tracciato), `Viewport` > `Slides` con 1–3 istanze di ShopCard, `Dots` (`DotActive` + `Dot`); solo token esistenti; verifica di salvataggio |
+| F-6 Prova del designer | (Alessandro in Penpot) | con una card scontata le card non restano allineate. Correzione di design: istanze in `Slides` ad altezza **fill**, `Content` della ShopCard ad altezza **fill** (il footer resta in fondo) |
+| F-7 GC primo giro | `/pds-code GC Carousel` | VC 0 blocchi; `styles.ts`, scaffold, story (6 ShopCard dai figli di default). **Giudizio negativo** in Storybook: il reader non legge ritaglio, dimensioni fisse, posizione degli assoluti |
+| F-8 A: pipeline | `A poi B` | reader: `clipContent` → `overflow-hidden`, dimensioni fisse in scala (`size-8`, `size-2`, `h-40`), posizione degli assoluti dai **vincoli** del designer (`left-2 top-1/2 -translate-y-1/2`), genitore `relative`, "fill" verticale (`flex-1`/`self-stretch`); D2 ignora dimensionamento e geometria dell'istanza. Vincoli delle frecce impostati in Penpot |
+| F-9 B: comportamento | approvato | diff proposto e applicato al `Carousel.tsx` dello sviluppatore: scroll-snap, `basis` per `perView` (responsive), frecce disabilitate ai bordi, pallini cliccabili, tastiera, autoplay con pause (mouse, focus, `prefers-reduced-motion`), a11y della ricetta. Verificato con Chrome via DevTools: next → slide 2, pallino 6 → fine (next disabilitata), ← → indietro. Foto in `test-v3/storybook/carousel-*.png` |
+
+**Emerso dalla prova**
+
+- **Penpot non esprime "alte come la più alta"** senza fissare il genitore: con tutti i figli in fill la striscia passa a "fix"; l'allineamento Stretch dà altezze incoerenti. Regola nel generatore: se tutti i figli riempiono un asse, la misura fissa del genitore su quell'asse non va nel codice.
+- **Il dimensionamento di un'istanza non è un override (D2)**: fill/auto, `ownSizing` e geometria dicono come l'istanza occupa il posto, non come appare. Un override vero (creato per errore durante una prova) è stato bloccato correttamente.
+- **Ritaglio di default**: in Penpot i board ritagliano per default, quindi `overflow-hidden` compare quasi ovunque (anche sulla ShopCard). Da decidere: leggerlo solo se attivato dal designer o se qualcosa esce davvero.
+- **GC = aspetto + scaffold statico; il comportamento lo propone la skill** come diff sul file dello sviluppatore: il modello della decisione 11 regge anche su un componente con molto comportamento.
+- **Pallini uno per slide**: con `perView` > 1 gli ultimi portano tutti alla fine; "uno per pagina" sarebbe un altro disegno.
+- **Tipi dei field delle sezioni** (booleani, numeri): lo scaffold li ricava dallo schema (prima `interval` era uscito `string`).
+- **Test di `scripts` rotti dallo spike** (45, preesistenti alla prova F): il catalogo Tailwind sostituisce quello delle fixture (generatore del tema, `extract`, `render`, `gates`, nome duplicato `font-weight.black`) e i prototipi `v3/` violano i confini (`process.exit` fuori dal `cli.ts` principale, `@penpot-ds/ui` nel testo generato).
+- **Scheda Penpot sospesa** di continuo (anche dopo pochi secondi): una lettura completa salvata subito (`--save-snapshot`) rende gli step successivi indipendenti dalla scheda.
+
