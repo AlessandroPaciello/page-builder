@@ -1,0 +1,435 @@
+diff --git a/packages/contracts/src/index.ts b/packages/contracts/src/index.ts
+index 1413c28..f5ad682 100644
+--- a/packages/contracts/src/index.ts
++++ b/packages/contracts/src/index.ts
+@@ -4,6 +4,7 @@ export { alert } from "./components/alert";
+ export { badge } from "./components/badge";
+ export { input } from "./components/input";
+ export { productCard } from "./components/product-card";
++export { shopCard } from "./components/shop-card";
+ export {
+   type Axis,
+   type AxisType,
+diff --git a/packages/contracts/src/registry.ts b/packages/contracts/src/registry.ts
+index eba7be9..eb10a39 100644
+--- a/packages/contracts/src/registry.ts
++++ b/packages/contracts/src/registry.ts
+@@ -3,6 +3,7 @@ import { alert } from "./components/alert";
+ import { badge } from "./components/badge";
+ import { input } from "./components/input";
+ import { productCard } from "./components/product-card";
++import { shopCard } from "./components/shop-card";
+ import type { ComponentContract } from "./contract";
+ import type { SectionDefinition } from "./section";
+ import { accordion } from "./sections/accordion";
+@@ -18,6 +19,7 @@ export const COMPONENT_CONTRACTS = {
+   [accordionItem.name]: accordionItem,
+   [alert.name]: alert,
+   [productCard.name]: productCard,
++  [shopCard.name]: shopCard,
+ } as const satisfies Readonly<Record<string, ComponentContract>>;
+ 
+ /** Unico punto che elenca le definizioni di sezione. */
+diff --git a/packages/contracts/src/schema-version.ts b/packages/contracts/src/schema-version.ts
+index 6221d1e..1229c25 100644
+--- a/packages/contracts/src/schema-version.ts
++++ b/packages/contracts/src/schema-version.ts
+@@ -7,5 +7,8 @@
+  * (assi `option`, field, slot) ed entra `product-card`. L'estensione v1
+  * (`parts`, `partRoles`, assi `state`/`behavior`) è fuori dal fingerprint:
+  * la sua cancellazione (Story 2.16) NON è un nuovo bump.
++ *
++ * 5 (spike 2026-10-10): entra `shop-card`. 6 (spike 2026-10-11, T6): field
++ * obbligatorio `category` della ShopCard, aggiunto dal designer in Penpot.
+  */
+-export const SCHEMA_VERSION = 4;
++export const SCHEMA_VERSION = 6;
+diff --git a/packages/contracts/tests/contracts.fingerprint.json b/packages/contracts/tests/contracts.fingerprint.json
+index 6fe867a..f7f90bb 100644
+--- a/packages/contracts/tests/contracts.fingerprint.json
++++ b/packages/contracts/tests/contracts.fingerprint.json
+@@ -2,5 +2,7 @@
+   "1": "05ca6aceeaa588384d74dd5626e4eb22fe9d3cf09a15f7492faa1f65a910d332",
+   "2": "59628230d831d08619b69dee8d7308c6365bd17aeda77777749a7927a0bf8d85",
+   "3": "75e1dce962257a812e9e677c0049dda6c4fc48a01fcc15f5e82c0d28414ed817",
+-  "4": "d71a057eb119c3970cc699d7f8ead0bba5698dad8bd872b9382a26a3097bc712"
++  "4": "d71a057eb119c3970cc699d7f8ead0bba5698dad8bd872b9382a26a3097bc712",
++  "5": "586b2b12b2ef7136f8bcf96d1eccedb3d760cdba3f5606e24c82ce233c9f91ec",
++  "6": "2518a38e23c664b0a043e6601acc67bcd3c1ec9965aadddfd9960ef4eaf6ad72"
+ }
+diff --git a/packages/scripts/src/commands/extract.ts b/packages/scripts/src/commands/extract.ts
+index 63ad143..8b93037 100644
+--- a/packages/scripts/src/commands/extract.ts
++++ b/packages/scripts/src/commands/extract.ts
+@@ -121,12 +121,13 @@ interface SeenNode {
+   readonly tokens: Readonly<Record<string, string>>;
+   readonly style: unknown;
+   readonly parentLayer: string | null;
++  readonly instance?: SnapshotLayer["instance"];
+ }
+ 
+ function collectSeen(root: SnapshotLayer): SeenNode[] {
+   const seen: SeenNode[] = [];
+   const visit = (node: SnapshotLayer, parentLayer: string | null): void => {
+-    seen.push({ name: node.name, tokens: node.tokens, style: node.style, parentLayer });
++    seen.push({ name: node.name, tokens: node.tokens, style: node.style, parentLayer, ...(node.instance ? { instance: node.instance } : {}) });
+     for (const child of node.children) visit(child, node.name);
+   };
+   for (const child of root.children) visit(child, null);
+@@ -327,6 +328,60 @@ export function extractCommandWith(deps: ExtractDeps = {}): Command {
+               detail: `parte "${partName}" (layer "${layer}"${when}) assente in Penpot — disegna il layer in Penpot o rimuovi la parte dal contratto di estrazione. ${adaptationFooter(extraction, partName)}`,
+             });
+           }
++          // Spike 2026-10-10 (composizione): istanza attesa ↔ istanza trovata.
++          const found = occurrences[0]!.instance;
++          if (def.component === undefined && found !== undefined) {
++            throw new ScriptError({
++              kind: "contract",
++              component,
++              cell: key,
++              part: partName,
++              detail: `parte "${partName}" (layer "${layer}"): in Penpot è un'istanza di "${found.contract ?? "componente senza plugin data"}", il contratto si aspetta una parte disegnata — stacca l'istanza in Penpot, oppure dichiara la parte come componente nel contratto di estrazione (component: "${(found.contract ?? "").split("@")[0]}").`,
++            });
++          }
++          if (def.component !== undefined) {
++            if (found === undefined) {
++              throw new ScriptError({
++                kind: "contract",
++                component,
++                cell: key,
++                part: partName,
++                detail: `parte "${partName}" (layer "${layer}"): attesa un'istanza del componente "${def.component}", trovato un layer disegnato — sostituisci il layer con un'istanza di ${def.component} in Penpot.`,
++              });
++            }
++            const foundName = (found.contract ?? "").split("@")[0];
++            if (foundName !== def.component) {
++              throw new ScriptError({
++                kind: "contract",
++                component,
++                cell: key,
++                part: partName,
++                detail: `parte "${partName}" (layer "${layer}"): istanza di "${found.contract ?? "componente senza plugin data"}", attesa un'istanza di "${def.component}" — scambia l'istanza in Penpot o correggi "component" nel contratto di estrazione.`,
++              });
++            }
++            const target = resolveExtraction(def.component);
++            for (const axis of target.contract.axes) {
++              const value = found.props[axis.name];
++              if (value === undefined || !(axis.values as readonly string[]).includes(value)) {
++                throw new ScriptError({
++                  kind: "contract",
++                  component,
++                  cell: key,
++                  part: partName,
++                  detail: `parte "${partName}" (istanza di ${def.component}): proprietà "${axis.name}"=${JSON.stringify(value)} non è un valore del contratto ${def.component} (${axis.values.join(", ")}) — scegli una variante valida in Penpot.`,
++                });
++              }
++            }
++            if (found.overrides.length > 0) {
++              throw new ScriptError({
++                kind: "contract",
++                component,
++                cell: key,
++                part: partName,
++                detail: `parte "${partName}" (istanza di ${def.component}): override di stile non ammessi (D2) — ${found.overrides.join("; ")}. Togli l'override in Penpot, oppure crea una variante di ${def.component}, oppure modifica ${def.component}.`,
++              });
++            }
++          }
+           if (!isRepeat && occurrences.length > 1) {
+             throw new ScriptError({
+               kind: "contract",
+@@ -434,6 +489,14 @@ export function extractCommandWith(deps: ExtractDeps = {}): Command {
+           if (partName === "root") continue;
+           if (!partInCell(extraction, partName, variantProps)) continue;
+           const occurrence = layersByName(seen, def.layer)[0]!;
++          if (def.component !== undefined && occurrence.instance !== undefined) {
++            // Composizione: nell'istantanea il riferimento al componente e la sua variante, non i token.
++            cellTokens[partName] = {
++              $component: occurrence.instance.contract ?? def.component,
++              ...Object.fromEntries(Object.entries(occurrence.instance.props).map(([axis, value]) => [`$prop.${axis}`, value])),
++            };
++            continue;
++          }
+           cellTokens[partName] = { ...occurrence.tokens };
+           const keywords = keywordValuesOf(occurrence);
+           if (Object.keys(keywords).length > 0) cellKeywords[partName] = keywords;
+@@ -450,6 +513,7 @@ export function extractCommandWith(deps: ExtractDeps = {}): Command {
+         const cellKeywords = cellsKeywordValues[key]!;
+         const variantProps = (actualByKey.get(key)!.variantProps as Record<string, string>)!;
+         for (const [partName, tokens] of Object.entries(cellTokens)) {
++          if (extraction.parts[partName]!.component !== undefined) continue;
+           const role = extraction.parts[partName]!.role as PartRole;
+           for (const [prop, token] of Object.entries(tokens).sort(([a], [b]) => (a < b ? -1 : 1))) {
+             const problem = propertyProblem(prop, { component, cell: key, part: partName, token });
+@@ -528,7 +592,7 @@ export function extractCommandWith(deps: ExtractDeps = {}): Command {
+         const seen = collectSeen(actual.root);
+         const holders: Array<{ label: string; part: string; tokens: Readonly<Record<string, string>>; style: unknown }> = [
+           { label: `layer "${actual.root.name}" (parte "root")`, part: "root", tokens: actual.root.tokens, style: actual.root.style },
+-          ...seen.map((node) => {
++          ...seen.filter((node) => node.instance === undefined).map((node) => {
+             const part = Object.entries(extraction.parts).find(([, def]) => def.layer === node.name)?.[0] ?? node.name;
+             return { label: `layer "${node.name}"`, part, tokens: node.tokens, style: node.style };
+           }),
+diff --git a/packages/scripts/src/extraction.ts b/packages/scripts/src/extraction.ts
+index c6a65e0..036630d 100644
+--- a/packages/scripts/src/extraction.ts
++++ b/packages/scripts/src/extraction.ts
+@@ -60,6 +60,14 @@ export interface PartDefinition {
+   readonly when?: Readonly<Record<string, readonly [string, ...string[]]>>;
+   /** Field array: la parte si ripete per elemento (primo layer come modello). */
+   readonly repeat?: string;
++  /**
++   * Spike 2026-10-10 (composizione): la parte è un'ISTANZA del componente con
++   * questo nome di contratto (es. `badge`). Variante letta da Penpot (D1),
++   * override di stile vietati (D2), testo dal field collegato (D3).
++   */
++  readonly component?: string;
++  /** Field del componente annidato ← field di questo componente, es. `{ label: "badgeLabel" }`. */
++  readonly fields?: Readonly<Record<string, string>>;
+ }
+ 
+ /** Una parte risolta: `layer` sempre presente. */
+diff --git a/packages/scripts/src/library-plan.ts b/packages/scripts/src/library-plan.ts
+index d94a104..88f5748 100644
+--- a/packages/scripts/src/library-plan.ts
++++ b/packages/scripts/src/library-plan.ts
+@@ -339,15 +339,10 @@ export function partsForCell(extraction: ExtractionContract, variantProps: Reado
+       });
+     }
+     const componentTokens = (COMPONENT_TOKENS as Record<string, Record<string, Record<string, string>>>)[extraction.contract.name];
+-    const tokens = componentTokens?.[name];
+-    if (tokens === undefined) {
+-      throw new ScriptError({
+-        kind: "contract",
+-        component: extraction.penpot.container,
+-        part: name,
+-        detail: `parte "${name}" senza token nel piano per "${extraction.contract.name}": aggiungi la voce in COMPONENT_TOKENS (o il registro) invece di zeri silenziosi.`,
+-      });
+-    }
++    // Spike 2026-10-10: la struttura non dipende dai token di partenza. Senza voce
++    // in COMPONENT_TOKENS la parte resta senza token (scheletro neutro): extract e
++    // propose leggono l'aspetto da Penpot e segnalano ciò che manca.
++    const tokens = componentTokens?.[name] ?? {};
+     out.push({
+       name,
+       layer: part.layer,
+diff --git a/packages/scripts/src/library/library-reader.ts b/packages/scripts/src/library/library-reader.ts
+index 375037a..584ad95 100644
+--- a/packages/scripts/src/library/library-reader.ts
++++ b/packages/scripts/src/library/library-reader.ts
+@@ -86,6 +86,20 @@ function styleOf(shape) {
+   }
+   if (typeof shape.opacity === "number" && Math.abs(shape.opacity - 1) > 1e-6) style[${single("opacity")}] = shape.opacity;
+   if (Array.isArray(shape.shadows) && shape.shadows.length > 0) style[${single("shadows")}] = JSON.parse(JSON.stringify(shape.shadows));
++  // Spike 2026-10-10 (bug #13): il registro dichiara layoutDir/Align/Justify/Wrap con
++  // source "flexLayout", ma lo styleOf non li leggeva: il layout si perdeva.
++  if (shape.flex) {
++    const dir = shape.flex.dir;
++    if (dir === "row" || dir === "column") style.layoutDir = dir;
++    if (typeof shape.flex.alignItems === "string") style.layoutAlign = shape.flex.alignItems;
++    if (typeof shape.flex.justifyContent === "string") style.layoutJustify = shape.flex.justifyContent;
++    if (typeof shape.flex.wrap === "string") style.layoutWrap = shape.flex.wrap;
++  }
++  // Spike: dimensionamento dentro il layout del genitore (fill = tutta la larghezza/altezza).
++  if (shape.layoutChild) {
++    if (typeof shape.layoutChild.horizontalSizing === "string") style.sizingH = shape.layoutChild.horizontalSizing;
++    if (typeof shape.layoutChild.verticalSizing === "string") style.sizingV = shape.layoutChild.verticalSizing;
++  }
+   return style;
+ }
+ `;
+@@ -103,13 +117,44 @@ function isVariantContainerShape(shape) {
+   }
+ }
+ ${STYLE_OF_SOURCE}
++function instanceInfo(shape) {
++  try {
++    if (!(typeof shape.isComponentInstance === "function" && shape.isComponentInstance())) return null;
++    if (typeof shape.isComponentMainInstance === "function" && shape.isComponentMainInstance()) return null;
++    const comp = shape.component();
++    if (!comp) return null;
++    const main = comp.mainInstance();
++    const container = main ? main.parent : null;
++    let contract = null;
++    try { contract = container ? (container.getSharedPluginData("pagebuilder", "contract") || null) : null; } catch (error) { contract = null; }
++    const props = JSON.parse(JSON.stringify(comp.variantProps ?? {}));
++    const overrides = [];
++    const diff = (a, b, path) => {
++      if (!b) { overrides.push(path + ": layer senza corrispettivo nel componente"); return; }
++      const ta = JSON.stringify(a.tokens ?? {});
++      const tb = JSON.stringify(b.tokens ?? {});
++      if (ta !== tb) overrides.push(path + ": token " + ta + " invece di " + tb);
++      const sa = JSON.stringify(styleOf(a));
++      const sb = JSON.stringify(styleOf(b));
++      if (sa !== sb) overrides.push(path + ": stile " + sa + " invece di " + sb);
++      const cb = b.children || [];
++      (a.children || []).forEach((child, index) => diff(child, cb[index], path + "/" + child.name));
++    };
++    diff(shape, main, shape.name);
++    return { contract, props, overrides };
++  } catch (error) {
++    return null;
++  }
++}
+ function layerTree(shape) {
++  const instance = instanceInfo(shape);
+   return {
+     name: shape.name,
+     kind: shape.type,
+     tokens: JSON.parse(JSON.stringify(shape.tokens ?? {})),
+     style: styleOf(shape),
+-    children: (shape.children || []).map(layerTree),
++    ...(instance ? { instance } : {}),
++    children: instance ? [] : (shape.children || []).map(layerTree),
+   };
+ }
+ const catalog = penpot.library.local.tokens;
+@@ -278,11 +323,21 @@ function parseLayer(raw: unknown, context: string): LibrarySnapshot["components"
+     }
+     tokens[property] = tokenName;
+   }
++  const rawInstance = (raw as { instance?: { contract?: unknown; props?: unknown; overrides?: unknown } }).instance;
+   return {
+     name,
+     kind,
+     tokens,
+     style: JSON.parse(JSON.stringify(layer.style)),
++    ...(rawInstance && typeof rawInstance === "object"
++      ? {
++          instance: {
++            contract: typeof rawInstance.contract === "string" ? rawInstance.contract : null,
++            props: JSON.parse(JSON.stringify(rawInstance.props ?? {})) as Record<string, string>,
++            overrides: Array.isArray(rawInstance.overrides) ? rawInstance.overrides.map(String) : [],
++          },
++        }
++      : {}),
+     children: assertArray(layer?.children ?? [], "layer.children", `layer "${name}"`).map((child, index) =>
+       parseLayer(child, `figlio #${index} di "${name}" (${context})`),
+     ),
+diff --git a/packages/scripts/src/library/library-snapshot.ts b/packages/scripts/src/library/library-snapshot.ts
+index 2897f84..08e90a2 100644
+--- a/packages/scripts/src/library/library-snapshot.ts
++++ b/packages/scripts/src/library/library-snapshot.ts
+@@ -34,6 +34,14 @@ export interface SnapshotLayer {
+   /** Proprietà di stile valorizzate (valori grezzi letti da Penpot). */
+   style: Record<string, unknown>;
+   children: SnapshotLayer[];
++  /**
++   * Spike 2026-10-10 (composizione): presente se il layer è un'istanza di un
++   * altro componente. `contract` = plugin data del container d'origine
++   * (`badge@1`), `props` = proprietà di variante, `overrides` = differenze di
++   * token/stile rispetto all'istanza principale (testo escluso). I figli di
++   * un'istanza non si leggono: il loro interno lo verifica l'extract del componente.
++   */
++  instance?: { contract: string | null; props: Record<string, string>; overrides: string[] };
+ }
+ 
+ export interface SnapshotCell {
+diff --git a/packages/scripts/src/shared/style-properties.ts b/packages/scripts/src/shared/style-properties.ts
+index a31f670..616bb02 100644
+--- a/packages/scripts/src/shared/style-properties.ts
++++ b/packages/scripts/src/shared/style-properties.ts
+@@ -317,6 +317,14 @@ export const STYLE_PROPERTIES = {
+     },
+     emitter: { emit: "none" },
+   },
++  // Spike 2026-10-10: su Penpot 2.18.3 il font si lega con la proprietà
++  // `fontFamily` (singolare); `fontFamilies` resta la riga storica bloccata.
++  fontFamily: {
++    read: { source: "notRead", reason: "solo binding: il valore grezzo del font non entra nello stile" },
++    type: token("fontFamilies"),
++    status: SUPPORTED,
++    emitter: { emit: "utility", prefix: "font" },
++  },
+   // ---- Layout e posizione (Story 2.12, CAP-3): letti dal layer Penpot, mai
+   // ---- scritti a mano. In coda al registro: l'ordine delle righe sopra è
+   // ---- quello delle chiavi di `style` nelle fixture v1 (byte-identiche).
+@@ -422,7 +430,7 @@ export const ROLE_PROPERTIES = {
+     ...POSITION_PROPERTIES,
+   ],
+   // Tipografia del registro: dimensione, peso, spaziatura, famiglia (bloccata dal registro).
+-  text: ["fill", "fontSize", "fontWeight", "letterSpacing", "fontFamilies", "opacity"],
++  text: ["fill", "fontSize", "fontWeight", "letterSpacing", "fontFamilies", "fontFamily", "opacity"],
+   icon: ["fill", "strokeColor", "strokeWidth"],
+   divider: ["strokeColor", "strokeWidth", "strokeStyle"],
+   // Nessun `fill`: il contenuto arriva dal field `src`, la regola "token su ogni stile" non si applica al bitmap.
+diff --git a/packages/tokens/package.json b/packages/tokens/package.json
+index b7176d6..8f9b0fb 100644
+--- a/packages/tokens/package.json
++++ b/packages/tokens/package.json
+@@ -11,7 +11,8 @@
+     },
+     "./scales": "./src/tokens.generated.ts",
+     "./tailwind-theme.css": "./src/tailwind-theme.css",
+-    "./tailwind-extras.css": "./src/tailwind-extras.css"
++    "./tailwind-extras.css": "./src/tailwind-extras.css",
++    "./themes/brand-ocean.css": "./src/themes/brand-ocean.css"
+   },
+   "scripts": {
+     "build": "tsup src/index.ts --format esm --dts --out-dir dist",
+diff --git a/packages/ui/src/styles/globals.css b/packages/ui/src/styles/globals.css
+index f2c7219..2adb602 100644
+--- a/packages/ui/src/styles/globals.css
++++ b/packages/ui/src/styles/globals.css
+@@ -1,5 +1,7 @@
+ @import "tailwindcss";
+ @import "tw-animate-css";
++@import "@penpot-ds/tokens/tailwind-theme.css";
++@import "@penpot-ds/tokens/themes/brand-ocean.css";
+ @source "../../../../apps/**/*.{ts,tsx}";
+ @source "../**/*.{ts,tsx}";
+ 
+@@ -75,46 +77,6 @@
+ }
+ 
+ @theme inline {
+-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+-  --color-sidebar-ring: var(--sidebar-ring);
+-  --color-sidebar-border: var(--sidebar-border);
+-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+-  --color-sidebar-accent: var(--sidebar-accent);
+-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+-  --color-sidebar-primary: var(--sidebar-primary);
+-  --color-sidebar-foreground: var(--sidebar-foreground);
+-  --color-sidebar: var(--sidebar);
+-  --color-chart-5: var(--chart-5);
+-  --color-chart-4: var(--chart-4);
+-  --color-chart-3: var(--chart-3);
+-  --color-chart-2: var(--chart-2);
+-  --color-chart-1: var(--chart-1);
+-  --color-ring: var(--ring);
+-  --color-input: var(--input);
+-  --color-border: var(--border);
+-  --color-destructive: var(--destructive);
+-  --color-accent-foreground: var(--accent-foreground);
+-  --color-accent: var(--accent);
+-  --color-muted-foreground: var(--muted-foreground);
+-  --color-muted: var(--muted);
+-  --color-secondary-foreground: var(--secondary-foreground);
+-  --color-secondary: var(--secondary);
+-  --color-primary-foreground: var(--primary-foreground);
+-  --color-primary: var(--primary);
+-  --color-popover-foreground: var(--popover-foreground);
+-  --color-popover: var(--popover);
+-  --color-card-foreground: var(--card-foreground);
+-  --color-card: var(--card);
+-  --color-foreground: var(--foreground);
+-  --color-background: var(--background);
+-  --radius-sm: calc(var(--radius) - 4px);
+-  --radius-md: calc(var(--radius) - 2px);
+-  --radius-lg: var(--radius);
+-  --radius-xl: calc(var(--radius) + 4px);
+-  --radius-2xl: calc(var(--radius) + 8px);
+-  --radius-3xl: calc(var(--radius) + 12px);
+-  --radius-4xl: calc(var(--radius) + 16px);
+ }
+ 
+ /*
+@@ -124,7 +86,6 @@
+  * destructive-foreground, font-weight, tracking…) generano le loro utility.
+  * Lo verifica `generated-classes.test.ts`.
+  */
+-@import "@penpot-ds/tokens/tailwind-theme.css";
+ 
+ @layer base {
+   * {

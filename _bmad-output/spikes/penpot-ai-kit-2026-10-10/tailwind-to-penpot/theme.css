@@ -1,0 +1,48 @@
+/*
+ * Tema del design system: solo le scelte proprie.
+ * Tutto ciò che non è qui (palette, spaziatura, raggi, testo, pesi, tracking,
+ * ombre) arriva dal tema di default di Tailwind v4 (tailwindcss/theme.css).
+ * Un valore letterale qui sovrascrive il default; un riferimento var(--…)
+ * diventa un token semantico che punta a una primitiva.
+ */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* rounded-full in v4 è un'utility fissa, non una variabile del tema:
+     la dichiaro perché in Penpot serve come token (badge a pillola). */
+  --radius-full: 9999px;
+
+  /* Spessore del bordo (Tailwind lo fissa a 1px nelle utility, senza variabile):
+     serve come token per il bordo della card (ricetta: ring-1). */
+  --border-width-default: 1px;
+
+  /* Ruoli shadcn (tema "neutral"), riferiti alla palette Tailwind */
+  --color-background: var(--color-white);
+  --color-foreground: var(--color-neutral-950);
+  --color-card: var(--color-white);
+  --color-card-foreground: var(--color-neutral-950);
+  --color-primary: var(--color-neutral-900);
+  --color-primary-foreground: var(--color-neutral-50);
+  --color-secondary: var(--color-neutral-100);
+  --color-secondary-foreground: var(--color-neutral-900);
+  --color-muted: var(--color-neutral-100);
+  --color-muted-foreground: var(--color-neutral-500);
+  --color-accent: var(--color-neutral-100);
+  --color-accent-foreground: var(--color-neutral-900);
+  --color-destructive: var(--color-red-600);
+  --color-destructive-foreground: var(--color-white);
+  --color-border: var(--color-neutral-200);
+  --color-input: var(--color-neutral-200);
+  --color-ring: var(--color-neutral-400);
+}
+
+/*
+ * Varianti di tema: [data-<gruppo>="<nome>"] { … } sovrascrive solo i ruoli
+ * che cambiano. In Penpot diventa il set "<gruppo>/<nome>" e il tema
+ * (gruppo <gruppo>, nome <nome>); il tema "<gruppo>/default" non aggiunge set.
+ */
+[data-brand="ocean"] {
+  --color-primary: var(--color-blue-600);
+  --color-primary-foreground: var(--color-white);
+  --color-ring: var(--color-blue-400);
+}

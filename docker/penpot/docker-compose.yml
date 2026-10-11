@@ -86,7 +86,7 @@ services:
   #     - "443:443"
 
   penpot-frontend:
-    image: "penpotapp/frontend:${PENPOT_VERSION:-latest}"
+    image: "penpotapp/frontend:${PENPOT_VERSION:-2.18.3}"
     restart: always
     ports:
       - 9001:8080
@@ -117,7 +117,7 @@ services:
       << : [*penpot-flags, *penpot-http-body-size]
 
   penpot-backend:
-    image: "penpotapp/backend:${PENPOT_VERSION:-latest}"
+    image: "penpotapp/backend:${PENPOT_VERSION:-2.18.3}"
     restart: always
 
     volumes:
@@ -186,7 +186,7 @@ services:
       PENPOT_SMTP_SSL: false
 
   penpot-exporter:
-    image: "penpotapp/exporter:${PENPOT_VERSION:-latest}"
+    image: "penpotapp/exporter:${PENPOT_VERSION:-2.18.3}"
     restart: always
 
     depends_on:
@@ -197,7 +197,7 @@ services:
       - penpot
 
     environment:
-      << : [*penpot-secret-key]
+      << : [*penpot-flags, *penpot-secret-key]
       # Don't touch it; this uses an internal docker network to
       # communicate with the frontend.
       PENPOT_PUBLIC_URI: http://penpot-frontend:8080
@@ -263,7 +263,7 @@ services:
       - penpot
 
   penpot-mcp:
-    image: "penpotapp/mcp:${PENPOT_VERSION:-latest}"
+    image: "penpotapp/mcp:${PENPOT_VERSION:-2.18.3}"
     # Comando di default dell'immagine (`node index.js --multi-user`): ogni client
     # si autentica con il token personale generato in Settings → Integrations
     # (richiede `enable-mcp` in PENPOT_FLAGS). I client passano da
