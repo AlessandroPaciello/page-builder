@@ -10,6 +10,8 @@ Prove svolte il 2026-10-10 e 11, in ordine. Sintesi, decisioni e punti aperti st
 | E (T1–T6) | modello v3 sulla ShopCard: collegamento, generatore generico, decisione 11, cambio di aspetto e di struttura |
 | F | **simulazione completa delle skill sul Carousel** |
 
+> **Nota (2026-10-11).** Nelle prove E e F compare un "collegamento" per componente (`<nome>.binding.ts`): era il veicolo del prototipo per le informazioni non lette da Penpot. È **superato** dalla decisione 8 rivista (AD-1 della spine 2026-10-03: zero metadati per componente): nel modello quelle informazioni vengono da Penpot o dal componente dello sviluppatore. Le righe qui sotto raccontano le prove come sono andate. Confronto completo con le decisioni precedenti nel [README](README.md#confronto-con-le-decisioni-precedenti).
+
 Ambiente: kit penpot-ai-kit v0.5.1 letto da un clone e seguito a mano (non installato); Penpot 2.17.2 fino alla prova C e 2.18.3 dopo. Codice: worktree temporaneo su `develop` (`999ba13`) fino a T4b-1 (perso con il riavvio del 2026-10-11), poi il working tree del branch `spike/penpot-ai-kit`; a fine prove il codice è stato tolto dal branch e vive solo in [`test-v3/`](test-v3/README.md).
 
 ---
@@ -114,7 +116,7 @@ Componente "nuovo" `ShopCard` (`shop-card`), per non collidere con la ProductCar
 
 ---
 
-## Prova E — test v3: collegamento, verifica e generatore generici
+## Prova E — test v3: verifica e generatore generici
 
 Caso d'uso riassunto in [`test-v3/shop-card/README.md`](test-v3/shop-card/README.md).
 

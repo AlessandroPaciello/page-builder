@@ -1,6 +1,6 @@
 # Test v3 — il modello nuovo, provato su due casi d'uso
 
-Prove del modello v3 (contratto dell'editor + collegamento, verifica e generazione generiche, **stili generati e componente dello sviluppatore**) e tutto il codice dello spike, in un'unica copia. Il codice **non è sul branch**: `packages/` di `spike/penpot-ai-kit` è pulito; per rieseguire le prove va riapplicato (sotto).
+Prove del modello v3 (contratto dell'editor, verifica e generazione generiche, **stili generati e componente dello sviluppatore**) e tutto il codice dello spike, in un'unica copia. Il codice **non è sul branch**: `packages/` di `spike/penpot-ai-kit` è pulito; per rieseguire le prove va riapplicato (sotto).
 
 ## Casi d'uso
 
@@ -38,16 +38,16 @@ Poi, da `packages/scripts`: `node --import tsx src/v3/cli.ts styles <ShopCard|Ca
 
 | File | Cosa | Caso |
 |---|---|---|
-| `packages/scripts/src/v3/binding.ts` | `defineBinding`, controlli locali, `sectionContract` (sezione vista come contratto); `slot`, `repeat`, `icon` | entrambi |
+| `packages/scripts/src/v3/binding.ts` | veicolo del prototipo per le informazioni non lette da Penpot (elementi, field, slot, icone); `sectionContract` legge gli `enum` di una sezione come assi. **Superato** dalla decisione 8 rivista (AD-1): nel modello queste informazioni vengono da Penpot o dal codice dello sviluppatore | prototipo |
 | `packages/scripts/src/v3/generate.ts` | verifica (VC), classi da token e geometria (`classesOf`), generatore "tutto generato" della prima versione (T3) | entrambi |
 | `packages/scripts/src/v3/styles.ts` | modello "stili generati, componente tuo": `generateStyles` (una `cva` per parte), `scaffold`, `checkSlots` (parti Penpot ↔ `data-slot`), story delle sezioni | entrambi |
 | `packages/scripts/src/v3/cli.ts` | `verify\|generate\|styles <Comp> [--snapshot f] [--save-snapshot f]` | entrambi |
 | `packages/contracts/src/components/shop-card.ts` | contratto dell'editor | ShopCard |
-| `packages/scripts/src/contracts/shop-card.binding.ts` | collegamento | ShopCard |
+| `packages/scripts/src/contracts/shop-card.binding.ts` | file per componente del prototipo, **superato** (AD-1) | prototipo |
 | `packages/ui/src/domains/commerce/ShopCard.styles.ts`, `.stories.tsx` | `@generated` | ShopCard |
 | `packages/ui/src/domains/commerce/ShopCard.tsx` | **dello sviluppatore** | ShopCard |
 | `packages/contracts/src/sections/carousel.ts` | sezione (contratto dell'editor) | Carousel |
-| `packages/scripts/src/contracts/carousel.binding.ts` | collegamento | Carousel |
+| `packages/scripts/src/contracts/carousel.binding.ts` | file per componente del prototipo, **superato** (AD-1) | prototipo |
 | `packages/ui/src/domains/layout/Carousel.styles.ts`, `.stories.tsx` | `@generated` | Carousel |
 | `packages/ui/src/domains/layout/Carousel.tsx` | **dello sviluppatore**: scaffold + comportamento approvato | Carousel |
 | `packages/scripts/src/contracts/shop-card.extract.ts` | contratto di estrazione v2 (prova D; superato dal collegamento, tolto dal registro) | storico |

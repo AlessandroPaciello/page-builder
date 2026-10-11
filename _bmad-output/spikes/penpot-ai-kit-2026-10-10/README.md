@@ -24,6 +24,7 @@
 5. **Stili generati, componente dello sviluppatore** (decisione 11). Il generatore scrive solo l'aspetto (`<Comp>.styles.ts`); il componente React è codice libero. Un cambio di aspetto in Penpot diventa una riga di `styles.ts`, un cambio di struttura una proposta da approvare; il codice scritto a mano non viene mai riscritto.
 6. **Il percorso delle skill regge su un componente nuovo e complesso.** La [simulazione sul Carousel](test-v3/carousel/README.md) va dal primo prompt al componente funzionante in 8 passi e 4 approvazioni: ricetta → contratti → disegno in Penpot → codice, con una sezione con slot e molto comportamento.
 7. **La pipeline attuale ha bug seri**, il più grave dei quali è che **il tema Penpot non arriva nel CSS compilato** (vedi Problemi).
+8. **Lo spike non è partito dalle decisioni già prese.** Cambia consapevolmente AD-11 v2, ma è in conflitto con la spine 2026-10-03 su cinque punti (verifica che blocca, letture salvate, headless, ruoli di parte, ordine dei livelli): vedi [Confronto con le decisioni precedenti](#confronto-con-le-decisioni-precedenti).
 
 ## Decisioni di Alessandro
 
@@ -36,7 +37,7 @@
 | 5 | **Due skill:** `pds-design` (verso Penpot) e `pds-code` (verso il codice), con i comandi sotto; `pds-setup` resta |
 | 6 | **Due strade per un componente nuovo:** *dal contratto* o *dal design*; in entrambe **la skill propone i contratti** e lo sviluppatore approva |
 | 7 | **Composizione con istanze** (D1–D5): variante scelta dal designer e validata; override di stile vietati; testo dell'istanza solo d'esempio (nel codice dal field); istanze annidate ammesse; contratto dell'editor invariato |
-| 8 | Il **collegamento** registra ciò che cambia **struttura o comportamento** (componente annidato, `when`, field, elemento HTML, a11y); l'**aspetto** si legge da Penpot |
+| 8 | *(rivista il 2026-10-11)* **Nessun file per componente oltre al contratto dell'editor** (AD-1/CAP-4 della spine 2026-10-03: zero metadati per componente). Struttura e aspetto si leggono da Penpot; elemento HTML, field → parte, a11y e comportamento stanno nel componente dello sviluppatore (decisione 11). Il collegamento per componente usato nel prototipo è superato |
 | 9 | Contratto dell'editor della ShopCard corretto: link relativi, immagine e testo del badge facoltativi |
 | 10 | Penpot locale fissato a **2.18.3** (compose, con backup prima della migrazione) |
 | 11 | **Stili generati, componente tuo:** il generatore scrive solo `<Comp>.styles.ts`; `<Comp>.tsx` è dello sviluppatore dopo lo scaffold (più elasticità sul codice) |
@@ -63,16 +64,20 @@
 
 Strade: *dal contratto* `CN → DC → GC`; *dal design* `DC (libera) → CD → GC`. Modifiche: aspetto → `AC`; struttura → `MS → AC`.
 
-### I contratti di un componente (o di una sezione)
+### Da dove viene ogni informazione di un componente
 
-| | Contratto dell'editor | Collegamento |
-|---|---|---|
-| File | `packages/contracts/src/components/<nome>.ts`, oppure `sections/<nome>.ts` per una sezione con slot | `packages/scripts/src/contracts/<nome>.binding.ts` |
-| Contiene | varianti e field per chi compone le pagine; per una sezione anche slot e figli di default | elemento HTML, parte → field, componenti annidati, `when`, a11y, dominio; per una sezione `slot`, `repeat`, `icon` e quali field sono assi delle celle Penpot |
-| Scritto da | la skill (CN/CD), approvato | la skill (CN/CD), approvato |
-| Versione | `SCHEMA_VERSION` + fingerprint (pagine salvate) | — |
+Un solo file per componente scritto e approvato: il **contratto dell'editor**. Niente altro metadato per componente (decisione 8, AD-1).
 
-Esempi: ShopCard ([contratto](test-v3/codice/packages/contracts/src/components/shop-card.ts), [collegamento](test-v3/codice/packages/scripts/src/contracts/shop-card.binding.ts)); Carousel ([sezione](test-v3/codice/packages/contracts/src/sections/carousel.ts), [collegamento](test-v3/codice/packages/scripts/src/contracts/carousel.binding.ts)).
+| Informazione | Fonte |
+|---|---|
+| varianti, field, slot (ciò che usano l'editor e le pagine salvate) | **contratto dell'editor**: `packages/contracts/src/components/<nome>.ts`, o `sections/<nome>.ts` per una sezione con slot; versionato da `SCHEMA_VERSION` + fingerprint; scritto dalla skill (CN/CD/MS), approvato |
+| parti, albero, componenti annidati e variante scelta, quando una parte esiste (celle), aspetto (token), geometria | **Penpot**, letto live (plugin data `nome@versione` sul container) |
+| assi delle celle di una sezione | field `enum` della sezione con lo stesso nome della proprietà di variante in Penpot |
+| contenuto di uno slot | layer i cui figli sono istanze dei componenti ammessi dallo slot: in Penpot sono esempi |
+| elemento HTML, field → parte, icone, a11y, comportamento, cartella | **componente dello sviluppatore** (decisione 11): lo scaffold li propone, l'umano conferma, poi sono codice |
+| legame tra Penpot e codice | `data-slot` = nome della parte in Penpot (convenzione shadcn) |
+
+Esempi: [contratto della ShopCard](test-v3/codice/packages/contracts/src/components/shop-card.ts), [sezione Carousel](test-v3/codice/packages/contracts/src/sections/carousel.ts).
 
 ### Gli script: 5, tutti generici
 
@@ -122,7 +127,7 @@ Provato sulla ShopCard (prove.md, T4b-2, T5, T6: file modificato a mano rimasto 
 | Template dei test cablati; log di `extract` | test fragili, messaggi fuorvianti | `render.ts`, `extract.ts` | A-14, A-15 |
 | Il reader non leggeva ritaglio, dimensioni fisse, posizione degli assoluti, "fill" verticale | frecce e pallini senza misura, card fuori dal contenitore | `library-reader.ts`, generatore (corretto nel prototipo) | F-7, F-8 |
 | D2 contava come override il dimensionamento di un'istanza | blocco su card in "fill" dentro uno slot | `instanceInfo` del reader (corretto nel prototipo) | F-6, F-8 |
-| La pipeline conosce solo contratti di componente | una sezione con slot non si legge né si genera | prototipo: `sectionContract`, `slot`/`repeat`/`icon` | F-3 |
+| La pipeline conosce solo contratti di componente | una sezione con slot non si legge né si genera | da leggere da contratto della sezione + Penpot (prototipo con un adattatore) | F-3 |
 | Test di `scripts` rotti dallo spike | 45 rossi: fixture col catalogo vecchio, confini violati da `v3/` | catalogo, `v3/` | F |
 
 ### Limiti di Penpot, del kit e dell'ambiente
@@ -140,18 +145,54 @@ Provato sulla ShopCard (prove.md, T4b-2, T5, T6: file modificato a mano rimasto 
 | Board con ritaglio attivo per default | `overflow-hidden` quasi ovunque: decidere quando leggerlo |
 | Scheda Penpot sospesa dal browser | documentare: finestra visibile o flag `--disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows` |
 
+## Confronto con le decisioni precedenti
+
+Lo spike non è partito dalle decisioni già prese: va confrontato con la [spine 2026-10-03](../../planning-artifacts/architecture/architecture-page-builder-2026-10-03/ARCHITECTURE-SPINE.md) (estrazione-costruzione, con la [spec](../../specs/spec-penpot-estrazione-costruzione/SPEC.md)) e con AD-11 v2 della [spine 2026-07-25](../../planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md), che la prima eredita. Esito: ✅ coerente · ⚠️ in conflitto, da decidere · 🔁 cambia consapevolmente (da registrare nel correct-course).
+
+### Spine 2026-10-03 (estrazione-costruzione)
+
+| Decisione | Cosa dice | Lo spike | Esito |
+|---|---|---|---|
+| AD-1 | nessun runtime: la skill guida; `packages/scripts` non guida né vincola il flusso; **zero metadati per componente** (CAP-4) | la skill guida tutti i passi; metadati per componente tolti (decisione 8 rivista); restano 5 script (reader, verifica, generatore, tema) chiamati dalla skill | ✅ metadati · ⚠️ script: leggono e generano su richiesta della skill, ma la verifica può bloccare |
+| AD-2, CAP-5 | conferma umana unico gate; regole come fix, **mai blocchi muti** | ogni scrittura (contratti, Penpot, diff del componente) passa da un'approvazione; VC però **blocca** da script | ⚠️ VC: trasformare i blocchi in proposte di fix confermate |
+| AD-3, CAP-1 | rilettura live a ogni stadio; **mai cache né fixture** | letture salvate (`--snapshot`) usate per generare, per aggirare la scheda Penpot sospesa; punto aperto 5 proponeva una copia della lettura nel repo | ⚠️ nel flusso solo lettura live; le letture salvate restano materiale dello spike |
+| AD-4, CAP-2 | profili headless+token versionati (`packages/scripts/profiles/`), Base UI | nessun profilo; il comportamento del Carousel è scritto a mano senza headless | ⚠️ non coperto |
+| AD-5, CAP-8 | mai mani su `@generated`; un token un proprietario (generato Penpot vince); componenti esistenti solo per diff | `styles.ts` solo dal generatore; componente dello sviluppatore aggiornato per diff approvati; correzione di `globals.css` (C-6) fa vincere il tema Penpot | ✅ |
+| AD-6, CAP-9 | un solo vocabolario verso Puck: Tailwind theme v4 | seme `theme.css` Tailwind v4 → Penpot → di nuovo CSS | ✅ |
+| AD-7, CAP-7 | fedeltà = giudizio umano, nessuno score | giudizio in Storybook (negativo sul primo Carousel, decisivo) | ✅ |
+| AD-8, CAP-6 | il gate mostra 4 controlli: plugin data → contratto esistente, **ruoli di parte nel vocabolario chiuso**, token nel theme, nomi | plugin data ✅, token (avvisi) ✅, nomi in parte; **ruoli di parte tolti** | ⚠️ ruoli |
+| AD-9 | livelli L0 → L3 in ordine: un livello si apre solo a precedente completo | Carousel (organismo) prima del Button (atomo) | ⚠️ deroga non registrata: registrarla o rifare in ordine |
+| Convenzione a11y | il comportamento accessibile entra dal primitivo headless, mai disegnato | a11y nel codice dello sviluppatore, proposta dalla skill | ⚠️ con AD-4 |
+
+### AD-11 v2 (spine 2026-07-25, rivista il 2026-09-17)
+
+| Regola | Cosa dice | Lo spike | Esito |
+|---|---|---|---|
+| Due contratti | page builder (nel fingerprint) + estrazione `<nome>.extract.ts` | un solo contratto (editor); il resto da Penpot o dal codice | 🔁 (decisione 8) |
+| Ruoli di parte | vocabolario chiuso `surface`/`text`/`icon`/`divider`/`image` nel contratto di estrazione | registro per tipo di layer, senza ruoli | 🔁 / ⚠️ (vedi AD-8) |
+| Istantanea | `data/components/<nome>.json`, unico artefatto generato; il suo diff è la review del design | nessuna istantanea: la review è il diff di `styles.ts` | 🔁 (coerente con AD-3 della spine 10-03) |
+| Render | tutto `@generated` (componente, test, story, barrel), nessuna base | solo `styles.ts` e story generati; componente dello sviluppatore | 🔁 (decisione 11) |
+| Headless per parte | Base UI come elemento della parte; a11y dal primitivo | nessun headless | ⚠️ (vedi AD-4) |
+| Sei comandi; solo `library` scrive su Penpot | `theme`, `library`, `extract`, `render`, `gates`, `propose` | due skill (pds-design, pds-code); su Penpot scrive il designer col kit | 🔁 (decisioni 2 e 5) |
+| Composizione ≠ componente | Accordion, hero, sezioni: definizioni di sezione in `contracts` | Carousel come sezione | ✅ |
+| Logica propria (Table, **Carousel**…) | in Penpot solo un segnaposto; adapter scritto a mano, senza marker | Carousel disegnato in Penpot, stili generati, comportamento nel codice dello sviluppatore | 🔁 da registrare: con la decisione 11 il segnaposto non serve più |
+| Pass/fail | negli script e negli schemi, mai nel prompt di una skill | VC blocca da script | ✅ qui, ma ⚠️ con la spine 10-03 (AD-2): le due regole vanno conciliate |
+| `@generated` | mai a mano; i file senza marker sono preservati | idem | ✅ |
+
+**In sintesi:** lo spike è coerente sul vocabolario del tema, sulla fedeltà giudicata dall'umano, sui file generati e sull'aggiornamento per diff. Cambia consapevolmente AD-11 v2 (un contratto, niente istantanea, componente dello sviluppatore, scrittura su Penpot dal designer). Resta in conflitto con la spine 2026-10-03 su: verifica che blocca, letture salvate, profili headless e a11y, ruoli di parte, ordine dei livelli. Questi punti vanno risolti nella forgia, uno per uno, prima del correct-course.
+
 ## Punti aperti per la forgia
 
 1. **Chi genera il codice:** deciso (11): generatore deterministico per l'aspetto, scaffold una tantum per la struttura, poi il componente è dello sviluppatore.
-2. **Uno o due contratti:** proposta due file, entrambi scritti dalla skill.
+2. **Uno o due contratti:** deciso (8, rivista): un solo contratto, quello dell'editor; nessun file per componente.
 3. **Gli script in Python?** Alessandro lo ritiene la soluzione giusta per le skill. Nodo: contratti, registro e generatore del tema sono TypeScript; servirebbe un'esportazione dei contratti in JSON come confine stabile.
 4. **Ogni script, uno per uno:** input e output stabili, cosa può cambiare senza rompere gli altri, test, aggiornamenti di Penpot e Tailwind. Richiesta esplicita di Alessandro, per evitare intoppi nelle evoluzioni.
-5. **Copia della lettura di Penpot nel repository** (come l'istantanea di oggi), da scrivere con AC: permetterebbe di rigenerare e di verificare in CI senza Penpot.
-6. **Componente dello sviluppatore:** come AC propone il diff del JSX dopo un cambio di struttura; se lo scaffold genera anche il test; cosa resta nel collegamento dopo lo scaffold (serve ancora a VC per istanze e `when`).
+5. **Copia della lettura di Penpot nel repository:** in conflitto con AD-3 della spine 2026-10-03 (mai cache né fixture); da decidere se serve davvero (CI senza Penpot) o se resta solo la lettura live.
+6. **Componente dello sviluppatore:** come AC propone il diff del JSX dopo un cambio di struttura; se lo scaffold genera anche il test; quali controlli restano a VC senza un file per componente (es. "testo senza field") e quali passano al gate della skill con conferma umana.
 7. **Larghezza dei componenti** (fissa in Penpot, non un token) e caricamento del webfont.
 8. **Render generico prima della 2.18** (libreria dei sei domini).
 9. **AD-11 e i "sei comandi" della v2** cambiano: correct-course.
-10. **Sezioni nella pipeline** (prova F): sezione come contratto con assi (`sectionContract`), concetti `slot`/`repeat`/`icon` nel collegamento, story con i figli di default; chiarire la differenza tra componente con slot e sezione (AD-11 "Composizione ≠ ricetta").
+10. **Sezioni nella pipeline** (prova F): assi dai field `enum` della sezione, slot riconosciuti da Penpot (istanze dei componenti ammessi), ripetizioni e icone riconosciute da Penpot e decise allo scaffold, story con i figli di default; chiarire la differenza tra componente con slot e sezione (AD-11 "Composizione ≠ componente").
 11. **Comportamento proposto dalla skill** dopo lo scaffold (prova F, B): come la skill lo scrive e lo mostra, e quando ripropone (cambi di struttura).
 12. **Geometria in Penpot**: dimensioni fisse fuori scala, vincoli degli assoluti, ritaglio di default, "fill" sul genitore auto.
 13. **Test dello spike**: riallineare le fixture al catalogo Tailwind e portare `v3/` dentro i confini prima di riapplicare il codice.

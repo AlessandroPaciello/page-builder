@@ -12,7 +12,7 @@ Simulazione completa delle skill `pds-design` e `pds-code` su un componente **nu
 |---|---|---|---|
 | 1 | `/pds-design` | menu | stato del file Penpot (tema, componenti esistenti) |
 | 2 | `CN, vorrei un carousel` | pds-design · **CN** | la skill trova la [ricetta shadcn](../../recipes/carousel.md) e fa 7 domande, ognuna con una proposta |
-| 3 | *slide = shop-card, max 3 visibili, autoplay impostabile, solo orizzontale…* | **CN** | propone i due contratti → **approvato**; li scrive, registra la sezione, `SCHEMA_VERSION` 6 → 7 |
+| 3 | *slide = shop-card, max 3 visibili, autoplay impostabile, solo orizzontale…* | **CN** | propone il contratto della sezione → **approvato**; lo scrive, lo registra, `SCHEMA_VERSION` 6 → 7 |
 | 4 | `DC` | pds-design · **DC** | disegna il container `Carousel` in Penpot con i token esistenti; verifica di salvataggio |
 | 5 | *(il designer prova una card scontata)* | — | le card non restano allineate → correzione di design in Penpot (altezza "fill") |
 | 6 | `/pds-code GC Carousel` | pds-code · **VC + GC** | `Carousel.styles.ts`, scaffold di `Carousel.tsx`, story; **giudizio negativo** in Storybook |
@@ -23,7 +23,7 @@ Simulazione completa delle skill `pds-design` e `pds-code` su un componente **nu
 
 La skill parte da una ricetta, non da zero: il Carousel di shadcn (`base`, v4) letto dal sorgente e riassunto in [`recipes/carousel.md`](../../recipes/carousel.md) — parti, asse `orientation`, comportamento con embla, cosa non si può disegnare in Penpot.
 
-Le risposte di Alessandro decidono il modello: le slide sono **ShopCard scelte nell'editor**, quindi il carousel è una **sezione con slot** (come l'Accordion), non un componente.
+Le risposte di Alessandro decidono il modello: le slide sono **ShopCard scelte nell'editor**, quindi il carousel è una **sezione con slot** (come l'Accordion), non un componente. La skill scrive il contratto dell'editor; lo approva l'umano.
 
 **Contratto dell'editor** — [`sections/carousel.ts`](../codice/packages/contracts/src/sections/carousel.ts)
 ```ts
@@ -36,21 +36,15 @@ fields: {
 slots: [{ id: "slides", allow: ["shop-card"] }],
 ```
 
-**Collegamento** — [`carousel.binding.ts`](../codice/packages/scripts/src/contracts/carousel.binding.ts)
-```ts
-defineBinding(sectionContract(carousel, { axes: ["perView"] }), {
-  domain: "layout",
-  parts: {
-    root:         { element: "section", attribute: { "aria-label": "label" } },
-    slides:       { slot: "slides" },              // le ShopCard in Penpot sono esempi
-    dots:         { repeat: "slides" },            // un pallino per slide
-    previous:     { element: "button" },
-    previousIcon: { icon: "lucide:ChevronLeft" },  // tracciato in Penpot → icona lucide nel codice
-    // …next, nextIcon
-  },
-});
-```
-Tre concetti nuovi per la pipeline: `slot`, `repeat`, `icon`.
+È l'unico file per componente scritto e approvato: nessun altro metadato (AD-1). Il resto si ricava da Penpot o vive nel codice dello sviluppatore:
+
+| Cosa | Da dove |
+|---|---|
+| `perView` è l'asse delle celle | field `enum` della sezione con lo stesso nome della proprietà di variante in Penpot |
+| le ShopCard sono il contenuto dello slot | in Penpot sono istanze di un componente ammesso dallo slot: esempi, non struttura |
+| un pallino per slide, uno attivo | in Penpot `Dot` e `DotActive`; lo scaffold li ripete per ogni figlio |
+| il chevron è un'icona | in Penpot è un tracciato; lo scaffold propone l'icona lucide, poi è codice |
+| `<section aria-label={label}>`, i `<button>` | proposti dallo scaffold e confermati: sono codice dello sviluppatore |
 
 ## 4–5. Disegno in Penpot (DC)
 
@@ -130,6 +124,8 @@ Verificato pilotando Chrome via DevTools: "successiva" → slide 2; pallino 6 �
 - In Penpot i board ritagliano per default: `overflow-hidden` compare quasi ovunque. Da decidere quando leggerlo.
 - I pallini sono uno per slide: con `perView` > 1 gli ultimi portano tutti alla fine.
 - Penpot non esprime "alte come la più alta" senza fissare la striscia: il generatore ignora quella misura (regola da validare).
-- Le sezioni nella pipeline (`sectionContract`, `slot`/`repeat`/`icon`) sono da progettare nella forgia.
+- Le sezioni nella pipeline (assi dai field `enum`, slot, ripetizioni e icone riconosciuti da Penpot) sono da progettare nella forgia.
+- Il prototipo usava ancora un file di collegamento per componente per portare queste informazioni al generatore: superato (decisione 8 rivista, AD-1).
+- Rispetto alle decisioni precedenti: AD-11 v2 prevedeva per il Carousel solo un segnaposto in Penpot; la spine 2026-10-03 chiede i livelli in ordine (il Button prima) e il comportamento da un primitivo headless. Vedi il [confronto nel README](../../README.md#confronto-con-le-decisioni-precedenti).
 
 Dettaglio dei passi: [prove.md, prova F](../../prove.md#prova-f--carousel-simulazione-completa-della-skill-2026-10-11). Lettura di Penpot usata: [`lettura-penpot.json`](lettura-penpot.json).
