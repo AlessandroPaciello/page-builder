@@ -7,10 +7,11 @@ import config from "./main";
 
 /**
  * Pin della configurazione Storybook (Story 2.11, review Loop 2):
- * - il glob `stories` deve risolvere al catalogo generato (4 componenti),
- *   altrimenti la build esce 0 con zero story e nessun test lo segnala;
+ * - i glob `stories` devono risolvere ad almeno una story (Story 2.18: il
+ *   dropdown dell'editor), altrimenti la build esce 0 con zero story e
+ *   nessun test lo segnala;
  * - l'addon a11y deve restare registrato (criterio "pannello a11y attivo");
- * - il glob deve restare in parità con lo smoke gate
+ * - i glob (`domains/**` ed `editor/**`) devono restare in parità con lo smoke gate
  *   (packages/ui/src/stories.smoke.test.tsx), altrimenti story navigabili
  *   restano senza gate o viceversa.
  */
@@ -48,23 +49,26 @@ function resolvePattern(fromDir: string, pattern: string): string[] {
 }
 
 describe("storybook config — catalogo e addon pinnati", () => {
-  it("stories risolve ai 4 moduli generati (solo .stories.tsx)", () => {
+  it("stories risolve ad almeno un modulo (solo .stories.tsx)", () => {
     const stories = (config as { stories?: unknown }).stories;
     expect(Array.isArray(stories)).toBe(true);
     const patterns = stories as string[];
     expect(patterns.length).toBeGreaterThan(0);
 
     const resolved = patterns.flatMap((p) => resolvePattern(here, p)).sort();
-    expect(resolved.length).toBeGreaterThanOrEqual(4);
+    expect(resolved.length).toBeGreaterThanOrEqual(1);
     for (const f of resolved) expect(f.endsWith(".stories.tsx")).toBe(true);
   });
 
   it("glob in parità con lo smoke gate (nessuna story fuori dal gate)", () => {
     const smoke = readFileSync(join(uiSrc, "stories.smoke.test.tsx"), "utf8");
-    expect(smoke).toContain("./domains/**/*.stories.tsx");
+    const SCOPES = ["domains", "editor"];
+    for (const scope of SCOPES) expect(smoke).toContain(`./${scope}/**/*.stories.tsx`);
     const patterns = (config as { stories?: string[] }).stories ?? [];
+    expect(patterns).toHaveLength(SCOPES.length);
+    for (const scope of SCOPES) expect(patterns.some((p) => p.includes(`/packages/ui/src/${scope}/**/`))).toBe(true);
     const mainResolved = patterns.flatMap((p) => resolvePattern(here, p)).sort();
-    const smokeResolved = walk(join(uiSrc, "domains"))
+    const smokeResolved = SCOPES.flatMap((scope) => walk(join(uiSrc, scope)))
       .filter((f) => f.endsWith(".stories.tsx"))
       .sort();
     expect(mainResolved).toEqual(smokeResolved);

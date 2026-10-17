@@ -57,7 +57,7 @@ describe("isForbiddenSpecifier", () => {
   it("gli specifier estranei non riguardano il gate", () => {
     expect(isForbiddenSpecifier("@modelcontextprotocol/sdk")).toBe(false);
     expect(isForbiddenSpecifier("@penpot-ds/tokens")).toBe(false);
-    expect(isForbiddenSpecifier("./library-plan")).toBe(false);
+    expect(isForbiddenSpecifier("./shared/paths")).toBe(false);
   });
 });
 

@@ -2,24 +2,16 @@
   "name": "@penpot-ds/scripts",
   "version": "0.0.0",
   "private": true,
-  "description": "Pipeline MCP Penpot→codice v2: due contratti → istantanea → render headless (sei comandi, un guscio).",
+  "description": "Rigenerazione del tema dal catalogo token Penpot (fixture o live) e registro delle proprietà di stile; la pipeline v3 arriva con le Story 2.19+.",
   "type": "module",
   "scripts": {
     "check-types": "tsc --noEmit",
     "lint": "node ./scripts/check-boundaries.mjs",
     "test": "vitest run",
-    "theme": "node --import tsx src/cli.ts theme",
-    "library": "node --import tsx src/cli.ts library",
-    "propose": "node --import tsx src/cli.ts propose",
-    "extract": "node --import tsx src/cli.ts extract",
-    "render": "node --import tsx src/cli.ts render",
-    "gates": "node --import tsx src/cli.ts gates"
+    "theme": "node --import tsx src/theme/main.ts"
   },
   "dependencies": {
-    "@app/contracts": "workspace:*",
-    "@modelcontextprotocol/sdk": "catalog:",
-    "@penpot-ds/tokens": "workspace:*",
-    "zod": "catalog:"
+    "@modelcontextprotocol/sdk": "catalog:"
   },
   "devDependencies": {
     "@app/config": "workspace:*",

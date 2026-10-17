@@ -306,12 +306,12 @@ describe("layout, posizione e ruolo image (Story 2.12, CAP-3)", () => {
 
   it("rosso: un token fill su una parte image è fuori ruolo (outsideRole), con l'adattamento in ordine", () => {
     const tree = {
-      name: "ProductCard",
+      name: "MediaCard",
       tokens: {},
       style: {},
       children: [{ name: "image", tokens: { fill: "color.card", borderRadiusTopLeft: "radius.lg" }, style: {}, children: [] }],
     };
-    const issues = layerTreeIssues(tree, { component: "ProductCard", cell: "promo=none|hover=off" }, {}, { root: "surface", image: "image" });
+    const issues = layerTreeIssues(tree, { component: "MediaCard", cell: "promo=none|hover=off" }, {}, { root: "surface", image: "image" });
     expect(issues).toHaveLength(1);
     expect(issues[0]).toMatchObject({ blocked: false, outsideRole: true });
     expect(issues[0]!.message).toContain(`parte "image", ruolo "image", proprietà "fill", token "color.card"`);

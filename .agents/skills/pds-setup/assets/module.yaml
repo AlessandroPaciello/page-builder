@@ -1,7 +1,7 @@
 code: pds
 name: "Penpot DS"
-description: "Allinea la library Penpot ai contratti del page builder: bootstrap una tantum e aggiunte successive, con esito deciso dagli script di `packages/scripts`."
+description: "Pipeline Penpot → codice del design system del page builder. Le skill operative pds-design e pds-code arrivano con la v3 (Story 2.28–2.29)."
 module_version: 1.0.0
 default_selected: false
 module_greeting: >
-  Modulo Penpot DS pronto. Apri il file Penpot, connetti il plugin MCP e lancia [PB] (bootstrap), [PA] (additiva), [PC] (crea componente) oppure [PS] (sincronizza componente).
+  Modulo Penpot DS registrato. Le skill operative (pds-design, pds-code) arrivano con la v3; per ora è disponibile solo [SU] (setup).

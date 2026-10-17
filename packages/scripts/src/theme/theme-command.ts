@@ -7,8 +7,8 @@ import { readPenpotTokenCatalog } from "./penpot-reader";
 
 /**
  * Stadio 1 (token), pura rispetto al processo: nessun `process.exit*`, nessun
- * parsing di `argv`. La chiamano l'entry v1 `src/cli/generate-theme.ts` e il
- * comando v2 `theme` (Story 2.12): stesso comportamento, un solo corpo.
+ * parsing di `argv`. La chiama l'entrypoint `src/theme/main.ts` (Story 2.18),
+ * che legge gli argomenti e decide il codice d'uscita.
  */
 
 export interface ThemeDeps {
@@ -62,10 +62,4 @@ export function writeTheme(catalog: TokenCatalog, live: boolean, deps: ThemeDeps
   }
 
   log("Generati packages/tokens/src/tailwind-theme.css e tokens.generated.ts");
-}
-
-/** Corpo completo di `generate:theme` / `theme`: lettura (fixture o live) poi scrittura. */
-export async function runTheme(args: { readonly live: boolean }, deps: ThemeDeps = {}): Promise<void> {
-  const catalog = await loadThemeCatalog(args.live, deps);
-  writeTheme(catalog, args.live, deps);
 }
