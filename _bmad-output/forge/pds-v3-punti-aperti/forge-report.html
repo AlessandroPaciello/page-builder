@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forgia pds v3 — punti aperti</title>
+<style>
+:root{--bg:#f7f3ea;--paper:#fffdf8;--ink:#2a2420;--muted:#6b6058;--line:#e3dacb;--accent:#8a1c1c;--ok:#2f6b3a;--warn:#9a6a12}
+@media (prefers-color-scheme:dark){:root{--bg:#1b1815;--paper:#24201c;--ink:#efe7da;--muted:#b3a796;--line:#3a332c;--accent:#d0574f;--ok:#7fbf8a;--warn:#e0b25a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Georgia,"Iowan Old Style",serif}
+main{max-width:920px;margin:0 auto;padding:32px 16px 64px}
+header{display:flex;gap:24px;align-items:center;flex-wrap:wrap;border-bottom:2px solid var(--line);padding-bottom:20px}
+header .t{flex:1;min-width:260px}
+h1{font-size:1.9rem;margin:0 0 6px}
+h2{font-size:1.25rem;margin:32px 0 10px;border-bottom:1px solid var(--line);padding-bottom:4px}
+.sub{color:var(--muted);margin:0}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin:10px 0}
+.card h3{margin:0 0 6px;font-size:1.02rem}
+.card p,.card ul{margin:4px 0}
+ul{padding-left:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+.tag{display:inline-block;font:600 .72rem/1 system-ui,sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:4px 7px;border-radius:4px;margin-right:6px}
+.lock{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.kill{background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+.risk{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.persona{display:flex;gap:10px;align-items:flex-start}
+.persona .ic{font-size:1.5rem;line-height:1}
+.persona b{display:block}
+.persona i{color:var(--muted)}
+code{font:.88em ui-monospace,Menlo,monospace;background:color-mix(in srgb,var(--line) 60%,transparent);padding:1px 4px;border-radius:3px}
+footer{margin-top:40px;color:var(--muted);font-size:.9rem}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <svg width="150" height="150" viewBox="0 0 200 200" role="img" aria-label="Sigillo: HARDENED">
+    <defs><radialGradient id="w" cx="40%" cy="35%"><stop offset="0" stop-color="#c0392b"/><stop offset="1" stop-color="#6e1414"/></radialGradient></defs>
+    <path d="M100 8 C128 10 150 6 166 28 C186 44 194 70 190 100 C196 130 182 156 162 172 C140 192 116 190 100 194 C76 192 52 194 34 172 C12 154 8 128 10 100 C6 72 16 46 36 30 C54 10 76 6 100 8Z" fill="url(#w)"/>
+    <circle cx="100" cy="100" r="68" fill="none" stroke="#f3d9c9" stroke-width="2" stroke-dasharray="3 4" opacity=".75"/>
+    <circle cx="100" cy="100" r="56" fill="none" stroke="#f3d9c9" stroke-width="1.5" opacity=".6"/>
+    <text x="100" y="94" text-anchor="middle" font-family="Georgia,serif" font-size="21" font-weight="700" fill="#fbeee4" letter-spacing="1.5">HARDENED</text>
+    <text x="100" y="116" text-anchor="middle" font-family="Georgia,serif" font-size="11" fill="#f3d9c9" letter-spacing="2">pds v3 · 2026-10-17</text>
+    <path d="M70 128 L130 128" stroke="#f3d9c9" stroke-width="1.2" opacity=".7"/>
+  </svg>
+  <div class="t">
+    <h1>Forgia pds v3: punti aperti</h1>
+    <p class="sub">Punti 7, 12, 10, 11 e la parte a11y dell'8 del README dello spike penpot-ai-kit; il 13 è fuori. Si appoggia alle 9 regole del 13/10 e alle 8 decisioni sugli script del 17/10.</p>
+    <p class="sub">Esito: <b>HARDENED</b>. Input per il correct-course: <code>forged-idea.md</code>.</p>
+  </div>
+</header>
+
+<h2>Cosa cambia rispetto alle forgie precedenti</h2>
+<div class="card"><h3><span class="tag lock">correzione</span>Regola 1: chi scrive i metadati</h3>
+<p><code>part</code>, <code>when</code>, <code>slot</code> e le risposte alle domande li scrive <b>pds-code alla generazione</b>, via MCP Penpot, con conferma, solo come shared plugin data. Il designer disegna e basta: non scrive metadati e nessuno tocca il suo disegno.</p></div>
+<div class="card"><h3><span class="tag lock">nuovo schema</span>Domande per i casi ambigui</h3>
+<p>Proposto da Alessandro. Il nucleo riconosce un caso ambiguo e restituisce una domanda; la skill la pone; la risposta resta in Penpot e non si ripete. Finché resta una domanda aperta, la generazione è ferma, quindi la skill non può saltarla.</p></div>
+
+<h2>Decisioni</h2>
+<div class="grid">
+  <div class="card"><h3>Geometria (12)</h3><ul>
+    <li>La misura della radice entra solo se cambia tra le celle (a′)</li>
+    <li>Un valore fuori scala diventa arbitrario, con avviso</li>
+    <li>Il ritaglio si applica per regola se è chiaro, con una domanda se c'è contenuto variabile</li>
+    <li>La geometria entra nel registro; ciò che non si traduce dà un avviso</li></ul></div>
+  <div class="card"><h3>Larghezza e font (7)</h3><ul>
+    <li>La larghezza la decide chi usa il componente</li>
+    <li><code>fonts=fontsource</code>: un solo <code>fonts.css</code> generato per Next e Storybook</li>
+    <li>Via Geist e <code>next/font</code></li></ul></div>
+  <div class="card"><h3>Sezioni (10)</h3><ul>
+    <li>Sezione = almeno uno slot; il "componente con slot" non esiste</li>
+    <li>Un asse esiste solo se il designer disegna la variante; altrimenti c'è un <code>when</code></li>
+    <li>Lo slot si riconosce dalle istanze; le icone sono parti</li>
+    <li>La Story 3.4 cambia</li></ul></div>
+  <div class="card"><h3>Comportamento (11)</h3><ul>
+    <li>Base UI se esiste, altrimenti ricetta shadcn <code>base</code> + APG</li>
+    <li>Prima l'elenco, poi un diff per comportamento</li>
+    <li>Un test per ogni comportamento approvato</li></ul></div>
+  <div class="card"><h3>A11y (8)</h3><ul>
+    <li>Focus e disabled hanno sempre un default globale</li>
+    <li>Hover e active solo se disegnati (asse <code>state</code>)</li>
+    <li>axe bloccante su ogni story; "testo + colore" nel giudizio umano</li>
+    <li>La Story 2.18 va riscritta</li></ul></div>
+  <div class="card"><h3>Fuori da Penpot</h3><ul>
+    <li>Un componente senza container è scritto a mano: contratto sì, nessun generato</li>
+    <li>Un disegno fatto altrove si riporta in Penpot</li>
+    <li>Un secondo ingresso solo quando il caso diventa reale</li></ul></div>
+</div>
+
+<h2>Scartato</h2>
+<div class="card"><ul>
+  <li><span class="tag kill">kill</span><b>Radice sempre senza misura:</b> le taglie dell'Avatar sparivano in silenzio.</li>
+  <li><span class="tag kill">kill</span><b>Arrotondare o bloccare i valori fuori scala:</b> arrotondare sceglie un valore che nessuno ha deciso; bloccare è un blocco sull'aspetto.</li>
+  <li><span class="tag kill">kill</span><b>Ritaglio sempre:</b> taglia l'anello di focus (WCAG 2.4.7).</li>
+  <li><span class="tag kill">kill</span><b><code>next/font</code>:</b> due caricamenti, e Storybook mente.</li>
+  <li><span class="tag kill">kill</span><b>Hover di default con "cella identica":</b> troppo macchinoso.</li>
+  <li><span class="tag kill">kill</span><b>Diff del comportamento in blocco:</b> porta al "sì" detto senza leggere.</li>
+  <li><span class="tag kill">kill</span><b>Semantic Tagger:</b> verificato sul sorgente, tiene i tag solo in memoria.</li>
+</ul></div>
+
+<h2>Punti deboli rimasti in piedi</h2>
+<div class="card"><ul>
+  <li><span class="tag risk">rischio</span>I metadati in Penpot non si vedono: una perdita si scopre alla generazione successiva. C'è il controllo di stato in <code>pds-design</code>; il pannello in sola lettura è rimandato in <code>deferred-work.md</code>.</li>
+  <li><span class="tag risk">rischio</span>Un layer che tiene la chiave ma cambia significato: lo vede solo il giudizio in Storybook.</li>
+  <li><span class="tag risk">da misurare</span>Quali operazioni di Penpot cancellano i plugin data, e cosa fa davvero "fill" dentro hug: da verificare nel collaudo <code>.penpot</code>.</li>
+  <li><span class="tag risk">accettato</span>Senza hover disegnato non c'è hover; "testo + colore" resta affidato all'umano.</li>
+</ul></div>
+
+<h2>Chi ha messo sotto pressione l'idea</h2>
+<div class="grid">
+  <div class="card persona"><span class="ic">🎨</span><div><b>Sally</b><i>UX</i><br>"Avatar e Badge hanno una misura che fa parte del disegno"; 30 celle di stati sono troppe.</div></div>
+  <div class="card persona"><span class="ic">🧑‍💻</span><div><b>Marta</b><i>generata, sviluppatrice di un'agenzia</i><br>"Il designer non deve sapere niente di chiavi."</div></div>
+  <div class="card persona"><span class="ic">🏗️</span><div><b>Winston</b><i>architetto</i><br>"Il nucleo puro rende possibile un secondo guscio: aspettare non costa niente."</div></div>
+  <div class="card persona"><span class="ic">⚙️</span><div><b>Amelia</b><i>dev</i><br>"<code>left+right</code> si traduce"; chi conosce la mappa componente → primitivo?</div></div>
+  <div class="card persona"><span class="ic">🧱</span><div><b>Boundary</b><i>confini</i><br>Le taglie perse in silenzio; un field che non controlla niente; un pannello che scrive è una seconda strada.</div></div>
+  <div class="card persona"><span class="ic">🪓</span><div><b>Killjoy</b><i>scettico</i><br>Gli <code>[37px]</code> che si accumulano; il test scritto dallo stesso LLM che scrive il codice.</div></div>
+  <div class="card persona"><span class="ic">♿</span><div><b>Yui</b><i>accessibilità</i><br><code>overflow-hidden</code> taglia il focus; senza una regola globale il focus non c'è.</div></div>
+  <div class="card persona"><span class="ic">🃏</span><div><b>Wildcard</b><i>il caso strano</i><br>La Card con contenuto libero; i pallini uno per slide.</div></div>
+  <div class="card persona"><span class="ic">⚡</span><div><b>Vex</b><i>prestazioni</i><br>Il salto del layout senza <code>next/font</code>; embla come dipendenza.</div></div>
+  <div class="card persona"><span class="ic">🛠️</span><div><b>Dana · Grumbal · Splinter · Level</b><i>operatività e pragmatismo</i><br>Il componente scritto a mano serve comunque; i <code>when</code> invisibili; per progetto o per caso; il costo cresce con la complessità reale.</div></div>
+</div>
+
+<footer>Memlog: <code>_bmad-output/forge/pds-v3-punti-aperti/.memlog.md</code> · Forgie precedenti: <code>pds-v3-penpot-ai-kit</code> (13/10), <code>pds-v3-scripts</code> (17/10).</footer>
+</main>
+</body>
+</html>
