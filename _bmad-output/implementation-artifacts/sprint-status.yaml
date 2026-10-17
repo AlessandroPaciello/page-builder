@@ -44,7 +44,7 @@
 #   la chiusura review no (1-2 done prima). Precondizione Epic 2 = 1-4-tracciante, non 1-2.
 
 generated: '2026-07-26'
-last_updated: "2026-10-17T00:00+02:00"  # correct-course pds v3 (sprint-change-proposal-2026-10-17)
+last_updated: "2026-10-17T18:00+02:00"  # Story 2.17 review (story/2-17-tema-penpot-nel-css)
 project: page-builder
 project_key: NOKEY
 tracking_system: file-system
@@ -84,7 +84,7 @@ development_status:
   # correct-course 2026-10-17 (pds v3): 2-17-skill-pds-sui-sei-comandi cancellata,
   # 2-18-libreria-componenti-accessibile rinumerata 2-32; tolte le voci della slice
   # estrazione-costruzione (2-1…2-4, 3-1…3-3, 4-1…4-4), superata
-  2-17-tema-penpot-nel-css-compilato: backlog
+  2-17-tema-penpot-nel-css-compilato: review
   2-18-rimozione-dei-componenti-di-prova-e-della-pipeline-v2: backlog
   2-19-fixture-sul-catalogo-tailwind-e-codice-nuovo-dentro-i-confini: backlog
   2-20-nucleo-puro-e-registro-delle-proprieta: backlog
