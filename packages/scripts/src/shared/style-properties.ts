@@ -6,9 +6,10 @@ import type { TokenType } from "./theme-generator";
  *
  * Una riga per proprietà: come la legge il reader (`read`), il tipo (`kind`:
  * token con il suo tipo di token, oppure parola chiave di una lista chiusa),
- * lo stato (`supported` | `blocked` con motivo) e la mappatura dell'emitter
- * shadcn (`emit`). Reader, estrazione, `verify:library` ed emitter leggono
- * tutti da qui: non esistono più liste parallele.
+ * lo stato (`supported` | `blocked` con motivo) e la mappatura in classi
+ * (`emit`). Oggi il registro non ha consumer (reader, estrazione,
+ * `verify:library` ed emitter sono stati rimossi con la v1 e la v2, Story
+ * 2.16 e 2.18): lo userà il nucleo v3 (Story 2.20), senza liste parallele.
  *
  * Solo due stati, nessuno skip: una proprietà o genera codice fedele o blocca
  * il componente con un errore nominativo. Una proprietà assente dal registro
@@ -121,7 +122,8 @@ export type EmitRule =
    * Parola chiave → classi fisse (Story 2.12): per una proprietà `kind:
    * keyword` ogni valore della lista ha le sue classi (es. `layoutDir`:
    * `column` → `flex flex-col`). Le classi sono strutturali, dichiarate qui
-   * e mai derivate dal vocabolario token. Solo il render v2 le consuma.
+   * e mai derivate dal vocabolario token. Oggi nessuno le consuma (il render
+   * v2 è stato rimosso nella 2.18); le userà il nucleo v3 (Story 2.20).
    */
   | { readonly emit: "keywordClass"; readonly classes: Readonly<Record<string, string>> }
   /** Proprietà bloccata: nessuna mappatura. */
@@ -548,8 +550,9 @@ interface LayerLike {
 }
 
 /**
- * Tutti i problemi di proprietà di un albero di layer (stile e binding):
- * condiviso da estrazione e `verify:library`. La board radice è la parte
+ * Tutti i problemi di proprietà di un albero di layer (stile e binding).
+ * Oggi senza consumer (estrazione e `verify:library` sono stati rimossi):
+ * lo userà il nucleo v3 (Story 2.20). La board radice è la parte
  * "root" (stessa convenzione di `partBindings`), gli altri layer contano per
  * nome. Una proprietà presente sia nello stile sia nei token è segnalata una
  * volta sola.
@@ -573,8 +576,9 @@ export interface LayerIssue {
 
 /**
  * Come `layerTreeProblems`, ma dice anche se il problema è una proprietà
- * BLOCCATA (registrata, stato `blocked`): è ciò che mette un componente "in
- * attesa" in `verify:library` (Story 2.8 parte B), mentre non registrata e
+ * BLOCCATA (registrata, stato `blocked`): è ciò che metteva un componente
+ * "in attesa" in `verify:library` (Story 2.8 parte B, oggi rimosso; il nucleo
+ * v3 della Story 2.20 ne erediterà l'uso), mentre non registrata e
  * valore fuori lista restano rossi. Con i `roles` del contratto (Story 2.10,
  * A) controlla anche il ruolo: un token su una proprietà usabile che il
  * ruolo della parte non ammette è un problema `outsideRole`, mai corretto.

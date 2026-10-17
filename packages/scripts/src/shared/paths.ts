@@ -2,9 +2,10 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /**
- * Unico modulo con i path dei dati committati di `@penpot-ds/scripts`, dei
- * package vicini e della radice dei file generati. Nessun altro file calcola
- * un path da `import.meta.url`: uno spostamento del codice si aggiorna qui,
+ * Unico modulo con i path dei dati committati di `@penpot-ds/scripts` e dei
+ * package vicini che `theme` legge o scrive (Story 2.18: via i path della
+ * v2). Nessun altro file calcola un path da `import.meta.url`: uno
+ * spostamento del codice si aggiorna qui,
  * e `tests/paths.test.ts` fallisce nominando la chiave che punta a un file
  * inesistente. I seam dei test (`dir`, `root`, `paths`) restano intatti: qui
  * vivono solo i default dei comandi veri.
@@ -16,8 +17,6 @@ const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const packagesRoot = dirname(packageRoot);
 /** Dati committati: fuori da `src/`, così le skill e il designer puntano a una radice stabile. */
 const dataDir = resolve(packageRoot, "data");
-const contractsRoot = resolve(packagesRoot, "contracts");
-const uiPackageRoot = resolve(packagesRoot, "ui");
 
 export const PATHS = {
   packageRoot,
@@ -26,20 +25,8 @@ export const PATHS = {
   dataDir,
   /** Catalogo token Stadio 1 committato (`theme` lo legge; con `--live` lo riscrive). */
   catalogPath: resolve(dataDir, "penpot-catalog.json"),
-  /** Istantanee v2 `data/components/<kebab>.json`: scritte solo da `extract` (tmp + rename). */
-  componentsDir: resolve(dataDir, "components"),
-  /** Valori del bootstrap della library (palette + semantic). */
-  semanticSeedPath: resolve(dataDir, "semantic-tokens.seed.json"),
   /** `packages/tokens/src`: `theme` scrive qui il tema. */
   tokensSrcDir: resolve(packagesRoot, "tokens/src"),
-  contractsRoot,
-  /** `packages/contracts/src`: `components/<nome>.ts` e `schema-version.ts`. */
-  contractsSrcDir: resolve(contractsRoot, "src"),
-  fingerprintPath: resolve(contractsRoot, "tests/contracts.fingerprint.json"),
-  /** `packages/ui`: la cwd della suite ui nel gate a11y. */
-  uiPackageRoot,
-  /** Radice dei file generati: `packages/ui/src/domains/`. */
-  domainsRoot: resolve(uiPackageRoot, "src/domains"),
 } as const;
 
 export type PathKey = keyof typeof PATHS;

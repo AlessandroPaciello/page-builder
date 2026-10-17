@@ -166,10 +166,10 @@ Ogni bug ha un proprietario. Quelli che spariscono con la v2 si chiudono nella s
 | 4 | Lo spessore del bordo non genera classi (`strokeWidth` `coveredByBase`, residuo v1) | bordi invisibili | corretto nel registro | 2.20 |
 | 5 | `fontFamily` non registrato (Penpot 2.18 usa il singolare) | font non legato | corretto nel registro | 2.20 |
 | 6 | `theme` legge solo i set attivi e rifiuta i nomi duplicati | niente varianti di tema | corretto in `extract_theme` | 2.26 |
-| 7 | Struttura dipendente da `COMPONENT_TOKENS` | nessun componente nuovo senza codice | sparisce con `library-plan.ts` | 2.18 |
-| 8 | Render scritto a mano per componente | codice per ogni componente | sparisce; il generatore è generico | 2.18, 2.22 |
-| 9 | Contratti di estrazione caricati tutti all'avvio della CLI | un contratto cambia e si rompe `theme` | sparisce con la CLI | 2.18 |
-| 10 | Template dei test cablati; log di `extract` | test fragili, messaggi fuorvianti | sparisce con `render`/`extract` | 2.18 |
+| 7 | Struttura dipendente da `COMPONENT_TOKENS` | nessun componente nuovo senza codice | **sparito con la v2 (Story 2.18)**: `library-plan.ts` cancellato | 2.18 |
+| 8 | Render scritto a mano per componente | codice per ogni componente | **sparito con la v2 (Story 2.18)**: `render.ts` cancellato; il generatore generico resta da fare | 2.18, 2.22 |
+| 9 | Contratti di estrazione caricati tutti all'avvio della CLI | un contratto cambia e si rompe `theme` | **sparito con la v2 (Story 2.18)**: CLI e `registry.ts` cancellati | 2.18 |
+| 10 | Template dei test cablati; log di `extract` | test fragili, messaggi fuorvianti | **sparito con la v2 (Story 2.18)**: `render`/`extract` cancellati | 2.18 |
 | 11 | Ritaglio, dimensioni fisse, posizione degli assoluti, "fill" verticale non letti | frecce e pallini senza misura | corretto in adattatore e geometria | 2.21, 2.23 |
 | 12 | D2 contava come override il dimensionamento di un'istanza | blocco su card in "fill" in uno slot | corretto nell'adattatore | 2.23 |
 | 13 | La pipeline conosce solo contratti di componente | una sezione non si legge né si genera | corretto | 2.27 |

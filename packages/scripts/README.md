@@ -1,95 +1,22 @@
 # @penpot-ds/scripts
 
-Pipeline MCP che legge il catalogo token da Penpot e genera i file di [`@penpot-ds/tokens`](../tokens/README.md).
+Legge il catalogo token da Penpot (o dalla fixture committata) e genera i file di [`@penpot-ds/tokens`](../tokens/README.md). Ospita anche il registro delle proprietà di stile (`src/shared/style-properties.ts`).
 
-**Stage 1 (token) + Stage 2 per-componente (estrazione componenti/ricette) + emitter shadcn e gate (Story 2.6).** Il renderer deterministico (fixture+ricetta → componente) è l'emitter di Story 2.6.
+La pipeline v1 (Story 2.1–2.11) e la v2 (Story 2.12–2.16) sono state rimosse (Story 2.16 e 2.18): niente più comandi `library`/`propose`/`extract`/`render`/`gates`, contratti di estrazione né istantanee. La pipeline v3 (nucleo puro e server MCP `pds`) arriva con le Story 2.19+.
 
 ## Script
 
 | Comando | Cosa fa |
 |---|---|
-| `pnpm --filter @penpot-ds/scripts generate:theme` | Rigenera `tailwind-theme.css` + `tokens.generated.ts` **dalla fixture committata** (`data/penpot-catalog.json`), offline. |
-| `pnpm --filter @penpot-ds/scripts generate:theme -- --live` | Si connette al server MCP Penpot (vedi [Connessione a Penpot](#connessione-a-penpot)), legge il catalogo reale, **aggiorna anche la fixture committata**, poi rigenera. |
-| `pnpm --filter @penpot-ds/scripts extract:component -- <Nome> [--snapshot <path>]` | **Live di default** (mai in CI né in build): estrae UN componente dalla library Penpot e scrive `data/recipes/<nome>.fixture.json` E `data/recipes/<nome>.recipe.json` (coppia scritta atomicamente: se la ricetta fallisce, la fixture torna indietro — zero artefatti). Il nome è quello del VariantContainer (`Badge`), che deve dichiarare il plugin data `pagebuilder/contract = nome@versione`: fallisce loud (exit ≠ 0, zero artefatti) su contratto duplicato, nome incoerente, contratto senza container. `--snapshot <path>` è il seam offline: legge uno snapshot già salvato invece di parlare con Penpot (il file è validato alla fonte — un JSON che non è uno snapshot fallisce nominando il campo). |
-| `pnpm --filter @penpot-ds/scripts validate:recipe -- <Nome>` | Offline: valida la coppia `data/recipes/<nome>.fixture.json` + `<nome>.recipe.json` — conformance meccanica al contratto (assi, valori, parti = esattamente quelli del contratto; celle = prodotto cartesiano completo), conformance ricetta↔fixture (ogni cella `proprietà → token` = binding `shape.tokens` della fixture per la stessa parte×cella; il `judgment` della ricetta = contenuto di `judgments/<contratto>.json`) e gate token Stadio 1 (ogni token esiste nel catalogo; un literal non passa). Ha anche il check di provenienza (`penpotComponentId`, `fixtureHash`). Wired in CI come Gate 4 di `gates:render`. |
-| `pnpm --filter @penpot-ds/scripts render:component -- <Nome> [--check] [--base <dir>]` | **Offline, per componente e su richiesta** (mai in build): l'emitter shadcn (Story 2.6) legge fixture+ricetta+binding+base committate e genera i 4 file `@generated` in `packages/ui/src/domains/<domain>/` (`.tsx`, `.test.tsx`, `.stories.tsx`, `index.ts`), instradando gli assi per TIPO letto dal contratto (`option` → varianti `cva`; `state` → prefissi `focus-visible:`/`aria-invalid:`/`disabled:`; `behavior` → `data-[state=…]:`) e derivando le classi da `varSuffix` (stessa funzione di nome dello Stadio 1, validate col vocabolario token — un literal non passa). `--check` NON scrive: confronto byte-per-byte in memoria (`renderCheck`), exit ≠ 0 nominando componente e file divergente — è il gate rigenerazione. Un file esistente senza marker `@generated` non è MAI sovrascritto (skip con log, non errore). Distinzione: `extract:component`/`validate:recipe` producono e validano i DATI (fixture+ricetta, da Penpot); `render:component` consuma i dati committati e produce CODICE, senza mai parlare con Penpot. |
-| `pnpm --filter @penpot-ds/scripts bootstrap:library [-- --dry-run]` | **Live, una tantum** (mai in CI né in build): bootstrap della library Penpot sui contratti (Story 2.4). Su un file Penpot vuoto crea i set `palette` e `semantic`, i token semantici e un VariantContainer per contratto, poi verifica. Rifiuta con exit 1 e zero scritture se la library non è vuota. `--dry-run` stampa il piano senza scrivere. Guidato dalla skill `pds-bootstrap` (modulo BMad `pds`). **Recupero da run interrotto**: se una scrittura si interrompe a metà, la library resta parziale (celle orfane senza container). Rilanciare il bootstrap verrà comunque rifiutato (la library non è più vuota): rimuovi a mano in Penpot i componenti orfani (`<Container> <asse>=<valore>`) e i set parziali, poi riparti da un file nuovo. La guardia nel writer fallisce loud se trova un componente con lo stesso nome, invece di creare duplicati. |
-| `pnpm --filter @penpot-ds/scripts add:library [-- --dry-run]` | **Live** (mai in CI né in build): modalità additiva sulla library esistente — crea solo i token mancanti e i container dei contratti senza container legato, **segnala** le differenze senza correggerle. Le differenze sono solo avvisi a schermo e **non** cambiano l'exit code: dopo ogni run (anche a 0 operazioni) gira la verifica, e l'exit code è SEMPRE quello di `verifyLibrary`. |
-| `pnpm --filter @penpot-ds/scripts verify:library [-- --snapshot <path>]` | **Sola lettura**: legge lo snapshot della library e lancia `verifyLibrary` (10 regole: un container per contratto, assi/valori/celle/parti, binding token su ogni proprietà di stile, spec completa, `generateTheme()` verde, coppie di contrasto). L'exit code decide l'esito. Offline accetta `--snapshot <path>` (seam dei test). |
-| `pnpm --filter @penpot-ds/scripts test` | Test unitari, offline e deterministici — nessuna rete (i transport MCP nei test sono mockati). |
-| `pnpm --filter @penpot-ds/scripts gates:render` | I **5 gate del regime design→codice** (Story 2.6), bloccanti in CI (wired in `.github/workflows/ci.yml`): 1. **completezza artefatti** (`.tsx` + `.test.tsx` + `.stories.tsx` + `index.ts` per componente in `ui/domains`), 2. **rigenerazione a diff zero** (`renderCheck`, nessuna scrittura), 3. **a11y** (esito della suite `@penpot-ds/ui`, assert `vitest-axe` su ogni componente generato), 4. **conformità al contratto** (riuso `validateRecipe`), 5. **drift della fixture** (Penpot live vs fixture committata, via `readLibrarySnapshot`; skip DOCUMENTATO se la lettura live fallisce — mai verde finto). Ogni gate ha prova rosso/verde propria in `src/emitter/gates.test.ts`. La lista dei componenti coperti è derivata dalle ricette committate (`data/recipes/*.recipe.json`): un componente nuovo entra nei gate per costruzione. |
+| `pnpm --filter @penpot-ds/scripts theme` | Rigenera `tailwind-theme.css` + `tokens.generated.ts` **dalla fixture committata** (`data/penpot-catalog.json`), offline. |
+| `pnpm --filter @penpot-ds/scripts theme -- --live` | Si connette al server MCP Penpot (vedi [Connessione a Penpot](#connessione-a-penpot)), legge il catalogo reale, **aggiorna anche la fixture committata** (solo dopo che la generazione è riuscita), poi rigenera. Mai in CI né in build. |
+| `pnpm --filter @penpot-ds/scripts test` | Test unitari, offline e deterministici: nessuna rete (la lettura live nei test è un seam). |
 
-## Pipeline v2 (Story 2.12 → 2.17): `src/v2/`
-
-Dal correct-course del 2026-09-17 il package ospita **due pipeline**: la v1 (tutto `src/` fuori da `src/v2/`, comandi qui sopra) resta in servizio e verde fino alla Story 2.16; la v2 (`src/v2/`, [SPEC](../../_bmad-output/specs/spec-refactor-packages-scripts/SPEC.md)) le si affianca e non è mai importata dalla v1 (`tests/v2-boundary.test.ts`). Fondamenta della Story 2.12:
-
-- **Due contratti, dipendenza in un verso solo.** Il contratto del page builder (`@app/contracts`, nel fingerprint) ha solo nome, versione, assi `option`, field e slot; `parts`/`partRoles`/assi `state`-`behavior` restano come **estensione deprecata** fuori dal fingerprint, letta solo dalla v1 (`legacyContracts()` in `src/extract/component-reader.ts`). Il **contratto di estrazione** (`src/v2/contracts/<nome>.extract.ts`, `defineExtraction`) importa il primo e dichiara parti con ruolo, albero (`parent`), `when`, `repeat`, `content`/`attribute`, assi di rendering, headless, a11y; contraddirlo è un errore a module load che nomina parte e campo ([vocabolario](../../_bmad-output/specs/spec-refactor-packages-scripts/extraction-contract.md)). Primo caso: `product-card.extract.ts`.
-- **Registro unico** (`src/shared/style-properties.ts`): impara `layout` (`layoutDir`/`layoutAlign`/`layoutJustify`/`layoutWrap`, gap in `rowGap`/`columnGap`) e `position` (`positionAbsolute`/`positionX`/`positionY`/`zIndex`) letti dal layer Penpot, e il ruolo `image` (raggio, opacità, layout, posizione, nessun `fill`). Il vocabolario dei 5 ruoli (`PART_ROLES`) vive qui.
-- **Un guscio, un errore** (`src/v2/shell.ts`, `src/v2/errors.ts`, entry `src/v2/cli.ts`): `ScriptError { kind, component?, cell?, part?, detail }` con exit `1` input · `2` penpot · `3` contract · `4` gate; `process.exit` solo nell'entry. Comandi sul guscio: `theme` (2.12), `library`/`propose` (2.13), `extract`/`render` (2.14), `gates` (2.15) ([commands.md](../../_bmad-output/specs/spec-refactor-packages-scripts/commands.md)).
-
-### `library` e `propose` dal contratto di estrazione (Story 2.13, CAP-6/CAP-7)
-
-Solo `library` scrive su Penpot; `propose` è sola lettura. Entrambi live, **mai in CI né in build**.
-
-| Comando | Esempio | Cosa fa |
-|---|---|---|
-| `pnpm --filter @penpot-ds/scripts library -- bootstrap` | `pnpm --filter @penpot-ds/scripts library -- bootstrap --dry-run` | Su library vuota crea i set `palette`/`semantic`, i token del seed (inclusi `shadow.*`/`ring`) e i container v2; su library esistente rifiuta (exit 1) senza scrivere. |
-| `pnpm --filter @penpot-ds/scripts library -- add ProductCard` | `pnpm --filter @penpot-ds/scripts library -- add ProductCard --dry-run` | Crea il VariantContainer `ProductCard` (plugin data `product-card@1`, assi `promo`×`hover` = 6 board, layer delle 11 parti con alias `Badge/Label` e `Tag/Label`, token dal registro per ruolo). Rilanciato è idempotente: exit 0 senza scritture, differenze segnalate. `--dry-run` stampa il piano senza scrivere. |
-| `pnpm --filter @penpot-ds/scripts propose -- ProductCard` | `pnpm --filter @penpot-ds/scripts propose -- ProductCard` | Legge Penpot e stampa il diff sui due contratti con file e riga (`packages/contracts/src/components/product-card.ts`, `packages/scripts/src/v2/contracts/product-card.extract.ts`); non scrive mai né su Penpot né sui file. Sostituisce `adopt:variant`, `bump:contract`, `role:part`. |
-
-Nota: il `--` dopo il nome del package separa gli argomenti pnpm da quelli del comando (via `node --import tsx src/v2/cli.ts <comando>` si omette: `library bootstrap --dry-run`). `library --help` / `propose --help` stampano l'uso senza leggere né scrivere. Exit code: `1` input · `2` penpot · `3` contract · `4` gate. `--snapshot` non esiste in CLI: nei test il seam è la DI (`readSnapshot`/`callTool`), mai in CI né in build (entrambi live).
-
-`when` governa la presenza (`badge`/`badgeLabel` solo con `promo=offer|discount`): l'assenza attesa non è mai un errore né un diff.
-
-### `extract` e `render` — una istantanea, quattro file (Story 2.14, CAP-4/CAP-5)
-
-Solo `extract` scrive l'istantanea (`data/components/<kebab>.json` con `contract`, `provenance`, `cells` per 6 celle, tmp + rename); solo `library` scrive su Penpot; `render` genera da istantanea + estrazione + registro i quattro file `@generated` senza basi. Nessun comando live gira mai in CI: l'unico passo v2 in CI è `render --check --all` dentro `gates`, e l'esito sta solo nell'exit code (0 ok, 4 diff).
-
-| Comando | Esempio | Cosa fa |
-|---|---|---|
-| `pnpm --filter @penpot-ds/scripts extract -- ProductCard` | `pnpm --filter @penpot-ds/scripts extract -- ProductCard --snapshot /tmp/library.json` | Live di default: legge il container, valida nei 5 stadi `penpot → contract → parts → properties → write` e scrive `data/components/product-card.json`. `--snapshot <file>` è il seam di lettura/test (mai scrittura live). |
-| `pnpm --filter @penpot-ds/scripts extract -- ProductCard --check` | `pnpm --filter @penpot-ds/scripts extract -- ProductCard --check --snapshot /tmp/library.json` | Confronta senza scrivere: exit 0 se identica, exit 4 (`gate`) con diff nominativo se diverge. |
-| `pnpm --filter @penpot-ds/scripts render -- ProductCard` | `pnpm --filter @penpot-ds/scripts render -- ProductCard --check` | Da istantanea committata genera `<Comp>.tsx`, `.test.tsx`, `.stories.tsx` e barrel in `packages/ui/src/domains/commerce/` (`@generated` con provenienza). `--check` non scrive (diff zero). Un file senza marker non è mai sovrascritto (skip, non errore). |
-| `pnpm --filter @penpot-ds/scripts render -- --all` | `pnpm --filter @penpot-ds/scripts render -- --check --all` | Tutte le istantanee committate (`data/components/*.json`): i fallimenti si accumulano e si elencano alla fine (exit 4 se uno diverge o fallisce). |
-
-Mappatura: `when`→condizionale, `repeat`→`map` (primo layer modello), `attribute`→attributo, `state`→prefissi (`hover:`), headless→elemento (card: `null`), layout/posizione dal registro, `content`→testo, `focusVisible`→`focus-visible:`. Errori nominativi (componente, cella, parte) con adattamenti designer → registro → contratto; una categoria per stadio nel log. `extract --help` / `render --help` stampano l'uso senza leggere né scrivere.
-
-### `gates` — gate v2 in CI (Story 2-15, CAP-9)
-
-`render --check --all` in memoria + suite `ui` con axe, report per componente
-su terminale e `$GITHUB_STEP_SUMMARY`. Un componente divergente nomina solo
-sé; gli altri vengono comunque verificati. Nessun comando live in CI.
-
-| Comando | Esempio | Cosa fa |
-|---|---|---|
-| `pnpm --filter @penpot-ds/scripts gates` | `GITHUB_STEP_SUMMARY=/tmp/s.md pnpm --filter @penpot-ds/scripts gates` | Da repo (CI-safe, mai live): verifica ogni istantanea committata contro i file `@generated` (rigenerazione a diff zero in memoria, barrel per dominio incluso), esige `axe(` nel test e la nota `Giudizio visivo` nella story, poi gira la suite `ui`. Exit 0 verde, exit 4 (`gate`) nominativo se una voce è rossa. |
-| `pnpm --filter @penpot-ds/scripts gates -- --json /tmp/gates.json` | — | Come sopra, più report JSON su file: stesso report del terminale, ogni problema con `severity`/`kind`/`message` (il `kind` decide il percorso della skill, mai il testo). |
-
-Tassonomia exit di `gates`: `1` (`input`, uso errato: argomento non atteso,
-`--json` senza valore o duplicato) contro `4` (`gate`, verifiche rosse con
-voce nominativa per componente o riga globale per la suite). Il seed live
-(`extract`/`library` su Penpot) vuole `PENPOT_MCP_URL`/`PENPOT_MCP_TOKEN`
-(vedi [Connessione a Penpot](#connessione-a-penpot)); `gates` è offline e non
-legge mai quelle variabili.
-
-Vincoli mai-in-CI: `extract`, `render` senza `--check`, `library` e `propose`
-non girano mai in CI né in build (sono live o scrivono); in CI gira solo
-`gates` (v2). Convivenza v1/v2 fino alla 2.16: in
-`.github/workflows/ci.yml` girano entrambi `gates:render` (v1) e `gates`
-(v2), entrambi a diff zero; un job rosso nomina il modulo nel log. La
-ProductCard end-to-end (seed MCP, istantanea reale, render, giudizio visivo
-in Storybook) è documentata in `data/components/product-card.seed.md`.
-
-## Emitter shadcn e gate (Story 2.6)
-
-- **Basi committate** (decisione frozen): `data/bases/<kebab>/` contiene l'output di `shadcn add` eseguito UNA TANTUM per badge/input/accordion — le basi sono INPUT dell'emitter; il CLI shadcn non gira mai a runtime né in CI. `packages/ui/components.json` ha gli alias riallineati a `@penpot-ds/ui/domains` (Task 0).
-- **Binding per componente**: `data/bindings/<kebab>.binding.json` dichiara tutto ciò che dipende dalla libreria (AD-11): componente base, parti ricetta → parti libreria, headless (con `rootProps` per i render di test), valori d'asse → API. Il TIPO d'asse vive SOLO nel contratto: l'emitter lo legge da `@app/contracts` e il binding lo ripete solo come controllo incrociato fail-loud.
-- **Convenzione `@generated` in `domains/`**: ogni file generato inizia con un commento `@generated` che porta provenienza (`contract`, `penpotComponentId`, `fixtureHash`) e comando di rigenerazione. Si modifica la ricetta o il binding (o si riestrae la fixture) e si rigenera — mai edit a mano; un file senza marker è "sganciato" dalla pipeline e viene preservato.
-- **Gate drift (decisione frozen, opzione a)**: bloccante in CI SE E SOLO SE il runner raggiunge il server MCP Penpot; altrimenti skip documentato col motivo nel log e riesecuzione manuale/nightly. Nessuna estrazione Penpot in CI/build: l'unica lettura live è il gate drift, con seam offline per i test.
+Uscite di `theme` (entrypoint `src/theme/main.ts`): `0` tema rigenerato · `1` input (argomento ignoto, fixture illeggibile, catalogo che non genera) · `2` penpot (lettura live fallita).
 
 ## Connessione a Penpot
 
-Solo i comandi live (`generate:theme --live`, `extract:component`, `bootstrap:library`, `add:library`, `verify:library`) parlano con Penpot; test, `validate:recipe` e `generate:theme` offline non leggono mai queste variabili. I comandi `*:library` sono **mai in CI né in build**: Penpot non è raggiungibile dal runner.
+Solo `theme --live` parla con Penpot; test e `theme` offline non leggono mai queste variabili.
 
 | Variabile | Obbligatoria | Default / effetto |
 |---|---|---|
@@ -98,83 +25,21 @@ Solo i comandi live (`generate:theme --live`, `extract:component`, `bootstrap:li
 
 Setup di Penpot, del token e di direnv: [README alla root](../../README.md#penpot-locale-e-server-mcp).
 
-Se manca il token, se è stato rigenerato o se il plugin non è connesso, i comandi live falliscono con un errore che nomina `PENPOT_MCP_TOKEN`.
+Se manca il token, se è stato rigenerato o se il plugin non è connesso, `theme --live` fallisce con exit 2 e un errore che nomina `PENPOT_MCP_TOKEN`.
 
 ## Dove vive la fixture del catalogo token
 
-`data/penpot-catalog.json` — serializzazione del catalogo token Penpot (`{ sets: [{ name, tokens: [{ name, type, value }] }] }`), solo i set `active`. Committata così la generazione gira offline e il diff della fixture mostra cosa è cambiato nel design (AC #3 di Story 2.1). È anche il vocabolario contro cui `validate:recipe` valida i token delle ricette e la provenienza (`fixtureHash`) di fixture e ricette.
+`data/penpot-catalog.json` — serializzazione del catalogo token Penpot (`{ sets: [{ name, tokens: [{ name, type, value }] }] }`), solo i set `active`. Committata così la generazione gira offline e il diff della fixture mostra cosa è cambiato nel design.
 
-**Dalla Story 2.5 è l'unica fixture**: la vecchia library `mis` è stata cancellata insieme a `legacy-mis-catalog.json`, e le ricette sono per parti e token, validate contro i contratti di `@app/contracts`. Un test (`tests/no-legacy-consumers.test.ts`) impedisce che nomi `mis-*` ricompaiano in `packages/ui/src` e `apps/web/src` (`packages/tokens` è l'eccezione ammessa).
-
-## Library Penpot (src/library/ e data/)
-
-Dalla Story 2.4 il package possiede anche la pipeline di allineamento library↔contratti (Stadio 0 di penpot-pipeline.md):
-
-- `library-spec.ts` — l'elenco minimo dei token semantici richiesti (61) + le 14 coppie di contrasto (≥4.5:1 testo, ≥3:1 indicatori), come dati.
-- `data/semantic-tokens.seed.json` — i valori del bootstrap (palette + semantic con riferimenti `{...}`), decisi con il designer.
-- `data/designs/<contratto>.design.json` — ruolo → token per parte × cella: il disegno di partenza che il designer poi cambia in Penpot.
-- `library-plan.ts` — piano PURO bootstrap/additiva: il tipo `Operation` non ha varianti per update/delete (l'invariante "l'additiva non corregge" è nel tipo).
-- `library-reader.ts` — snapshot serializzabile della library via MCP (set, token, container, celle, plugin data `pagebuilder/contract`, albero layer con `shape.tokens`).
-- `verify-library.ts` — le 10 regole che decidono l'esito, pure e testate: un caso rosso per regola in `verify-library.test.ts`.
-- `contrast.ts` — rapporto di contrasto WCAG (luminanza relativa), helper puro.
-- `penpot-writer.ts` — traduce le `Operation` in codice `execute_code`, un'operazione per chiamata.
-- `library-command.ts` — logica di `bootstrap:library` / `add:library` / `verify:library` (entry in `src/cli/library.ts`); `adopt-command.ts` e `bump-command.ts` per `adopt:variant` e `bump:contract`.
-
-Nota binding (aggiornata dalla Story 2.5): l'estrazione legge `shape.tokens` come unica via — `applyToken` persiste dopo il reload del file (spike verificato su "Page Builder DS") e la regola 7 di `verifyLibrary` esige un binding su ogni proprietà di stile valorizzata, quindi nella library verificata non esistono proprietà senza binding da derivare per hex. Il vecchio hex-match di `component-reader.ts` è stato rimosso con la vecchia library `mis`. Limitazione API scoperta nella Story 2.4: `applyToken` NON supporta i token `fontFamilies` su Penpot 2.17.2 ("should be a set of strings" su ogni variante) — il font family resta una scelta del designer e non è soggetto a binding.
-
-## Dove vivono fixture e ricette dei componenti
-
-`data/recipes/` — dati committati, non codice:
-
-- **`<nome>.fixture.json`** — fatti letti da Penpot **senza sapere cosa sia React**: il plugin data `pagebuilder/contract` del VariantContainer (`nome@versione`), assi e valori, e per ogni cella l'albero dei layer con `shape.tokens` (proprietà → nome token) e le proprietà di stile valorizzate. Scritta SOLO da `extract:component`.
-- **`<nome>.recipe.json`** — mappa di parti a **profondità 1** (chiavi = le `parts` piatte del contratto): ogni parte mappa chiavi cella (`asse=valore|…`, valori senza separatori `|`/`=`) a celle `proprietà → token`. Le celle sono derivate dai binding della fixture (la conformance ricetta↔fixture lo verifica); il **giudizio** (`domain`, `headless`, `a11y`) arriva dal file per contratto `data/recipes/judgments/<contratto>.json`; la provenienza (`penpotComponentId` + `fixtureHash`) è riregistrata dall'estrazione. Nessuna classe di una libreria: il blocco `cva` è della Story 2.6 (emitter). Una parte annidata con assi propri non è esprimibile nello schema: fallisce (criterio di stop).
-- **`judgments/<contratto>.json`** — i campi di giudizio per contratto, scritti a mano e committati: l'estrazione li fonde con le celle estratte. I giudizi sono JSON: le note (es. sul fatto che `headless.parts` nomina componenti Radix, non parti del contratto) stanno nel campo `comment`.
-
-**Confine fixture/ricetta (regola assoluta):** nella fixture niente decisioni (dominio, headless, ARIA); nella ricetta niente fatti grezzi (hex, CSS raw, shape). La ricetta nomina token, mai valori: un literal non passa la validazione.
-
-## Estrarre un nuovo componente
-
-1. Il contratto deve esistere in `@app/contracts` e la library Penpot deve avere il VariantContainer che lo dichiara via plugin data `pagebuilder/contract = nome@versione`, con nome = PascalCase del contratto (le skill `pds` scrivono il plugin data; `verify:library` verifica il resto).
-2. `pnpm --filter @penpot-ds/scripts extract:component -- <Nome>` → scrive e committa `data/recipes/<nome>.fixture.json` e `<nome>.recipe.json` (celle dai binding, giudizio dal file `judgments/<contratto>.json`, provenienza). Fallisce loud senza scrivere nulla se il plugin data è malformato o le celle sono ambigue. Per provare offline: `-- --snapshot <path>` con uno snapshot salvato da `verify:library -- --snapshot`-style (o da un run precedente).
-3. Se il giudizio del contratto cambia, edita a mano `data/recipes/judgments/<contratto>.json` e riestrai.
-4. `pnpm --filter @penpot-ds/scripts validate:recipe -- <Nome>` → deve passare; se un token non è nel catalogo Stadio 1, correggi la **library** (o il contratto), non il validatore.
+È l'unica fixture: la vecchia library `mis` è stata cancellata. Un test (`tests/no-legacy-consumers.test.ts`) impedisce che nomi `mis-*` ricompaiano in `packages/ui/src` e `apps/web/src` (`packages/tokens` è l'eccezione ammessa).
 
 ## File
 
-Il codice sta in `src/`, diviso per area; i dati committati stanno in `data/`, fuori dal codice, così le skill e il designer puntano a una radice stabile.
-
-- `data/` — `penpot-catalog.json` (catalogo Stadio 1), `recipes/` (fixture, ricette e `judgments/`), `bindings/`, `bases/`, `designs/`, `library.snapshot.json`, `semantic-tokens.seed.json`.
-- `src/shared/` — moduli condivisi fra le aree:
-  - `paths.ts`, l'**unico** modulo che calcola i path (dati, package vicini, `ui/src/domains`): `tests/paths.test.ts` fallisce nominando la chiave che punta a un file inesistente;
-  - `mcp-client.ts`, utilità MCP (`withTimeout` a 15 s, validazione dell'envelope `execute_code`);
-  - `theme-generator.ts`, il mapping puro `TokenCatalog → { css, ts }`, con `varSuffix()`/`varName()`/`TYPE_NAMESPACE`/`fixtureHash()` riusati da vocabolario e ricette;
-  - `style-properties.ts`, il registro delle proprietà;
-  - `component-report.ts`, il report per componente;
-  - `naming.ts`, con `toKebab` e `pascalCase`;
-  - `direct-invocation.ts`, la guardia unica degli entrypoint (con `realpathSync`).
-- `src/theme/` — Stadio 1:
-  - `penpot-reader.ts`, un client MCP minimale che legge solo `penpot.library.local.tokens`;
-  - `token-vocabulary.ts`, il vocabolario delle classi Tailwind v4 dal catalogo, più una whitelist strutturale esplicita e minimale.
-- `src/extract/` — Stadio 2:
-  - `component-reader.ts`, da snapshot a fixture di un componente, con validazione del plugin data `pagebuilder/contract` ed export di `PLUGIN_DATA_PATTERN`;
-  - `recipe-schema.ts`, gli schemi Zod di fixture, ricetta e giudizio, più gli helper `cellKeyOf` e `partBindings`;
-  - `validate-recipe.ts`, il validatore puro;
-  - `variant-normalize.ts`;
-  - `extract-component.ts`, logica di `extract:component` e `validate:recipe`: assembla la ricetta, la valida prima di scrivere e scrive la coppia atomicamente. Contiene anche i loader di catalogo, giudizio e alias.
-- `src/library/` — pipeline di allineamento library↔contratti (vedi sopra), inoltre:
-  - `designs-loader.ts`, il loader dei design committati (`data/designs/`) e la copertura design↔registry;
-  - `library-snapshot.ts`, i tipi dello snapshot serializzabile della library;
-  - `adopt-variant.ts`, il piano e la scrittura di `adopt:variant` (contratto, `SCHEMA_VERSION`, fingerprint, binding, design);
-  - `bump-contract.ts`, il piano e lo step `execute_code` di `bump:contract`.
-- `src/emitter/` — emitter shadcn e gate (Story 2.6):
-  - `render-component.ts`, funzione pura da fixture, ricetta, binding e basi ai 4 file `@generated`;
-  - `render-command.ts`, logica di `render:component`;
-  - `artifacts.ts`, i loader degli artefatti committati;
-  - `binding-shadcn.ts`, lo schema dei binding;
-  - `axis-influence.ts`, quali assi fanno variare una proprietà di una parte (il controllo `influencingAxes`);
-  - `gates.ts` e `gates-runner.ts`, i 5 gate e il report.
-- `src/cli/` — un file per comando, che fa **solo** parsing, guardia e `main`: `generate-theme.ts`, `extract-component.ts` (`extract:component` / `validate:recipe`), `render-component.ts` (`render:component` / `render:check`), `gates-render.ts`, `library.ts` (`bootstrap:library` / `add:library` / `verify:library`), `adopt-variant.ts`, `bump-contract.ts`; `component-args.ts` è il parsing condiviso da `adopt:variant` e `bump:contract`, non un comando. `tests/cli-smoke.test.ts` li lancia davvero (`node --import tsx`) e fallisce su un `ERR_MODULE_NOT_FOUND` o un `ENOENT`, nominando il comando.
-- `scripts/check-boundaries.mjs` + `tests/check-boundaries.test.ts` — gate di confine con prova rosso/verde: ammette solo `@app/contracts` fra gli `@app/*` ed è rosso su un import relativo che esce dalla radice del package.
+- `data/penpot-catalog.json` — il catalogo token committato.
+- `src/theme/` — `main.ts` (entrypoint: argomenti e codice d'uscita), `theme-command.ts` (lettura e scrittura atomica del tema), `penpot-reader.ts` (client MCP minimale che legge solo `penpot.library.local.tokens`).
+- `src/shared/` — `paths.ts` (l'**unico** modulo che calcola i path: `tests/paths.test.ts` fallisce nominando la chiave che punta a un file inesistente), `mcp-client.ts` (utilità MCP), `theme-generator.ts` (mapping puro `TokenCatalog → { css, ts }`), `style-properties.ts` (registro delle proprietà), `naming.ts`.
+- `scripts/check-boundaries.mjs` + `tests/check-boundaries.test.ts` — gate di confine con prova rosso/verde.
+- `tests/pipeline-boundary.test.ts` — le directory v1/v2 non esistono e `process.exit*` compare solo in `src/theme/main.ts`.
 
 ## Cosa non toccare
 

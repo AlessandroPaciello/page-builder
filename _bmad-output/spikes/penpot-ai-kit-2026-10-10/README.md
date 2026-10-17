@@ -121,10 +121,10 @@ Provato sulla ShopCard (prove.md, T4b-2, T5, T6: file modificato a mano rimasto 
 | Lo spessore del bordo non genera classi | bordi invisibili | registro: `strokeWidth` è `coveredByBase` (residuo v1) | E |
 | `fontFamily` non registrato | font non legato (Penpot 2.18 usa il singolare) | registro | V-2 |
 | `theme` legge solo i set attivi e rifiuta i nomi duplicati | niente varianti di tema; CSS che dipende dal tema acceso | `theme/penpot-reader.ts`, generatore del tema | C-2 |
-| La struttura dipende dalla tabella dei token di partenza | nessun componente nuovo leggibile senza codice | `library-plan.ts` (`COMPONENT_TOKENS`) | D-4 |
-| Render scritto a mano per componente | ogni componente nuovo richiede codice | `render.ts` | D, E |
-| Contratti di estrazione caricati tutti all'avvio della CLI | un contratto cambia, si rompe `theme` | `registry.ts` | E |
-| Template dei test cablati; log di `extract` | test fragili, messaggi fuorvianti | `render.ts`, `extract.ts` | A-14, A-15 |
+| La struttura dipende dalla tabella dei token di partenza — *sparito con la v2 (Story 2.18)* | nessun componente nuovo leggibile senza codice | `library-plan.ts` (`COMPONENT_TOKENS`) | D-4 |
+| Render scritto a mano per componente — *sparito con la v2 (Story 2.18); il generatore generico resta alla 2.22* | ogni componente nuovo richiede codice | `render.ts` | D, E |
+| Contratti di estrazione caricati tutti all'avvio della CLI — *sparito con la v2 (Story 2.18)* | un contratto cambia, si rompe `theme` | `registry.ts` | E |
+| Template dei test cablati; log di `extract` — *sparito con la v2 (Story 2.18)* | test fragili, messaggi fuorvianti | `render.ts`, `extract.ts` | A-14, A-15 |
 | Il reader non leggeva ritaglio, dimensioni fisse, posizione degli assoluti, "fill" verticale | frecce e pallini senza misura, card fuori dal contenitore | `library-reader.ts`, generatore (corretto nel prototipo) | F-7, F-8 |
 | D2 contava come override il dimensionamento di un'istanza | blocco su card in "fill" dentro uno slot | `instanceInfo` del reader (corretto nel prototipo) | F-6, F-8 |
 | La pipeline conosce solo contratti di componente | una sezione con slot non si legge né si genera | da leggere da contratto della sezione + Penpot (prototipo con un adattatore) | F-3 |

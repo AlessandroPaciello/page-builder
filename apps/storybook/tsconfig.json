@@ -5,6 +5,6 @@
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "types": ["node", "vite/client"]
   },
-  "include": [".storybook/**/*.ts", "global.d.ts", "../../packages/ui/src/domains/**/*.stories.tsx"],
+  "include": [".storybook/**/*.ts", "global.d.ts", "../../packages/ui/src/domains/**/*.stories.tsx", "../../packages/ui/src/editor/**/*.stories.tsx"],
   "exclude": ["node_modules", "storybook-static"]
 }

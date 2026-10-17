@@ -1,4 +1,4 @@
-/** Nome file kebab-case: "LifecycleBadge" → "lifecycle-badge". Usato dall'emitter (data-slot, nomi file) e dai loader. */
+/** Nome file kebab-case: "AccordionItem" → "accordion-item". */
 export function toKebab(name: string): string {
   return name
     .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
@@ -6,7 +6,7 @@ export function toKebab(name: string): string {
     .toLowerCase();
 }
 
-/** `badge` → `Badge`, `accordion-item` → `AccordionItem`: il nome del container in Penpot. */
+/** `accordion-item` → `AccordionItem`: il nome del container in Penpot. */
 export function pascalCase(kebab: string): string {
   return kebab
     .split("-")

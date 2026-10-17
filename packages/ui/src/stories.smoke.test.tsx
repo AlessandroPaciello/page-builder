@@ -5,20 +5,21 @@ import type { ComponentType } from "react";
 import { describe, expect, it } from "vitest";
 
 /**
- * Smoke delle story generate (Story 2.11): scopre le story per glob — nessun
- * elenco hard-coded di componenti o story — asserisce che ogni story
- * dichiara `args` (CSF3: le props stanno in `args`, mai al primo livello) e
- * rende ogni story via `composeStories`. Una story senza `args` è un test
- * rosso che nomina componente e story; le altre story girano comunque (un
- * `describe` per modulo). Vale invariato per le story di `render` v2: la
- * forma attesa è sempre CSF3 con `args`.
+ * Smoke delle story (Story 2.11, glob esteso a `editor/` nella 2.18): scopre
+ * le story per glob — nessun elenco hard-coded di componenti o story —
+ * asserisce che ogni story dichiara `args` (CSF3: le props stanno in `args`,
+ * mai al primo livello) e rende ogni story via `composeStories`. Una story
+ * senza `args` è un test rosso che nomina componente e story; le altre story
+ * girano comunque (un `describe` per modulo). Oggi c'è solo la story scritta
+ * a mano del dropdown dell'editor; le story generate in `domains/` tornano con
+ * la v3, nella stessa forma CSF3 con `args`.
  */
 
-const modules = import.meta.glob("./domains/**/*.stories.tsx", { eager: true }) as Record<
+const modules = import.meta.glob(["./domains/**/*.stories.tsx", "./editor/**/*.stories.tsx"], { eager: true }) as Record<
   string,
   Record<string, unknown> & { default?: { title?: string; component?: { displayName?: string; name?: string } } }
 >;
-// Glob speculare a apps/storybook/.storybook/main.ts (runtime diversi, nessuna costante condivisa).
+// Glob speculari a apps/storybook/.storybook/main.ts (runtime diversi, nessuna costante condivisa).
 // Parità verificata da apps/storybook/.storybook/main.test.ts: se i due glob divergono, quella suite è rossa.
 
 function hasArgs(story: unknown): boolean {

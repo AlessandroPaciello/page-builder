@@ -223,9 +223,6 @@ Sessione di Alessandro con agente forge (`_bmad-output/forge/pipeline-troppo-vin
   summary: il giudizio ammette un solo `role` fisso per componente, quindi un componente con stati informativi e bloccanti (Alert: `info`/`success` vs `warning`/`error`) non può avere `role="status"` sugli uni e `role="alert"` sugli altri.
   evidence: Alert emette `role="alert"` (live region assertiva) anche per `info`/`success`, che interrompe lo screen reader a ogni render; limite di espressività pre-esistente del giudizio (`a11y.role` stringa unica), non introdotto dalla 2.9. Da decidere prima che la 2.10 generi Toast/Alert definitivi.
   routed: Story 2.10 (correct-course 2026-09-15) — a11y.role come mappa per asse option; Alert status/alert per variante.
-- source_spec: `_bmad-output/implementation-artifacts/2-9-skill-pds-component.md`
-  summary: `_bmad/_config/skill-manifest.csv` registra le skill pds con path `_bmad/pds/<skill>/SKILL.md`, che su disco non esistono (le skill stanno in `skills/`, `.claude/skills/`, `.agents/skills/`).
-  evidence: vale per pds-additive, pds-bootstrap, pds-setup e ora pds-component (schema dell'installer copiato); un consumer che risolve le skill dal manifest non le trova. Pre-esistente; da verificare con il flusso di installazione del modulo (pds-setup / installer BMad).
 
 ## Deferred from: bmad-build riordino di packages/scripts (2026-09-14)
 
@@ -257,57 +254,20 @@ Pianificato da `sprint-change-proposal-2026-09-15.md`, prima della libreria:
 Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor-packages-scripts/`): Epic 2 a 18 story, Storybook anticipato a 2.11, v2 nelle Story 2.12–2.17, libreria → 2.18. La v1 resta in servizio e verde finché la ProductCard non passa (2.15); poi si cancella (2.16), non si migra.
 
 - **Voci senza oggetto alla 2.16 — CHIUSE in Story 2.16 (2026-10-03).** Le voci seguenti riguardavano artefatti cancellati con la v1 (ricette, judgment, binding, design committati, basi shadcn, comandi v1 `adopt:variant`/`bump:contract`/`sync:design`/`verify:library`, `gates:render`, `verify:library`): *nessuna verifica incrociata ricetta↔fixture* (code review 2.2); *parte con zero binding e chiavi d'asse extra in `extract:component`* e *`id` UUID nella fixture* (build review 2.5); *problemi 1, 3, 6, 8 e piano `adopt:variant`* del register Alert (2026-09-12); *coppie di contrasto del focus ring* (build review 2.7a); *`adopt:variant`* e *celle di valori rimossi dopo `bump:contract`* (2.7b/2.7c); *regola icona solo su `strokeWidth`* e *classi strutturali* (code review 2.7 gruppo 3); *regola 10 sul design committato* (verifica live 2.9). Chiuse come "senza oggetto": gli artefatti non esistono più (`data/bindings|designs|bases|recipes` cancellati, `src/cli|emitter|extract` cancellati, `src/v2` appiattito in `src`).
-- **Voci che restano valide in v2:** `applyToken` senza `fontFamilies` e pattern hex-match (limiti di Penpot, Stadio 0); boundary-check fragile (retro Epic 1); albero di `packages/scripts` nello spine — **riallineato alla 2.16** (`src/v2` appiattito in `src/`, `src/cli|emitter|extract` v1 cancellati, 6 comandi su `src/cli.ts`); `generate:theme` senza test sui path di default e senza `process.exit` (→ comando `theme` v2, CAP-8 e Story 2.12 — **fatto nella 2.12**, **chiuso nella 2.16**: corpo in `src/theme/theme-command.ts`, comando `theme` sul guscio `src/cli.ts` con smoke in `src/cli.test.ts`; l'entry v1 `generate:theme` cancellata con gli altri 12 script v1).
-- **Aperto:** deriva di Penpot senza `extract` (un `extract --check` schedulato) — non-goal dello SPEC v2, resta qui.
-
-- source_spec: `_bmad-output/implementation-artifacts/2-12-fondamenta-v2-due-contratti-registro-guscio.md`
-  summary: verificare su Penpot live il default di `layoutAlign` e la lista chiusa di `zIndex` del registro (Story 2.12), insieme ai campi `layoutChild.absolute`, `parentX`/`parentY` e `layoutChild.zIndex`.
-  evidence: il registro dichiara `layoutAlign` default `stretch` e `zIndex` a multipli di 10; se il flex di Penpot ha default `start`, una board lasciata al default non registra nulla e rende `stretch`, e uno z-index fuori lista blocca il componente. Il server MCP non era raggiungibile nella sessione della 2.12; la Story 2.13 prevede già la verifica sul reader.
+- **Voci che restano valide in v2:** `applyToken` senza `fontFamilies` e pattern hex-match (limiti di Penpot, Stadio 0); boundary-check fragile (retro Epic 1); albero di `packages/scripts` nello spine — **riallineato alla 2.16** (`src/v2` appiattito in `src/`, `src/cli|emitter|extract` v1 cancellati, 6 comandi su `src/cli.ts`); `generate:theme` senza test sui path di default e senza `process.exit` (→ comando `theme` v2, CAP-8 e Story 2.12 — **fatto nella 2.12**, **chiuso nella 2.16**: corpo in `src/theme/theme-command.ts`, comando `theme` sul guscio `src/cli.ts` con smoke in `src/cli.test.ts`; l'entry v1 `generate:theme` cancellata con gli altri 12 script v1). *Nota 2.18: dalla Story 2.18 `theme` gira da `src/theme/main.ts` (test in `src/theme/main.test.ts`); il guscio `src/cli.ts` e `src/cli.test.ts` non esistono più.*
+- **Voci senza oggetto alla 2.18 — CHIUSE in Story 2.18 (2026-10-17).** Le voci seguenti riguardavano artefatti cancellati con la v2 (guscio `src/cli.ts`, comandi `library`/`propose`/`extract`/`render`/`gates`, contratti di estrazione `src/contracts/*.extract.ts`, `library-writer.ts`, istantanee e seed `data/components/*`, i cinque componenti di prova in `packages/ui/src/domains/`, le skill `pds-bootstrap`/`pds-additive`/`pds-component`): *path `_bmad/pds/<skill>/SKILL.md` del manifest* per `pds-bootstrap`/`pds-additive`/`pds-component` (code review 2.9: skill e righe di manifest cancellate; resta aperto il solo `pds-setup`, voce sotto); *deriva di Penpot senza `extract`* (register v2); *`a11y.ariaAttributes` senza vocabolario*, *`headless.package` senza check formato*, *regola 11 sul registry completo* (CR 2.12); *delay fisso di 150ms e `const` top-level nel writer v2* (build review e CR 2.13); *render oltre l'asse hover*, *args di test/story dai field*, *alt informativo dell'immagine*, *cablaggio del gate v2 in CI* (CR 2.14); *nota Giudizio visivo parametrica*, *barrel top-level in `gates`*, *`failedFiles` della suite ui* (review 2.15); *README di `packages/scripts` sui sei comandi* (riscritto nella 2.18 sul solo `theme`) e *provenienza rigenerabile dei seed v2* (CR 2.16); *disegno live dei 5 container* (decisione live-track 2.16: i componenti di prova tornano con la v3, Story 2.31). Chiuse come "senza oggetto": gli artefatti non esistono più. Restano aperte le voci ambigue fra v1/v2 e codice vivo: `writeTheme` non atomica su due file, `slots` nel fingerprint, collisione `1-1…1-4`, voci di Epic 1, e le tre voci sotto.
+- **Aperto (da CR 2.9, ridotta alla 2.18):** `_bmad/_config/skill-manifest.csv` registra `pds-setup` con path `_bmad/pds/pds-setup/SKILL.md`, che su disco non esiste (la skill sta in `skills/`, `.claude/skills/`, `.agents/skills/`). routed: Story 2.28 (skill v3 e configurazione di progetto).
+- **Aperto (da 2.12 e CR 2.12, ridotta alla 2.18):** default live di `layoutAlign` (il registro dichiara `stretch`) e lista chiusa di `zIndex` (multipli di 10), insieme ai campi `layoutChild.absolute`, `parentX`/`parentY` e `layoutChild.zIndex`, mai verificati su Penpot live: il reader v2 è cancellato, la verifica resta. routed: Story 2.25 (collaudo degli aggiornamenti di Penpot con il campione `.penpot`).
+- **Aperto (da CR 2.12, ridotta alla 2.18):** `positionAbsolute: static` emette classe vuota e il `relative` sul genitore va assegnato da chi genera (`packages/scripts/src/shared/style-properties.ts`); il render v2 che lo faceva è cancellato, il bisogno passa al generatore v3. routed: Story 2.22 (generazione di `styles.ts`).
 
 ## Deferred from: code review of 2-12-fondamenta-v2-due-contratti-registro-guscio (2026-09-17)
 
 - **Copertura review precedente parziale** — chiusa da questa CR: 4/4 layer (`blind-hunter`, `edge-case-hunter`, `verification-gap`, `acceptance-auditor`) verdi, nessun 429. Nessuna azione ulteriore.
-- **`a11y.ariaAttributes` senza vocabolario** — `packages/scripts/src/v2/extraction.ts`: stringhe arbitrarie passano il module load. Il vocabolario va deciso con il render (**Story 2.14**), che li consuma.
-- **`headless.package`/primitivi senza check formato** — `packages/scripts/src/v2/extraction.ts:309`: solo esistenza parte + package non vuoto. Il formato si fissa con il render (**Story 2.14**).
-- **`positionAbsolute: static` emette classe vuota + parent `relative` al render** — `packages/scripts/src/shared/style-properties.ts:365`: il `relative` sul genitore è assegnato al render (**Story 2.14**, vedi Design Notes 2.12).
-- **Regola 11 sul registry completo** — `packages/scripts/src/library/verify-library.ts:469`: coesistenza voluta (un container v2 è legittimo, non orfano); la verifica dei container v2 spetta all'`extract` (**Story 2.13**).
-- **Default `layoutAlign`/`zIndex` live non verificati** — vedi voce 2.12 già presente sopra (reader MCP **Story 2.13**).
 - **`writeTheme` non atomica su due file** — `packages/scripts/src/theme/theme-command.ts`: ogni file è tmp+rename ma la coppia no; pattern preesistente all'estrazione, re-run chiude il buco.
 - **Sezione senza `slots` → TypeError in fingerprint (maybe-false, sarebbe medium)** — `packages/contracts/src/fingerprint.ts:76`: da dirimere leggendo `SectionDefinition` (slots obbligatorio?) o `?? []`.
 
-## Deferred from: build review of 2-13-library-e-propose-penpot-dal-contratto-di-estrazione (2026-09-17)
-
-- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/2-13-library-e-propose-penpot-dal-contratto-di-estrazione.md`
-  summary: il delay fisso di 150ms prima di `createComponent` nel writer v2 potrebbe non bastare se `applyToken` è più lento su Penpot live (maybe-false, sarebbe medium).
-  evidence: `packages/scripts/src/v2/library-writer.ts:174` eredita il pattern dalla v1 (`src/library/penpot-writer.ts:190`); senza run live non si decide. Si osserva il primo `library add` live: se i binding mancano a snapshot, sostituire l'attesa con un poll su `shape.tokens`.
-
-## Deferred from: code review of 2-13-library-e-propose-penpot-dal-contratto-di-estrazione (2026-09-27)
-
-- **Live runtime incerto** — `packages/scripts/src/v2/library-writer.ts:174-175`: delay fisso 150ms e `const` top-level senza IIFE nel `execute_code`. Non decidibile senza run live (maybe-false, sarebbe medium). Si osserva il live `add`: se flakya/mancano binding o redeclaration errors, si passa a poll su `shape.tokens` / IIFE.
-
 ## Deferred from: code review of 2-14-extract-e-render-una-istantanea-quattro-file (2026-09-27)
 
-- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/2-14-extract-e-render-una-istantanea-quattro-file.md`
-  summary: generalizzare il render oltre l'asse hover quando arriverà un secondo asse di rendering.
-  evidence: `classesForPart` in `packages/scripts/src/v2/commands/render.ts` diffonde solo i valori hover; un secondo asse state/behavior richiederebbe mappatura generica (2.16+).
-- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/2-14-extract-e-render-una-istantanea-quattro-file.md`
-  summary: campionamento generico degli args di test/story dai field del contratto invece degli helper specifici ProductCard.
-  evidence: `sampleArgsFor*` in `packages/scripts/src/v2/commands/render.ts` hardcodano i field della card; serve solo dal secondo componente (2.16+).
-- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/2-14-extract-e-render-una-istantanea-quattro-file.md`
-  summary: alt informativo dell'immagine via nuovo field del contratto invece di alt vuoto.
-  evidence: `img alt=""` nel template di `render.ts`; richiede decisione di design sul field (2.15 disegno MCP).
-- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/2-14-extract-e-render-una-istantanea-quattro-file.md`
-  summary: cablaggio del gate v2 in CI per snapshot e file generati.
-  evidence: comando `gates` (CAP-9) è la Story 2.15; il cablaggio CI vive lì.
-- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/2-15-productcard-end-to-end-e-gate-in-ci.md`
-  summary: parametrizzare la nota Giudizio visivo per componente nel template di render invece del testo fisso ProductCard/2-15.
-  evidence: review 2-15 (Blind) — `renderComponentV2` emette il commento incondizionato; corretto con un solo componente, serve dal secondo (2.16+).
-- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/2-15-productcard-end-to-end-e-gate-in-ci.md`
-  summary: estendere `gates` alla verifica del barrel top-level `domains/index.ts` oltre ai barrel per dominio.
-  evidence: review 2-15 (Blind) — il top-level è scritto a mano per disegno; il gate copre solo `commerce/index.ts`; rivalutare col secondo componente (2.16).
-- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/2-15-productcard-end-to-end-e-gate-in-ci.md`
-  summary: popolare `failedFiles` della suite ui in `gates` con i nomi dei file falliti invece del solo exit code.
-  evidence: review 2-15 (Blind) — `defaultRunSuite` ritorna sempre lista vuota; il rosso via exit code basta, i nomi richiedono parsing output.
 - source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/spec-1-1-prima-lettura-live-con-disciplina.md`
   summary: Sciogliere la collisione di tracking `1-1…1-4` tra Epic 1 page-builder (done) e nuovo slice penpot-estrazione-costruzione nella stessa mappa `epic-1` di sprint-status.
   evidence: review 1.1 (Blind) — due `1-1` diversi coesistono (`1-1-scaffolding…` done + `1-1-prima-lettura…` in-progress); la chiave piena disambigua oggi, ma automazione e story_key resolution restano ambigue; richiede decisione su chiavi con prefisso slice.
@@ -337,21 +297,6 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor
   evidence: review epic-1 (Acceptance) — H1 1.3 verbatim a 3 opzioni senza checklist registrata; la sostanza era coperta in 1.4 per piano a live vuoto, ma dal primo token di specie serve il gate esplicito.
 - D1 collisione chiavi `1-1…1-4`: nessuna nuova voce — già tracciata sopra (review 1.1, riga collisione tracking). Reason odierna: richiede schema condiviso prima di rinominare.
 
-## Deferred from: code review of 2-16-rimozione-della-v1-e-rigenerazione-dei-quattro-componenti (2026-10-03)
-
-- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/spec-2-16-rimozione-della-v1-e-rigenerazione-dei-quattro-componenti.md`
-  summary: Riscrivere `packages/scripts/README.md` sui sei comandi v2 (oggi documenta ancora comandi v1 cancellati e path `src/v2/`).
-  evidence: review 2-16 (Blind + Edge) — README con `extract:component`, `gates:render`, `verify:library` e sezione Pipeline v2 `src/v2/`; rewrite ampia fuori scope (skill congelate per 2.17).
-- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/spec-2-16-rimozione-della-v1-e-rigenerazione-dei-quattro-componenti.md`
-  summary: Aggiungere provenienza rigenerabile ai seed v2 (SHA baseline, comandi, timestamp) oltre alla provenance negli snapshot.
-  evidence: review 2-16 (Blind) — `seed-library.json` con id `seed-*-2-16` e `seed.md` con i passi ma senza SHA/comandi/timestamp per ripetere SEED-MCP alla lettera.
-
-## Deferred from: decisione live-track 2-16 con Alessandro (2026-10-03)
-
-- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/spec-2-16-rimozione-della-v1-e-rigenerazione-dei-quattro-componenti.md`
-  summary: Disegno live in Penpot dei 5 container (ProductCard + Badge, Input, Alert, AccordionItem) rinviato alle story guidate dalla skill (2.17/2.18): i container nascono con `library add` nel flusso [PC], poi `extract` live e confronto a diff zero con gli snapshot seed.
-  evidence: decisione Alessandro 2026-10-03 — MCP punta al file scratch (solo set `tracer`); il file library non esiste ancora e `library add` fallisce senza i set token. Fino al live, gli snapshot `seed-*-2-16` fanno fede e i gate provano solo coerenza interna. Precondizioni: ripuntare MCP sul file vero, set token via bootstrap, skill riscritta (2.17).
-
 ## Deferred from: forgia pds-v3-punti-aperti (2026-10-17)
 
 - source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/forge/pds-v3-punti-aperti/forged-idea.md`
@@ -361,3 +306,9 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-17-tema-penpot-nel-css-compilato.md`
   summary: `theme-in-css.test.ts` compila con il `postcss.config.mjs` di `packages/ui`, non con quello di `apps/storybook`; puntare `root` su `apps/storybook` (o un controllo sul CSS del build statico in CI) quando cambia la configurazione CSS di Storybook.
   evidence: oggi i due config sono identici (solo `@tailwindcss/postcss`), quindi il test vale; se Storybook passa a `@tailwindcss/vite` o cambia config, il bug della 2.17 può tornare con i test verdi (review 2.17, verification-gap).
+
+## Deferred from: build review of 2-18-rimozione-dei-componenti-di-prova-e-della-pipeline-v2 (2026-10-17)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-18-rimozione-dei-componenti-di-prova-e-della-pipeline-v2.md`
+  summary: il comando di rigenerazione del tema è ancora citato come `generate:theme` (inesistente dalla 2.16) in `REGEN_COMMAND` di `packages/scripts/src/shared/theme-generator.ts`, negli header `@generated` di `tailwind-theme.css`/`tokens.generated.ts`, in `packages/tokens/README.md` e nella descrizione di `packages/tokens/package.json`.
+  evidence: review 2.18 (Blind) — pre-esistente; cambiare `REGEN_COMMAND` rigenera il tema, fuori perimetro della 2.18. Da riallineare con `extract_theme` (Story 2.26).
