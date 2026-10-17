@@ -7,7 +7,7 @@ paradigm: 'hexagonal (core di dominio + adapter) su monolite Next.js fullstack'
 scope: 'Page builder end-to-end: design system (Penpot→token→componenti ui/domains→puck-components) + editor pagine (authoring drag-and-drop, versioning/publish/rollback/archive, render pubblico by-slug), RBAC, audit, structure/content + sanitizzazione, integrazione commerce pluggable. Riscrittura greenfield full-TypeScript.'
 status: final
 created: '2026-07-25'
-updated: '2026-09-12'
+updated: '2026-10-17'
 binds: [CAP-1, CAP-2, CAP-3, CAP-4, CAP-5, CAP-6, CAP-7, CAP-8, CAP-9, CAP-10, CAP-11, CAP-12, CAP-13, CAP-14]
 sources:
   - '../../specs/spec-page-builder/SPEC.md'
@@ -65,7 +65,7 @@ Diagramma delle dipendenze consentite (chi può dipendere da chi). È **una rego
 ```mermaid
 graph LR
   contracts["contracts (foglia, no UI)"]
-  tokens --> domains["ui/src/domains (generato)"]
+  tokens --> domains["ui/src/domains (stili generati + componenti dello sviluppatore)"]
   contracts --> domains
   domains --> editor["ui/src/editor (a mano)"]
   domains --> puck[puck-components]
@@ -99,7 +99,7 @@ graph LR
 
 - **Binds:** CAP-3, CAP-4, CAP-5, CAP-6; `apps/web`.
 - **Prevents:** due stack UI paralleli e divergenti (il drift legacy: app su react-bootstrap invece delle composizioni del design system).
-- **Rule:** `apps/web` costruisce la UI **solo** su `@penpot-ds/ui` (+ token). Vietato introdurre una libreria UI **stilistica** concorrente. Le primitive **headless** (Base UI) non sono una libreria concorrente: non portano stile, sono la dipendenza di *comportamento* dichiarata per parte nel contratto di estrazione (AD-11), e sono importabili **solo** da `@penpot-ds/ui/src/domains/**` — mai da `apps/web`, mai da `editor/**`. Layering `contracts ← { ui/domains, puck-components, domain, render }; tokens ← ui{ domains ← editor } ← puck-components` — `contracts` è una foglia come `tokens`; `ui/domains` implementa i contratti, non li possiede (AD-5). **Regola di confine assoluta:** i componenti in `domains/` non conoscono il dominio page-builder e non importano mai da `editor/`. Persa la barriera di package con la fusione, il confine è tenuto da una **regola di lint bloccante in CI** e dai due export separati del package.
+- **Rule:** `apps/web` costruisce la UI **solo** su `@penpot-ds/ui` (+ token). Vietato introdurre una libreria UI **stilistica** concorrente. Le primitive **headless** (Base UI) non sono una libreria concorrente: non portano stile, sono la dipendenza di *comportamento* fissata in `pds-setup` (`headless=base-ui`) e usata dal componente dello sviluppatore (AD-11), e sono importabili **solo** da `@penpot-ds/ui/src/domains/**` — mai da `apps/web`, mai da `editor/**`. Layering `contracts ← { ui/domains, puck-components, domain, render }; tokens ← ui{ domains ← editor } ← puck-components` — `contracts` è una foglia come `tokens`; `ui/domains` implementa i contratti, non li possiede (AD-5). **Regola di confine assoluta:** i componenti in `domains/` non conoscono il dominio page-builder e non importano mai da `editor/`. Persa la barriera di package con la fusione, il confine è tenuto da una **regola di lint bloccante in CI** e dai due export separati del package.
 
 ### AD-4 — RBAC deny-by-default a copertura totale nel core; auth ≠ authz [ADOPTED]
 
@@ -111,7 +111,7 @@ graph LR
 
 - **Binds:** CAP-2, CAP-4, CAP-6, CAP-13.
 - **Prevents:** duplicazione/drift della classificazione structure/content (il dolore #1 del legacy: `field-classifier.json` duplicato a mano in Java); payload non validato/non sanitizzato; **contratto disperso negli adapter (libreria, editor, render) che lega le pagine salvate a una libreria specifica**.
-- **Rule:** `packages/contracts` (`@app/contracts`) contiene **una sola volta**: gli schemi Zod delle props di ogni componente/blocco, gli assi **`option`** (gli assi `state`/`behavior` sono di rendering e vivono nel contratto di estrazione, AD-11), i field, gli slot, il classifier structure/content e le **definizioni di sezione** (albero di blocchi del contratto + props + slot con `allow` e `max`). **Zero dipendenze** da React, Puck, Tailwind e da Penpot. È la porta; gli adapter sono `ui/domains` (libreria), `puck-components` (editor), render pubblico, `packages/domain` (validazione).
+- **Rule:** `packages/contracts` (`@app/contracts`) contiene **una sola volta**: gli schemi Zod delle props di ogni componente/blocco, gli assi **`option`** (l'unico tipo di asse del contratto; `state` è un nome d'asse riservato in Penpot, mai una prop, AD-11), i field, gli slot, il classifier structure/content e le **definizioni di sezione** (contratto con almeno uno slot: field + slot con `allow` e `max`; l'albero sta in Penpot e nel componente, AD-11). **Zero dipendenze** da React, Puck, Tailwind e da Penpot. È la porta; gli adapter sono `ui/domains` (libreria), `puck-components` (editor), render pubblico, `packages/domain` (validazione).
   Alla scrittura/pubblicazione il core: (1) valida il payload contro i contratti, inclusi `allow`/`max` degli slot (Puck 0.22 non ha `max` nativo: in editor si impone con `resolvePermissions`, **nel core è autoritativo**); (2) deriva structure/content dal classifier; (3) **sanitizza i campi content** (XSS) prima di persistere. Default per campo/blocco ignoto: `content` (fail-safe).
   **Sezioni rigide per default**: struttura bloccata, contenuto modificabile, aperte solo negli slot dichiarati — decisi da sviluppatore/admin, non dal designer. **Blocchi di layout a soli token**: Box (background, padding, radius, border), Flex (direction, align, justify, gap, wrap), Grid/Columns — tutti assi `option` a valori token, nessun colore o misura libera.
 
@@ -145,23 +145,29 @@ graph LR
 - **Prevents:** lock-in su una sorgente commerce; riscrittura dei blocchi al cambio/affiancamento di sorgente; chiamate commerce dirette sparse nei blocchi; DTO commerce incompatibili tra blocchi.
 - **Rule:** i blocchi commerce (ProductCard/ProductGrid/AddToCart/…) e il render **non** parlano mai direttamente a Shopify o a un backend specifico, ma al **port `CommerceProvider`** con contratto canonico (metodi es. `getProduct`/`listProducts`/`getCollection`; DTO `ProductRef`, `Price { amount, currency }`, …). Adapter: Shopify (Storefront API GraphQL) e backend proprio. La risoluzione dati avviene **server-side a render-time** (`resolveData`/external fields di Puck).
 
-### AD-11 — Due contratti, una istantanea, un registro: il page builder possiede il vocabolario, l'estrazione possiede la lettura di Penpot e il render [ADOPTED, rivisto 2026-09-17 — v2, supera il regime fixture/ricetta/emitter delle revisioni 2026-09-12 e 2026-09-15]
+### AD-11 — Un contratto, Penpot letto dal vivo, stili generati e componente dello sviluppatore [ADOPTED, v3 2026-10-17 — supera AD-11 v2 (2026-09-17) e la spine 2026-10-03]
 
 - **Binds:** CAP-1, CAP-2, CAP-3, CAP-4.
-- **Prevents:** valori di design inventati a mano; drift design↔codice; componenti generati non accessibili perché il design non esprime comportamento; generazione non riproducibile; **vocabolario delle props — e quindi le pagine salvate — legato alla libreria generata o a Penpot**; un caso di design (parte opzionale, ripetibile, immagine, albero) che blocca la pipeline perché il modello non lo sa dire.
+- **Prevents:** valori di design inventati a mano; drift design ↔ codice; vocabolario delle props, e quindi le pagine salvate, legato alla libreria o a Penpot; metadati per componente scritti a mano che divergono; letture salvate o fixture che invecchiano; codice dello sviluppatore riscritto dal generatore; fedeltà persa in silenzio; scritture senza consenso; componenti non accessibili perché il comportamento non si disegna.
 - **Rule:**
-  **Due contratti, dipendenza in un verso solo.** Il **contratto del page builder** (`@app/contracts`, AD-5, **nel fingerprint**) descrive solo ciò che l'editor e le pagine salvate usano: `name`, `version`, assi `option`, `fields` (testo, attributo, url, array), slot. Regola: ci sta solo ciò che cambia una pagina salvata o un campo dell'editor. Il **contratto di estrazione** (`packages/scripts/src/contracts/<nome>.extract.ts`, **fuori dal fingerprint**) importa il primo e dichiara come il componente si legge da Penpot e come si rende: assi `state`/`behavior`, parti con ruolo, `when` (parte presente solo per certi valori d'asse `option`), `repeat` (parte ripetuta su un field array), `parent` (albero con radice `root`), `layer`/alias, `element`, `content`/`attribute` verso i field, `headless` per parte, dominio, a11y con role per variante, container Penpot. Contraddire il contratto del page builder (field inesistente, tipo sbagliato, `when` su asse non `option`, albero senza radice o con cicli, parte senza ruolo) è errore **a module load**, che nomina parte e campo, prima di qualsiasi comando. Mai il contrario: il page builder non conosce Penpot. Una variante nuova è un cambio esplicito del contratto del page builder (`schemaVersion`), non una scoperta nell'istantanea. *Transizione (correct-course 2026-09-17):* fino alla rimozione della v1 (Story 2.16) il contratto del page builder tollera `parts`/`partRoles`/assi `state`-`behavior` come estensione deprecata **fuori dal fingerprint**, letta solo dalla v1; `SCHEMA_VERSION` sale una volta sola.
-  **Tipi di asse**, dichiarati nei contratti e mai in Penpot: `option` (page builder: prop scelta in Puck → stile per variante), `state` (estrazione: browser → `hover:`/`focus-visible:`/`aria-invalid:`/`disabled:`, nessuna prop), `behavior` (estrazione: headless → `data-[state=…]:`, nessuna prop). Penpot disegna *tutti* gli assi come celle; una cella mancante è errore `contract`.
-  **Ruolo di parte**, dichiarato nel **contratto di estrazione** e mai in Penpot: vocabolario chiuso `surface` · `text` · `icon` · `divider` · `image`, che dice che cosa la parte è e quindi quali proprietà porta. La tabella ruolo → proprietà ammesse vive nel **registro delle proprietà** in `packages/scripts`, unico e globale: l'unico posto dove si insegna una proprietà Penpot (token, e da v2 anche layout e posizione letti dal layer, così nessuna classe Tailwind entra a mano). `image` ammette raggio, opacità, layout, posizione e **nessun `fill`**: unica eccezione alla regola "token su ogni stile", perché il contenuto arriva dal field. Un token su una proprietà che il ruolo non ammette non passa in silenzio: si segnala per nome e si propone l'adattamento nell'ordine designer → registro (una volta per tutte) → contratto di estrazione (invariato dalla Story 2.10).
-  **Legame componente→contratto:** SharedPluginData sul VariantContainer (`pagebuilder/contract = nome@versione`), scritto solo da `library`; il nome del container è controllo incrociato. `extract` fallisce su contratto dichiarato da due container, nome incoerente, contratto senza container.
-  **Un solo artefatto generato:** l'**istantanea** `data/components/<nome>.json`, scritta solo da `extract` (tmp + rename, mai a mano), con `contract`, `provenance` (id Penpot, `readAt`, hash) e `cells[cella][parte]` = token per proprietà più layout/posizione. Validata contro i due contratti. Il suo diff in PR **è** la review del design; `extract --check` confronta Penpot live senza scrivere. `judgments/`, `bindings/`, `designs/`, `bases/`, `recipes/` e la coppia fixture+ricetta non esistono più. L'albero delle parti (`parent`) sostituisce il vincolo "profondità 1".
-  **Nessuna base di libreria.** `render` genera `<Comp>.tsx`, `.test.tsx`, `.stories.tsx` e barrel — `@generated` con provenienza, a diff zero — da istantanea + contratto di estrazione + registro: `when` → render condizionale, `repeat` → `map`, `attribute` → attributo HTML, assi `state` → prefissi, `behavior` → `data-[state=…]:`, il **primitivo headless per parte** (Base UI, `headless: null` per chi non ne ha) è l'elemento della parte. Il **comportamento accessibile non è disegnabile in Penpot**: entra dal primitivo headless dichiarato nel contratto di estrazione, *input* del rendering, mai suo output. **Una sola libreria per installazione**: una seconda (es. MUI) è un altro contratto di estrazione sugli stessi contratti del page builder.
-  **Sei comandi, un guscio, un errore:** `theme`, `library`, `extract`, `render`, `gates`, `propose`; `ScriptError { kind, component?, cell?, part?, detail }` con exit `1` input · `2` penpot · `3` contract · `4` gate. Solo `library` scrive su Penpot; solo `extract` scrive l'istantanea; `extract` e `render` non girano mai in CI né in build; `propose` stampa il diff dei contratti e non scrive mai. Dettaglio → `specs/spec-refactor-packages-scripts/commands.md`.
-  **Composizione ≠ componente estratto.** Un componente composto (Accordion Root con più item), una hero o una sezione non sono componenti estratti: sono **definizioni di sezione** in `contracts` — alberi di dati (AD-5).
-  **Componenti senza headless o con logica propria** (Table con sorting, Carousel, 3D, mappe): contratto completo come gli altri; in Penpot solo un **segnaposto** (dimensioni, etichetta, plugin data) non estratto; adapter scritto a mano, senza marker.
-  **Scrittura su Penpot solo via skill e `library`:** bootstrap una tantum (rifiuta se la library esiste; crea anche i token shadow/ring), poi solo additiva; le differenze si segnalano, non si correggono. Nessuna sincronizzazione ricorrente codice→Penpot.
-  **Pass/fail sta negli script e negli schemi, mai nel prompt di una skill.** Il principio della libertà del designer resta: si chiede di toccare Penpot solo per scelte di design vere.
-  I file `@generated` non si editano a mano; i file senza marker sono sempre preservati. Dettaglio → companion `penpot-pipeline.md` (Stadio 2 v2) e `specs/spec-refactor-packages-scripts/`.
+  **Un solo file per componente: il contratto dell'editor.** `packages/contracts/src/components/<nome>.ts`, o `sections/<nome>.ts` per una sezione; assi `option`, field, slot; versionato da `SCHEMA_VERSION` + fingerprint (AD-5, AD-6). Lo propone la skill (dal contratto o dal design), lo approva lo sviluppatore. Nessun altro metadato per componente nel repo: niente contratto di estrazione, istantanea, binding, ricetta salvata.
+  **Da dove viene ogni informazione.** Parti, albero, istanze annidate e variante scelta, celle, token, layout e geometria: **Penpot, letto dal vivo** a ogni chiamata. Elemento HTML, field → parte, icone, comportamento, a11y: **il componente dello sviluppatore**. Il legame Penpot ↔ codice è la chiave di parte, che in codice è `data-slot`.
+  **Metadati in Penpot.** Shared plugin data `pagebuilder`: `contract = nome@versione` sul container; `part=<chiave>` sul layer (sopravvive al rename, passa alle istanze, Ctrl+D la copia); `when=<field>`, `slot=<id>` e le risposte alle domande. Li scrive **solo `pds-code`**, alla generazione, via MCP Penpot, con conferma. Mai stile, geometria, layer o token: il disegno è del designer, che non scrive metadati. Il nome del layer è libero e serve solo a proporre la chiave.
+  **Stili generati, componente dello sviluppatore.** Il generatore scrive `<Comp>.styles.ts` (una `cva` per chiave di parte, tutti gli assi, varianti delle istanze annidate) e `<Comp>.stories.tsx` (una per cella, figli di default del contratto per le sezioni), entrambi `@generated` con versione del generatore e hash. `<Comp>.tsx` lo crea lo scaffold una volta, poi è dello sviluppatore e il generatore non lo tocca più. Il lato codice lo controlla `tsc` (chiavi esportate da `styles.ts`); la verifica controlla solo il lato Penpot. Una parte tolta di proposito dallo sviluppatore è un avviso (export inutilizzato). Un cambio di struttura rigenera solo `styles.ts`; per ogni parte aggiunta, tolta o diventata lista la skill suggerisce la modifica del TSX con un esempio sul file attuale e la applica solo su richiesta.
+  **Esiti: avviso, blocco, domanda.** L'aspetto produce solo avvisi. Un caso ambiguo è una **domanda** con le opzioni: la skill chiede, la risposta si scrive in Penpot sul layer e non si richiede più. Chiavi doppie (lista `repeat` o parte nuova), parti senza chiave e domande aperte fermano `generate_component`, che non scrive finché restano.
+  **Assi e stati.** Nel contratto solo assi `option`. Un field `structure` è un asse se Penpot ha una variante con lo stesso nome, altrimenti è un rendering condizionale con `when=<field>` su una parte; né l'uno né l'altro → domanda. Focus e disabled hanno un default nel CSS globale (anello `ring`, opacità 50%); una cella disegnata vince; il focus non si toglie. Hover e active esistono solo se disegnati, sull'asse riservato `state` (una cella per variante su una taglia, applicata col prefisso a tutte le taglie), mai una prop; le celle mancanti non sono un errore.
+  **Componente e sezione.** Componente: tutti i pezzi li sceglie il designer. Sezione: almeno uno slot. Le parti proprie seguono le stesse regole; una sezione con parti proprie ha container, `styles.ts` e scaffold, una di sola disposizione no. Slot = layer i cui figli sono tutti istanze dei componenti ammessi; se ambiguo → domanda, `slot=<id>`. Un'istanza in Penpot diventa `<Comp />` nel codice: variante scelta dal designer e validata, override di stile vietati, testo solo d'esempio.
+  **Geometria.** Ogni voce nel registro ha una traduzione; le regole di contesto sono funzioni del nucleo. La misura fissa della radice si ignora se è uguale in tutte le celle, entra nella `cva` se cambia tra le celle (a′). Un valore fuori scala diventa un valore arbitrario (`w-[37px]`) con un avviso ripetuto e il valore in scala più vicino; mai una classe persa in silenzio. Ritaglio: `overflow-hidden` se un figlio esce o se il genitore ha un raggio e un figlio tocca un bordo; ignorato se niente esce e non c'è contenuto variabile; domanda se niente esce ma c'è contenuto variabile. `left+right` e `top+bottom` si traducono; un vincolo non traducibile (`scale`) dà un avviso e nessuna classe; "fill" dentro hug è una domanda.
+  **Comportamento e a11y.** Primitivo Base UI se esiste (lo scaffold lo usa); altrimenti ricetta shadcn `base` letta dal vivo + pattern APG, mai salvata. La skill propone prima un elenco di comportamenti, poi un diff piccolo per comportamento con conferma e un test per ognuno (file dello sviluppatore). Le dipendenze nuove le sceglie lo sviluppatore, con l'alternativa senza dipendenze. axe è bloccante su ogni story `@generated`; la tastiera è coperta dai test di comportamento; "testo + colore" è una voce fissa del giudizio in Storybook.
+  **Tema e font.** Seme `theme.css` (Tailwind v4 + ruoli shadcn) → token Penpot (`tokens_from_css`); poi la fonte è Penpot e `extract_theme` scrive `theme.css` e `themes/<gruppo>-<nome>.css` per le varianti dichiarate come `[data-<gruppo>="<nome>"]`, e `fonts.css` dalle famiglie del tema. Il tema Penpot vince nel CSS compilato. Font via `fontsource`, caricati dallo stesso file in Next e in Storybook; niente `next/font`.
+  **Script: nucleo puro, un adattatore, un guscio.** TypeScript in `packages/scripts`; il nucleo legge `@app/contracts` ed è fatto di funzioni dati → dati (niente disco, rete, console, exit code). `readComponent` è l'unico punto che parla con Penpot (`execute_code`). Il guscio è il **server MCP `pds`**, senza CLI di prodotto: senza stato, rilegge Penpot a ogni chiamata, non scrive mai su Penpot, non decide. Strumenti: `tokens_from_css`, `describe_component`, `verify_component`, `build_order`, `generate_component` (restituisce `Change[]` e scrive lui i file `@generated`), `extract_theme`. Tipi interni (`Lettura`, `Finding`, `Change`) zod con nome e senza versione.
+  **Due skill.** `pds-design` (verso Penpot: tema, varianti di tema, contratto nuovo, disegno via kit, contratto dal design, modifica di struttura) e `pds-code` (verso il codice: tema, verifica, generazione, aggiornamento, gate), wrapper delle skill di penpot-ai-kit dove ha senso; `pds-setup` resta. Nessuno script tra i contratti e Penpot: i componenti li disegna il designer col kit.
+  **Ordine.** Niente livelli: `build_order` genera un componente solo se esistono già i componenti che contiene.
+  **Configurazione di progetto** in `pds-setup`: `framework=react`, `headless=base-ui`, `styling=tailwind-v4`, `fonts=fontsource`, un valore implementato per chiave; un valore non supportato è un rifiuto esplicito.
+  **CI senza Penpot, quattro livelli:** nucleo con dati minimi scritti a mano; server in memoria con un adattatore Penpot finto; hash e versione dei file `@generated` (hash che non torna = blocco, versione vecchia con hash giusto = avviso); ogni classe del registro, espansa sui token del tema generato, produce CSS con la Tailwind installata, più il test di `tokens_from_css` sul seme. Nessuna lettura di Penpot salvata nel repo.
+  **Collaudo degli aggiornamenti di Penpot.** Un componente campione che usa tutte le proprietà del registro, salvato come `.penpot` nel repo. A ogni aggiornamento: istanza nuova, import, collaudo lanciato a mano; ogni proprietà del registro compare nella lettura. Il Penpot vero si aggiorna solo se il collaudo passa.
+  **Fuori da Penpot.** Un componente senza container è scritto a mano: contratto sì, niente di generato, solo il gate. Un disegno fatto altrove si riporta in Penpot.
+  I file `@generated` non si editano a mano; i file senza marker sono sempre preservati. Dettaglio → companion `penpot-pipeline.md`.
 
 ### AD-12 — Snapshot di contenuto immutabili
 
@@ -188,7 +194,7 @@ graph LR
 | Mutazione di stato | solo via casi d'uso del core; publish/rollback/archive in transazione che accoppia `Page.status`↔`PageVersion.status`; ogni save = nuova DRAFT (AD-12); ≤1 pubblicata come backstop DB |
 | Cache | domini disgiunti draft/published; invalidazione post-commit via port `CacheInvalidator` (AD-9) |
 | Validazione/sanitizzazione | schemi Zod dei **contratti** (`@app/contracts`) condivisi FE/BE; sanitizzazione XSS dei campi `content` lato server prima di persist/publish |
-| Accessibilità | baseline WCAG 2.1 AA obbligatoria per primitive/composizioni (companion `a11y-baseline.md`) |
+| Accessibilità | baseline WCAG 2.1 AA obbligatoria per primitive/composizioni (companion `a11y-baseline.md`); focus e disabled con default globale, axe bloccante sulle story generate (AD-11) |
 
 ## Stack
 
@@ -207,12 +213,16 @@ graph LR
 | pnpm | 10 |
 | Turborepo | 2 |
 | create-better-t-stack (scaffold) | 3.37.0 |
+| Penpot (self-hosted) | 2.18.3 |
+| penpot-ai-kit | 0.5.1 |
+| @base-ui/react | ^1.8.0 |
+| @fontsource/* | corrente all'installazione (Story 2.26) |
 
 > Versioni verificate contro il registry npm al 2026-07-25 (`@measured/puck` è deprecato → `@puckeditor/core`; Next 16.x corrente; Prisma 7.9). Da riconfermare al momento dello scaffold; il codice diventa proprietario di questi pin una volta creato.
 
 ## Structural Seed
 
-Workspace **greenfield** (oggi contiene solo `docs/` come riferimento legacy). Monorepo pnpm + Turborepo. I `packages/*` del design system sono **(ri)costruiti** in questa riscrittura guidati da SPEC+companion — token e componenti `domains/` **generati** via pipeline Penpot (AD-11); lo spine ne ratifica **ruoli e layering**, non un codice preesistente.
+Workspace **greenfield** (oggi contiene solo `docs/` come riferimento legacy). Monorepo pnpm + Turborepo. I `packages/*` del design system sono **(ri)costruiti** in questa riscrittura guidati da SPEC+companion — token, tema, font e stili dei componenti `domains/` **generati** via pipeline Penpot v3 (AD-11), componenti React dello sviluppatore; lo spine ne ratifica **ruoli e layering**, non un codice preesistente.
 
 ```text
 page-builder/
@@ -228,21 +238,22 @@ page-builder/
     domain/                  # CORE esagonale: casi d'uso, RBAC, audit, pipeline payload, PORT (AD-1,2,4,5,8)
     commerce-provider/       # port CommerceProvider + adapter Shopify/custom (AD-10)
     contracts/               # @app/contracts — schemi props, tipi di asse, classifier, definizioni di sezione; zero dipendenze UI (AD-5, AD-6, AD-11)
-    tokens/                  # @penpot-ds/tokens — GENERATO da Penpot (AD-11)
+    tokens/                  # @penpot-ds/tokens — GENERATO da Penpot: theme.css, themes/*.css, fonts.css (AD-11)
     ui/                      # @penpot-ds/ui — libreria componenti unica (AD-3, AD-11)
-      src/domains/           #   GENERATO: data-display, inputs, feedback, layout,
-                             #   navigation, overlays — Base UI headless + token, @generated
+      src/domains/           #   data-display, inputs, feedback, layout, navigation, overlays, commerce:
+                             #   <Comp>.styles.ts e .stories.tsx @generated; <Comp>.tsx dello
+                             #   sviluppatore (scaffold una tantum), Base UI headless + token
                              #   export `.`  → unico consumo per puck-components
       src/editor/            #   A MANO: composizioni di prodotto (TopBar, PageList,
                              #   LifecycleBadge, SaveStateIndicator, EmptyState, VersionList)
                              #   export `./editor` → unico consumo per apps/web (app)
     puck-components/         # @penpot-ds/puck-components — adapter Puck dei contratti: config, permissions, resolvePermissions (AD-5)
-    scripts/                 # pipeline Penpot→codice (AD-11): contratti di estrazione, registro, sei comandi
-      contracts/             #   <nome>.extract.ts — come si legge da Penpot e come si rende
-      registry/              #   registro proprietà unico (token, layout, posizione) + tabella ruolo→proprietà
-      penpot/                #   lettore MCP → istantanea data/components/<nome>.json
-      render/                #   istantanea + contratto di estrazione + registro → tsx/test/story/barrel
-      gates/                 #   render --check --all · suite ui · axe, report per componente
+    scripts/                 # pipeline Penpot→codice v3 (AD-11)
+      src/core/              #   nucleo puro: tipi zod (Lettura, Finding, Change), registro, geometria,
+                             #   verifica, generatore, ordine, tema — dati → dati
+      src/penpot/            #   readComponent: unico punto che parla con Penpot (execute_code)
+      src/server/            #   server MCP pds: sei strumenti, senza stato, scrive i file @generated
+      collaudo/              #   campione .penpot con tutte le proprietà del registro
     storybook/               # docs/playground
 ```
 
@@ -252,7 +263,7 @@ page-builder/
 
 | Capability | Lives in | Governed by |
 | --- | --- | --- |
-| CAP-1/CAP-2 pipeline Penpot→token/componenti | `packages/scripts`, `tokens`, `ui/src/domains` | AD-11 |
+| CAP-1/CAP-2 pipeline Penpot→token/tema/stili (v3) | `packages/scripts` (nucleo, adattatore, server MCP `pds`), `tokens`, `ui/src/domains` | AD-11 |
 | CAP-3 primitive accessibili | `packages/ui/src/domains` | AD-3, AD-11, a11y-baseline |
 | CAP-4 blocchi Puck | `packages/contracts` + `packages/puck-components` | AD-3, AD-5, AD-6, AD-11 |
 | CAP-5 composizioni editor | `packages/ui/src/editor` | AD-3 |
@@ -276,4 +287,5 @@ page-builder/
 - **Migrazione `schemaVersion` del payload** — policy di upgrade quando `schemaVersion` cambia (contratto authoring↔render). Da fissare alla prima evoluzione degli schemi dei blocchi; oggi `schemaVersion` è dichiarata e posseduta da `contracts` (AD-6).
 - **Strategia di migrazione dati dal legacy Strapi** — fuori scope SPEC salvo re-ingaggio esplicito.
 - **Envelope perf/latenza** (budget render/save) — da misurare in implementazione, non vincolato qui.
-- **Emitter per una seconda libreria (es. MUI).** Fattibilità dedotta dall'API tema MUI (`theme.components.*.variants`/`styleOverrides`), non eseguita. Riaprire alla prima richiesta concreta di una libreria non shadcn: contratti, sezioni, pagine salvate e core non cambiano; servono token rigenerati per il nuovo target e un adapter per componente (AD-11). *(Sostituisce la voce "Estensione della pipeline ai blocchi Puck", chiusa il 2026-09-12 da AD-5/AD-11: le sezioni sono definizioni di dati estratte da Penpot, i blocchi di layout sono a soli token.)* *Nota (2026-09-17): con la v2 la voce cambia forma — non "un emitter per libreria" ma "un contratto di estrazione per target"; contratti del page builder, sezioni, pagine salvate e core restano invariati, come già previsto.*
+- **Seconda libreria o secondo framework (es. MUI).** Oggi `pds-setup` accetta un solo valore per chiave (`framework=react`, `headless=base-ui`, `styling=tailwind-v4`, `fonts=fontsource`) e rifiuta gli altri in modo esplicito. Riaprire al primo progetto reale che li chieda: contratti dell'editor, sezioni, pagine salvate e core non cambiano (AD-11 v3, correct-course 2026-10-17; sostituisce la voce "Emitter per una seconda libreria").
+- **Pannello Penpot in sola lettura.** Plugin nostro (`content:read`) che mostra al designer le chiavi `part`/`when`/`slot` del layer selezionato e segnala layer senza chiave e chiavi doppie; la scrittura resta di `pds-code`. Attivare quando un designer lavora senza skill e una chiave si perde prima della generazione (`implementation-artifacts/deferred-work.md`).

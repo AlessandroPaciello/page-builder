@@ -9,6 +9,11 @@ Companion di [SPEC.md](./SPEC.md). Termini di dominio, stack-agnostici.
 - **Payload** — rappresentazione strutturata del layout di una pagina, nella forma Puck `{content, root, zones}` con `schemaVersion`. Accettato 1:1 senza riscrittura.
 - **Block-id stabile** — ogni blocco nel payload porta un id persistente indipendente dalla posizione, che abilita diff/audit/merge a livello di blocco tra versioni.
 - **Token** — valore di design (colore/tipografia/spacing/radius/ombra) generato da Penpot, fonte di verità stilistica.
+- **Contratto dell'editor** — unico file per componente o sezione in `@app/contracts`: assi `option`, field, slot; versionato da `SCHEMA_VERSION` + fingerprint.
+- **Chiave di parte** — identità di un layer Penpot (`part=<chiave>`, shared plugin data `pagebuilder`), scritta da `pds-code`; in codice è `data-slot` e una `cva` in `<Comp>.styles.ts`.
+- **Componente dello sviluppatore** — il file `<Comp>.tsx`: creato una volta dallo scaffold, poi scritto a mano e mai riscritto dalla pipeline.
+- **Sezione** — contratto con almeno uno slot, disegnato in Penpot come un componente; rigida nell'editor, aperta solo negli slot.
+- **Domanda** — esito della verifica su un caso ambiguo: la skill chiede, la risposta si scrive in Penpot e non si richiede più.
 - **Primitive** — componente UI headless/accessibile riusabile, agnostico rispetto al dominio page-builder.
 - **Puck block (blocco)** — primitiva incapsulata come blocco dell'editor, con campi editabili e controlli guidati dai token.
 - **Composizione (ui)** — componente composto con semantica dell'editor (es. TopBar, PageList), costruito su primitive+token.

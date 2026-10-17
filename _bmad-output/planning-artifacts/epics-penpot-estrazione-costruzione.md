@@ -8,7 +8,11 @@ inputDocuments:
   - "_bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md"
   - "_bmad-output/specs/spec-penpot-estrazione-costruzione/.memlog.md"
   - "_bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-10-03/.memlog.md"
+status: superseded
+superseded_by: 'sprint-change-proposal-2026-10-17.md'
 ---
+> **Superato (correct-course 2026-10-17).** Questo breakdown (Epic 1 done; Epic 2–4 cancellati) è sostituito dalla pipeline v3: AD-11 v3 nella [spine 2026-07-25](architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md) e [sprint-change-proposal-2026-10-17](sprint-change-proposal-2026-10-17.md). Resta come storia; dove una sua regola preveniva un rischio ancora valido, il rischio è ripreso nella proposta (§2.3).
+
 
 # penpot-estrazione-costruzione - Epic Breakdown
 

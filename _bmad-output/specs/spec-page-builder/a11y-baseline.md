@@ -34,3 +34,12 @@ Usare la semantica nativa corretta per ciascun tipo:
 ## 5. Portale condiviso per gli overlay
 
 Dialog, Toast e Drawer/SidePanel si montano su un **nodo root DOM condiviso** aggiunto in cima al documento, così lo z-index resta sopra il canvas dell'editor senza conflitti di stacking context. Eccezione: il Tooltip usa il proprio portale senza conflitti rilevanti.
+
+## 6. Stati e verifica
+
+*(Aggiunto dal correct-course 2026-10-17, AD-11 v3.)*
+
+- **Focus e disabled** hanno sempre un default nel CSS globale (anello `ring`, opacità 50%); una cella disegnata in Penpot vince; il focus non si toglie mai.
+- **Hover e active** esistono solo se disegnati, sull'asse riservato `state`; senza cella disegnata non c'è hover.
+- **axe** è bloccante nel gate su ogni story generata; la **tastiera** è coperta dai test di comportamento del componente.
+- **Stato = testo + colore** (§2) è una voce fissa del giudizio umano in Storybook: non lo verifica uno strumento automatico.

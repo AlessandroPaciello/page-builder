@@ -5,7 +5,8 @@ purpose: build-substrate
 altitude: feature
 paradigm: 'pipes-and-filters agentica (skill-driven, nessun runtime dedicato)'
 scope: 'Sistema di estrazione e costruzione Penpot→React live via MCP: check, diff, proposta, conferma umana, disegno/estrazione, verifica. Solo token→organismi; template/pagine a Puck.'
-status: final
+status: superseded
+superseded_by: 'sprint-change-proposal-2026-10-17.md'
 created: '2026-10-03'
 updated: '2026-10-03'
 binds: [CAP-1, CAP-2, CAP-3, CAP-4, CAP-5, CAP-6, CAP-7, CAP-8, CAP-9, CAP-10]
@@ -17,6 +18,8 @@ companions:
   - '../../../specs/spec-penpot-estrazione-costruzione/extraction-flow.md'
   - '../../architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md'
 ---
+> **Superato (correct-course 2026-10-17).** Questa spine (AD-1…AD-9) è sostituita dalla pipeline v3: AD-11 v3 nella [spine 2026-07-25](../architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md) e [sprint-change-proposal-2026-10-17](../../sprint-change-proposal-2026-10-17.md). Resta come storia; dove una sua regola preveniva un rischio ancora valido, il rischio è ripreso nella proposta (§2.3).
+
 
 # Architecture Spine — penpot-estrazione-costruzione
 

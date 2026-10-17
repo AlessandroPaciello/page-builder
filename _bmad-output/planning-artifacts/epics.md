@@ -8,6 +8,10 @@ inputDocuments:
   - "_bmad-output/specs/spec-page-builder/a11y-baseline.md"
   - "_bmad-output/specs/spec-page-builder/glossary.md"
   - "_bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md"
+  - "_bmad-output/spikes/penpot-ai-kit-2026-10-10/README.md"
+  - "_bmad-output/forge/pds-v3-penpot-ai-kit/forged-idea.md"
+  - "_bmad-output/forge/pds-v3-scripts/forged-idea.md"
+  - "_bmad-output/forge/pds-v3-punti-aperti/forged-idea.md"
 ---
 
 # page-builder - Epic Breakdown
@@ -22,8 +26,8 @@ Questo documento decompone i requisiti dello SPEC (spec-kernel, in sostituzione 
 
 ### Functional Requirements
 
-FR1 (CAP-1): Il sistema estrae i design token da Penpot e genera lo strato token (colori/tipografia/spacing/radii/ombre) consumato dalla UI, data-driven dal catalogo Penpot.
-FR2 (CAP-2): Il sistema genera primitive React accessibili dai componenti Penpot (contratto del page builder + contratto di estrazione → istantanea letta da Penpot → render sul registro delle proprietà), con componente+test+story+barrel, preservando i file scritti a mano.
+FR1 (CAP-1): Il sistema porta in Penpot un tema nato da un seme CSS Tailwind, poi estrae i design token da Penpot e genera lo strato token (colori/tipografia/spacing/radii/ombre), le varianti di tema e i font consumati dalla UI, data-driven dal catalogo Penpot.
+FR2 (CAP-2): Il sistema genera dai componenti Penpot gli stili e le story di primitive React accessibili (contratto dell'editor + Penpot letto dal vivo → `styles.ts` e story generati sul registro delle proprietà; componente dello sviluppatore creato una volta dallo scaffold), preservando i file scritti a mano.
 FR3 (CAP-3): Il sistema offre una libreria di primitive UI headless/accessibili organizzate per dominio (data-display, inputs, feedback, layout, navigation, overlays).
 FR4 (CAP-4): Il sistema espone le primitive come blocchi del page-builder con campi validati da schema e controlli guidati dai token, aggregati in un'unica config con slot annidabili.
 FR5 (CAP-5): Il sistema fornisce composizioni di prodotto per l'editor (LifecycleBadge, SaveStateIndicator, TopBar, PageList, VersionList, EmptyState) costruite solo su primitive+token.
@@ -44,8 +48,8 @@ NFR1 (Accessibilità): Ogni primitiva/composizione rispetta WCAG 2.1 AA — focu
 NFR2 (Sicurezza/Authz): Autorizzazione deny-by-default enforced server-side a copertura totale, su lettura **e** scrittura; nessuna via di modifica/lettura non-pubblica fuori dal core di dominio (no CRUD auto-generato).
 NFR3 (Sicurezza/XSS): I campi content del payload sono sanitizzati lato server prima di persist/publish; campi/blocchi ignoti trattati come content (fail-safe).
 NFR4 (Integrità dati): Invariante ≤1 PUBLISHED per pagina garantito a livello DB (indice univoco parziale); ogni salvataggio crea una nuova versione DRAFT immutabile (no mutazione in-place); versionNumber allocato dal core con UNIQUE(page_id, version_number).
-NFR5 (Coerenza design↔codice): Penpot è single source of truth di valori e aspetto; il contratto dei componenti è del page builder; artefatti generati marcati @generated e mai editati a mano; la rigenerazione preserva i file scritti a mano.
-NFR6 (Confine UI): Il frontend consuma esclusivamente il design system (@penpot-ds/ui), non uno stack UI stilistico parallelo; layering contracts ← {ui/domains, puck-components, domain, render}; tokens ← ui/domains ← {puck-components, ui/editor}. Le primitive headless (Base UI) non sono una libreria concorrente: importabili solo da ui/src/domains.
+NFR5 (Coerenza design↔codice): Penpot è single source of truth di valori e aspetto; il contratto dei componenti è del page builder; artefatti generati marcati @generated con versione del generatore e hash, mai editati a mano (controllato in CI); il componente React è dello sviluppatore e la rigenerazione non lo tocca.
+NFR6 (Confine UI): Il frontend consuma esclusivamente il design system (@penpot-ds/ui), non uno stack UI stilistico parallelo; layering contracts ← {ui/domains, puck-components, domain, render}; tokens ← ui/domains ← {puck-components, ui/editor}. Le primitive headless (Base UI, fissato in pds-setup con headless=base-ui) non sono una libreria concorrente: importabili solo da ui/src/domains.
 NFR7 (Intercambiabilità commerce): I blocchi commerce e il render parlano solo al port CommerceProvider; cambiare/affiancare sorgente = cambiare un adapter, non riscrivere i blocchi.
 NFR8 (Deferred — Perf): Budget di latenza render/save deliberatamente deferiti (da misurare in implementazione, non vincolati qui).
 
@@ -55,7 +59,7 @@ _Da Architecture Spine (AD-1…13) e Stack — vincoli tecnici che impattano l'i
 
 - **[STARTER] Scaffolding greenfield (Epic 1, Story 1):** workspace inizializzato con `create-better-t-stack` (3.37.0) → Next.js App Router + TypeScript; monorepo pnpm (10) + Turborepo (2); rimozione di ogni residuo legacy. Stack pinnato allo scaffold: Next 16.x, React 19, PostgreSQL 18, Prisma 7.9+, Better Auth, oRPC, Tailwind 4, Node LTS. `@puckeditor/core` 0.22.x (NB: `@measured/puck` è deprecato) è ratificato nello spine ma **installato in Epic 3/4**, non allo scaffold.
 - **AD-1/AD-2 (paradigma):** core di dominio esagonale in `packages/domain` (no HTTP, no React), unico punto di accesso al dominio (mutazioni + letture non-pubbliche); adapter attorno; core estraibile.
-- **AD-3/AD-11 (design system):** ricostruzione dei `packages/*` (tokens/ui/puck-components/scripts/storybook; nessun package `primitives`); token e componenti `ui/domains` generati via pipeline Penpot→codice con regime due contratti → istantanea → render (AD-11 v2, correct-course 2026-09-17); il regime v1 (fixture → ricetta → emitter shadcn) resta in servizio fino alla rimozione prevista dalla Story 2.16. Una libreria per installazione.
+- **AD-3/AD-11 (design system):** ricostruzione dei `packages/*` (tokens/ui/puck-components/scripts/storybook; nessun package `primitives`); token, tema, font e stili dei componenti `ui/domains` generati via pipeline v3 (AD-11 v3, correct-course 2026-10-17): un contratto dell'editor, Penpot letto dal vivo, server MCP `pds` su nucleo puro, skill `pds-design`/`pds-code`; il componente React è dello sviluppatore. Una libreria per installazione, fissata in `pds-setup`.
 - **AD-4/AD-13 (auth/authz/errori):** Better Auth (adapter Prisma) fornisce Principal+ruolo nel context oRPC; authz fine nel core; errori di dominio tipizzati → set oRPC fisso; semantica 404 (non rivelare esistenza) vs 403.
 - **AD-5/AD-6 (contratti/payload):** schemi Zod + classifier structure/content + definizioni di sezione condivisi FE/BE in `packages/contracts` (`@app/contracts`, zero dipendenze UI); payload jsonb {content,root,zones}; block-id client-owned immutabili; schemaVersion di `contracts`.
 - **AD-7 (integrità publish):** indice univoco parziale Postgres via migration SQL esplicita (eseguita in release, prima dell'avvio app, gate CI); publish/rollback/archive in transazione che accoppia Page.status↔PageVersion.status.
@@ -102,11 +106,11 @@ Scaffolding greenfield del workspace (create-better-t-stack → Next.js App Rout
 **FRs covered:** FR12 (fondamenta); abilita tutti gli altri. Vincoli: AD-1, AD-2, AD-4, AD-7 (schema indice), NFR2, NFR4, [STARTER].
 
 ### Epic 2: Design system — token e componenti da Penpot
-Pipeline Penpot→codice (packages/scripts) che genera token (packages/tokens) e componenti React accessibili (packages/ui/src/domains). Il regime arriva in due tempi: la v1 (contratto → fixture → ricetta → emitter shadcn, Story 2.1–2.10) porta la pipeline fino a quattro componenti reali e ne scopre il limite sul primo caso davvero composito; la v2 (due contratti → istantanea → render headless, Story 2.12–2.17) lo risolve nel vocabolario del contratto e cancella la v1. Outcome: si generano token e componenti accessibili dal catalogo Penpot in modo riproducibile, conformi ai contratti del page builder, visibili e testati in Storybook — ProductCard compresa, senza una riga di codice a mano.
+Pipeline Penpot→codice (packages/scripts) che genera token, tema e font (packages/tokens) e gli stili dei componenti (packages/ui/src/domains), con componenti React accessibili scritti dallo sviluppatore sopra gli stili. Il regime arriva in tre tempi: v1 (contratto → fixture → ricetta → emitter shadcn, Story 2.1–2.10), v2 (due contratti → istantanea → render headless, Story 2.12–2.16) e v3 (un contratto, Penpot letto dal vivo, stili generati e componente dello sviluppatore, Story 2.17–2.31, correct-course 2026-10-17). Outcome: dal catalogo Penpot si generano in modo riproducibile tema e stili; i componenti dei domini sono accessibili, visibili e testati in Storybook, e la CI li verifica senza Penpot.
 **FRs covered:** FR1, FR2, FR3. Vincoli: AD-3, AD-5, AD-11, NFR1, NFR5, UX-DR1-5,7.
 
 ### Epic 3: Blocchi ed elementi dell'editor
-Blocchi Puck come adapter dei contratti (packages/puck-components), blocchi di layout a soli token, definizioni di sezione estratte da Penpot e rigide nell'editor, classifier structure/content esteso a tutti i contratti, e composizioni di prodotto dell'editor (packages/ui/src/editor: TopBar, PageList, VersionList, LifecycleBadge, SaveStateIndicator, EmptyState). Outcome: esistono i blocchi, le sezioni e le composizioni; la config Puck è pronta per l'editor.
+Blocchi Puck come adapter dei contratti (packages/puck-components), blocchi di layout a soli token, sezioni disegnate in Penpot (contratti con almeno uno slot) e rigide nell'editor, classifier structure/content esteso a tutti i contratti, e composizioni di prodotto dell'editor (packages/ui/src/editor: TopBar, PageList, VersionList, LifecycleBadge, SaveStateIndicator, EmptyState). Outcome: esistono i blocchi, le sezioni e le composizioni; la config Puck è pronta per l'editor.
 **FRs covered:** FR4, FR5, FR13 (definizione). Vincoli: AD-3, AD-5, AD-6, AD-11, UX-DR6,8.
 
 ### Epic 4: Editor e bozze
@@ -205,11 +209,11 @@ So that l'app sia deployabile in modo portabile con lo schema sempre applicato p
 
 ## Epic 2: Design system — token e componenti da Penpot
 
-Si generano token e componenti React accessibili dal catalogo Penpot in modo riproducibile, visibili e testati in Storybook. Il regime è `due contratti → istantanea → render` (AD-11 v2, rivisto 2026-09-17): il contratto del page builder (`@app/contracts`) possiede il vocabolario che l'editor e le pagine salvate usano; il contratto di estrazione (`packages/scripts`) possiede come il componente si legge da Penpot e come si rende; Penpot disegna valori e aspetto; l'unica istantanea, scritta solo da `extract`, è ciò che si rivede in PR; il codice è funzione pura di istantanea + contratto di estrazione + registro.
+Si generano token e stili dei componenti dal catalogo Penpot in modo riproducibile, con componenti React accessibili scritti dallo sviluppatore sopra gli stili generati, visibili e testati in Storybook. Il regime è la **v3** (AD-11 v3, correct-course 2026-10-17): un contratto dell'editor per componente; Penpot letto dal vivo per parti, celle, token e geometria; `styles.ts` e story generati, componente dello sviluppatore; un server MCP `pds` sopra un nucleo puro; due skill `pds-design` e `pds-code`. Fonti: [spike penpot-ai-kit](../spikes/penpot-ai-kit-2026-10-10/README.md) e le tre forgie pds v3; proposta in `sprint-change-proposal-2026-10-17.md`.
 
-> **Story 2.1–2.10 (v1).** Descrivono il regime `contratto → fixture → ricetta → emitter shadcn`, completato e mergiato. Restano **come storia**: non vanno riscritte, e il codice che documentano è in servizio finché la Story 2.16 non lo cancella. Il limite che ha portato alla v2 non era negli script ma nel vocabolario del contratto — vedi [SPEC-refactor-packages-scripts](../specs/spec-refactor-packages-scripts/SPEC.md) e `sprint-change-proposal-2026-09-17.md`.
+> **Story 2.1–2.16 (v1 e v2).** Restano **come storia**: non vanno riscritte. Il codice v2 e i componenti di prova generati si rimuovono nella Story 2.18. La Story 2.17 "Skill `pds-*` sui sei comandi" è cancellata (branch mai mergiato); la libreria dei sei domini è ora la Story 2.32 (ex 2.18).
 
-**Tooling:** BMad Builder installato il 2026-09-12 (`bmb` v2.2.2). Il modulo BMad `penpot-ds` (codice `pds`) si crea **dentro la Story 2.4** (Task 6), perché il dev scrive le sue skill (decisione di Alessandro, 2026-09-12).
+**Tooling:** BMad Builder installato il 2026-09-12 (`bmb` v2.2.2). Il modulo BMad `penpot-ds` (codice `pds`) è nato nella Story 2.4; con la v3 contiene `pds-setup`, `pds-design` (Story 2.28) e `pds-code` (Story 2.29).
 
 ### Story 2.1: Pipeline token Penpot→codice
 
@@ -470,23 +474,248 @@ So that esista una sola pipeline e un solo modo di descrivere un componente (FR2
 **And** `apps/web` è ricontrollata per consumatori dei quattro componenti nella finestra tra rimozione e rigenerazione; l'action item della retro Epic 1 sul dropdown-menu scritto a mano è rivalutato qui
 **And** le voci di `deferred-work.md` legate ad artefatti v1 (register del correct-course 2026-09-17) sono chiuse come "senza oggetto" con riferimento a questa story.
 
-### Story 2.17: Skill `pds-*` sui sei comandi
+### Story 2.17: Il tema Penpot nel CSS compilato
 
-As a sviluppatore,
-I want le skill `pds-bootstrap`, `pds-additive` e `pds-component` riscritte sui sei comandi,
-So that il ciclo di vita di un componente resti guidato senza citare nulla che non esista più (FR2, AD-11).
+As a designer/sviluppatore,
+I want che i valori del tema Penpot arrivino davvero nel CSS che il browser riceve,
+So that un cambio del designer si veda nei componenti e non resti coperto dai default shadcn e Tailwind (FR1, NFR5, AD-11).
 
 **Acceptance Criteria:**
 
-**Given** la v2 sola in `packages/scripts` (Story 2.16)
-**When** riscrivo le skill
-**Then** nessuna skill `pds-*` cita un comando v1 (`grep` a zero su `verify:library`, `add:library`, `gates:render`, `adopt:variant`, `sync:design`, `extract:component`, `bump:contract`, `bootstrap:library`, `role:part`, `render:component`)
-**And** [PC] chiede assi `option` e field per il page builder, poi parti/ruoli/`when`/`repeat`/headless/a11y per l'estrazione, scrive i due contratti, chiama `library add`, poi `extract`, `render`, `gates`; [PS] legge lo stato con `extract --check` e `gates` e instrada: drift → `extract` + `render` con diff; Penpot davanti ai contratti → `propose` e applicazione a mano; errore `contract` → i tre adattamenti; la regola di `repeat` (primo layer come modello, gli altri identici) è detta al designer
-**And** la skill si ferma solo sulle decisioni umane, non scrive mai su Penpot né sui contratti fuori dai comandi; l'esito è l'exit code; `module-help.csv` aggiornato; verificata eseguendo i due percorsi su un componente reale.
+**Given** `packages/ui/src/styles/globals.css` con `@import` del tema a metà file e il blocco `@theme inline` shadcn che ridefinisce colori, raggi e font
+**When** riordino il CSS globale
+**Then** l'`@import` del tema Penpot è in testa con gli altri e nessun blocco ridefinisce i nomi che il tema possiede (colori, raggi, font); le variabili shadcn in `:root`/`.dark` che oscurano il tema non esistono più
+**And** un test compila il CSS con la Tailwind installata e verifica che `bg-primary`, `rounded-lg` e `font-sans` usino i valori del tema Penpot, rosso sul CSS di oggi e verde dopo la correzione
+**And** il default globale di focus (anello `ring`) e di disabled (opacità 50%) resta nel livello `base`
+**And** Storybook e `apps/web` caricano lo stesso CSS globale, e il build statico di Storybook resta verde.
 
-### Story 2.18: Libreria componenti accessibile
+### Story 2.18: Rimozione dei componenti di prova e della pipeline v2
 
-*(ex 2.11, riposizionata dal correct-course 2026-09-17 dopo la v2.)*
+As a sviluppatore,
+I want togliere i componenti generati per prova e il codice della v2,
+So that la v3 parta da un terreno pulito e nessuno usi più artefatti che non hanno un proprietario (FR2, NFR5, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** `develop` dopo la Story 2.17
+**When** rimuovo la v2
+**Then** non esistono più Badge, Input, Alert, AccordionItem e ProductCard in `packages/ui/src/domains` (componente, test, story, barrel), `packages/scripts/data/components/*`, i contratti di estrazione, i comandi `library`, `propose`, `extract`, `render`, `gates`, `library-writer.ts`, `library-plan.ts`, `render.ts`, il guscio CLI e `ScriptError`, né il job `gates` in CI
+**And** restano i contratti dell'editor in `@app/contracts` con fingerprint e `SCHEMA_VERSION` invariati, il registro delle proprietà, il comando `theme` (fino alla Story 2.26), Storybook con il suo smoke gate e il dropdown dell'editor su Base UI
+**And** le skill `pds-bootstrap`, `pds-additive` e `pds-component` sono rimosse (da `.claude/skills`, `.agents/skills` e `module-help.csv`); `pds-setup` resta; il branch `story/2-17-skill-pds-sui-sei-comandi` si chiude senza merge
+**And** `apps/web` e `ui/editor` non importano nulla di rimosso (verificato con `tsc` e la build), e la CI è verde
+**And** i bug 7–10 dello spike (`COMPONENT_TOKENS`, render per componente, contratti caricati all'avvio, template e log) sono chiusi come "spariti con la v2" con rimando a questa story; le voci di `deferred-work.md` legate ad artefatti v2 sono chiuse come "senza oggetto".
+
+### Story 2.19: Fixture sul catalogo Tailwind e codice nuovo dentro i confini
+
+*(Punto 13 dello spike.)*
+
+As a sviluppatore,
+I want che i test di `scripts` usino il catalogo nato dal seme Tailwind e che i confini coprano le cartelle del nuovo codice,
+So that riportare il modello v3 non renda rossa la suite (i 45 test dello spike) e nessun modulo nuovo sfugga alle regole di dipendenza (FR2, NFR6, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** il seme `theme.css` dello spike (`tailwind-to-penpot/`) e i test di `scripts` scritti sul catalogo vecchio
+**When** riallineo le fixture
+**Then** i test di `scripts` leggono il catalogo token derivato dal seme Tailwind (catalogo dati a mano, non una lettura di Penpot), e la suite è verde con il codice di [`test-v3/`](../spikes/penpot-ai-kit-2026-10-10/test-v3/README.md) usato come riferimento
+**And** `check-boundaries.mjs` di `packages/scripts` copre `src/core`, `src/penpot` e `src/server`: il nucleo non importa né disco né rete né MCP, solo `src/penpot` parla con Penpot, `src/server` non importa da `src/penpot` fuori dal punto di iniezione dell'adattatore
+**And** ogni regola di confine ha un test rosso/verde automatico (chiude per `packages/scripts` l'azione aperta della retro Epic 1 sui `check-boundaries.mjs`; `ui`, `domain` e `api` si aggiungono qui o restano aperte, a scelta della story)
+**And** nessuna cartella `v3/` entra nel repo: il codice nuovo vive nelle cartelle del seed.
+
+### Story 2.20: Nucleo puro e registro delle proprietà
+
+As a sviluppatore,
+I want un nucleo di funzioni dati → dati con i tipi della pipeline e un registro unico delle proprietà Penpot,
+So that ogni proprietà si insegni in un solo posto e tutta la logica sia testabile senza Penpot (FR2, NFR5, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** `packages/scripts/src/core` vuoto e il registro attuale
+**When** scrivo il nucleo
+**Then** esistono gli schemi zod `Lettura`, `Finding` (`avviso` · `blocco` · `domanda` con opzioni) e `Change`, con un nome e senza versione, e nessuna funzione del nucleo tocca disco, rete, console o codice di uscita (verificato dai confini della Story 2.19)
+**And** il registro ha una voce per proprietà con la sua traduzione in classe Tailwind (token, layout flex, dimensionamento), senza tabella ruolo → proprietà; `strokeWidth` produce classi (bug 4), `fontFamily` al singolare è registrato (bug 5), "fill" orizzontale e verticale produce classi (bug 3)
+**And** livello 1 della CI: il nucleo è testato con dati minimi scritti a mano, un test rosso/verde per voce del registro
+**And** livello 4 della CI: ogni classe del registro, espansa sui token del tema generato, produce CSS con la Tailwind installata.
+
+### Story 2.21: Geometria e larghezza nel registro
+
+As a designer/sviluppatore,
+I want che dimensioni, posizioni e ritaglio disegnati in Penpot arrivino nel codice con regole fisse,
+So that nessuna misura si perda in silenzio e il ritaglio non tagli l'anello di focus (FR2, NFR1, NFR5, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** il nucleo della Story 2.20
+**When** aggiungo le voci di geometria e le regole di contesto come funzioni del nucleo
+**Then** la misura fissa della radice uguale in tutte le celle si ignora, e se cambia tra le celle entra nella `cva` sotto l'asse (a′)
+**And** un valore fuori scala diventa un valore arbitrario (`w-[37px]`) con un `Finding` di tipo avviso che riporta il valore in scala più vicino, per misure e posizioni
+**And** il ritaglio segue le tre regole: `overflow-hidden` se un figlio esce o il genitore ha raggio e un figlio tocca un bordo; nessuna classe se niente esce e non c'è contenuto variabile; domanda se niente esce ma c'è contenuto variabile (testo da field, immagine, slot)
+**And** `left+right` e `top+bottom` si traducono; un vincolo `scale` dà un avviso e nessuna classe; "fill" dentro hug dà una domanda; con tutti i figli in fill la misura fissa del genitore si ignora (limite di Penpot dello spike)
+**And** ogni regola ha un test rosso/verde nel livello 1 della CI (bug 11, lato nucleo).
+
+### Story 2.22: Verifica e generazione — chiavi di parte, `styles.ts`, scaffold, story
+
+As a sviluppatore,
+I want verificare un componente letto da Penpot e generarne stili, scaffold e story con un generatore unico,
+So that un componente nuovo non richieda una riga di codice nella pipeline e il mio componente non venga mai riscritto (FR2, FR3, NFR5, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** una `Lettura` scritta a mano (componente con istanza annidata, parti con e senza chiave, chiavi doppie)
+**When** chiamo verifica, ordine e generazione del nucleo
+**Then** la verifica restituisce: parte senza chiave → domanda con la chiave proposta dal nome del layer; chiavi doppie → domanda *lista* (`repeat`) o *parte nuova*; aspetto → avvisi; e la generazione rifiuta finché resta una domanda aperta
+**And** il generatore produce `<Comp>.styles.ts` con una `cva` per chiave (tutti gli assi `option`, varianti delle istanze annidate), intestazione `@generated` con versione del generatore e hash, e `<Comp>.stories.tsx` con una story per cella
+**And** lo scaffold crea `<Comp>.tsx` solo se non esiste, con `data-slot` = chiave di parte e l'elemento HTML proposto (domanda se il layer è ambiguo); un `<Comp>.tsx` esistente resta identico byte per byte dopo ogni rigenerazione (prova T4b-2 dello spike come test)
+**And** un'istanza annidata diventa `<Comp />` con la variante scelta in Penpot e validata; un override di stile su un'istanza è un blocco; il dimensionamento dell'istanza non è un override (bug 12, lato nucleo)
+**And** asse riservato `state`: hover/active disegnati diventano prefissi su tutte le taglie, mai una prop; celle mancanti non sono un errore; focus e disabled non disegnati usano il default globale
+**And** `build_order` restituisce l'ordine di generazione dalle istanze e rifiuta un componente che contiene un componente non ancora generato
+**And** una parte tolta dal TSX dallo sviluppatore è un avviso (export inutilizzato); un cambio di struttura restituisce `Change[]` per `styles.ts` e, per ogni parte aggiunta, tolta o diventata lista, un suggerimento con esempio sul TSX attuale, mai applicato
+**And** tutto è testato nel livello 1 della CI (bug 8 chiuso: nessun codice per componente).
+
+### Story 2.23: Adattatore Penpot `readComponent`
+
+As a sviluppatore,
+I want un unico punto che legge un componente da Penpot e lo restituisce come `Lettura`,
+So that tutte le proprietà del registro arrivino dal file vero e nessun altro modulo parli con Penpot (FR2, NFR5, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** Penpot 2.18.3 locale con il file "tailwind" dello spike (Badge, ShopCard, Carousel)
+**When** chiamo `readComponent` via `execute_code`
+**Then** la `Lettura` contiene celle, token, layout flex (bug 2), dimensionamento "fill" e "hug" (bug 3), ritaglio, dimensioni fisse, posizione e vincoli degli assoluti, "fill" verticale (bug 11), istanze con componente d'origine, variante e override confrontati con l'istanza principale (bug 12), e lo shared plugin data `pagebuilder` di container e layer
+**And** le istanze si riconoscono dal componente d'origine, non solo dal nome (limite `switchVariant` dello spike); gli elementi si ritrovano da nomi e plugin data, mai dallo `storage` del plugin
+**And** la `Lettura` è validata dallo schema zod del nucleo, e una proprietà nel registro che la lettura non porta è un errore che la nomina
+**And** l'adattatore non ha fixture di lettura Penpot (regola 5): i suoi test girano solo nel collaudo (Story 2.25); in CI l'adattatore è sostituito da quello finto della Story 2.24
+**And** il README dell'adattatore documenta la scheda Penpot sospesa dal browser (finestra visibile o i flag `--disable-background-timer-throttling --disable-renderer-backgrounding --disable-backgrounding-occluded-windows`).
+
+### Story 2.24: Server MCP `pds` e controllo dei file generati in CI
+
+As a sviluppatore,
+I want un server MCP `pds` che esponga il nucleo come strumenti e scriva i file generati,
+So that la skill non passi da stringhe di shell né scriva a mano un file `@generated`, e la CI sappia se un file generato è stato toccato (FR2, NFR5, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** il nucleo (Story 2.20) e l'adattatore (Story 2.23)
+**When** avvio il server `pds` registrato nella configurazione MCP del progetto
+**Then** espone `tokens_from_css`, `describe_component`, `verify_component`, `build_order`, `generate_component` e `extract_theme`, con ingressi e uscite validati dagli schemi del nucleo; non tiene stato, rilegge Penpot a ogni chiamata e non scrive mai su Penpot
+**And** `generate_component` scrive lui i file `@generated` e restituisce `Change[]`; non scrive se ci sono chiavi doppie, parti senza chiave o domande aperte
+**And** livello 2 della CI: il server gira in memoria con un adattatore Penpot finto, un test per strumento e per schema
+**And** livello 3 della CI: per ogni file `@generated` del repo, hash che non torna = blocco che nomina il file; versione del generatore vecchia con hash giusto = avviso
+**And** non esiste una CLI di prodotto; il README dice come riavviare il server dopo una modifica del nucleo.
+
+### Story 2.25: Collaudo degli aggiornamenti di Penpot
+
+As a sviluppatore,
+I want un componente campione e una procedura che dicano se una versione nuova di Penpot rompe la lettura,
+So that il Penpot vero si aggiorni solo quando la pipeline lo legge ancora tutto (FR2, NFR5, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** il registro completo (Story 2.20–2.21) e l'adattatore (Story 2.23)
+**When** costruisco il campione e lancio il collaudo a mano su un'istanza Penpot nuova
+**Then** esiste un componente campione salvato come `.penpot` nel repo che usa **ogni** voce del registro (geometria compresa) e ogni chiave di plugin data (`contract`, `part`, `when`, `slot`)
+**And** la procedura (istanza nuova → import del campione → collaudo) verifica che ogni proprietà del registro compaia nella lettura e che il campione le usi tutte; un'esclusione è un errore che nomina la proprietà
+**And** il collaudo misura quali operazioni di Penpot cancellano gli shared plugin data (raggruppa, booleane, copia tra file, ripristino, stacco) e se "fill" dentro hug è leggibile; l'esito è registrato nel README del collaudo e nel `penpot-pipeline.md`
+**And** la procedura dice che il Penpot vero (oggi 2.18.3, backup prima della migrazione) si aggiorna solo se il collaudo passa, e come distinguere una migrazione dell'import `.penpot` da un guasto dell'adattatore.
+
+### Story 2.26: Tema da seme CSS, varianti di tema e font
+
+As a designer/sviluppatore,
+I want portare un tema Tailwind in Penpot e riportarlo in codice con le sue varianti e i suoi font,
+So that il designer parta da un tema idiomatico e il codice torni idiomatico (`bg-primary`, `text-sm`) senza perdite (FR1, NFR5, AD-6, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** il seme `theme.css` (Tailwind v4 + ruoli shadcn) e il server `pds`
+**When** chiamo `tokens_from_css` e poi `extract_theme`
+**Then** `tokens_from_css` restituisce set e temi Penpot dal seme, comprese le varianti dichiarate come `[data-<gruppo>="<nome>"]`; un'ombra con `spread` negativo diventa 0 e un colore fuori sRGB il più vicino, entrambi con un avviso
+**And** `extract_theme` legge **tutti** i set e i temi, non solo quelli attivi, accetta nomi uguali in set diversi (bug 6) e scrive `theme.css` e `themes/<gruppo>-<nome>.css` `@generated`; il giro seme → Penpot → CSS chiude senza perdite sul seme dello spike (test di livello 4)
+**And** con `fonts=fontsource` in `pds-setup`, `extract_theme` scrive `fonts.css` `@generated` dalle famiglie del tema; Next e Storybook caricano lo stesso file; `next/font`, Geist e l'override dei font in `globals.css` non esistono più
+**And** il comando `theme` e il suo codice sono rimossi: non resta nessuna CLI di prodotto.
+
+### Story 2.27: Sezioni
+
+As a designer/sviluppatore,
+I want leggere e generare una sezione con slot come un componente,
+So that hero, carousel e sezioni prodotto si disegnino in Penpot con la stessa libertà dei componenti (FR2, FR4, AD-5, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** un contratto `sections/<nome>.ts` con almeno uno slot e un container Penpot (Carousel dello spike: `perView` 1–3, slot di `shop-card`)
+**When** verifico e genero la sezione
+**Then** un field `structure` è un asse se Penpot ha una variante con lo stesso nome, altrimenti un rendering condizionale con `when=<field>` su una parte; senza asse né `when` è una domanda (quale parte, asse da disegnare, o field in `content` con MS)
+**And** uno slot è il layer i cui figli sono tutti istanze dei componenti ammessi dallo slot; se è ambiguo è una domanda e la risposta è `slot=<id>`; le istanze nello slot sono esempi
+**And** una forma disegnata nella sezione è una parte con la sua chiave, non un errore; un'icona è una parte con chiave e quale icona la propone lo scaffold
+**And** una sezione con parti proprie ha container, `styles.ts` e scaffold; una sezione di sola disposizione non ne ha
+**And** la story della sezione usa i figli di default del contratto, una per cella (bug 13 chiuso)
+**And** ogni regola ha un test rosso/verde nel livello 1 della CI.
+
+### Story 2.28: Skill `pds-design` e configurazione di progetto
+
+As a designer/sviluppatore,
+I want una skill che porti tema e componenti in Penpot attraverso il kit ufficiale,
+So that il designer lavori con gli strumenti di Penpot e io approvi i contratti senza scrivere codice di pipeline (FR1, FR2, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** il server `pds` e penpot-ai-kit 0.5.1
+**When** costruisco `pds-design` con `bmad-workflow-builder`
+**Then** le voci sono **TB** (tema base dal seme, via `tokens_from_css` e `penpot-foundations`), **TV** (variante di tema), **CN** (ricetta → domande → proposta dei contratti → approvazione), **DC** (disegna il componente, dal contratto o libero, via `penpot-component-factory`), **CD** (bozza del contratto dal design, via `describe_component` → approvazione), **MS** (diff sui contratti → approvazione)
+**And** la skill fa da wrapper alle skill del kit dove ha senso; le celle si costruiscono da zero (il clone di `createVariants.js` annida una copia); una cella per chiamata e la verifica in una chiamata separata (`applyToken` lento); i trigger non entrano in conflitto con quelli del kit
+**And** `pds-design` non scrive metadati in Penpot; offre un controllo di stato che chiama `verify_component` e mostra chiavi mancanti o doppie al designer
+**And** `pds-setup` scrive `framework=react`, `headless=base-ui`, `styling=tailwind-v4`, `fonts=fontsource` e rifiuta in modo esplicito ogni altro valore
+**And** ogni scrittura (contratti, Penpot) passa da una conferma; un contratto dell'editor cambiato alza `SCHEMA_VERSION` e il fingerprint; `module-help.csv` è aggiornato; la skill è verificata eseguendo le due strade (dal contratto, dal design) su un componente reale.
+
+### Story 2.29: Skill `pds-code`
+
+As a sviluppatore,
+I want una skill che porti un componente da Penpot al codice, risponda alle domande e aggiorni gli stili,
+So that generare e riallineare un componente sia una sequenza di conferme e non di comandi (FR2, FR3, NFR1, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** il server `pds`, il collaudo (Story 2.25) e `pds-design`
+**When** costruisco `pds-code` con `bmad-workflow-builder`
+**Then** le voci sono **ET** (estrai tema), **VC** (verifica), **GC** (genera `styles.ts` e story, scaffold se manca il TSX, giudizio in Storybook), **AC** (rigenera `styles.ts`, riassume i cambi, suggerimenti per i cambi di struttura), **GA** (gate: `tsc`, test, tema nel CSS, contrasto, axe, un pacchetto font per famiglia)
+**And** a ogni `Finding` di tipo domanda la skill mostra le opzioni, scrive la risposta in Penpot come shared plugin data `pagebuilder` (`part`, `when`, `slot`, risposta) via MCP Penpot **solo dopo conferma**, e non la richiede più; mai stile, geometria, layer o token
+**And** GC rispetta `build_order`; il giudizio in Storybook ha "testo + colore" come voce fissa; AC suggerisce le modifiche del TSX con un esempio e le applica solo su richiesta
+**And** la skill non scrive mai un file `@generated` (li scrive il server) e si ferma solo sulle decisioni umane; `module-help.csv` è aggiornato; verificata su un componente reale per GC e per un AC con cambio di struttura.
+
+### Story 2.30: Comportamento accessibile
+
+As a sviluppatore,
+I want che la skill mi proponga il comportamento del componente da Base UI o da una ricetta, un pezzo alla volta e con un test per pezzo,
+So that il comportamento accessibile entri nel mio componente senza diff in blocco e senza dipendenze scelte da altri (FR3, NFR1, AD-3, AD-11).
+
+**Acceptance Criteria:**
+
+**Given** un componente generato da `pds-code` GC (Carousel dello spike come caso)
+**When** chiedo il comportamento
+**Then** se Base UI ha il primitivo lo scaffold lo usa e la skill propone solo il collegamento; altrimenti la skill legge dal vivo la ricetta shadcn `base` e il pattern APG, senza salvarli
+**And** la skill propone prima l'elenco dei comportamenti da scegliere, poi un diff piccolo per comportamento con conferma, e un test per ogni comportamento (file dello sviluppatore, eseguito da GA); una dipendenza nuova la sceglie lo sviluppatore, con l'alternativa senza dipendenze
+**And** la riproposta avviene solo su richiesta o quando un cambio di struttura tocca una parte usata da un comportamento
+**And** axe in GA è bloccante su ogni story `@generated`, con una prova rosso/verde; la tastiera è coperta dai test di comportamento
+**And** `a11y-baseline.md` riceve la §6 (stati, axe, giudizio "testo + colore").
+
+### Story 2.31: Rigenerazione dei componenti di prova con la v3
+
+As a designer/sviluppatore,
+I want rifare Badge, ShopCard e Carousel con le due skill, dal disegno al componente,
+So that il modello v3 sia dimostrato su un atomo, una card con istanze e una sezione prima della libreria (FR1, FR2, FR3, NFR1).
+
+**Acceptance Criteria:**
+
+**Given** le Story 2.17–2.30 e il file Penpot "tailwind"
+**When** genero nell'ordine di `build_order` Badge, ShopCard (con istanze di Badge, contratto dell'editor corretto dello spike: link relativi, immagine e testo del badge facoltativi, `category` obbligatoria) e la sezione Carousel
+**Then** ciascuno ha `styles.ts` e story `@generated`, il componente dello sviluppatore, test e axe verdi, e il giudizio visivo di Alessandro in Storybook
+**And** Badge passa dalla strada *dal contratto* e ShopCard dalla strada *dal design*; un cambio di aspetto in Penpot diventa una riga di `styles.ts` e un cambio di struttura un suggerimento sul TSX (T5 e T6 dello spike)
+**And** i cambi del contratto dell'editor passano da un aumento di `SCHEMA_VERSION` (decisione 13 dello spike)
+**And** la CI a quattro livelli è verde e non legge Penpot.
+
+### Story 2.32: Libreria componenti accessibile
+
+*(ex 2.18, riscritta dal correct-course 2026-10-17.)*
 
 As a sviluppatore,
 I want una libreria di componenti organizzata per dominio e conforme alla a11y baseline,
@@ -494,11 +723,14 @@ So that l'editor e le composizioni possano costruirci sopra (FR3, NFR1).
 
 **Acceptance Criteria:**
 
-**Given** i token generati, la v2 (Story 2.12–2.16) e le skill riscritte (Story 2.17)
-**When** genero i componenti per i sei domini (data-display, inputs, feedback, layout, navigation, overlays) in `packages/ui/src/domains`, ciascuno creato con la voce [PC] di `pds-component`: due contratti, `library add`, disegno, `extract`, `render`
-**Then** ogni componente interattivo ha focus visibile WCAG AA, stato comunicato da testo+colore e ARIA corretto, con il comportamento fornito dall'headless **Base UI** dichiarato **per parte nel contratto di estrazione**
-**And** i test axe passano su tutti i componenti e i componenti in `domains/` non importano da `editor/`, verificato da **lint bloccante**
-**And** i componenti senza headless disponibile e con logica propria (Table con sorting, Carousel) e i componenti complessi hanno un contratto completo e un segnaposto in Penpot; l'adapter è scritto a mano, senza marker `@generated`, e la pipeline li ignora.
+**Given** la v3 dimostrata (Story 2.31)
+**When** creo i componenti dei domini (data-display, inputs, feedback, layout, navigation, overlays, commerce) in `packages/ui/src/domains`, ciascuno con `pds-design` e `pds-code` nell'ordine di `build_order`
+**Then** ogni componente ha un contratto dell'editor, `styles.ts` e story `@generated` e un componente dello sviluppatore; il comportamento viene dal primitivo Base UI se esiste, altrimenti dalla ricetta shadcn `base` + APG proposta per comportamento (Story 2.30)
+**And** ogni componente interattivo ha focus visibile WCAG AA (default globale o cella disegnata), stato comunicato da testo + colore (voce del giudizio in Storybook) e ARIA corretto; axe è verde su ogni story generata e la tastiera è coperta dai test di comportamento
+**And** Table e Carousel si disegnano in Penpot come gli altri: niente segnaposto; gli stili sono generati e la logica propria sta nel componente dello sviluppatore
+**And** un componente senza container in Penpot (3D, mappe, configuratori) è scritto a mano: contratto sì, niente di generato, solo GA
+**And** il "Filtro attivo" (Badge + icona-link) è un componente con un'istanza di Badge, non una parte opzionale del Badge
+**And** i componenti in `domains/` non importano da `editor/`, verificato da lint bloccante.
 
 
 ## Epic 3: Blocchi ed elementi dell'editor
@@ -528,7 +760,7 @@ So that possa comporre pagine con elementi del design system (FR4, AD-5).
 
 **Given** i contratti, i componenti `ui/domains` e il ponte token
 **When** implemento per ogni contratto i campi (dagli assi `option`), le `permissions` e il render tramite la libreria dell'installazione, aggregati in `puckConfig`
-**Then** gli assi `state`/`behavior` non diventano campi; Box, Flex, Grid e Columns hanno slot (content; col1/col2/col3) e soli assi a valori token (Box: background/padding/radius/border; Flex: direction/align/justify/gap/wrap)
+**Then** solo gli assi `option` diventano campi (l'asse riservato `state` vive solo in Penpot); Box, Flex, Grid e Columns hanno slot (content; col1/col2/col3) e soli assi a valori token (Box: background/padding/radius/border; Flex: direction/align/justify/gap/wrap)
 **And** ogni blocco valida con lo schema di `@app/contracts`, senza alcuna copia in `puck-components`.
 
 ### Story 3.3: Classifier structure/content esteso a tutti i contratti
@@ -544,19 +776,23 @@ So that permessi editor e sanitizzazione server condividano la stessa fonte (FR1
 **Then** ogni campo di ogni blocco è classificato come `structure` o `content`
 **And** un campo o blocco sconosciuto è trattato come `content` (fail-safe), e `puck-components` deriva i permessi dal classifier senza una seconda copia della classificazione.
 
-### Story 3.4: Definizioni di sezione da Penpot
+### Story 3.4: Sezioni nell'editor
+
+*(Riscritta dal correct-course 2026-10-17: una forma disegnata in una sezione non è più un errore.)*
 
 As a sviluppatore/autore,
-I want estrarre una sezione disegnata in Penpot come definizione di dati con slot dichiarati,
-So that hero e sezioni siano fedeli al disegno e rigide nell'editor (FR4, AD-5, AD-11).
+I want esporre in Puck le sezioni disegnate in Penpot, rigide e aperte solo negli slot dichiarati,
+So that hero e sezioni siano fedeli al disegno e l'autore cambi solo il contenuto (FR4, AD-5, AD-11).
 
 **Acceptance Criteria:**
 
-**Given** una sezione in Penpot composta solo da istanze di componenti della library + layout
-**When** la estraggo e scrivo la ricetta di sezione (slot riferiti per id Penpot, `allow`, `max`)
-**Then** la definizione (albero di Box/Flex/componenti + props + slot) vive in `@app/contracts` ed è esposta in Puck per nome; una forma sciolta fa fallire l'estrazione nominando l'elemento; uno slot che punta a un nodo sparito fa fallire la validazione
-**And** in editor la struttura è bloccata e il contenuto modificabile; gli slot accettano solo i blocchi dell'`allow` fino a `max` (`resolvePermissions`); i testi del mockup diventano default dei campi content
-**And** il primo estratto di sezione comprende una composizione di designer — il blocco "Filtro attivo" (Badge + icona-link affiancati) — come prova che una sezione dà al designer la stessa libertà decisa per i componenti: la X del filtro non è una parte opzionale del Badge ma un link accanto ad esso (`href` verso la ricerca senza il filtro), e nessuna parte del Badge è opzionale.
+**Given** una sezione generata con la v3 (contratto `sections/<nome>.ts` con almeno uno slot, `styles.ts` e componente dello sviluppatore, Story 2.27)
+**When** la registro in `puckConfig`
+**Then** è esposta in Puck per nome; la struttura è bloccata e i campi `content` sono modificabili; gli slot accettano solo i blocchi dell'`allow` fino a `max` (`resolvePermissions`) e il core lo impone comunque (Story 4.3)
+**And** una forma disegnata nella sezione **non è un errore**: è una parte della sezione con la sua chiave, con stili generati come in un componente
+**And** uno slot si riconosce in Penpot (layer i cui figli sono istanze dei componenti ammessi, o `slot=<id>` scritto da `pds-code`); uno slot del contratto che in Penpot non si trova più è un blocco di `verify_component` che nomina slot e sezione
+**And** i valori iniziali in editor sono i figli e i default del contratto; i testi delle istanze in Penpot restano esempi
+**And** una sezione di sola disposizione (nessuna parte propria) è esposta senza `styles.ts`.
 
 ### Story 3.5: Composizioni dell'editor
 

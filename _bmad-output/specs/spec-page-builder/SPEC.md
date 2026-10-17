@@ -21,19 +21,19 @@ Esiste già un prodotto end-to-end che va dal design al codice fino alla pubblic
 ## Capabilities
 
 - **CAP-1 — Pipeline token design→codice**
-  - **intent:** estrarre i design token da Penpot e generare lo strato token (colori/tipografia/spacing/radii/ombre) consumato dalla UI.
-  - **success:** la rigenerazione produce artefatti token (variabili CSS + scala tipizzata) raggruppati per set Penpot; un nuovo set produce una nuova sezione senza modifiche al codice (data-driven); i file generati sono marcati `@generated` e non editabili a mano. Dettaglio → [penpot-pipeline.md](./penpot-pipeline.md).
+  - **intent:** portare in Penpot un tema nato da un seme CSS Tailwind, poi estrarre da Penpot i design token e generare lo strato token (colori/tipografia/spacing/radii/ombre), le varianti di tema e i font consumati dalla UI.
+  - **success:** il seme `theme.css` (Tailwind v4 + ruoli shadcn) diventa set e temi Penpot; da lì la rigenerazione legge tutti i set e i temi e scrive `theme.css`, un file per variante di tema e `fonts.css`, marcati `@generated` e non editabili a mano; un nuovo set produce una nuova sezione senza modifiche al codice (data-driven); i valori del tema Penpot sono quelli che arrivano nel CSS compilato. Dettaglio → [penpot-pipeline.md](./penpot-pipeline.md). *(Rivisto dal correct-course 2026-10-17.)*
 
 - **CAP-2 — Generazione componenti design→codice**
-  - **intent:** generare primitive accessibili dai componenti Penpot, mappando la matrice di varianti Penpot in un modello di varianti.
-  - **success:** l'estrazione di un componente produce fixture e ricetta committate, **validate contro il contratto del componente**; il renderer emette componente + test + story + barrel in modo **riproducibile** (rigenerare dà diff zero); i file scritti a mano sono preservati; i cinque gate (completezza, rigenerazione, a11y, drift fixture, **conformità al contratto**) passano in CI (il drift è bloccante se il server Penpot è raggiungibile da CI, altrimenti manuale/nightly con decisione documentata).
+  - **intent:** generare dai componenti Penpot gli stili e le story di primitive accessibili, mappando la matrice di varianti Penpot sugli assi del contratto dell'editor; il componente React lo scrive lo sviluppatore sopra gli stili generati.
+  - **success:** da un contratto dell'editor e dalla lettura dal vivo di Penpot, senza codice per componente nella pipeline, si generano `<Comp>.styles.ts` e story in modo **riproducibile** (marcati `@generated` con versione del generatore e hash); lo scaffold crea il componente una volta e la rigenerazione non lo tocca più; i casi ambigui diventano domande la cui risposta resta in Penpot; la CI verifica senza Penpot nucleo, server, integrità dei file generati e CSS prodotto dal registro. *(Riscritto dal correct-course 2026-10-17.)*
 
 - **CAP-3 — Libreria di primitive accessibili**
-  - **intent:** offrire una libreria di componenti UI headless/accessibili organizzati per dominio (data-display, inputs, feedback, layout, navigation, overlays).
-  - **success:** ogni componente interattivo rispetta la [a11y-baseline](./a11y-baseline.md) (focus visibile, stato=testo+colore, ARIA corretto), verificato da test di accessibilità automatici. Catalogo → [design-system.md](./design-system.md).
+  - **intent:** offrire una libreria di componenti UI headless/accessibili organizzati per dominio (data-display, inputs, feedback, layout, navigation, overlays, commerce).
+  - **success:** ogni componente interattivo rispetta la [a11y-baseline](./a11y-baseline.md) (focus visibile, stato=testo+colore, ARIA corretto); il comportamento viene dal primitivo Base UI se esiste, altrimenti da una ricetta shadcn con il pattern APG, con un test per comportamento; axe è bloccante su ogni story generata. Catalogo → [design-system.md](./design-system.md).
 
 - **CAP-4 — Blocchi del page-builder**
-  - **intent:** esporre i **contratti dei componenti** come blocchi dell'editor, con campi validati da schema e controlli guidati dai token, aggregati in un'unica config con slot annidabili; più **sezioni** disegnate in Penpot, rigide per default e aperte solo negli slot dichiarati.
+  - **intent:** esporre i **contratti dei componenti** come blocchi dell'editor, con campi validati da schema e controlli guidati dai token, aggregati in un'unica config con slot annidabili; più **sezioni** — contratti con almeno uno slot, disegnate in Penpot come i componenti — rigide per default e aperte solo negli slot dichiarati.
   - **success:** l'editor renderizza i blocchi; una modifica ai token spacing/radii si propaga sia agli stili sia alle opzioni dei campi dei blocchi; una sezione rende modificabili solo i campi content e gli slot dichiarati, e un blocco fuori dall'allow-list o oltre il `max` di uno slot è rifiutato lato server.
 
 - **CAP-5 — Composizioni di prodotto per l'editor**
@@ -82,7 +82,7 @@ Esiste già un prodotto end-to-end che va dal design al codice fino alla pubblic
 
 ## Constraints
 
-- **Penpot è la single source of truth dei valori e dell'aspetto; il contratto dei componenti (assi, valori, parti) è del page builder** — così un cambio di libreria componenti non tocca le pagine salvate. Token e componenti sono *generati*, non scritti a mano; la pipeline token resta data-driven dal catalogo Penpot (nuovo set ⇒ nuova sezione di output senza toccare il codice). Aderenza stretta: usare esattamente i valori del design, mai inventare valori mancanti (solo default neutri).
+- **Penpot è la single source of truth dei valori e dell'aspetto; il contratto dei componenti (assi, valori, field, slot) è del page builder** — così un cambio di libreria componenti non tocca le pagine salvate. Token, tema e stili dei componenti sono *generati*, non scritti a mano; il componente React è dello sviluppatore e la rigenerazione non lo tocca; la pipeline token resta data-driven dal catalogo Penpot (nuovo set ⇒ nuova sezione di output senza toccare il codice). Aderenza stretta: usare esattamente i valori del design, mai inventare valori mancanti (solo default neutri).
 - **Gli artefatti generati portano il marker `@generated` e non si editano a mano**; la rigenerazione deve preservare i file scritti a mano (skip salvo forzatura).
 - **Il payload di layout è la forma Puck `{content, root, zones}` accettata 1:1**, senza riscrittura della struttura; ogni blocco porta un id stabile indipendente dalla posizione (abilita diff/audit a livello di blocco).
 - **Lo storico dei contenuti è modellato tramite versioni di pagina esplicite**; l'audit copre solo metadati immutabili — non duplicare l'intero blob di contenuto nello store di audit.
@@ -109,5 +109,5 @@ Un workspace riscritto in cui i token e i componenti di un designer in Penpot fl
 
 - Penpot resta il tool di design sorgente e la pipeline di generazione è preservata come parte del target (richiesta esplicita "preservare la pipeline Penpot"); solo il backend applicativo cambia.
 - I ruoli di dominio (Admin/Editor/Cliente) e il modello Page/PageVersion sono concetti di prodotto, non artefatti dello stack scartato, e vengono preservati stack-agnosticamente; l'identità utente sarà fornita dallo stack scelto in fase architecture.
-- Una sola libreria componenti per installazione, scelta a build time: oggi la libreria generata da Penpot su primitivi headless Base UI, senza basi di libreria; una seconda libreria (es. MUI) implementerebbe gli stessi contratti del page builder con un proprio contratto di estrazione.
+- Una sola libreria componenti per installazione, scelta a build time: oggi stili generati da Penpot e componenti su primitivi headless Base UI, fissati in `pds-setup` (`framework=react`, `headless=base-ui`, `styling=tailwind-v4`); una seconda libreria (es. MUI) sarebbe un altro valore di configurazione, oggi rifiutato in modo esplicito, sugli stessi contratti del page builder.
 - Le pagine mescolano contenuto statico del design system e blocchi commerce data-driven; la vetrina e-commerce è servita dal page-builder stesso, con i dati commerce risolti server-side a render-time via il provider (CAP-15).
