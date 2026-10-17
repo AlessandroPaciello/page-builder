@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forgia pds v3</title>
+<style>
+:root{--bg:#f6f1e7;--paper:#fffdf8;--ink:#2a2420;--muted:#6f655c;--line:#e2d8c8;--seal:#8f1d1d;--seal-2:#b8322a;--ok:#2f6b3a;--warn:#a2620b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1916;--paper:#24211d;--ink:#ece6dc;--muted:#a59b8f;--line:#3a352f;--seal:#c0392b;--seal-2:#e0564a;--ok:#6fbf7d;--warn:#e0a24a}}
+:root[data-theme="dark"]{--bg:#1b1916;--paper:#24211d;--ink:#ece6dc;--muted:#a59b8f;--line:#3a352f;--seal:#c0392b;--seal-2:#e0564a;--ok:#6fbf7d;--warn:#e0a24a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Georgia,"Times New Roman",serif}
+main{max-width:880px;margin:0 auto;padding:32px 16px 64px}
+.sheet{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:32px 28px;position:relative}
+header{display:flex;gap:24px;align-items:center;flex-wrap:wrap;border-bottom:2px solid var(--line);padding-bottom:20px;margin-bottom:24px}
+header .t{flex:1;min-width:240px}
+h1{font-size:1.9rem;margin:0 0 4px}
+h2{font-size:1.15rem;margin:28px 0 10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-family:system-ui,sans-serif}
+.meta{color:var(--muted);font-size:.92rem;font-family:system-ui,sans-serif}
+ol,ul{padding-left:1.3rem;margin:0}
+li{margin:6px 0}
+b{font-weight:700}
+code{font-family:ui-monospace,monospace;font-size:.88em;background:var(--bg);padding:1px 5px;border-radius:3px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:6px;padding:12px 14px;font-family:system-ui,sans-serif;font-size:.93rem}
+.card .who{font-weight:700}
+.card .role{color:var(--muted);font-size:.85rem}
+.card q{display:block;margin-top:6px;font-style:italic;font-family:Georgia,serif}
+table{width:100%;border-collapse:collapse;font-family:system-ui,sans-serif;font-size:.92rem}
+td,th{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600}
+.k{color:var(--seal);font-weight:700}
+.w{color:var(--warn)}
+footer{margin-top:28px;color:var(--muted);font-size:.85rem;font-family:system-ui,sans-serif}
+.seal{width:150px;height:150px;flex:none}
+</style>
+</head>
+<body>
+<main>
+<div class="sheet">
+<header>
+  <svg class="seal" viewBox="0 0 200 200" role="img" aria-label="Sigillo HARDENED">
+    <defs><path id="c" d="M100,100 m-68,0 a68,68 0 1,1 136,0 a68,68 0 1,1 -136,0"/></defs>
+    <path fill="var(--seal)" d="M100 8l13 10 16-4 8 14 16 3 2 16 13 10-5 15 7 15-11 12 1 16-15 6-5 15-16-1-11 12-15-6-14 8-12-11-16 2-8-14-15-5 1-16-11-12 6-15-5-15 13-10 2-16 16-3 8-14 16 4z"/>
+    <circle cx="100" cy="100" r="74" fill="none" stroke="var(--seal-2)" stroke-width="3"/>
+    <circle cx="100" cy="100" r="52" fill="none" stroke="var(--seal-2)" stroke-width="2"/>
+    <text fill="#f6e7d8" font-family="system-ui,sans-serif" font-size="12" letter-spacing="3"><textPath href="#c">PDS V3 · PENPOT → CODICE · 2026-10-13 ·</textPath></text>
+    <text x="100" y="98" text-anchor="middle" fill="#fff4e6" font-family="Georgia,serif" font-weight="700" font-size="19" letter-spacing="1">HARDENED</text>
+    <text x="100" y="118" text-anchor="middle" fill="#f6e7d8" font-family="system-ui,sans-serif" font-size="10" letter-spacing="2">9 DECISIONI</text>
+  </svg>
+  <div class="t">
+    <h1>Forgia: pds v3</h1>
+    <div class="meta">Alessandro · 11–13 ottobre 2026 · page-builder, branch <code>spike/penpot-ai-kit</code></div>
+    <p>Il modello dello spike penpot-ai-kit è stato messo sotto attacco sul legame tra Penpot e il codice. Ne escono <b>nove regole</b> che sostituiscono le AD scartate e chiudono tutti e cinque i conflitti con la spine del 2026-10-03.</p>
+  </div>
+</header>
+
+<h2>Premesse</h2>
+<ul>
+  <li>Le AD precedenti (spine 2026-10-03, AD-11 v2) si scartano. Di ognuna si è verificato se il rischio che preveniva vale ancora.</li>
+  <li>I componenti già generati sono test da rimuovere e rigenerare, senza vincoli di compatibilità.</li>
+</ul>
+
+<h2>Decisioni bloccate</h2>
+<ol>
+  <li><b>La parte si riconosce da una chiave in Penpot</b> (<code>part=&lt;chiave&gt;</code> nel plugin data), non dal nome del layer. Prova dal vivo: la chiave regge al rename e passa alle istanze.</li>
+  <li><b><code>styles.ts</code> dichiara le parti con i tipi</b>: il lato codice lo controlla <code>tsc</code>, VC guarda solo Penpot.</li>
+  <li><b>Lo sviluppatore che toglie una parte riceve solo un avviso</b>: la decisione 11 resta vera.</li>
+  <li><b>Le chiavi doppie le risolve chi lancia la skill</b> (lista o parte nuova), e la risposta resta in Penpot.</li>
+  <li><b>In CI niente Penpot</b>: solo controlli sul codice, con <code>styles.ts</code> protetto da un hash.</li>
+  <li><b>Configurazione di progetto</b> <code>react / base-ui / tailwind-v4</code>, un valore per chiave, gli altri rifiutati.</li>
+  <li><b>Cambio di struttura</b>: si rigenera solo <code>styles.ts</code>; la skill suggerisce sempre la modifica con un esempio e la applica solo su richiesta.</li>
+  <li><b>Ruoli di parte eliminati</b>: l'elemento HTML lo decide lo scaffold, che chiede quando il caso è ambiguo.</li>
+  <li><b>Ordine dato dalle istanze</b>, non dai livelli L0–L3.</li>
+</ol>
+
+<h2>Conflitti con la spine 2026-10-03</h2>
+<table>
+  <tr><th>Conflitto</th><th>Risoluzione</th></tr>
+  <tr><td>VC che blocca</td><td>chiavi in Penpot e <code>tsc</code>; domande in sessione, nessun blocco senza spiegazione</td></tr>
+  <tr><td>Letture salvate</td><td>nessuna copia: la CI controlla solo il codice</td></tr>
+  <tr><td>Headless e a11y</td><td>regola di progetto nella configurazione</td></tr>
+  <tr><td>Ruoli di parte</td><td>eliminati, si decide allo scaffold</td></tr>
+  <tr><td>Ordine dei livelli</td><td>dipendenze delle istanze</td></tr>
+</table>
+
+<h2>Scartato</h2>
+<ul>
+  <li><span class="k">✕</span> Nome del layer come identità: un rename innocuo rompeva il codice.</li>
+  <li><span class="k">✕</span> VC che legge il TSX: fragile con codice scritto a mano.</li>
+  <li><span class="k">✕</span> Copia della lettura di Penpot nel repo: invecchia ed è una fixture.</li>
+  <li><span class="k">✕</span> Profili headless per componente, o la stessa domanda ripetuta a ogni scaffold: portano a incoerenza tra sessioni.</li>
+  <li><span class="k">✕</span> Framework e stile configurabili subito: non c'è un secondo progetto.</li>
+  <li><span class="k">✕</span> Diff del TSX applicato in automatico: porta al "sì" detto senza leggere.</li>
+</ul>
+
+<h2>Punti deboli sopravvissuti</h2>
+<ul>
+  <li><span class="w">▲</span> Le chiavi non si vedono in Penpot: il designer non sa che Ctrl+D copia anche l'identità della parte.</li>
+  <li><span class="w">▲</span> Un Penpot "sporco" non si nota finché qualcuno non rigenera.</li>
+  <li><span class="w">▲</span> La configurabilità per altri progetti è solo dichiarata: lo stile resta legato a Tailwind.</li>
+  <li><span class="w">▲</span> Aperti per la prossima forgia: script (Python o TS, ingressi e uscite), sezioni, geometria, webfont, test dello spike.</li>
+</ul>
+
+<h2>Chi ha messo alla prova l'idea</h2>
+<div class="grid">
+  <div class="card"><div class="who">😤 Grumbal</div><div class="role">The Adversary</div><q>Zero metadati è falso: li avete solo sparpagliati in tre posti.</q></div>
+  <div class="card"><div class="who">🏗️ Winston</div><div class="role">System Architect</div><q>Ogni asse configurabile moltiplica le combinazioni da provare.</q></div>
+  <div class="card"><div class="who">🧑‍💻 Teo</div><div class="role">sviluppatore che eredita il progetto (generato)</div><q>Il componente è mio: se tolgo una parte, mi bloccate per sempre?</q></div>
+  <div class="card"><div class="who">👩‍🎨 Ines</div><div class="role">designer freelance (generata)</div><q>Copio sempre un pezzo esistente per farne uno nuovo.</q></div>
+</div>
+
+<footer>Memlog: <code>_bmad-output/forge/pds-v3-penpot-ai-kit/.memlog.md</code> · Sintesi: <code>forged-idea.md</code></footer>
+</div>
+</main>
+</body>
+</html>

@@ -1,0 +1,300 @@
+{
+  "contract": "shop-card@1",
+  "provenance": {
+    "penpotComponentId": "31283b54-457f-8039-8008-c4d268e55def",
+    "readAt": "2026-10-10T14:55:11.324Z",
+    "snapshotHash": "18030a389447"
+  },
+  "cells": {
+    "size=default|promo=discount": {
+      "action": {
+        "$component": "badge@1",
+        "$prop.size": "sm",
+        "$prop.variant": "destructive"
+      },
+      "content": {
+        "paddingBottom": "spacing.0",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingTop": "spacing.0"
+      },
+      "cta": {
+        "fill": "color.primary",
+        "fontFamily": "font.sans",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.normal"
+      },
+      "description": {
+        "fill": "color.muted-foreground",
+        "fontFamily": "font.sans",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.normal",
+        "letterSpacing": "tracking.normal"
+      },
+      "footer": {
+        "fill": "color.muted",
+        "paddingBottom": "spacing.4",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingTop": "spacing.4"
+      },
+      "header": {
+        "paddingBottom": "spacing.0",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingTop": "spacing.0",
+        "rowGap": "spacing.1"
+      },
+      "image": {
+        "borderRadiusBottomLeft": "radius.xl",
+        "borderRadiusBottomRight": "radius.xl",
+        "borderRadiusTopLeft": "radius.xl",
+        "borderRadiusTopRight": "radius.xl"
+      },
+      "price": {
+        "fill": "color.foreground",
+        "fontFamily": "font.sans",
+        "fontSize": "text.base",
+        "fontWeight": "font-weight.semibold",
+        "letterSpacing": "tracking.normal"
+      },
+      "root": {
+        "borderRadiusBottomLeft": "radius.xl",
+        "borderRadiusBottomRight": "radius.xl",
+        "borderRadiusTopLeft": "radius.xl",
+        "borderRadiusTopRight": "radius.xl",
+        "fill": "color.card",
+        "paddingBottom": "spacing.4",
+        "paddingLeft": "spacing.0",
+        "paddingRight": "spacing.0",
+        "paddingTop": "spacing.0",
+        "rowGap": "spacing.4",
+        "strokeColor": "color.border",
+        "strokeWidth": "border-width.default"
+      },
+      "title": {
+        "fill": "color.card-foreground",
+        "fontFamily": "font.sans",
+        "fontSize": "text.base",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.normal"
+      }
+    },
+    "size=default|promo=none": {
+      "content": {
+        "paddingBottom": "spacing.0",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingTop": "spacing.0"
+      },
+      "cta": {
+        "fill": "color.primary",
+        "fontFamily": "font.sans",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.normal"
+      },
+      "description": {
+        "fill": "color.muted-foreground",
+        "fontFamily": "font.sans",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.normal",
+        "letterSpacing": "tracking.normal"
+      },
+      "footer": {
+        "fill": "color.muted",
+        "paddingBottom": "spacing.4",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingTop": "spacing.4"
+      },
+      "header": {
+        "paddingBottom": "spacing.0",
+        "paddingLeft": "spacing.4",
+        "paddingRight": "spacing.4",
+        "paddingTop": "spacing.0",
+        "rowGap": "spacing.1"
+      },
+      "image": {
+        "borderRadiusBottomLeft": "radius.xl",
+        "borderRadiusBottomRight": "radius.xl",
+        "borderRadiusTopLeft": "radius.xl",
+        "borderRadiusTopRight": "radius.xl"
+      },
+      "price": {
+        "fill": "color.foreground",
+        "fontFamily": "font.sans",
+        "fontSize": "text.base",
+        "fontWeight": "font-weight.semibold",
+        "letterSpacing": "tracking.normal"
+      },
+      "root": {
+        "borderRadiusBottomLeft": "radius.xl",
+        "borderRadiusBottomRight": "radius.xl",
+        "borderRadiusTopLeft": "radius.xl",
+        "borderRadiusTopRight": "radius.xl",
+        "fill": "color.card",
+        "paddingBottom": "spacing.4",
+        "paddingLeft": "spacing.0",
+        "paddingRight": "spacing.0",
+        "paddingTop": "spacing.0",
+        "rowGap": "spacing.4",
+        "strokeColor": "color.border",
+        "strokeWidth": "border-width.default"
+      },
+      "title": {
+        "fill": "color.card-foreground",
+        "fontFamily": "font.sans",
+        "fontSize": "text.base",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.normal"
+      }
+    },
+    "size=sm|promo=discount": {
+      "action": {
+        "$component": "badge@1",
+        "$prop.size": "sm",
+        "$prop.variant": "destructive"
+      },
+      "content": {
+        "paddingBottom": "spacing.0",
+        "paddingLeft": "spacing.3",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.0"
+      },
+      "cta": {
+        "fill": "color.primary",
+        "fontFamily": "font.sans",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.normal"
+      },
+      "description": {
+        "fill": "color.muted-foreground",
+        "fontFamily": "font.sans",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.normal",
+        "letterSpacing": "tracking.normal"
+      },
+      "footer": {
+        "fill": "color.muted",
+        "paddingBottom": "spacing.3",
+        "paddingLeft": "spacing.3",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.3"
+      },
+      "header": {
+        "paddingBottom": "spacing.0",
+        "paddingLeft": "spacing.3",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.0",
+        "rowGap": "spacing.1"
+      },
+      "image": {
+        "borderRadiusBottomLeft": "radius.xl",
+        "borderRadiusBottomRight": "radius.xl",
+        "borderRadiusTopLeft": "radius.xl",
+        "borderRadiusTopRight": "radius.xl"
+      },
+      "price": {
+        "fill": "color.foreground",
+        "fontFamily": "font.sans",
+        "fontSize": "text.base",
+        "fontWeight": "font-weight.semibold",
+        "letterSpacing": "tracking.normal"
+      },
+      "root": {
+        "borderRadiusBottomLeft": "radius.xl",
+        "borderRadiusBottomRight": "radius.xl",
+        "borderRadiusTopLeft": "radius.xl",
+        "borderRadiusTopRight": "radius.xl",
+        "fill": "color.card",
+        "paddingBottom": "spacing.3",
+        "paddingLeft": "spacing.0",
+        "paddingRight": "spacing.0",
+        "paddingTop": "spacing.0",
+        "rowGap": "spacing.3",
+        "strokeColor": "color.border",
+        "strokeWidth": "border-width.default"
+      },
+      "title": {
+        "fill": "color.card-foreground",
+        "fontFamily": "font.sans",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.normal"
+      }
+    },
+    "size=sm|promo=none": {
+      "content": {
+        "paddingBottom": "spacing.0",
+        "paddingLeft": "spacing.3",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.0"
+      },
+      "cta": {
+        "fill": "color.primary",
+        "fontFamily": "font.sans",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.normal"
+      },
+      "description": {
+        "fill": "color.muted-foreground",
+        "fontFamily": "font.sans",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.normal",
+        "letterSpacing": "tracking.normal"
+      },
+      "footer": {
+        "fill": "color.muted",
+        "paddingBottom": "spacing.3",
+        "paddingLeft": "spacing.3",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.3"
+      },
+      "header": {
+        "paddingBottom": "spacing.0",
+        "paddingLeft": "spacing.3",
+        "paddingRight": "spacing.3",
+        "paddingTop": "spacing.0",
+        "rowGap": "spacing.1"
+      },
+      "image": {
+        "borderRadiusBottomLeft": "radius.xl",
+        "borderRadiusBottomRight": "radius.xl",
+        "borderRadiusTopLeft": "radius.xl",
+        "borderRadiusTopRight": "radius.xl"
+      },
+      "price": {
+        "fill": "color.foreground",
+        "fontFamily": "font.sans",
+        "fontSize": "text.base",
+        "fontWeight": "font-weight.semibold",
+        "letterSpacing": "tracking.normal"
+      },
+      "root": {
+        "borderRadiusBottomLeft": "radius.xl",
+        "borderRadiusBottomRight": "radius.xl",
+        "borderRadiusTopLeft": "radius.xl",
+        "borderRadiusTopRight": "radius.xl",
+        "fill": "color.card",
+        "paddingBottom": "spacing.3",
+        "paddingLeft": "spacing.0",
+        "paddingRight": "spacing.0",
+        "paddingTop": "spacing.0",
+        "rowGap": "spacing.3",
+        "strokeColor": "color.border",
+        "strokeWidth": "border-width.default"
+      },
+      "title": {
+        "fill": "color.card-foreground",
+        "fontFamily": "font.sans",
+        "fontSize": "text.sm",
+        "fontWeight": "font-weight.medium",
+        "letterSpacing": "tracking.normal"
+      }
+    }
+  }
+}

@@ -8,7 +8,11 @@ companions:
   - ../spec-page-builder/penpot-pipeline.md
 sources:
   - ../../forge/refactor-packages-scripts/forged-idea.md
+status: superseded
+superseded_by: 'sprint-change-proposal-2026-10-17.md'
 ---
+> **Superato (correct-course 2026-10-17).** Questo SPEC v2 (due contratti, istantanea, sei comandi) è sostituito dalla pipeline v3: AD-11 v3 nella [spine 2026-07-25](../../planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md) e [sprint-change-proposal-2026-10-17](../../planning-artifacts/sprint-change-proposal-2026-10-17.md). Resta come storia; dove una sua regola preveniva un rischio ancora valido, il rischio è ripreso nella proposta (§2.3).
+
 
 > **Canonical contract.** Questo SPEC e i file in `companions:` sono il contratto completo e validato per cosa costruire, testare e verificare. `penpot-pipeline.md` descrive la pipeline v1: resta valido per Stadio 0 (library) e Stadio 1 (token) e per il principio guida; dove confligge con questo SPEC (tre artefatti, emitter shadcn, parti e ruoli nel contratto del page builder) prevale questo SPEC.
 

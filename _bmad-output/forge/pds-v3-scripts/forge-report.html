@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forgia script pds</title>
+<style>
+:root{--bg:#f6f1e7;--paper:#fffdf8;--ink:#2a2420;--muted:#6f655c;--line:#e2d8c8;--seal:#8f1d1d;--seal-2:#b8322a;--ok:#2f6b3a;--warn:#a2620b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1916;--paper:#24211d;--ink:#ece6dc;--muted:#a59b8f;--line:#3a352f;--seal:#c0392b;--seal-2:#e0564a;--ok:#6fbf7d;--warn:#e0a24a}}
+:root[data-theme="dark"]{--bg:#1b1916;--paper:#24211d;--ink:#ece6dc;--muted:#a59b8f;--line:#3a352f;--seal:#c0392b;--seal-2:#e0564a;--ok:#6fbf7d;--warn:#e0a24a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Georgia,"Times New Roman",serif}
+main{max-width:880px;margin:0 auto;padding:32px 16px 64px}
+.sheet{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:32px 28px;position:relative}
+header{display:flex;gap:24px;align-items:center;flex-wrap:wrap;border-bottom:2px solid var(--line);padding-bottom:20px;margin-bottom:24px}
+header .t{flex:1;min-width:240px}
+h1{font-size:1.9rem;margin:0 0 4px}
+h2{font-size:1.15rem;margin:28px 0 10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-family:system-ui,sans-serif}
+.meta{color:var(--muted);font-size:.92rem;font-family:system-ui,sans-serif}
+ol,ul{padding-left:1.3rem;margin:0}
+li{margin:6px 0}
+b{font-weight:700}
+code{font-family:ui-monospace,monospace;font-size:.88em;background:var(--bg);padding:1px 5px;border-radius:3px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:6px;padding:12px 14px;font-family:system-ui,sans-serif;font-size:.93rem}
+.card .who{font-weight:700}
+.card .role{color:var(--muted);font-size:.85rem}
+.card q{display:block;margin-top:6px;font-style:italic;font-family:Georgia,serif}
+table{width:100%;border-collapse:collapse;font-family:system-ui,sans-serif;font-size:.92rem}
+td,th{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600}
+.k{color:var(--seal);font-weight:700}
+.w{color:var(--warn)}
+footer{margin-top:28px;color:var(--muted);font-size:.85rem;font-family:system-ui,sans-serif}
+.seal{width:150px;height:150px;flex:none}
+</style>
+</head>
+<body>
+<main>
+<div class="sheet">
+<header>
+  <svg class="seal" viewBox="0 0 200 200" role="img" aria-label="Sigillo HARDENED">
+    <defs><path id="c" d="M100,100 m-68,0 a68,68 0 1,1 136,0 a68,68 0 1,1 -136,0"/></defs>
+    <path fill="var(--seal)" d="M100 8l13 10 16-4 8 14 16 3 2 16 13 10-5 15 7 15-11 12 1 16-15 6-5 15-16-1-11 12-15-6-14 8-12-11-16 2-8-14-15-5 1-16-11-12 6-15-5-15 13-10 2-16 16-3 8-14 16 4z"/>
+    <circle cx="100" cy="100" r="74" fill="none" stroke="var(--seal-2)" stroke-width="3"/>
+    <circle cx="100" cy="100" r="52" fill="none" stroke="var(--seal-2)" stroke-width="2"/>
+    <text fill="#f6e7d8" font-family="system-ui,sans-serif" font-size="12" letter-spacing="3"><textPath href="#c">PDS V3 · SCRIPT E CONFINI · 2026-10-17 ·</textPath></text>
+    <text x="100" y="98" text-anchor="middle" fill="#fff4e6" font-family="Georgia,serif" font-weight="700" font-size="19" letter-spacing="1">HARDENED</text>
+    <text x="100" y="118" text-anchor="middle" fill="#f6e7d8" font-family="system-ui,sans-serif" font-size="10" letter-spacing="2">PUNTI 3–4</text>
+  </svg>
+  <div class="t">
+    <h1>Script di pds v3: linguaggio e confini</h1>
+    <div class="meta">Forgia del 2026-10-17 · Alessandro · continua la forgia pds v3 del 2026-10-13 (9 regole ferme) · obiettivo: chiudere i punti 3–4 del README dello spike</div>
+  </div>
+</header>
+
+<h2>Esito</h2>
+<p>Il problema reale non era il linguaggio ma la <b>leggibilità</b>. La risposta è strutturale: <b>nucleo puro in TypeScript</b>, <b>un solo adattatore Penpot</b>, <b>un solo guscio: un server MCP <code>pds</code></b> senza stato. La CI gira senza Penpot su quattro livelli; gli aggiornamenti di Penpot passano da un collaudo con un campione <code>.penpot</code>.</p>
+
+<h2>Decisioni fissate</h2>
+<ol>
+<li><b>TypeScript</b> in <code>packages/scripts</code>: il nucleo legge <code>@app/contracts</code>; niente export JSON dei contratti.</li>
+<li><b>Nucleo puro</b> (dati → dati, niente disco, rete, console o codice di uscita) + <b>adattatore</b> <code>readComponent</code>, unico punto con <code>execute_code</code> + <b>guscio</b> senza decisioni.</li>
+<li><b>Server MCP <code>pds</code></b> come unico guscio: senza stato (rilegge live, regola 5), non scrive su Penpot, entra appena gli schemi del nucleo si stabilizzano. Nessuna CLI di prodotto.</li>
+<li><b>Strumenti:</b> <code>tokens_from_css</code>, <code>describe_component</code>, <code>verify_component</code>, <code>build_order</code>, <code>generate_component</code>, <code>extract_theme</code>.</li>
+<li><b>I file <code>@generated</code> li scrive il server.</b> <code>generate_component</code> non scrive con chiavi doppie o parti senza chiave.</li>
+<li><b>Versioni:</b> tipi interni senza versione; file persistenti con versione del generatore + hash. Hash rotto = blocco, versione vecchia = avviso.</li>
+<li><b>CI su quattro livelli:</b> nucleo · server in memoria · hash/versione · ogni classe del registro produce CSS con la Tailwind installata.</li>
+<li><b>Collaudo degli aggiornamenti di Penpot:</b> campione <code>.penpot</code> nel repo, istanza nuova, collaudo a mano; il Penpot vero si aggiorna solo se passa.</li>
+</ol>
+
+<h2>Scartato</h2>
+<table>
+<tr><th>Opzione</th><th>Perché</th></tr>
+<tr><td class="k">Python</td><td>era un'opzione, non un bisogno; la leggibilità è un problema di struttura</td></tr>
+<tr><td class="k">Server proxy che scrive su Penpot</td><td>contraddice la decisione 2 dello spike</td></tr>
+<tr><td class="k">CLI come guscio della skill</td><td>ingresso verificato solo dopo il lancio, uscita sporca, nome del designer in una riga di shell</td></tr>
+<tr><td class="k">Fixture della lettura di Penpot</td><td>vede solo il parsing TS, non le omissioni silenziose; vietata dalla regola 5</td></tr>
+<tr><td class="k">Versione sui tipi interni</td><td>nessuno li rilegge</td></tr>
+</table>
+
+<h2>Punti deboli sopravvissuti</h2>
+<ul>
+<li class="w">Il server va riavviato a ogni modifica del nucleo: in sviluppo resta il dubbio "codice vecchio o nuovo?".</li>
+<li class="w">Se il server non parte, la skill resta senza strumenti: nessun piano B da CLI.</li>
+<li class="w">Il collaudo vede solo le proprietà già nel registro; una migrazione all'import del <code>.penpot</code> può sembrare un guasto dell'adattatore.</li>
+<li class="w">Restano aperti i punti 7, 8, 10–13 del README.</li>
+</ul>
+
+<h2>Chi ha messo alla prova l'idea</h2>
+<div class="grid">
+<div class="card"><div class="who">🏗️ Winston</div><div class="role">System Architect</div><q>Penpot MCP per toccare il file, il nostro server per capirlo.</q></div>
+<div class="card"><div class="who">🧰 Tomás</div><div class="role">manutentore di monorepo (generato)</div><q>Due runtime vogliono dire due lockfile e due modi di fallire.</q></div>
+<div class="card"><div class="who">🧪 Ilaria</div><div class="role">manutentrice di un server MCP (generata)</div><q>A ogni correzione del generatore: codice nuovo o vecchio?</q></div>
+<div class="card"><div class="who">🪵 Splinter</div><div class="role">Consensus Challenger</div><q>Non scrivere da una struttura ambigua.</q></div>
+<div class="card"><div class="who">🚢 Dana</div><div class="role">The Pragmatist</div><q>Il rito dell'aggiornamento esiste già: rendetelo verificabile.</q></div>
+<div class="card"><div class="who">🎯 Yui</div><div class="role">The Craftsman</div><q>Apri verify e trovi solo regole.</q></div>
+<div class="card"><div class="who">😤 Grumbal</div><div class="role">The Adversary</div><q>Senza versione nell'intestazione, ogni rilascio manda la CI in rosso.</q></div>
+<div class="card"><div class="who">🔒 Vex</div><div class="role">Security Engineer</div><q>Il nome del componente lo scrive il designer e finisce in una shell.</q></div>
+<div class="card"><div class="who">🌶️ Boundary</div><div class="role">Edge-Case Hunter</div><q>Il campione può derivare: controllate anche ciò che non usa.</q></div>
+<div class="card"><div class="who">📏 Level</div><div class="role">Claim Checker</div><q>Quale errore della CLI avete visto davvero?</q></div>
+<div class="card"><div class="who">🃏 Wildcard</div><div class="role">Option Generator</div><q>Uno script da cinque righe, attrezzo e non prodotto.</q></div>
+<div class="card"><div class="who">🛑 Killjoy</div><div class="role">Loop Stopper</div><q>Il resto è dei punti 7–13, non di qui.</q></div>
+</div>
+
+<footer>Memlog: <code>_bmad-output/forge/pds-v3-scripts/.memlog.md</code> · Sintesi: <code>forged-idea.md</code></footer>
+</div>
+</main>
+</body>
+</html>
