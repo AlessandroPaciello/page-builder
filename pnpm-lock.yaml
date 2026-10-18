@@ -474,10 +474,19 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: 'catalog:'
         version: 1.30.0(zod@4.4.3)
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
     devDependencies:
       '@app/config':
         specifier: workspace:*
         version: link:../config
+      '@tailwindcss/node':
+        specifier: 'catalog:'
+        version: 4.3.3
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.3.3
       tsx:
         specifier: 'catalog:'
         version: 4.23.13

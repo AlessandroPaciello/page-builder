@@ -321,3 +321,13 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-19-fixture-sul-catalogo-tailwind-e-codice-nuovo-dentro-i-confini.md`
   summary: Bug 14 dello spike (45 test di `scripts` rossi per fixture sul catalogo vecchio e `v3/` fuori dai confini) e punto 13 del README dello spike: **chiusi con la Story 2.19** — catalogo Tailwind dei test in `packages/scripts/tests/fixtures/tailwind-catalog.json`, regole `core`/`penpot`/`server`/`v3` nel gate di `scripts`.
   evidence: registrazione della chiusura; nessuna azione residua.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-20-nucleo-puro-e-registro-delle-proprieta.md`
+  summary: `Change.path` accetta path assoluti e segmenti `..`; il server MCP `pds` (Story 2.24) deve limitare i path alla cartella del componente prima di scrivere o eliminare.
+  evidence: lo schema del nucleo controlla solo `min(1)`; review 2.20 (Edge, Blind), danno reale solo quando la 2.24 scrive su disco.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-20-nucleo-puro-e-registro-delle-proprieta.md`
+  summary: verificare nell'adattatore (2.23) e nel collaudo (2.25) che i valori di default (padding 0, opacità 1, spessore 0) non arrivino come stile grezzo e che il default Penpot di `alignItems` sia davvero `stretch`; valutare `min-w-0`/`min-h-0` con `flex-1`.
+  evidence: non verificato (maybe-false, medium). Se l'adattatore emette i default, ogni layer dà avvisi "senza token"; se il default Penpot è `start`, un figlio hug viene stirato dal CSS.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-20-nucleo-puro-e-registro-delle-proprieta.md`
+  summary: il registro non ha `lineHeight`, `textAlign`, `textTransform`, `textDecoration`, `fontStyle` né scorciatoie (`p-*`, `px-*`, `py-*`); vanno aggiunti quando un componente reale li usa o il collaudo 2.25 li legge.
+  evidence: preesistente (il registro v1/v2 non li aveva); oggi danno un avviso e nessuna classe, review 2.20 (Blind).
