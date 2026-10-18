@@ -331,3 +331,12 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-20-nucleo-puro-e-registro-delle-proprieta.md`
   summary: il registro non ha `lineHeight`, `textAlign`, `textTransform`, `textDecoration`, `fontStyle` né scorciatoie (`p-*`, `px-*`, `py-*`); vanno aggiunti quando un componente reale li usa o il collaudo 2.25 li legge.
   evidence: preesistente (il registro v1/v2 non li aveva); oggi danno un avviso e nessuna classe, review 2.20 (Blind).
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-21-geometria-e-larghezza-nel-registro.md`
+  summary: il nucleo non ha una funzione pura che costruisce la `Scale` (token `spacing` → `{suffix, px}`) dal catalogo; va scritta, con il suo test, quando il server (2.24) o il generatore (2.22) chiamano `layerClasses`/`rootSizeClasses`, e il livello 4 deve usarla al posto della regex `scaleOf`.
+  evidence: review 2.21 (Blind). Oggi l'unico costruttore è una regex nel test di livello 4 che accetta solo px e suffissi `[\w-]+`: un consumer che ne scrive un'altra rischia una scala diversa da quella collaudata.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-21-geometria-e-larghezza-nel-registro.md`
+  summary: verificare nell'adattatore (2.23) e nel collaudo (2.25) se Penpot emette misure e posizioni sub-pixel (es. 15.9999999); se sì, arrotondarle nell'adattatore o usare una tolleranza nei confronti del nucleo (scala, bordo toccato, centramento).
+  evidence: non verificato (maybe-false, medium). Se succede: classi arbitrarie e avvisi fuori scala spuri, "non esattamente" sul centramento, ritaglio per raggio mancato.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-21-geometria-e-larghezza-nel-registro.md`
+  summary: gli offset degli assoluti (`left-*`, `right-*`, …) si calcolano dal riquadro esterno del genitore, ma in CSS partono dentro il bordo; con un genitore con `strokeWidth` interno risultano sfalsati dello spessore. Serve il valore del token di spessore nel nucleo, oppure un avviso.
+  evidence: review 2.21 (Edge). Il risultato non è silenzioso (di solito diventa un valore fuori scala con avviso), ma la posizione è sbagliata di 1–2px.

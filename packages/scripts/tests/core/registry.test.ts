@@ -8,13 +8,15 @@ import {
   type LetturaLayer,
   type ParentDir,
   type RegisteredProperty,
+  type Scale,
   type TokenType,
 } from "../../src/core";
 
 /**
  * Livello 1 della CI (Story 2.20): il registro con dati minimi scritti a
  * mano. Ogni voce ha un caso verde (le sue classi) e un caso rosso (avviso,
- * nessuna classe).
+ * nessuna classe). Le voci di geometria (Story 2.21) hanno qui i verdi e i
+ * rossi di validazione; le regole di contesto stanno in `geometry.test.ts`.
  */
 
 const TOKEN_TYPES: Readonly<Record<string, TokenType>> = {
@@ -33,20 +35,30 @@ const TOKEN_TYPES: Readonly<Record<string, TokenType>> = {
 
 const tokenTypeOf = (name: string): TokenType | undefined => TOKEN_TYPES[name];
 
+const SCALE: Scale = [
+  { suffix: "4", px: 16 },
+  { suffix: "10", px: 40 },
+];
+
 function layer(partial: Partial<LetturaLayer> = {}): LetturaLayer {
   return { name: "box", kind: "rect", tokens: {}, style: {}, children: [], ...partial };
 }
 
-function run(partial: Partial<LetturaLayer>, parentDir: ParentDir = "none") {
-  return layerClasses(layer(partial), { parentDir, tokenTypeOf });
+/** Il genitore: un layer con la direzione di flex `parentDir`, più `extra` (misure, dimensionamento). */
+function run(partial: Partial<LetturaLayer>, parentDir: ParentDir = "none", extra: Partial<LetturaLayer> = {}) {
+  const parent = layer({ name: "genitore", kind: "board", ...extra, style: { layoutDir: parentDir, ...extra.style } });
+  return layerClasses(layer(partial), { parent, tokenTypeOf, scale: SCALE });
 }
 
 interface Case {
   readonly name: string;
   readonly layer: Partial<LetturaLayer>;
   readonly parentDir?: ParentDir;
+  readonly parent?: Partial<LetturaLayer>;
   readonly classes: readonly string[];
 }
+
+const ABS = { position: "absolute", sizingH: "auto", sizingV: "auto" } as const;
 
 /** Verde: una o più righe per voce. */
 const GREEN: Readonly<Record<RegisteredProperty, readonly Case[]>> = {
@@ -105,13 +117,50 @@ const GREEN: Readonly<Record<RegisteredProperty, readonly Case[]>> = {
     { name: "fill in colonna (bug 3)", layer: { style: { sizingV: "fill" } }, parentDir: "column", classes: ["flex-1"] },
     { name: "fill in riga", layer: { style: { sizingV: "fill" } }, parentDir: "row", classes: ["self-stretch"] },
     { name: "fill fuori da un flex", layer: { style: { sizingV: "fill" } }, parentDir: "none", classes: ["h-full"] },
+    { name: "fill dentro hug, risposta fill", layer: { pluginData: { fillInHugV: "fill" }, style: { sizingV: "fill" } }, parentDir: "column", parent: { style: { sizingV: "auto" } }, classes: ["flex-1"] },
+  ],
+  x: [
+    { name: "nel flusso: ignorata", layer: { style: { x: 16, sizingH: "auto", sizingV: "auto" } }, classes: [] },
+    { name: "assoluto", layer: { style: { ...ABS, x: 16, y: 0 } }, classes: ["absolute", "left-4", "top-0"] },
+  ],
+  y: [{ name: "assoluto", layer: { style: { ...ABS, x: 0, y: 40 } }, classes: ["absolute", "left-0", "top-10"] }],
+  width: [
+    { name: "fix in scala", layer: { style: { width: 16, sizingV: "auto" } }, classes: ["w-4"] },
+    { name: "hug: nessuna misura", layer: { style: { width: 16, sizingH: "auto", sizingV: "auto" } }, classes: [] },
+  ],
+  height: [{ name: "fix in scala", layer: { style: { height: 40, sizingH: "auto" } }, classes: ["h-10"] }],
+  position: [
+    { name: "default", layer: { style: { position: "flow" } }, classes: [] },
+    { name: "assoluto", layer: { style: { ...ABS, x: 16, y: 16 } }, classes: ["absolute", "left-4", "top-4"] },
+  ],
+  constraintH: [
+    { name: "right", layer: { style: { ...ABS, constraintH: "right", x: 168, width: 16, y: 0 } }, parent: { style: { width: 200 } }, classes: ["absolute", "right-4", "top-0"] },
+    { name: "leftright", layer: { style: { ...ABS, sizingH: "fix", constraintH: "leftright", x: 16, width: 168, y: 0 } }, parent: { style: { width: 200 } }, classes: ["absolute", "left-4", "right-4", "top-0"] },
+  ],
+  constraintV: [
+    { name: "bottom", layer: { style: { ...ABS, constraintV: "bottom", x: 0, y: 44, height: 16 } }, parent: { style: { height: 100 } }, classes: ["absolute", "bottom-10", "left-0"] },
+    { name: "center esatto", layer: { style: { ...ABS, constraintV: "center", x: 0, y: 42, height: 16 } }, parent: { style: { height: 100 } }, classes: ["-translate-y-1/2", "absolute", "left-0", "top-1/2"] },
+  ],
+  clip: [
+    { name: "niente esce: nessuna classe", layer: { style: { clip: true } }, classes: [] },
+    {
+      name: "un figlio esce",
+      layer: { style: { clip: true, width: 16, height: 16 }, children: [layer({ style: { x: -4, y: 0, width: 4, height: 4 } })] },
+      classes: ["h-4", "overflow-hidden", "w-4"],
+    },
   ],
 };
 
-/** Rosso: un token del tipo sbagliato (voci token) o un valore fuori lista (voci a parola chiave). */
+/**
+ * Rosso: un token del tipo sbagliato (voci token), un valore fuori lista
+ * (voci a parola chiave e liste di geometria), un valore del tipo sbagliato
+ * (numeri e interruttori di geometria).
+ */
 function redCase(property: RegisteredProperty): Partial<LetturaLayer> {
   const entry = REGISTRY[property];
   if (entry.kind === "token") return { tokens: { [property]: entry.tokenType === "color" ? "spacing.4" : "blue.500" } };
+  if (entry.kind === "geometry" && entry.valueType === "number") return { style: { [property]: "abc" } };
+  if (entry.kind === "geometry" && entry.valueType === "boolean") return { style: { [property]: "sì" } };
   return { style: { [property]: "fuori-lista" } };
 }
 
@@ -124,7 +173,7 @@ describe("registro — una voce, un rosso/verde", () => {
     describe(property, () => {
       for (const green of GREEN[property]) {
         it(`verde: ${green.name}`, () => {
-          const result = run(green.layer, green.parentDir);
+          const result = run(green.layer, green.parentDir, green.parent);
           expect(result.findings).toEqual([]);
           expect(result.classes).toEqual([...green.classes].sort());
         });
@@ -189,7 +238,7 @@ describe("registro — matrice della spec", () => {
   });
 
   it("un token che collassa in un suffisso vuoto è un avviso, non un'eccezione", () => {
-    const result = layerClasses(layer({ tokens: { fill: "color" } }), { parentDir: "none", tokenTypeOf: () => "color" });
+    const result = layerClasses(layer({ tokens: { fill: "color" } }), { tokenTypeOf: () => "color", scale: SCALE });
     expect(result.classes).toEqual([]);
     expect(result.findings).toEqual([{ level: "avviso", where: 'layer "box"', message: expect.stringContaining("suffisso vuoto") }]);
   });
@@ -207,6 +256,31 @@ describe("registro — matrice della spec", () => {
     });
     expect(result.classes).toEqual(["bg-blue-500", "flex", "flex-col", "pt-4"]);
     expect(result.findings.map((finding) => finding.message.match(/"(\w+)"/)![1])).toEqual(["alpha", "zeta"]);
+  });
+
+  it("geometria: legata a un token, numero negativo per una misura, numero non finito → avvisi", () => {
+    const bound = run({ tokens: { width: "spacing.4" } });
+    expect(bound.findings[0]!.message).toContain("solo dal valore in style");
+    expect(bound.findings[0]!.message).toContain("il token è ignorato");
+    // Token e valore insieme: il token si ignora, la classe viene dal valore in style.
+    const both = run({ tokens: { width: "spacing.4" }, style: { width: 16, sizingV: "auto" } });
+    expect(both.classes).toEqual(["w-4"]);
+    expect(both.findings).toEqual([{ level: "avviso", where: 'layer "box"', message: expect.stringContaining("il token è ignorato") }]);
+    // Dimensionamento malformato: un solo avviso, nessuna misura.
+    const sizing = run({ style: { sizingH: "fuori-lista", width: 16, sizingV: "auto" } });
+    expect(sizing.classes).toEqual([]);
+    expect(sizing.findings).toEqual([{ level: "avviso", where: 'layer "box"', message: expect.stringContaining('"sizingH"') }]);
+    expect(run({ style: { width: -1 } }).findings[0]!.message).toContain('"width" con valore -1 malformato');
+    expect(run({ style: { x: Number.NaN, y: 0, position: "absolute", sizingH: "auto", sizingV: "auto" } }).findings.map((finding) => finding.message)).toEqual([
+      expect.stringContaining('"x" con valore NaN malformato'),
+      expect.stringContaining('senza "x" valido'),
+    ]);
+  });
+
+  it("la direzione del flex si ricava dal genitore; senza genitore è la radice", () => {
+    expect(run({ style: { sizingH: "fill" } }, "row").classes).toEqual(["flex-1"]);
+    expect(run({ style: { sizingH: "fill" } }, "diagonal" as ParentDir).classes).toEqual(["w-full"]);
+    expect(layerClasses(layer({ style: { sizingH: "fill", width: 16 } }), { tokenTypeOf, scale: SCALE }).classes).toEqual(["w-full"]);
   });
 
   it("una chiave ereditata (`toString`) è non registrata", () => {

@@ -1,7 +1,8 @@
 /**
- * Nucleo puro della pipeline v3 (Story 2.20): funzioni dati → dati, senza
+ * Nucleo puro della pipeline v3 (Story 2.20, geometria 2.21): funzioni dati → dati, senza
  * disco, rete, console né codice di uscita (confini della Story 2.19).
  */
+export * from "./geometry";
 export * from "./registry";
 export * from "./schemas";
 export * from "./token-names";

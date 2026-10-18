@@ -3,12 +3,17 @@ import { describe, expect, it } from "vitest";
 
 import {
   collapseRadius,
+  GEOMETRY_FIXED_CLASSES,
+  GEOMETRY_PREFIXES,
   ICON_LAYER_KINDS,
   PARENT_DIRS,
   RADIUS_CORNERS,
   registeredProperties,
   REGISTRY,
+  scaleClass,
   varSuffix,
+  type Scale,
+  type Translation,
   type TranslationContext,
 } from "../../src/core";
 import { generateTheme, type TokenCatalog } from "../../src/shared/theme-generator";
@@ -22,6 +27,11 @@ import { loadTailwindCatalog } from "../fixtures/catalog";
  *
  * Il catalogo Tailwind non ha token `opacity` (Tailwind v4 non ha quel
  * namespace): il test aggiunge un set minimo scritto a mano.
+ *
+ * Geometria (Story 2.21): le voci `kind: "geometry"` non si traducono da
+ * sole; le loro classi sono quelle di `scaleClass` su ogni passo della scala
+ * (le `--spacing-*` del tema generato) per ogni prefisso di misura e di
+ * lato, i negativi dei lati, gli arbitrari, lo zero e le classi fisse.
  */
 
 const OPACITY_SET = { name: "test/opacity", tokens: [{ name: "opacity.50", type: "opacity" as const, value: "0.5" }] };
@@ -46,6 +56,8 @@ function expandRegistry(theme: TokenCatalog): { classes: Expanded[]; emptyEntrie
   const emptyEntries: string[] = [];
   for (const property of registeredProperties()) {
     const entry = REGISTRY[property];
+    // Le voci di geometria si espandono a parte (`expandGeometry`): qui si validano soltanto.
+    if (entry.kind === "geometry") continue;
     const before = classes.length;
     const inputs =
       entry.kind === "token"
@@ -54,7 +66,7 @@ function expandRegistry(theme: TokenCatalog): { classes: Expanded[]; emptyEntrie
     for (const input of inputs) {
       for (const context of CONTEXTS) {
         // Ogni voce si traduce con la sua funzione: le firme coincidono (input stringa, contesto).
-        const translation = (entry.translate as (value: string, context: TranslationContext) => ReturnType<typeof entry.translate>)(input, context);
+        const translation = (entry.translate as (value: string, context: TranslationContext) => Translation)(input, context);
         if ("classes" in translation) for (const cls of translation.classes) classes.push({ property, cls });
       }
     }
@@ -74,6 +86,33 @@ function isUnsupported(property: string, value: string): boolean {
   return entry.kind === "keyword" && "unsupported" in entry.translate(value, { layerKind: "rect", parentDir: "none" });
 }
 
+/** La scala del tema: ogni `--spacing-<sfx>: <n>px` del CSS generato. */
+function scaleOf(css: string): Scale {
+  return [...css.matchAll(/^\s*--spacing-([\w-]+):\s*(-?[\d.]+)px;/gm)].map(([, suffix, px]) => ({ suffix: suffix!, px: Number(px) }));
+}
+
+const SIDES = GEOMETRY_PREFIXES.filter((prefix) => prefix !== "w" && prefix !== "h");
+
+/** Le classi di geometria: ogni passo per ogni prefisso, i negativi dei lati, arbitrari, zero, classi fisse. */
+function expandGeometry(scale: Scale): Expanded[] {
+  const out: Expanded[] = [];
+  const push = (prefix: string, px: number): void => {
+    out.push({ property: `geometria ${prefix} ${px}px`, cls: scaleClass(prefix, px, scale).cls });
+  };
+  for (const prefix of GEOMETRY_PREFIXES) {
+    for (const step of scale) push(prefix, step.px);
+    push(prefix, 0);
+    push(prefix, 37);
+    push(prefix, 0.5);
+  }
+  for (const side of SIDES) {
+    for (const step of scale) if (step.px !== 0) push(side, -step.px);
+    push(side, -3);
+  }
+  for (const cls of GEOMETRY_FIXED_CLASSES) out.push({ property: "geometria (classi fisse)", cls });
+  return out;
+}
+
 /** Il CSS del tema generato, senza l'`@import` relativo dei token extra (non serve alle utility). */
 function themeCss(theme: TokenCatalog): string {
   return generateTheme(theme)
@@ -85,8 +124,11 @@ function themeCss(theme: TokenCatalog): string {
 describe("livello 4 — ogni classe del registro produce CSS con la Tailwind installata", () => {
   it("ogni voce dà almeno una classe sul tema; ogni classe produce CSS", async () => {
     const theme = catalog();
-    const { classes, emptyEntries } = expandRegistry(theme);
+    const { classes: registryClasses, emptyEntries } = expandRegistry(theme);
     expect(emptyEntries, "voci senza nessuna classe sul tema generato (manca un token del loro tipo?)").toEqual([]);
+    const scale = scaleOf(themeCss(theme));
+    expect(scale.length, "la scala spacing del tema generato").toBeGreaterThan(20);
+    const classes = [...registryClasses, ...expandGeometry(scale)];
 
     const compiler = await compile(`@import "tailwindcss";\n${themeCss(theme)}`, { base: import.meta.dirname, onDependency: () => {} });
     // `build` accumula i candidati delle chiamate precedenti: una classe produce CSS se cambia l'output della build prima.
