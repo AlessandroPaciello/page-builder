@@ -195,7 +195,7 @@ Lo spike non è partito dalle decisioni già prese: va confrontato con la [spine
 10. **Sezioni nella pipeline** (prova F): assi dai field `enum` della sezione, slot riconosciuti da Penpot (istanze dei componenti ammessi), ripetizioni e icone riconosciute da Penpot e decise allo scaffold, story con i figli di default; chiarire la differenza tra componente con slot e sezione (AD-11 "Composizione ≠ componente").
 11. **Comportamento proposto dalla skill** dopo lo scaffold (prova F, B): come la skill lo scrive e lo mostra, e quando ripropone (cambi di struttura).
 12. **Geometria in Penpot**: dimensioni fisse fuori scala, vincoli degli assoluti, ritaglio di default, "fill" sul genitore auto.
-13. **Test dello spike**: riallineare le fixture al catalogo Tailwind e portare `v3/` dentro i confini prima di riapplicare il codice.
+13. **Test dello spike**: riallineare le fixture al catalogo Tailwind e portare `v3/` dentro i confini prima di riapplicare il codice. **Chiuso con la Story 2.19**: catalogo Tailwind dei test in `packages/scripts/tests/fixtures/tailwind-catalog.json`; il gate di `scripts` conosce `src/core`, `src/penpot`, `src/server` e vieta le cartelle `v3`.
 
 ## Stato
 

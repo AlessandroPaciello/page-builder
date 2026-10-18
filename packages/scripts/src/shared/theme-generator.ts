@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 /**
  * Contratto di serializzazione del catalogo token Penpot letto da
- * `penpot.library.local.tokens` (vedi penpot-reader.ts). Solo i set
+ * `penpot.library.local.tokens` (vedi src/penpot/penpot-reader.ts). Solo i set
  * `active` vengono inclusi — filtrati a monte dal reader.
  */
 export type TokenType =

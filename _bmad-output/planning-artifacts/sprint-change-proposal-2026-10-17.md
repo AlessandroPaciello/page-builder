@@ -173,7 +173,7 @@ Ogni bug ha un proprietario. Quelli che spariscono con la v2 si chiudono nella s
 | 11 | Ritaglio, dimensioni fisse, posizione degli assoluti, "fill" verticale non letti | frecce e pallini senza misura | corretto in adattatore e geometria | 2.21, 2.23 |
 | 12 | D2 contava come override il dimensionamento di un'istanza | blocco su card in "fill" in uno slot | corretto nell'adattatore | 2.23 |
 | 13 | La pipeline conosce solo contratti di componente | una sezione non si legge né si genera | corretto | 2.27 |
-| 14 | 45 test di `scripts` rossi applicando lo spike (fixture col catalogo vecchio, `v3/` fuori dai confini) | | corretto (punto 13) | 2.19 |
+| 14 | 45 test di `scripts` rossi applicando lo spike (fixture col catalogo vecchio, `v3/` fuori dai confini) | | corretto (punto 13) — **chiuso con la Story 2.19** | 2.19 |
 
 ### 4.2 Nuova AD-11 (sostituisce AD-11 v2 nella spine 2026-07-25)
 
