@@ -2,7 +2,7 @@
   "name": "@penpot-ds/scripts",
   "version": "0.0.0",
   "private": true,
-  "description": "Rigenerazione del tema dal catalogo token Penpot (fixture o live) e registro delle proprietà di stile; la pipeline v3 arriva con le Story 2.19+.",
+  "description": "Rigenerazione del tema dal catalogo token Penpot (fixture o live) e nucleo puro della pipeline v3 (schemi e registro delle proprietà, Story 2.20).",
   "type": "module",
   "scripts": {
     "check-types": "tsc --noEmit",
@@ -11,10 +11,13 @@
     "theme": "node --import tsx src/theme/main.ts"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "catalog:"
+    "@modelcontextprotocol/sdk": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@app/config": "workspace:*",
+    "@tailwindcss/node": "catalog:",
+    "tailwindcss": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",

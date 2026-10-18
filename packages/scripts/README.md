@@ -1,8 +1,8 @@
 # @penpot-ds/scripts
 
-Legge il catalogo token da Penpot (o dalla fixture committata) e genera i file di [`@penpot-ds/tokens`](../tokens/README.md). Ospita anche il registro delle proprietà di stile (`src/shared/style-properties.ts`).
+Legge il catalogo token da Penpot (o dalla fixture committata) e genera i file di [`@penpot-ds/tokens`](../tokens/README.md). Ospita anche il nucleo puro della pipeline v3 (`src/core`, Story 2.20): gli schemi `Lettura`, `Finding`, `Change` e il registro delle proprietà.
 
-La pipeline v1 (Story 2.1–2.11) e la v2 (Story 2.12–2.16) sono state rimosse (Story 2.16 e 2.18): niente più comandi `library`/`propose`/`extract`/`render`/`gates`, contratti di estrazione né istantanee. La pipeline v3 (nucleo puro e server MCP `pds`) arriva con le Story 2.19+.
+La pipeline v1 (Story 2.1–2.11) e la v2 (Story 2.12–2.16) sono state rimosse (Story 2.16 e 2.18): niente più comandi `library`/`propose`/`extract`/`render`/`gates`, contratti di estrazione né istantanee. La pipeline v3 cresce dalla Story 2.19: il nucleo c'è (2.20), adattatore Penpot e server MCP `pds` arrivano con le 2.23–2.24.
 
 ## Script
 
@@ -42,10 +42,20 @@ Se manca il token, se è stato rigenerato o se il plugin non è connesso, `theme
 - `data/penpot-catalog.json` — il catalogo token committato.
 - `src/theme/` — `main.ts` (entrypoint: argomenti e codice d'uscita), `theme-command.ts` (lettura e scrittura atomica del tema).
 - `src/penpot/` — l'unica cartella che parla con Penpot: `mcp-client.ts` (utilità MCP) e `penpot-reader.ts` (client MCP minimale che legge solo `penpot.library.local.tokens`; `src/theme` lo importa da qui fino alla 2.26).
-- `src/shared/` — `paths.ts` (l'**unico** modulo di `src/` che calcola i path: `tests/paths.test.ts` fallisce nominando la chiave che punta a un file inesistente), `theme-generator.ts` (mapping puro `TokenCatalog → { css, ts }`), `style-properties.ts` (registro delle proprietà), `naming.ts`.
+- `src/shared/` — `paths.ts` (l'**unico** modulo di `src/` che calcola i path: `tests/paths.test.ts` fallisce nominando la chiave che punta a un file inesistente), `theme-generator.ts` (mapping puro `TokenCatalog → { css, ts }`; i nomi dei token li prende da `src/core/token-names.ts`), `naming.ts`.
+- `src/core/` — il nucleo puro (Story 2.20): `schemas.ts` (zod `Lettura`, `Finding`, `Change`, con un nome e senza versione), `registry.ts` (registro delle proprietà), `token-names.ts` (tipo, namespace e suffisso dei token), `index.ts`.
+- `tests/core/` — i test del nucleo: livello 1 (`schemas.test.ts`, `registry.test.ts`, dati scritti a mano) e livello 4 (`registry-tailwind.test.ts`). Stanno fuori da `src/core` perché importano `vitest`, che il confine `core` vieta.
 - `tests/fixtures/` — il catalogo Tailwind dei test e il suo loader.
 - `scripts/check-boundaries.mjs` + `tests/check-boundaries.test.ts` — gate di confine con prova rosso/verde per ogni regola.
 - `tests/pipeline-boundary.test.ts` — le directory v1/v2 non esistono e `process.exit*` compare solo in `src/theme/main.ts`.
+
+## Registro delle proprietà (`src/core/registry.ts`)
+
+Una voce per proprietà Penpot, con la sua traduzione in classi Tailwind: un token del tipo dichiarato (`fill` → `bg-*`/`text-*`/`fill-*` sulle icone, `strokeWidth` → `border-(length:--border-width-*)`, `fontFamily` → `font-*`, …) oppure una parola chiave di una lista chiusa (layout flex, `strokeStyle`, dimensionamento `sizingH`/`sizingV`). Il valore di default di una parola chiave non dà classi; "fill" dipende dalla direzione del genitore (in colonna `self-stretch` in orizzontale e `flex-1` in verticale, in riga il contrario, fuori da un flex `w-full`/`h-full`). Quattro angoli con lo stesso token diventano `rounded-<sfx>`.
+
+`layerClasses(layer, { parentDir, tokenTypeOf })` restituisce le classi di un layer e gli avvisi. Una proprietà che il registro non sa tradurre (non registrata, fuori lista, token del tipo sbagliato o assente dal tema, `strokeAlignment` center/outer) non ferma mai la generazione: è un `Finding` di tipo avviso, senza classe, che dice cosa aggiungere.
+
+Insegnare una proprietà = una voce in `REGISTRY` + i suoi casi verdi in `tests/core/registry.test.ts` (il test fallisce se una voce non ha il suo verde; il rosso di ogni voce lo genera il test: token del tipo sbagliato o valore fuori lista). Il livello 4 (`tests/core/registry-tailwind.test.ts`) espande ogni voce su tutti i token del suo tipo nel tema generato dal catalogo Tailwind, compila con `@tailwindcss/node` e fallisce nominando la classe che non produce CSS o che usa una variabile assente dal tema. Geometria (misure fisse, posizione, vincoli, ritaglio): Story 2.21.
 
 ## Confini (`pnpm --filter @penpot-ds/scripts lint`)
 
