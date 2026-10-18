@@ -62,14 +62,16 @@ describe("Finding", () => {
     for (const finding of [
       { level: "avviso", where: "layer x", message: "m" },
       { level: "blocco", where: "parte x", message: "m" },
-      { level: "domanda", where: "parte x", message: "lista o parte nuova?", options: ["lista", "parte nuova"] },
+      { level: "domanda", where: "parte x", message: "lista o parte nuova?", key: "lista", options: ["lista", "parte nuova"] },
     ]) {
       expect(Finding.parse(finding)).toEqual(finding);
     }
   });
 
-  it("rosso: domanda con meno di due opzioni, livello ignoto, messaggio vuoto", () => {
-    expect(Finding.safeParse({ level: "domanda", where: "x", message: "m", options: ["solo"] }).success).toBe(false);
+  it("rosso: domanda con meno di due opzioni, senza `key` o con `key` vuota, livello ignoto, messaggio vuoto", () => {
+    expect(Finding.safeParse({ level: "domanda", where: "x", message: "m", key: "k", options: ["solo"] }).success).toBe(false);
+    expect(Finding.safeParse({ level: "domanda", where: "x", message: "m", options: ["a", "b"] }).success).toBe(false);
+    expect(Finding.safeParse({ level: "domanda", where: "x", message: "m", key: "", options: ["a", "b"] }).success).toBe(false);
     expect(Finding.safeParse({ level: "errore", where: "x", message: "m" }).success).toBe(false);
     expect(Finding.safeParse({ level: "avviso", where: "x", message: "" }).success).toBe(false);
   });

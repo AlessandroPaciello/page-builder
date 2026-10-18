@@ -1,6 +1,6 @@
 # @penpot-ds/scripts
 
-Legge il catalogo token da Penpot (o dalla fixture committata) e genera i file di [`@penpot-ds/tokens`](../tokens/README.md). Ospita anche il nucleo puro della pipeline v3 (`src/core`, Story 2.20): gli schemi `Lettura`, `Finding`, `Change` e il registro delle proprietà.
+Legge il catalogo token da Penpot (o dalla fixture committata) e genera i file di [`@penpot-ds/tokens`](../tokens/README.md). Ospita anche il nucleo puro della pipeline v3 (`src/core`, Story 2.20–2.21): gli schemi `Lettura`, `Finding`, `Change`, il registro delle proprietà e le regole di geometria.
 
 La pipeline v1 (Story 2.1–2.11) e la v2 (Story 2.12–2.16) sono state rimosse (Story 2.16 e 2.18): niente più comandi `library`/`propose`/`extract`/`render`/`gates`, contratti di estrazione né istantanee. La pipeline v3 cresce dalla Story 2.19: il nucleo c'è (2.20), adattatore Penpot e server MCP `pds` arrivano con le 2.23–2.24.
 
@@ -43,8 +43,8 @@ Se manca il token, se è stato rigenerato o se il plugin non è connesso, `theme
 - `src/theme/` — `main.ts` (entrypoint: argomenti e codice d'uscita), `theme-command.ts` (lettura e scrittura atomica del tema).
 - `src/penpot/` — l'unica cartella che parla con Penpot: `mcp-client.ts` (utilità MCP) e `penpot-reader.ts` (client MCP minimale che legge solo `penpot.library.local.tokens`; `src/theme` lo importa da qui fino alla 2.26).
 - `src/shared/` — `paths.ts` (l'**unico** modulo di `src/` che calcola i path: `tests/paths.test.ts` fallisce nominando la chiave che punta a un file inesistente), `theme-generator.ts` (mapping puro `TokenCatalog → { css, ts }`; i nomi dei token li prende da `src/core/token-names.ts`), `naming.ts`.
-- `src/core/` — il nucleo puro (Story 2.20): `schemas.ts` (zod `Lettura`, `Finding`, `Change`, con un nome e senza versione), `registry.ts` (registro delle proprietà), `token-names.ts` (tipo, namespace e suffisso dei token), `index.ts`.
-- `tests/core/` — i test del nucleo: livello 1 (`schemas.test.ts`, `registry.test.ts`, dati scritti a mano) e livello 4 (`registry-tailwind.test.ts`). Stanno fuori da `src/core` perché importano `vitest`, che il confine `core` vieta.
+- `src/core/` — il nucleo puro (Story 2.20): `schemas.ts` (zod `Lettura`, `Finding`, `Change`, con un nome e senza versione), `registry.ts` (registro delle proprietà), `geometry.ts` (regole di geometria, Story 2.21), `token-names.ts` (tipo, namespace e suffisso dei token), `index.ts`.
+- `tests/core/` — i test del nucleo: livello 1 (`schemas.test.ts`, `registry.test.ts`, `geometry.test.ts`, dati scritti a mano) e livello 4 (`registry-tailwind.test.ts`). Stanno fuori da `src/core` perché importano `vitest`, che il confine `core` vieta.
 - `tests/fixtures/` — il catalogo Tailwind dei test e il suo loader.
 - `scripts/check-boundaries.mjs` + `tests/check-boundaries.test.ts` — gate di confine con prova rosso/verde per ogni regola.
 - `tests/pipeline-boundary.test.ts` — le directory v1/v2 non esistono e `process.exit*` compare solo in `src/theme/main.ts`.
@@ -53,9 +53,22 @@ Se manca il token, se è stato rigenerato o se il plugin non è connesso, `theme
 
 Una voce per proprietà Penpot, con la sua traduzione in classi Tailwind: un token del tipo dichiarato (`fill` → `bg-*`/`text-*`/`fill-*` sulle icone, `strokeWidth` → `border-(length:--border-width-*)`, `fontFamily` → `font-*`, …) oppure una parola chiave di una lista chiusa (layout flex, `strokeStyle`, dimensionamento `sizingH`/`sizingV`). Il valore di default di una parola chiave non dà classi; "fill" dipende dalla direzione del genitore (in colonna `self-stretch` in orizzontale e `flex-1` in verticale, in riga il contrario, fuori da un flex `w-full`/`h-full`). Quattro angoli con lo stesso token diventano `rounded-<sfx>`.
 
-`layerClasses(layer, { parentDir, tokenTypeOf })` restituisce le classi di un layer e gli avvisi. Una proprietà che il registro non sa tradurre (non registrata, fuori lista, token del tipo sbagliato o assente dal tema, `strokeAlignment` center/outer) non ferma mai la generazione: è un `Finding` di tipo avviso, senza classe, che dice cosa aggiungere.
+`layerClasses(layer, { parent, tokenTypeOf, scale })` restituisce le classi di un layer, gli avvisi e le domande. `parent` assente = il layer è la radice della cella; la direzione del flex si ricava da `parent.style.layoutDir`. Una proprietà che il registro non sa tradurre (non registrata, fuori lista, token del tipo sbagliato o assente dal tema, `strokeAlignment` center/outer) non ferma mai la generazione: è un `Finding` di tipo avviso, senza classe, che dice cosa aggiungere.
 
-Insegnare una proprietà = una voce in `REGISTRY` + i suoi casi verdi in `tests/core/registry.test.ts` (il test fallisce se una voce non ha il suo verde; il rosso di ogni voce lo genera il test: token del tipo sbagliato o valore fuori lista). Il livello 4 (`tests/core/registry-tailwind.test.ts`) espande ogni voce su tutti i token del suo tipo nel tema generato dal catalogo Tailwind, compila con `@tailwindcss/node` e fallisce nominando la classe che non produce CSS o che usa una variabile assente dal tema. Geometria (misure fisse, posizione, vincoli, ritaglio): Story 2.21.
+Insegnare una proprietà = una voce in `REGISTRY` + i suoi casi verdi in `tests/core/registry.test.ts` (il test fallisce se una voce non ha il suo verde; il rosso di ogni voce lo genera il test: token del tipo sbagliato o valore fuori lista). Il livello 4 (`tests/core/registry-tailwind.test.ts`) espande ogni voce su tutti i token del suo tipo nel tema generato dal catalogo Tailwind, compila con `@tailwindcss/node` e fallisce nominando la classe che non produce CSS o che usa una variabile assente dal tema; espande anche le classi di geometria sulla scala `--spacing-*` del tema generato.
+
+### Geometria (`src/core/geometry.ts`, Story 2.21)
+
+Voci `kind: "geometry"`, lette solo da `style`: `x`, `y`, `width`, `height` (px, `x`/`y` relativi all'angolo del genitore), `position` (`flow`|`absolute`), `constraintH` (`left`|`right`|`leftright`|`center`|`scale`), `constraintV` (`top`|`bottom`|`topbottom`|`center`|`scale`), `clip` (booleano). `layerClasses` le valida (un valore malformato è un avviso, senza classe) e poi applica le regole di contesto di `geometryClasses`:
+
+- **Scala** = i token `spacing` del tema (`scale: {suffix, px}[]`), non i multipli di 4px. In scala `w-<sfx>`; fuori scala `w-[37px]` con un avviso che nomina il passo più vicino (a parità il più piccolo); negativi `-left-<sfx>` o `left-[-3px]`; zero `<prefix>-0`.
+- **Misura fissa** (sizing `fix`, anche se assente, su un layer non radice) → `w-`/`h-`; niente se l'assoluto è ancorato ai due lati (`leftright`/`topbottom`) o ha vincolo `scale`, o se tutti i figli nel flusso sono `fill` su quell'asse (vale anche per la radice).
+- **Radice:** `rootSizeClasses(cells, { scale })` dà le classi di misura per cella: vuote se la misura è uguale in tutte le celle.
+- **Assoluti:** `absolute` sul layer, `relative` sul genitore; `left`/`right`/`leftright` → `left-*`/`right-*` (in verticale `top-*`/`bottom-*`); `center` → `left-1/2 -translate-x-1/2` con un avviso se non è centrato esattamente; `scale` → avviso, nessuna classe su quell'asse. Nei layer nel flusso `x`/`y` e vincoli non danno classi.
+- **Ritaglio** (solo `clip: true`): `overflow-hidden` se un figlio esce dal riquadro o se c'è un raggio e un figlio tocca un bordo; se niente esce ma un discendente ha contenuto variabile (testo, immagine, `pluginData.slot`) è una domanda con `key: "overflow"` (`hidden`|`visible`); altrimenti nessuna classe.
+- **"Fill" dentro hug:** figlio `fill` in un genitore `auto` sullo stesso asse → domanda con `key: "fillInHugH"`/`"fillInHugV"` (`fill` = classi di fill, `hug` = nessuna classe).
+
+Una `domanda` porta sempre `key`: la chiave di plugin data in cui `pds-code` scriverà la risposta. Una risposta valida sostituisce la domanda, un valore non valido la ripropone.
 
 ## Confini (`pnpm --filter @penpot-ds/scripts lint`)
 

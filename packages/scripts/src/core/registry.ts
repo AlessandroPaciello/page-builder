@@ -1,13 +1,27 @@
-import type { Finding, LetturaLayer } from "./schemas";
+import {
+  describeGeometry,
+  GEOMETRY_ENTRIES,
+  geometryClasses,
+  isValidGeometry,
+  sizingOf,
+  type GeometryEntry,
+  type GeometryQuestion,
+  type Scale,
+} from "./geometry";
+import type { Finding, LetturaLayer, PluginData } from "./schemas";
 import { varSuffix, type TokenType } from "./token-names";
 
 /**
  * Registro unico delle proprietà Penpot (Story 2.20, AD-11 v3).
  *
  * Una voce per proprietà, con la sua traduzione in classi Tailwind: un token
- * del tipo dichiarato (`kind: "token"`) oppure una parola chiave di una lista
- * chiusa (`kind: "keyword"`, il valore di default non dà classi). Le chiavi
- * sono i nomi che la `Lettura` usa in `tokens` e `style`.
+ * del tipo dichiarato (`kind: "token"`), una parola chiave di una lista
+ * chiusa (`kind: "keyword"`, il valore di default non dà classi) oppure una
+ * voce di geometria (`kind: "geometry"`: misure, posizione, vincoli,
+ * ritaglio, Story 2.21), che qui si valida soltanto e si traduce con le
+ * regole di contesto di `geometry.ts` (genitore, figli, celle). Le chiavi
+ * sono i nomi che la `Lettura` usa in `tokens` e `style`; la geometria si
+ * legge solo da `style`.
  *
  * Una proprietà che il registro non sa tradurre non ferma mai la generazione:
  * diventa un `Finding` di tipo avviso, senza classe, che dice cosa aggiungere
@@ -16,8 +30,6 @@ import { varSuffix, type TokenType } from "./token-names";
  * generato dal test); il livello 4
  * (`tests/core/registry-tailwind.test.ts`) prova da solo che le sue classi
  * producono CSS.
- *
- * Geometria (misure fisse, posizione, vincoli, ritaglio): Story 2.21.
  */
 
 /** Direzione del flex del genitore: decide come si traduce il dimensionamento "fill". */
@@ -29,10 +41,14 @@ export interface TranslationContext {
   /** Tipo di layer Penpot (`rect`, `text`, `path`, …). */
   readonly layerKind: string;
   readonly parentDir: ParentDir;
+  /** Dimensionamento del genitore per asse (`auto` = hug); assente per la radice. */
+  readonly parentSizing?: { readonly H?: string; readonly V?: string };
+  /** Plugin data del layer: le risposte alle domande. */
+  readonly answers?: PluginData;
 }
 
-/** Classi di una proprietà, oppure il motivo per cui il registro non la traduce. */
-export type Translation = { readonly classes: readonly string[] } | { readonly unsupported: string };
+/** Classi di una proprietà, il motivo per cui il registro non la traduce, oppure una domanda. */
+export type Translation = { readonly classes: readonly string[] } | { readonly unsupported: string } | { readonly question: GeometryQuestion };
 
 export interface TokenEntry {
   readonly kind: "token";
@@ -49,7 +65,7 @@ export interface KeywordEntry {
   readonly translate: (value: string, context: TranslationContext) => Translation;
 }
 
-export type RegistryEntry = TokenEntry | KeywordEntry;
+export type RegistryEntry = TokenEntry | KeywordEntry | GeometryEntry;
 
 /** Layer Penpot che disegnano un'icona: il tratto è `stroke-*` e il suo spessore è geometria dell'icona. */
 export const ICON_LAYER_KINDS: readonly string[] = ["path", "vector", "ellipse", "line"];
@@ -80,15 +96,38 @@ const keyword = (
   },
 });
 
+/** Chiave di plugin data della risposta a "fill dentro hug" sull'asse: `fill` | `hug`. */
+export const fillInHugKey = (axis: "H" | "V"): string => `fillInHug${axis}`;
+
+export const FILL_IN_HUG_ANSWERS = ["fill", "hug"] as const;
+
 /**
  * "Fill" su un asse: riempie il genitore. In un flex la classe dipende da
  * quale asse è quello principale; fuori da un flex è la larghezza o
- * l'altezza piena.
+ * l'altezza piena. Dentro un genitore che abbraccia il contenuto (hug) sullo
+ * stesso asse è ambiguo: domanda, finché la risposta in plugin data non dice
+ * `fill` (classi di fill) o `hug` (nessuna classe).
  */
 const fillSizing =
   (axis: "H" | "V"): KeywordEntry["translate"] =>
-  (value, { parentDir }) => {
+  (value, { parentDir, parentSizing, answers }) => {
     if (value !== "fill") return classes();
+    if (parentSizing?.[axis] === "auto") {
+      const key = fillInHugKey(axis);
+      const answer = answers?.[key];
+      if (answer === "hug") return classes();
+      if (answer !== "fill") {
+        const invalid = answer === undefined ? "" : ` La risposta "${answer}" non è valida.`;
+        const label = axis === "H" ? "orizzontale" : "verticale";
+        return {
+          question: {
+            key,
+            message: `Il layer è "fill" in ${label} ma il genitore abbraccia il contenuto (hug) sullo stesso asse: "fill" lo allarga quanto il genitore, "hug" lo lascia della sua misura.${invalid}`,
+            options: [...FILL_IN_HUG_ANSWERS],
+          },
+        };
+      }
+    }
     if (parentDir === "none") return classes(axis === "H" ? "w-full" : "h-full");
     const mainAxis = parentDir === "row" ? "H" : "V";
     return classes(axis === mainAxis ? "flex-1" : "self-stretch");
@@ -144,9 +183,11 @@ export const REGISTRY = {
     "start",
   ),
   layoutWrap: keyword({ nowrap: "", wrap: "flex-wrap" }, "nowrap"),
-  // Bug 3: dimensionamento. `fix` e `auto` (hug) non danno classi: le misure fisse sono della Story 2.21.
+  // Bug 3: dimensionamento. `fix` e `auto` (hug) non danno classi qui: la misura fissa è una regola di geometria (`geometry.ts`).
   sizingH: { kind: "keyword", values: ["fix", "fill", "auto"], default: "fix", translate: fillSizing("H") },
   sizingV: { kind: "keyword", values: ["fix", "fill", "auto"], default: "fix", translate: fillSizing("V") },
+  // Story 2.21: misure, posizione, vincoli e ritaglio (bug 11, lato nucleo).
+  ...GEOMETRY_ENTRIES,
 } as const satisfies Record<string, RegistryEntry>;
 
 export type RegisteredProperty = keyof typeof REGISTRY;
@@ -166,8 +207,17 @@ export function registeredProperties(): RegisteredProperty[] {
 export type TokenTypeOf = (tokenName: string) => TokenType | undefined;
 
 export interface LayerClassesInput {
-  readonly parentDir: ParentDir;
+  /** Il genitore; assente = il layer è la radice della cella. La direzione del flex si ricava da `parent.style.layoutDir`. */
+  readonly parent?: LetturaLayer;
   readonly tokenTypeOf: TokenTypeOf;
+  /** La scala del tema: i token `spacing` con il loro valore in px. */
+  readonly scale: Scale;
+}
+
+/** Direzione del flex di un layer, come genitore: `none` se non è un flex o il valore è malformato. */
+export function parentDirOf(parent: LetturaLayer | undefined): ParentDir {
+  const value = parent?.style["layoutDir"];
+  return value === "row" || value === "column" ? value : "none";
 }
 
 export interface LayerClasses {
@@ -178,12 +228,21 @@ export interface LayerClasses {
 const HOW_TO_TEACH = "una voce in REGISTRY (src/core/registry.ts) con la sua traduzione in classi + i suoi casi verdi in tests/core/registry.test.ts";
 
 /**
- * Le classi di un layer (solo le sue proprietà, non i figli) e gli avvisi
- * per ciò che il registro non traduce. Deterministica: classi ordinate e
- * senza doppioni, avvisi nell'ordine alfabetico delle proprietà.
+ * Le classi di un layer (le sue proprietà, più le regole di geometria che
+ * leggono genitore e figli), gli avvisi per ciò che il registro non traduce
+ * e le domande. Deterministica: classi ordinate e senza doppioni, avvisi
+ * delle proprietà in ordine alfabetico e poi quelli della geometria.
  */
 export function layerClasses(layer: LetturaLayer, input: LayerClassesInput): LayerClasses {
-  const context: TranslationContext = { layerKind: layer.kind, parentDir: input.parentDir };
+  const { parent } = input;
+  // Un layer assoluto è fuori dal flusso del flex: "fill" vale come fuori da un flex e il genitore non conta.
+  const inFlow = parent !== undefined && layer.style["position"] !== "absolute";
+  const context: TranslationContext = {
+    layerKind: layer.kind,
+    parentDir: inFlow ? parentDirOf(parent) : "none",
+    ...(inFlow ? { parentSizing: { H: sizingOf(parent, "H"), V: sizingOf(parent, "V") } } : {}),
+    ...(layer.pluginData === undefined ? {} : { answers: layer.pluginData }),
+  };
   const where = `layer "${layer.name}"`;
   const out: string[] = [];
   const findings: Finding[] = [];
@@ -201,6 +260,15 @@ export function layerClasses(layer: LetturaLayer, input: LayerClassesInput): Lay
       continue;
     }
     let translation: Translation;
+    if (entry.kind === "geometry") {
+      if (tokenName !== undefined) {
+        warn(`Proprietà "${property}" legata al token "${tokenName}": la geometria si legge solo dal valore in style (${describeGeometry(entry)}), il token è ignorato.`);
+      } else if (!isValidGeometry(entry, value)) {
+        warn(`Proprietà "${property}" con valore ${typeof value === "number" ? String(value) : JSON.stringify(value)} malformato: ammette ${describeGeometry(entry)}. Nessuna classe.`);
+      }
+      // Le classi di geometria vengono dalle regole di contesto, dopo il ciclo.
+      continue;
+    }
     if (entry.kind === "token") {
       if (tokenName === undefined) {
         warn(
@@ -246,8 +314,16 @@ export function layerClasses(layer: LetturaLayer, input: LayerClassesInput): Lay
       warn(`Proprietà "${property}" con valore "${String(value)}" non tradotta: ${translation.unsupported}. Nessuna classe.`);
       continue;
     }
+    if ("question" in translation) {
+      const { key, message, options } = translation.question;
+      findings.push({ level: "domanda", where, key, message, options: [...options] });
+      continue;
+    }
     out.push(...translation.classes);
   }
+  const geometry = geometryClasses(layer, { ...(parent === undefined ? {} : { parent }), scale: input.scale });
+  out.push(...geometry.classes);
+  findings.push(...geometry.findings);
   return { classes: collapseRadius([...new Set(out)]).sort(), findings };
 }
 

@@ -77,12 +77,14 @@ const message = z.string().min(1);
 
 /**
  * Esito del nucleo. `avviso`: si genera lo stesso. `blocco`: non si genera.
- * `domanda`: non si genera finché qualcuno non sceglie una delle opzioni.
+ * `domanda`: non si genera finché qualcuno non sceglie una delle opzioni;
+ * `key` è la chiave di plugin data in cui `pds-code` scriverà la risposta
+ * (Story 2.21).
  */
 export const Finding = z.discriminatedUnion("level", [
   z.object({ level: z.literal("avviso"), where, message }),
   z.object({ level: z.literal("blocco"), where, message }),
-  z.object({ level: z.literal("domanda"), where, message, options: z.array(z.string().min(1)).min(2) }),
+  z.object({ level: z.literal("domanda"), where, message, key: z.string().min(1), options: z.array(z.string().min(1)).min(2) }),
 ]);
 
 export type Finding = z.infer<typeof Finding>;
