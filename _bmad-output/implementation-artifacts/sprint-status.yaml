@@ -44,7 +44,7 @@
 #   la chiusura review no (1-2 done prima). Precondizione Epic 2 = 1-4-tracciante, non 1-2.
 
 generated: '2026-07-26'
-last_updated: "2026-10-18T19:00+02:00"  # Story 2.21 done (PR #62)
+last_updated: "2026-10-18T22:00+02:00"  # Story 2.22 review (story/2-22-verifica-e-generazione)
 project: page-builder
 project_key: NOKEY
 tracking_system: file-system
@@ -89,7 +89,7 @@ development_status:
   2-19-fixture-sul-catalogo-tailwind-e-codice-nuovo-dentro-i-confini: done  # PR #60, dbcd2c4
   2-20-nucleo-puro-e-registro-delle-proprieta: done  # PR #61, f0681d5
   2-21-geometria-e-larghezza-nel-registro: done  # PR #62, d2c0516
-  2-22-verifica-e-generazione-chiavi-di-parte-styles-scaffold-story: backlog
+  2-22-verifica-e-generazione-chiavi-di-parte-styles-scaffold-story: review
   2-23-adattatore-penpot-readcomponent: backlog
   2-24-server-mcp-pds-e-controllo-dei-file-generati-in-ci: backlog
   2-25-collaudo-degli-aggiornamenti-di-penpot: backlog

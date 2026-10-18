@@ -99,3 +99,17 @@ export const Change = z.discriminatedUnion("action", [
 ]);
 
 export type Change = z.infer<typeof Change>;
+
+/**
+ * Un cambio di struttura che il generatore non applica (Story 2.22): una
+ * parte aggiunta, tolta o diventata lista rispetto allo `styles.ts`
+ * esistente. `example` parte dal `<Comp>.tsx` attuale dello sviluppatore.
+ */
+export const Suggerimento = z.object({
+  part: z.string().min(1),
+  kind: z.enum(["aggiunta", "rimozione", "lista"]),
+  message,
+  example: z.string(),
+});
+
+export type Suggerimento = z.infer<typeof Suggerimento>;
