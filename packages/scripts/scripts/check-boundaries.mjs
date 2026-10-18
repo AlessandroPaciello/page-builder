@@ -1,31 +1,50 @@
 #!/usr/bin/env node
 /**
- * Check di confine bloccante per @penpot-ds/scripts (Story 2.4, Task 9).
+ * Check di confine bloccante per @penpot-ds/scripts (Story 2.4, esteso nella
+ * Story 2.19).
  *
- * `scripts` è la pipeline di generazione: legge Penpot via MCP e SCRIVE i
- * file generati di @penpot-ds/tokens. In `src/` sono vietati gli import di
- * `@app/*` — ECCEZIONE UNICA `@app/contracts` (la pipeline ne è un consumer:
- * i contratti sono una foglia senza dipendenze UI, penpot-pipeline.md
- * Stadio 2) — di `@penpot-ds/ui` e qualunque accesso ad `apps/*`. Le uniche
- * frecce workspace ammesse sono verso `@penpot-ds/tokens` e `@app/contracts`.
+ * `scripts` legge Penpot via MCP e SCRIVE i file generati di
+ * @penpot-ds/tokens. Regole di package, su tutto `src/`:
+ * - vietati gli import di `@app/*`, con l'ECCEZIONE UNICA di `@app/contracts`
+ *   (senza traversate `..`/`.`): i contratti sono una foglia senza dipendenze
+ *   UI e la pipeline ne è un consumer;
+ * - vietati `@penpot-ds/ui` e qualunque accesso ad `apps/*`;
+ * - vietati gli import relativi che escono dalla radice del package
+ *   (`../../ui/src/y` raggiungerebbe `@penpot-ds/ui` senza nominarlo); i
+ *   relativi interni fra cartelle di `src/` restano verdi.
  *
- * Lo schema è quello del gate di `@app/contracts` (action item retro Epic 1:
- * prova rosso/verde automatica, test su tmpdir in
- * `tests/check-boundaries.test.ts`): `checkBoundaries` è pura rispetto al
- * processo (niente exit, niente console) e il CLI gira solo se lo script è
- * invocato direttamente. Gli altri quattro check dell'Epic 1 restano senza
- * test proprio: l'action item resta open per quelli.
+ * Regole delle cartelle v3 (Story 2.19, `BOUNDARY_RULES`), ognuna con il suo
+ * caso rosso/verde in `tests/check-boundaries.test.ts`:
+ * - `core`: `src/core` importa solo relativi interni a `src/core`,
+ *   `@app/contracts` e `zod`; import dinamici e `require` hanno un argomento
+ *   letterale; il testo senza commenti non nomina `process`, `console`,
+ *   `fetch`, `globalThis`, `global`, `eval`, `Buffer`, `__dirname`,
+ *   `__filename` né `import.meta` (gli accessi a membro come `job.process()`
+ *   restano verdi): niente disco, rete, console, exit code né MCP;
+ * - `penpot`: solo `src/penpot/**` importa il client MCP
+ *   (`@modelcontextprotocol/sdk/…/client…`), e `src/shared/**` non importa da
+ *   `src/penpot` (un re-export lì aggirerebbe la regola `server`). Il gate
+ *   controlla il client MCP, non ogni accesso di rete;
+ * - `server`: `src/server/**` non importa da `src/penpot`, tranne il punto di
+ *   iniezione dell'adattatore `src/server/main.ts`;
+ * - `v3`: nessuna cartella `v3` (segmento di path) in `src/`, né import
+ *   relativi verso una cartella `v3`: il codice nuovo vive nelle cartelle del
+ *   seed, non in una copia dello spike.
+ *
+ * Le basi shadcn della v1 (`data/bases/`) non esistono più (Story 2.16):
+ * se ricomparissero, verrebbero scansionate con le stesse regole di `src/`.
+ *
+ * Lo schema è quello del gate di `@app/contracts` (action item retro Epic 1,
+ * chiuso per `scripts` nella Story 2.19): `checkBoundaries` è pura rispetto
+ * al processo (niente exit, niente console) e il CLI gira solo se lo script
+ * è invocato direttamente.
  *
  * Limiti dichiarati (gate regex, non un lexer JS), tutti in direzione
  * chiusa: gli specifier sono cercati nei literal riga per riga; la vista
- * `raw` (commenti stripping, literal intatti) è un backstop anti-desync che
- * segnala qualunque `@app/` fuori dai casi ammessi. Un `@app/contracts/..`
- * (traversata fuori dal package) è rosso sia come specifier sia in raw.
- *
- * Import relativi (riordino di packages/scripts): uno specifier relativo in
- * posizione di import si risolve rispetto al file ed è rosso se esce dalla
- * radice del package — `../../ui/src/y` raggiungerebbe `@penpot-ds/ui` senza
- * nominarlo. Gli import relativi interni fra cartelle di `src/` restano verdi.
+ * `raw` (commenti tolti, literal intatti) è un backstop anti-desync che
+ * segnala qualunque `@app/` fuori dai casi ammessi e il client MCP fuori da
+ * `src/penpot`. Un literal che sembra un import (`"copia from 'x'"`) dentro
+ * `src/core` è rosso anche se non lo è: meglio un falso rosso che un buco.
  */
 
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
@@ -76,6 +95,56 @@ export function escapesPackageRoot(packageRoot, file, specifier) {
   return target === ".." || target.startsWith(`..${sep}`) || isAbsolute(target);
 }
 
+/** Le regole delle cartelle v3 (Story 2.19): la chiave compare in ogni `reason`. */
+export const BOUNDARY_RULES = Object.freeze({
+  core: "core: src/core puro (solo relativi interni, @app/contracts e zod; niente process, console, fetch, globalThis, global, eval, Buffer, __dirname, __filename, import.meta)",
+  penpot: "penpot: solo src/penpot importa il client MCP, e src/shared non importa src/penpot",
+  server: "server: src/server non importa src/penpot (tranne src/server/main.ts)",
+  v3: "v3: nessuna cartella v3",
+});
+
+/** Il client MCP in ogni forma: `@modelcontextprotocol/sdk/client`, `…/client/index.js`, `…/dist/esm/client/…`. */
+export function isMcpClientSpecifier(specifier) {
+  if (!specifier.startsWith("@modelcontextprotocol/sdk/")) return false;
+  return specifier
+    .split("/")
+    .slice(2)
+    .some((segment) => segment === "client" || segment.startsWith("client."));
+}
+
+/** Specifier non relativi ammessi nel nucleo: `@app/contracts` (senza traversate) e `zod`. */
+function isCoreAllowedPackage(specifier) {
+  const traverses = specifier.split("/").some((segment) => segment === ".." || segment === ".");
+  if (specifier === "@app/contracts" || specifier.startsWith("@app/contracts/")) return !traverses;
+  if (specifier === "zod" || specifier.startsWith("zod/")) return !traverses;
+  return false;
+}
+
+/** Qualunque specifier letterale in posizione di import (`from`, `import`, `import(`, `require(`). */
+const IMPORT_SPECIFIER = /(?:\bfrom|\bimport|\brequire)\s*\(?\s*(["'`])([^"'`\n]+)\1/g;
+/** `import(` o `require(` con un argomento che non è un literal: il gate non può verificarlo. */
+const NON_LITERAL_LOAD = /(?:\bimport|\brequire)\s*\(\s*(?!["'`\s])/;
+/** Nel nucleo il testo senza commenti non nomina il processo, la console, la rete né il globale. */
+const CORE_FORBIDDEN_GLOBAL =
+  /(?<![.\w$])(?:\b(process|console|fetch|globalThis|global|eval|Buffer|__dirname|__filename)\b|\b(import)\s*\.\s*meta\b)/;
+/** Backstop raw del client MCP: anche fuori da qualunque literal scannerizzato. */
+const MCP_CLIENT_RAW = /@modelcontextprotocol\/sdk\/(?:[^"'`\s]*\/)?client(?![\w-])/;
+
+/** Path relativo al package, a segmenti. */
+function segmentsOf(packageRoot, path) {
+  return relative(packageRoot, path).split(sep);
+}
+
+function hasV3Segment(segments) {
+  return segments.some((segment) => segment.toLowerCase() === "v3");
+}
+
+/** True se `target` (assoluto) è `dir` o sta sotto `dir`. */
+function isInside(dir, target) {
+  const rel = relative(dir, target);
+  return rel === "" || (!rel.startsWith(`..${sep}`) && rel !== ".." && !isAbsolute(rel));
+}
+
 function stripComments(source) {
   let out = "";
   let i = 0;
@@ -124,7 +193,7 @@ function stripComments(source) {
   return out;
 }
 
-function sourceFiles(dir, visitedRealDirs, errors) {
+function sourceFiles(dir, visitedRealDirs, errors, dirs = []) {
   let out = [];
   let realDir;
   try {
@@ -135,6 +204,7 @@ function sourceFiles(dir, visitedRealDirs, errors) {
   }
   if (visitedRealDirs.has(realDir)) return out;
   visitedRealDirs.add(realDir);
+  dirs.push(dir);
 
   let entries;
   try {
@@ -153,10 +223,78 @@ function sourceFiles(dir, visitedRealDirs, errors) {
       continue;
     }
     if (st.isDirectory()) {
-      out = out.concat(sourceFiles(full, visitedRealDirs, errors));
+      out = out.concat(sourceFiles(full, visitedRealDirs, errors, dirs));
     } else if (SOURCE_EXTENSION.test(entry)) {
       out.push(full);
     }
+  }
+  return out;
+}
+
+/**
+ * Violazioni delle regole v3 per un file. `scanned` è il sorgente senza
+ * commenti; `rawLines` serve solo a citare la riga originale.
+ */
+function v3RuleViolations(packageRoot, path, scanned, rawLines) {
+  const out = [];
+  const file = relative(packageRoot, path);
+  const segments = segmentsOf(packageRoot, path);
+  const inSrc = segments[0] === "src";
+  const area = inSrc ? segments[1] : undefined;
+  const inCore = area === "core" && segments.length > 2;
+  const inPenpot = area === "penpot" && segments.length > 2;
+  const inServer = area === "server" && segments.length > 2;
+  const isInjectionPoint = inServer && segments.length === 3 && segments[2] === "main.ts";
+  const coreDir = resolve(packageRoot, "src", "core");
+  const penpotDir = resolve(packageRoot, "src", "penpot");
+  const push = (rule, line, detail, specifier) =>
+    out.push({
+      file,
+      ...(line !== undefined ? { line } : {}),
+      ...(specifier !== undefined ? { specifier } : {}),
+      rule,
+      reason: `${BOUNDARY_RULES[rule]} — ${detail}`,
+      text: typeof line === "number" ? (rawLines[line - 1]?.trim() ?? "") : "",
+    });
+
+  if (hasV3Segment(segments)) push("v3", undefined, "il file sta in una cartella v3");
+
+  let penpotSeen = false;
+  scanned.split("\n").forEach((lineText, index) => {
+    const line = index + 1;
+    for (const match of lineText.matchAll(STRING_LITERAL)) {
+      if (!inPenpot && isMcpClientSpecifier(match[1])) {
+        penpotSeen = true;
+        push("penpot", line, "il client MCP si importa solo da src/penpot", match[1]);
+      }
+    }
+    for (const match of lineText.matchAll(IMPORT_SPECIFIER)) {
+      const specifier = match[2];
+      const relativeSpecifier = specifier.startsWith("./") || specifier.startsWith("../");
+      const target = relativeSpecifier ? resolve(dirname(path), specifier) : undefined;
+      if (target !== undefined && hasV3Segment(segmentsOf(packageRoot, target))) {
+        push("v3", line, `import relativo verso una cartella v3 (${relative(packageRoot, target)})`, specifier);
+      }
+      if (inCore) {
+        const allowed = target !== undefined ? isInside(coreDir, target) && !specifier.includes("${") : isCoreAllowedPackage(specifier);
+        if (!allowed) push("core", line, `import di "${specifier}" non ammesso nel nucleo`, specifier);
+      }
+      if (area === "shared" && target !== undefined && isInside(penpotDir, target)) {
+        push("penpot", line, `src/shared non importa src/penpot (${relative(packageRoot, target)})`, specifier);
+      }
+      if (inServer && !isInjectionPoint && target !== undefined && isInside(penpotDir, target)) {
+        push("server", line, `import di src/penpot fuori dal punto di iniezione (${relative(packageRoot, target)})`, specifier);
+      }
+    }
+    if (inCore) {
+      if (NON_LITERAL_LOAD.test(lineText)) push("core", line, "import dinamico o require con argomento non letterale");
+      const global = CORE_FORBIDDEN_GLOBAL.exec(lineText);
+      if (global) push("core", line, `\`${global[1] ?? "import.meta"}\` nel nucleo (niente processo, console né rete)`);
+    }
+  });
+
+  if (!inPenpot && !penpotSeen && MCP_CLIENT_RAW.test(scanned)) {
+    push("penpot", "?", "il client MCP compare fuori da qualunque literal scannerizzato (possibile scanner desincronizzato)");
   }
   return out;
 }
@@ -166,9 +304,10 @@ export function checkBoundaries({ packageRoot }) {
   const violations = [];
   const scanErrors = [];
   const srcDir = join(packageRoot, "src");
-  const srcFiles = sourceFiles(srcDir, new Set(), scanErrors);
-  // Le basi shadcn committate (`data/bases/`, .tsx) sono codice anche se
-  // vivono fuori da `src/`: stesse regole. Assenti in un package senza basi.
+  const srcDirs = [];
+  const srcFiles = sourceFiles(srcDir, new Set(), scanErrors, srcDirs);
+  // Le basi shadcn della v1 (`data/bases/`) non esistono più (Story 2.16):
+  // se ricomparissero sarebbero codice, con le stesse regole.
   const basesDir = join(packageRoot, "data", "bases");
   const files = existsSync(basesDir) ? srcFiles.concat(sourceFiles(basesDir, new Set(), scanErrors)) : srcFiles;
 
@@ -209,6 +348,17 @@ export function checkBoundaries({ packageRoot }) {
         text: "contiene uno specifier vietato fuori da qualunque literal scannerizzato (possibile scanner desincronizzato)",
       });
     }
+    violations.push(...v3RuleViolations(packageRoot, path, scanned, rawLines));
+  }
+
+  // Una cartella v3 senza sorgenti (anche vuota) è rossa lo stesso; se
+  // contiene file, sono già rossi loro.
+  const v3Files = violations.filter((violation) => violation.rule === "v3").map((violation) => violation.file);
+  for (const dir of srcDirs) {
+    const rel = relative(packageRoot, dir);
+    if (rel.split(sep).at(-1)?.toLowerCase() !== "v3") continue;
+    if (v3Files.some((file) => file.startsWith(`${rel}${sep}`))) continue;
+    violations.push({ file: rel, rule: "v3", reason: `${BOUNDARY_RULES.v3} — cartella v3 in src/` });
   }
 
   // Un gate che non ha guardato nulla non può dire verde.
@@ -233,9 +383,13 @@ function main() {
   const packageRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
   const { violations, scanErrors, scannedFileCount } = checkBoundaries({ packageRoot });
   if (scanErrors.length > 0) fail("Impossibile scannerizzare alcuni elementi del confine", scanErrors);
-  if (violations.length > 0) fail("Violazione del confine scripts ↛ @app/* (tranne @app/contracts)|@penpot-ds/ui|apps/*", violations);
+  if (violations.length > 0) fail("Violazione dei confini di scripts", violations);
   console.log(
-    `✔ Confine scripts rispettato (${scannedFileCount} file: @app/contracts ammesso, resto di @app/*, @penpot-ds/ui e apps/* vietati; l'unica altra freccia è @penpot-ds/tokens)`,
+    [
+      `✔ Confine scripts rispettato (${scannedFileCount} file)`,
+      "  package: @app/contracts ammesso, resto di @app/*, @penpot-ds/ui, apps/* e relativi fuori dal package vietati",
+      ...Object.values(BOUNDARY_RULES).map((rule) => `  ${rule}`),
+    ].join("\n"),
   );
 }
 

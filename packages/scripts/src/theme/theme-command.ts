@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 
 import { PATHS } from "../shared/paths";
 import { generateTheme, type TokenCatalog } from "../shared/theme-generator";
-import { readPenpotTokenCatalog } from "./penpot-reader";
+import { readPenpotTokenCatalog } from "../penpot/penpot-reader";
 
 /**
  * Stadio 1 (token), pura rispetto al processo: nessun `process.exit*`, nessun

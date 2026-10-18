@@ -31,15 +31,32 @@ Se manca il token, se è stato rigenerato o se il plugin non è connesso, `theme
 
 `data/penpot-catalog.json` — serializzazione del catalogo token Penpot (`{ sets: [{ name, tokens: [{ name, type, value }] }] }`), solo i set `active`. Committata così la generazione gira offline e il diff della fixture mostra cosa è cambiato nel design.
 
-È l'unica fixture: la vecchia library `mis` è stata cancellata. Un test (`tests/no-legacy-consumers.test.ts`) impedisce che nomi `mis-*` ricompaiano in `packages/ui/src` e `apps/web/src` (`packages/tokens` è l'eccezione ammessa).
+È l'unica fixture da cui si genera il tema committato: la vecchia library `mis` è stata cancellata. Un test (`tests/no-legacy-consumers.test.ts`) impedisce che nomi `mis-*` ricompaiano in `packages/ui/src` e `apps/web/src` (`packages/tokens` è l'eccezione ammessa).
+
+### Catalogo Tailwind dei test
+
+`tests/fixtures/tailwind-catalog.json` (Story 2.19) — catalogo token scritto come dati, **non letto da Penpot**: i set `tailwind` (palette e scale di Tailwind v4) e `semantic` (ruoli shadcn come riferimenti alla palette) del seme dello spike, `_bmad-output/spikes/penpot-ai-kit-2026-10-10/tailwind-to-penpot/tokens.json` (ricavato da `theme.css`), convertiti nella forma `TokenCatalog`. Il set `brand/ocean` resta fuori: ridefinisce i ruoli di `semantic` e collide nel generatore fino alla Story 2.26. Serve solo ai test (`tests/fixtures/catalog.ts` lo carica); `data/penpot-catalog.json` e il tema generato non cambiano fino alla 2.26.
 
 ## File
 
 - `data/penpot-catalog.json` — il catalogo token committato.
-- `src/theme/` — `main.ts` (entrypoint: argomenti e codice d'uscita), `theme-command.ts` (lettura e scrittura atomica del tema), `penpot-reader.ts` (client MCP minimale che legge solo `penpot.library.local.tokens`).
-- `src/shared/` — `paths.ts` (l'**unico** modulo che calcola i path: `tests/paths.test.ts` fallisce nominando la chiave che punta a un file inesistente), `mcp-client.ts` (utilità MCP), `theme-generator.ts` (mapping puro `TokenCatalog → { css, ts }`), `style-properties.ts` (registro delle proprietà), `naming.ts`.
-- `scripts/check-boundaries.mjs` + `tests/check-boundaries.test.ts` — gate di confine con prova rosso/verde.
+- `src/theme/` — `main.ts` (entrypoint: argomenti e codice d'uscita), `theme-command.ts` (lettura e scrittura atomica del tema).
+- `src/penpot/` — l'unica cartella che parla con Penpot: `mcp-client.ts` (utilità MCP) e `penpot-reader.ts` (client MCP minimale che legge solo `penpot.library.local.tokens`; `src/theme` lo importa da qui fino alla 2.26).
+- `src/shared/` — `paths.ts` (l'**unico** modulo di `src/` che calcola i path: `tests/paths.test.ts` fallisce nominando la chiave che punta a un file inesistente), `theme-generator.ts` (mapping puro `TokenCatalog → { css, ts }`), `style-properties.ts` (registro delle proprietà), `naming.ts`.
+- `tests/fixtures/` — il catalogo Tailwind dei test e il suo loader.
+- `scripts/check-boundaries.mjs` + `tests/check-boundaries.test.ts` — gate di confine con prova rosso/verde per ogni regola.
 - `tests/pipeline-boundary.test.ts` — le directory v1/v2 non esistono e `process.exit*` compare solo in `src/theme/main.ts`.
+
+## Confini (`pnpm --filter @penpot-ds/scripts lint`)
+
+Oltre alle regole di package (`@app/*` vietato tranne `@app/contracts`, `@penpot-ds/ui`, `apps/*`, relativi fuori dal package), il gate conosce le cartelle della v3 (Story 2.19), anche prima che esistano:
+
+| Regola | Cosa vieta |
+|---|---|
+| `core` | in `src/core` ogni import che non sia un relativo interno a `src/core`, `@app/contracts` o `zod`; import dinamici e `require` con argomento non letterale; `process`, `console`, `fetch`, `globalThis`, `global`, `eval`, `Buffer`, `__dirname`, `__filename` e `import.meta` nel testo senza commenti (gli accessi a membro come `job.process()` restano ammessi) |
+| `penpot` | il client MCP (`@modelcontextprotocol/sdk/…/client…`) fuori da `src/penpot`, e gli import di `src/penpot` da `src/shared` (un re-export lì aggirerebbe `server`). Il gate controlla il client MCP, non ogni accesso di rete: non garantisce da solo che nessun altro file parli con Penpot |
+| `server` | gli import di `src/penpot` da `src/server`, tranne il punto di iniezione `src/server/main.ts` |
+| `v3` | una cartella `v3` in `src/` (anche vuota) e gli import relativi verso una cartella `v3` |
 
 ## Cosa non toccare
 

@@ -1,11 +1,12 @@
-import { callPenpotTool, isTextContent, resolveMcpEndpoint, type McpCallToolResult, type McpEndpoint } from "../shared/mcp-client";
+import { callPenpotTool, isTextContent, resolveMcpEndpoint, type McpCallToolResult, type McpEndpoint } from "./mcp-client";
 import type { TokenCatalog } from "../shared/theme-generator";
 
 /**
  * Client MCP minimale per leggere SOLO il catalogo token
- * (`penpot.library.local.tokens`). La lettura di componenti/varianti è in
- * component-reader.ts (Story 2.2). Endpoint e token vengono dall'ambiente
- * (`PENPOT_MCP_URL`, `PENPOT_MCP_TOKEN`): vedi mcp-client.ts.
+ * (`penpot.library.local.tokens`). Endpoint e token vengono dall'ambiente
+ * (`PENPOT_MCP_URL`, `PENPOT_MCP_TOKEN`): vedi mcp-client.ts. Sta in
+ * `src/penpot`, l'unica cartella che parla con Penpot (Story 2.19, regola
+ * `penpot` di check-boundaries); `src/theme` lo importa da qui fino alla 2.26.
  */
 
 /**

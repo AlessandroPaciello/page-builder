@@ -1,12 +1,18 @@
-import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { checkBoundaries, isForbiddenSpecifier, type BoundaryReport } from "../scripts/check-boundaries.mjs";
+import {
+  BOUNDARY_RULES,
+  checkBoundaries,
+  isForbiddenSpecifier,
+  isMcpClientSpecifier,
+  type BoundaryReport,
+} from "../scripts/check-boundaries.mjs";
 
 /**
  * Prova rosso/verde del gate di `packages/scripts` (Story 2.4, Task 9,
@@ -198,5 +204,268 @@ describe("checkBoundaries: rosso", () => {
       }),
     });
     expect(report.violations.length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * Regole delle cartelle v3 (Story 2.19): `src/core` puro, solo `src/penpot`
+ * parla con Penpot, `src/server` non importa `src/penpot` tranne che da
+ * `src/server/main.ts` (punto di iniezione), nessuna cartella `v3`. Le
+ * cartelle vere non esistono ancora (2.20+): i casi girano su package finti.
+ */
+describe("checkBoundaries: regole v3 (Story 2.19)", () => {
+  /** Package finto con un `src/index.ts` neutro più i file indicati. */
+  function check(files: Record<string, string>): BoundaryReport {
+    return checkBoundaries({ packageRoot: fakePackage({ "src/index.ts": "export const ok = 1;\n", ...files }) });
+  }
+
+  function ruleViolations(report: BoundaryReport, rule: string) {
+    return report.violations.filter((violation) => violation.rule === rule);
+  }
+
+  function expectRule(report: BoundaryReport, rule: string, expected: { file: string; line?: number | "?" }): void {
+    const found = ruleViolations(report, rule);
+    expect(found.length, JSON.stringify(report)).toBeGreaterThan(0);
+    expect(found[0], JSON.stringify(report)).toMatchObject({ file: expected.file, ...(expected.line !== undefined ? { line: expected.line } : {}) });
+    expect(found[0]!.reason).toContain(rule);
+  }
+
+  describe("isMcpClientSpecifier", () => {
+    it("riconosce il client MCP in ogni forma, non il resto dell'SDK", () => {
+      expect(isMcpClientSpecifier("@modelcontextprotocol/sdk/client")).toBe(true);
+      expect(isMcpClientSpecifier("@modelcontextprotocol/sdk/client/index.js")).toBe(true);
+      expect(isMcpClientSpecifier("@modelcontextprotocol/sdk/client/streamableHttp.js")).toBe(true);
+      expect(isMcpClientSpecifier("@modelcontextprotocol/sdk/dist/esm/client/index.js")).toBe(true);
+      expect(isMcpClientSpecifier("@modelcontextprotocol/sdk/server/mcp.js")).toBe(false);
+      expect(isMcpClientSpecifier("@modelcontextprotocol/sdkx/client")).toBe(false);
+      expect(isMcpClientSpecifier("./client")).toBe(false);
+    });
+  });
+
+  describe("nucleo (src/core)", () => {
+    it("verde: relativi interni, @app/contracts e zod", () => {
+      const report = check({
+        "src/core/a.ts":
+          'import { b } from "./b";\nimport type { ComponentContract } from "@app/contracts";\nimport { z } from "zod";\nexport const a = z.string().parse(b);\nexport type C = ComponentContract;\n',
+        "src/core/b.ts": 'export { c as b } from "./sub/c";\n',
+        "src/core/sub/c.ts": 'import { d } from "../d";\nexport const c = d;\n',
+        "src/core/d.ts": "// process.exit e console.log nei commenti non contano\nexport const d = \"x\";\n",
+      });
+      expect(report).toEqual({ violations: [], scanErrors: [], scannedFileCount: 5 });
+    });
+
+    it("rosso: `node:fs`", () => {
+      expectRule(check({ "src/core/a.ts": 'export const a = 1;\nimport { readFileSync } from "node:fs";\n' }), "core", {
+        file: join("src", "core", "a.ts"),
+        line: 2,
+      });
+    });
+
+    it("rosso: builtin senza prefisso `node:` e pacchetti qualunque", () => {
+      expectRule(check({ "src/core/a.ts": 'import { join } from "path";\n' }), "core", { file: join("src", "core", "a.ts"), line: 1 });
+      expectRule(check({ "src/core/a.ts": 'import { readFile } from "fs/promises";\n' }), "core", { file: join("src", "core", "a.ts") });
+      expectRule(check({ "src/core/a.ts": 'import { x } from "@penpot-ds/tokens";\n' }), "core", { file: join("src", "core", "a.ts") });
+    });
+
+    it("rosso: l'SDK MCP, client o server", () => {
+      expectRule(check({ "src/core/a.ts": 'import { Client } from "@modelcontextprotocol/sdk/client/index.js";\n' }), "core", {
+        file: join("src", "core", "a.ts"),
+        line: 1,
+      });
+      expectRule(check({ "src/core/a.ts": 'import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";\n' }), "core", {
+        file: join("src", "core", "a.ts"),
+      });
+    });
+
+    it("rosso: un relativo che esce da src/core (`../shared/x`)", () => {
+      const report = check({ "src/shared/x.ts": "export const x = 1;\n", "src/core/a.ts": 'import { x } from "../shared/x";\nexport { x };\n' });
+      expectRule(report, "core", { file: join("src", "core", "a.ts"), line: 1 });
+    });
+
+    it("rosso: re-export, import dinamico, require e import side-effect fuori dalle ammesse", () => {
+      expectRule(check({ "src/core/a.ts": 'export { x } from "../shared/x";\n' }), "core", { file: join("src", "core", "a.ts") });
+      expectRule(check({ "src/core/a.ts": 'export const m = await import("node:fs");\n' }), "core", { file: join("src", "core", "a.ts") });
+      expectRule(check({ "src/core/a.ts": 'const fs = require("fs");\nexport { fs };\n' }), "core", { file: join("src", "core", "a.ts") });
+      expectRule(check({ "src/core/a.ts": 'import "node:fs";\n' }), "core", { file: join("src", "core", "a.ts") });
+    });
+
+    it("rosso: import dinamico o require con argomento non letterale (non verificabile)", () => {
+      expectRule(check({ "src/core/a.ts": 'const name = "node:fs";\nexport const m = await import(name);\n' }), "core", {
+        file: join("src", "core", "a.ts"),
+        line: 2,
+      });
+      expectRule(check({ "src/core/a.ts": "export const m = require(process.env.X);\n" }), "core", { file: join("src", "core", "a.ts") });
+    });
+
+    it("rosso: `process.`, `console.` e `fetch(` nel testo senza commenti", () => {
+      expectRule(check({ "src/core/a.ts": "export const a = 1;\nexport const env = process.env.HOME;\n" }), "core", {
+        file: join("src", "core", "a.ts"),
+        line: 2,
+      });
+      expectRule(check({ "src/core/a.ts": 'console.log("x");\n' }), "core", { file: join("src", "core", "a.ts"), line: 1 });
+      expectRule(check({ "src/core/a.ts": 'export const r = fetch("https://example.com");\n' }), "core", {
+        file: join("src", "core", "a.ts"),
+        line: 1,
+      });
+      expectRule(check({ "src/core/a.ts": 'export const c = globalThis["console"];\n' }), "core", { file: join("src", "core", "a.ts") });
+    });
+
+    it("rosso: import dinamico relativo con interpolazione (`./${n}`)", () => {
+      expectRule(check({ "src/core/a.ts": "const n = \"b\";\nexport const m = await import(`./${n}`);\n" }), "core", {
+        file: join("src", "core", "a.ts"),
+        line: 2,
+      });
+    });
+
+    it("rosso: traversata dentro zod (`zod/../../shared/x`)", () => {
+      expectRule(check({ "src/core/a.ts": 'import { z } from "zod/../../shared/x";\nexport { z };\n' }), "core", {
+        file: join("src", "core", "a.ts"),
+        line: 1,
+      });
+    });
+
+    it("rosso: `import.meta.url` ed `eval(` nel nucleo", () => {
+      expectRule(check({ "src/core/a.ts": "export const u = import.meta.url;\n" }), "core", { file: join("src", "core", "a.ts"), line: 1 });
+      expectRule(check({ "src/core/a.ts": 'export const v = eval("1");\n' }), "core", { file: join("src", "core", "a.ts"), line: 1 });
+    });
+
+    it("verde: un accesso a membro (`job.process()`) non è il globale", () => {
+      const report = check({ "src/core/a.ts": "export const run = (job: Job) => job.process();\n" });
+      expect(report.violations).toEqual([]);
+    });
+
+    it("le stesse cose fuori da src/core non riguardano la regola del nucleo", () => {
+      const report = check({ "src/shared/a.ts": 'import { readFileSync } from "node:fs";\nconsole.log(process.cwd(), readFileSync);\n' });
+      expect(ruleViolations(report, "core")).toEqual([]);
+      expect(report.violations).toEqual([]);
+    });
+  });
+
+  describe("solo src/penpot parla con Penpot", () => {
+    it("verde: il client MCP dentro src/penpot", () => {
+      const report = check({
+        "src/penpot/client.ts": 'import { Client } from "@modelcontextprotocol/sdk/client/index.js";\nexport { Client };\n',
+      });
+      expect(report.violations).toEqual([]);
+    });
+
+    it("rosso: il client MCP in src/server", () => {
+      expectRule(check({ "src/server/x.ts": 'import { Client } from "@modelcontextprotocol/sdk/client/index.js";\nexport { Client };\n' }), "penpot", {
+        file: join("src", "server", "x.ts"),
+        line: 1,
+      });
+    });
+
+    it("rosso: il client MCP in src/shared, anche come import dinamico", () => {
+      expectRule(check({ "src/shared/x.ts": 'import { Client } from "@modelcontextprotocol/sdk/client/index.js";\nexport { Client };\n' }), "penpot", {
+        file: join("src", "shared", "x.ts"),
+        line: 1,
+      });
+      expectRule(check({ "src/shared/x.ts": 'export const m = await import("@modelcontextprotocol/sdk/client/streamableHttp.js");\n' }), "penpot", {
+        file: join("src", "shared", "x.ts"),
+      });
+    });
+
+    it("rosso: il client MCP fuori da qualunque literal scannerizzato (backstop raw)", () => {
+      const report = check({ "src/shared/x.ts": "const a = \"it's\"; import { Client } from '@modelcontextprotocol/sdk/client/index.js';\n" });
+      expect(ruleViolations(report, "penpot").length, JSON.stringify(report)).toBeGreaterThan(0);
+    });
+
+    it("rosso: src/shared re-esporta src/penpot (`src/shared/proxy.ts` → `../penpot/read`)", () => {
+      expectRule(
+        check({ "src/penpot/read.ts": "export const read = 1;\n", "src/shared/proxy.ts": 'export { read } from "../penpot/read";\n' }),
+        "penpot",
+        { file: join("src", "shared", "proxy.ts"), line: 1 },
+      );
+    });
+
+    it("verde: src/theme importa src/penpot (fino alla 2.26)", () => {
+      const report = check({ "src/penpot/read.ts": "export const read = 1;\n", "src/theme/cmd.ts": 'import { read } from "../penpot/read";\nexport { read };\n' });
+      expect(report.violations).toEqual([]);
+    });
+
+    it("verde: l'SDK lato server in src/server", () => {
+      const report = check({ "src/server/x.ts": 'import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";\nexport { McpServer };\n' });
+      expect(report.violations).toEqual([]);
+    });
+  });
+
+  describe("src/server non importa src/penpot, salvo il punto di iniezione", () => {
+    const penpot = { "src/penpot/read.ts": "export const read = 1;\n" };
+
+    it("rosso: `src/server/tools.ts` importa `../penpot/read`", () => {
+      expectRule(check({ ...penpot, "src/server/tools.ts": 'import { read } from "../penpot/read";\nexport { read };\n' }), "server", {
+        file: join("src", "server", "tools.ts"),
+        line: 1,
+      });
+    });
+
+    it("rosso: anche da una sottocartella, con re-export o import dinamico", () => {
+      expectRule(check({ ...penpot, "src/server/tools/a.ts": 'export { read } from "../../penpot/read";\n' }), "server", {
+        file: join("src", "server", "tools", "a.ts"),
+      });
+      expectRule(check({ ...penpot, "src/server/tools.ts": 'export const m = await import("../penpot");\n' }), "server", {
+        file: join("src", "server", "tools.ts"),
+      });
+    });
+
+    it("verde: `src/server/main.ts` importa `../penpot/read`", () => {
+      const report = check({ ...penpot, "src/server/main.ts": 'import { read } from "../penpot/read";\nexport { read };\n' });
+      expect(report.violations).toEqual([]);
+    });
+
+    it("rosso: `src/server/x/main.ts` in una sottocartella non è il punto di iniezione", () => {
+      expectRule(check({ ...penpot, "src/server/x/main.ts": 'import { read } from "../../penpot/read";\nexport { read };\n' }), "server", {
+        file: join("src", "server", "x", "main.ts"),
+      });
+    });
+
+    it("verde: src/server importa src/core e src/shared", () => {
+      const report = check({
+        "src/core/a.ts": "export const a = 1;\n",
+        "src/shared/b.ts": "export const b = 1;\n",
+        "src/server/tools.ts": 'import { a } from "../core/a";\nimport { b } from "../shared/b";\nexport { a, b };\n',
+      });
+      expect(report.violations).toEqual([]);
+    });
+  });
+
+  describe("nessuna cartella v3", () => {
+    it("rosso: `src/v3/cli.ts`", () => {
+      expectRule(check({ "src/v3/cli.ts": "export const x = 1;\n" }), "v3", { file: join("src", "v3", "cli.ts") });
+    });
+
+    it("rosso: `src/V3/cli.ts` (maiuscola)", () => {
+      expectRule(check({ "src/V3/cli.ts": "export const x = 1;\n" }), "v3", { file: join("src", "V3", "cli.ts") });
+    });
+
+    it("rosso: una cartella v3 annidata, anche vuota", () => {
+      expectRule(check({ "src/shared/v3/x.ts": "export const x = 1;\n" }), "v3", { file: join("src", "shared", "v3", "x.ts") });
+      const root = fakePackage({ "src/index.ts": "export const ok = 1;\n" });
+      mkdirSync(join(root, "src", "core", "v3"), { recursive: true });
+      expectRule(checkBoundaries({ packageRoot: root }), "v3", { file: join("src", "core", "v3") });
+    });
+
+    it("rosso: un import relativo verso una cartella v3 del package", () => {
+      expectRule(check({ "src/shared/x.ts": 'import { y } from "../../v3/y";\nexport { y };\n' }), "v3", { file: join("src", "shared", "x.ts"), line: 1 });
+    });
+
+    it("verde: `v3` come parte di un nome (`v3x`, `tailwind-v3.ts`) non è una cartella v3", () => {
+      const report = check({ "src/v3x/a.ts": "export const a = 1;\n", "src/shared/tailwind-v3.ts": "export const b = 1;\n" });
+      expect(report.violations).toEqual([]);
+    });
+  });
+
+  it("il CLI nomina le regole nuove nel messaggio di successo", () => {
+    const stdout = execFileSync("node", ["./scripts/check-boundaries.mjs"], { cwd: REAL_PACKAGE_ROOT, encoding: "utf8" });
+    for (const rule of Object.values(BOUNDARY_RULES)) expect(stdout).toContain(rule);
+  });
+
+  it("il package reale: il client MCP compare solo sotto src/penpot", () => {
+    const offenders = (readdirSync(join(REAL_PACKAGE_ROOT, "src"), { recursive: true }) as string[])
+      .filter((entry) => /\.tsx?$/.test(entry))
+      .filter((entry) => readFileSync(join(REAL_PACKAGE_ROOT, "src", entry), "utf8").includes("@modelcontextprotocol/sdk/client"))
+      .filter((entry) => !entry.startsWith(`penpot${sep}`));
+    expect(offenders).toEqual([]);
   });
 });

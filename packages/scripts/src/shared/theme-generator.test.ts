@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { loadTailwindCatalog } from "../../tests/fixtures/catalog";
 import { PATHS } from "./paths";
 import { generateTheme, varName, varSuffix, type TokenCatalog } from "./theme-generator";
 
@@ -331,5 +332,70 @@ describe("generateTheme — nomi delle scale per tailwind-merge (Story 2.9)", ()
     const weights = /export const fontWeightNames = \[([^\]]*)\]/.exec(ts)![1]!;
     expect(weights).toContain('"black"');
     expect(/export const trackingNames = \[([^\]]*)\]/.exec(ts)![1]).not.toContain('"black"');
+  });
+});
+
+/**
+ * Catalogo Tailwind (Story 2.19, bug 14): il seme dello spike scritto come
+ * dati in `tests/fixtures/tailwind-catalog.json` (vedi `tests/fixtures/catalog.ts`).
+ * La fixture committata `data/penpot-catalog.json` e il drift guard sopra
+ * restano quelli fino alla 2.26.
+ */
+describe("generateTheme — catalogo Tailwind", () => {
+  const SHADCN_ROLES: Record<string, string> = {
+    background: "white",
+    foreground: "neutral-950",
+    card: "white",
+    "card-foreground": "neutral-950",
+    primary: "neutral-900",
+    "primary-foreground": "neutral-50",
+    secondary: "neutral-100",
+    "secondary-foreground": "neutral-900",
+    muted: "neutral-100",
+    "muted-foreground": "neutral-500",
+    accent: "neutral-100",
+    "accent-foreground": "neutral-900",
+    destructive: "red-600",
+    "destructive-foreground": "white",
+    border: "neutral-200",
+    input: "neutral-200",
+    ring: "neutral-400",
+  };
+
+  it("la fixture ha solo i set `tailwind` e `semantic`, in quest'ordine (niente `brand/ocean`)", () => {
+    expect(loadTailwindCatalog().sets.map((set) => set.name)).toEqual(["tailwind", "semantic"]);
+  });
+
+  it("raggruppa il CSS per set, in ordine di catalogo", () => {
+    const { css } = generateTheme(loadTailwindCatalog());
+    expect([...css.matchAll(/\/\* set: (.+?) \*\//g)].map((m) => m[1])).toEqual(["tailwind", "semantic"]);
+  });
+
+  it("ogni ruolo shadcn punta alla palette Tailwind con var(--...), e la palette esiste", () => {
+    const { css } = generateTheme(loadTailwindCatalog());
+    for (const [role, swatch] of Object.entries(SHADCN_ROLES)) {
+      expect(css).toContain(`--color-${role}: var(--color-${swatch});`);
+      expect(css).toMatch(new RegExp(`--color-${swatch}: #[0-9A-F]{6};`));
+    }
+    const semantic = css.slice(css.indexOf("/* set: semantic */"));
+    expect([...semantic.matchAll(/--color-([a-z-]+):/g)].map((m) => m[1])).toEqual(Object.keys(SHADCN_ROLES));
+  });
+
+  it("porta le scale Tailwind nei namespace del generatore", () => {
+    const { css, ts } = generateTheme(loadTailwindCatalog());
+    expect(css).toContain("--spacing-4: 16px;");
+    expect(css).toContain("--text-sm: 14px;");
+    expect(css).toContain("--radius-lg: 8px;");
+    expect(css).toContain("--font-sans: Inter;");
+    expect(css).toContain("--shadow-sm: 0px 1px 3px 0px rgba(0,0,0,0.1), 0px 1px 2px -1px rgba(0,0,0,0.1);");
+    const colors = /export const colorNames = \[([^\]]*)\]/.exec(ts)![1]!;
+    for (const name of ["red-600", "neutral-900", "white", "primary", "ring"]) expect(colors).toContain(`"${name}"`);
+  });
+
+  it("è deterministico: due generazioni dalla fixture coincidono byte per byte", () => {
+    const first = generateTheme(loadTailwindCatalog());
+    const second = generateTheme(loadTailwindCatalog());
+    expect(second.css).toBe(first.css);
+    expect(second.ts).toBe(first.ts);
   });
 });
