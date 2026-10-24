@@ -67,6 +67,20 @@ describe("buildOrder", () => {
     expect(buildOrder([lettura], ["beta"], ABSTRACT)).toEqual({ order: ["alpha"], findings: [] });
   });
 
+  it("verde: il contratto annidato viene da `instance.contract`, non dal nome del componente (Story 2.23)", () => {
+    const lettura = shopCardLettura(() => layer({ name: "Action", pluginData: { part: "action" }, instance: { component: "Pill", contract: "badge@1", variant: {}, overrides: [] } }));
+    expect(buildOrder([lettura, badgeLettura()], [], CONTRACTS)).toEqual({ order: ["badge", "shop-card"], findings: [] });
+  });
+
+  it("rosso: `instance.contract` di un'altra versione o sconosciuto → blocco, ordine vuoto", () => {
+    for (const contract of ["badge@2", "chip@1"]) {
+      const lettura = shopCardLettura(() => layer({ name: "Action", pluginData: { part: "action" }, instance: { component: "Badge", contract, variant: {}, overrides: [] } }));
+      const result = buildOrder([lettura, badgeLettura()], [], CONTRACTS);
+      expect(result.order).toEqual([]);
+      expect(result.findings).toEqual([expect.objectContaining({ level: "blocco", where: 'componente "ShopCard"', message: expect.stringMatching(new RegExp(`^Istanza annidata "${contract}": `)) })]);
+    }
+  });
+
   it("a parità, ordine alfabetico", () => {
     expect(buildOrder([containing("Zeta", "Beta"), containing("Alpha", "Beta")], ["beta"], ABSTRACT).order).toEqual(["alpha", "zeta"]);
   });
