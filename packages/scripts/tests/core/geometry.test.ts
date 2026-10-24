@@ -7,6 +7,7 @@ import {
   layerClasses,
   rootSizeClasses,
   scaleClass,
+  scaleFromThemeCss,
   type Cella,
   type LetturaLayer,
   type Scale,
@@ -394,5 +395,20 @@ describe("geometria — fill dentro hug", () => {
 
   it("rosso: fill in un genitore fix non è una domanda", () => {
     expect(classesOf(layer({ style: { sizingH: "fill" } }), parent({ style: { layoutDir: "row" } }))).toEqual({ classes: ["flex-1"], findings: [] });
+  });
+});
+
+describe("scaleFromThemeCss (Story 2.22, voce deferred della 2.21)", () => {
+  it("legge ogni --spacing-<sfx>: <n>px; la base senza suffisso e i valori non in px non sono passi", () => {
+    const css = "@theme {\n  --spacing: 0.25rem;\n  --spacing-0: 0px;\n  --spacing-4: 16px;\n  --spacing-0-5: 2.5px;\n  --spacing-big: 2rem;\n  --spacing-4: 99px;\n  --color-x: #fff;\n}\n";
+    expect(scaleFromThemeCss(css)).toEqual([
+      { suffix: "0", px: 0 },
+      { suffix: "4", px: 16 },
+      { suffix: "0-5", px: 2.5 },
+    ]);
+  });
+
+  it("rosso: CSS senza spacing → scala vuota", () => {
+    expect(scaleFromThemeCss("--color-x: #fff;")).toEqual([]);
   });
 });

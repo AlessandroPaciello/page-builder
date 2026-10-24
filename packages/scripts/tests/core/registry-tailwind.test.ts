@@ -11,6 +11,8 @@ import {
   registeredProperties,
   REGISTRY,
   scaleClass,
+  scaleFromThemeCss,
+  STATE_PREFIXES,
   varSuffix,
   type Scale,
   type Translation,
@@ -32,6 +34,10 @@ import { loadTailwindCatalog } from "../fixtures/catalog";
  * sole; le loro classi sono quelle di `scaleClass` su ogni passo della scala
  * (le `--spacing-*` del tema generato) per ogni prefisso di misura e di
  * lato, i negativi dei lati, gli arbitrari, lo zero e le classi fisse.
+ * La scala viene da `scaleFromThemeCss`, la stessa funzione del nucleo.
+ *
+ * Stati (Story 2.22): ogni classe, con il prefisso di ogni stato
+ * (`STATE_PREFIXES`), produce CSS.
  */
 
 const OPACITY_SET = { name: "test/opacity", tokens: [{ name: "opacity.50", type: "opacity" as const, value: "0.5" }] };
@@ -86,11 +92,6 @@ function isUnsupported(property: string, value: string): boolean {
   return entry.kind === "keyword" && "unsupported" in entry.translate(value, { layerKind: "rect", parentDir: "none" });
 }
 
-/** La scala del tema: ogni `--spacing-<sfx>: <n>px` del CSS generato. */
-function scaleOf(css: string): Scale {
-  return [...css.matchAll(/^\s*--spacing-([\w-]+):\s*(-?[\d.]+)px;/gm)].map(([, suffix, px]) => ({ suffix: suffix!, px: Number(px) }));
-}
-
 const SIDES = GEOMETRY_PREFIXES.filter((prefix) => prefix !== "w" && prefix !== "h");
 
 /** Le classi di geometria: ogni passo per ogni prefisso, i negativi dei lati, arbitrari, zero, classi fisse. */
@@ -113,6 +114,25 @@ function expandGeometry(scale: Scale): Expanded[] {
   return out;
 }
 
+/** Le classi di stato: il prefisso di ogni stato davanti a ogni classe del registro e della geometria. */
+function expandStates(classes: readonly Expanded[]): Expanded[] {
+  return Object.entries(STATE_PREFIXES).flatMap(([state, prefix]) => classes.map(({ property, cls }) => ({ property: `${property} (${state})`, cls: `${prefix}${cls}` })));
+}
+
+/** Escape di un nome di classe in un selettore CSS (come `CSS.escape` per i caratteri ASCII). */
+function cssEscape(cls: string): string {
+  return cls.replace(/[^a-zA-Z0-9_\-\u0080-\uffff]/g, (char) => `\\${char}`);
+}
+
+/**
+ * Il CSS contiene il selettore della classe, seguito da un carattere che non
+ * continua un nome di classe: `hover:p-1` non passa grazie a `hover:p-10`.
+ */
+function hasSelector(css: string, cls: string): boolean {
+  const escaped = `.${cssEscape(cls)}`.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`${escaped}(?=[\\s,:{.[>~+)])`).test(css);
+}
+
 /** Il CSS del tema generato, senza l'`@import` relativo dei token extra (non serve alle utility). */
 function themeCss(theme: TokenCatalog): string {
   return generateTheme(theme)
@@ -126,7 +146,7 @@ describe("livello 4 — ogni classe del registro produce CSS con la Tailwind ins
     const theme = catalog();
     const { classes: registryClasses, emptyEntries } = expandRegistry(theme);
     expect(emptyEntries, "voci senza nessuna classe sul tema generato (manca un token del loro tipo?)").toEqual([]);
-    const scale = scaleOf(themeCss(theme));
+    const scale = scaleFromThemeCss(themeCss(theme));
     expect(scale.length, "la scala spacing del tema generato").toBeGreaterThan(20);
     const classes = [...registryClasses, ...expandGeometry(scale)];
 
@@ -150,9 +170,31 @@ describe("livello 4 — ogni classe del registro produce CSS con la Tailwind ins
     expect(unique.length).toBeGreaterThan(300);
   }, 60_000);
 
+  it("Story 2.22: ogni classe con il prefisso di ogni stato produce CSS (una build per stato)", async () => {
+    const theme = catalog();
+    const css = themeCss(theme);
+    const plain = [...expandRegistry(theme).classes, ...expandGeometry(scaleFromThemeCss(css))];
+    const states = expandStates([...new Map(plain.map((item) => [item.cls, item])).values()]);
+    expect(states.length).toBeGreaterThan(4 * 300);
+    const missing: string[] = [];
+    for (const prefix of Object.values(STATE_PREFIXES)) {
+      const batch = states.filter(({ cls }) => cls.startsWith(prefix));
+      const compiler = await compile(`@import "tailwindcss";\n${css}`, { base: import.meta.dirname, onDependency: () => {} });
+      const output = compiler.build(batch.map(({ cls }) => cls));
+      // Tailwind scrive il selettore con la classe escapata: c'è solo se la classe produce CSS.
+      for (const { property, cls } of batch) if (!hasSelector(output, cls)) missing.push(`${property}: ${cls}`);
+    }
+    expect(missing, "classi di stato che non producono CSS").toEqual([]);
+  }, 60_000);
+
   it("rosso: una classe che Tailwind non conosce non produce CSS", async () => {
     const compiler = await compile(`@import "tailwindcss";\n${themeCss(catalog())}`, { base: import.meta.dirname, onDependency: () => {} });
     const empty = compiler.build([]);
     expect(compiler.build(["border-width-1"])).toBe(empty);
+    expect(compiler.build(["pressed:bg-red-500"])).toBe(empty);
+    expect(hasSelector(compiler.build(["hover:bg-red-500"]), "hover:bg-red-500")).toBe(true);
+    expect(hasSelector(compiler.build(["hover:bg-nessun-token"]), "hover:bg-nessun-token")).toBe(false);
+    // Un prefisso di un'altra classe non basta.
+    expect(hasSelector(compiler.build(["hover:p-10"]), "hover:p-1")).toBe(false);
   });
 });

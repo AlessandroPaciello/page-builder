@@ -2,7 +2,7 @@
   "name": "@penpot-ds/scripts",
   "version": "0.0.0",
   "private": true,
-  "description": "Rigenerazione del tema dal catalogo token Penpot (fixture o live) e nucleo puro della pipeline v3 (schemi, registro delle proprietà e geometria, Story 2.20–2.21).",
+  "description": "Rigenerazione del tema dal catalogo token Penpot (fixture o live) e nucleo puro della pipeline v3 (schemi, registro delle proprietà, geometria, verifica e generazione dei componenti, Story 2.20–2.22).",
   "type": "module",
   "scripts": {
     "check-types": "tsc --noEmit",
@@ -11,6 +11,7 @@
     "theme": "node --import tsx src/theme/main.ts"
   },
   "dependencies": {
+    "@app/contracts": "workspace:*",
     "@modelcontextprotocol/sdk": "catalog:",
     "zod": "catalog:"
   },

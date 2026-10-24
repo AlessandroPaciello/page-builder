@@ -398,3 +398,16 @@ export function rootSizeClasses(cells: readonly Cella[], input: { readonly scale
   return { classes: classes.map((list) => [...new Set(list)].sort()), findings };
 }
 
+
+/**
+ * La scala del tema dal CSS generato (Story 2.22, voce deferred della 2.21):
+ * ogni `--spacing-<sfx>: <n>px;`. La base `--spacing` (senza suffisso) e i
+ * valori non in px non sono passi. Un suffisso ripetuto vale la prima volta.
+ */
+export function scaleFromThemeCss(css: string): Scale {
+  const steps = new Map<string, number>();
+  for (const [, suffix, px] of css.matchAll(/^\s*--spacing-([\w-]+)\s*:\s*(-?\d+(?:\.\d+)?)px\s*;/gm)) {
+    if (!steps.has(suffix!)) steps.set(suffix!, Number(px));
+  }
+  return [...steps].map(([suffix, px]) => ({ suffix, px }));
+}
