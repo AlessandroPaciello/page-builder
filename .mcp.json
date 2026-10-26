@@ -3,6 +3,16 @@
     "penpot": {
       "type": "http",
       "url": "http://localhost:9001/mcp/stream?userToken=${PENPOT_MCP_TOKEN:-}"
+    },
+    "pds": {
+      "type": "stdio",
+      "command": "pnpm",
+      "args": [
+        "--silent",
+        "--filter",
+        "@penpot-ds/scripts",
+        "pds"
+      ]
     }
   }
 }
