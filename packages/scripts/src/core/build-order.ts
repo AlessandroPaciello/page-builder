@@ -24,13 +24,26 @@ export function letturaName(lettura: Pick<Lettura, "component" | "pluginData">, 
   return found.contract?.name ?? kebabOf(lettura.component);
 }
 
-function instancesOf(layer: LetturaLayer, out: Set<string>): void {
+/**
+ * I nomi dei contratti annidati e, per quelli con `instance.contract`
+ * (`badge@1`), i problemi di `contractOf` (contratto sconosciuto o versione
+ * diversa dal codice).
+ */
+function instancesOf(layer: LetturaLayer, out: Set<string>, problems: Map<string, string>, contracts: ContractRegistry): void {
   // I figli di un'istanza non si visitano: sono del componente annidato.
   if (layer.instance !== undefined) {
-    out.add(instanceName(layer.instance.component));
+    if (layer.instance.contract !== undefined) {
+      const found = contractOf(layer.instance.contract, contracts);
+      if (found.contract === undefined) {
+        // Il blocco del contratto basta: il nome non entra tra le dipendenze (niente "né letto né generato").
+        if (!problems.has(layer.instance.contract)) problems.set(layer.instance.contract, found.problem!);
+        return;
+      }
+    }
+    out.add(instanceName(layer.instance));
     return;
   }
-  for (const child of layer.children) instancesOf(child, out);
+  for (const child of layer.children) instancesOf(child, out, problems, contracts);
 }
 
 export function buildOrder(letture: readonly Pick<Lettura, "component" | "pluginData" | "cells">[], generated: readonly string[], contracts: ContractRegistry = COMPONENT_CONTRACTS): BuildOrder {
@@ -48,9 +61,13 @@ export function buildOrder(letture: readonly Pick<Lettura, "component" | "plugin
       continue;
     }
     const set = new Set<string>();
+    const problems = new Map<string, string>();
     for (const cell of lettura.cells) {
       // Anche la radice: un componente che è un'istanza di sé stesso è un ciclo.
-      instancesOf(cell.root, set);
+      instancesOf(cell.root, set, problems, contracts);
+    }
+    for (const [value, problem] of [...problems].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
+      findings.push({ level: "blocco", where: `componente "${lettura.component}"`, message: `Istanza annidata "${value}": ${problem}` });
     }
     deps.set(name, set);
   }

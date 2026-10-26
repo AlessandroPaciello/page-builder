@@ -3,7 +3,7 @@ import { COMPONENT_CONTRACTS, type ComponentContract } from "@app/contracts";
 import { GEOMETRY_ENTRIES, rootSizeClasses, type Scale } from "./geometry";
 import { camelCase, kebabOf, pascalCase, PART_KEY, wordsOf } from "./naming";
 import { layerClasses, type TokenTypeOf } from "./registry";
-import type { Cella, Finding, LetturaLayer, PluginData } from "./schemas";
+import type { Cella, Finding, Instance, LetturaLayer, PluginData } from "./schemas";
 
 /**
  * Verifica di un componente intero (Story 2.22): contratto, assi e stati
@@ -127,9 +127,32 @@ export function contractOf(value: string | undefined, contracts: ContractRegistr
   return { contract };
 }
 
-/** Il nome kebab del contratto di un'istanza annidata (`Badge` → `badge`). */
-export function instanceName(component: string): string {
-  return kebabOf(component);
+/**
+ * Il nome kebab del contratto di un'istanza annidata: il nome in
+ * `instance.contract` (`badge@1` → `badge`) se c'è, altrimenti il kebab del
+ * nome del componente (`Badge` → `badge`).
+ */
+export function instanceName(instance: Pick<Instance, "component" | "contract">): string {
+  return instance.contract === undefined ? kebabOf(instance.component) : instance.contract.split("@")[0]!;
+}
+
+/**
+ * Il contratto di un'istanza annidata. Con `instance.contract` passa da
+ * `contractOf`, che controlla anche la versione; senza, cerca il kebab del
+ * nome del componente.
+ */
+export function nestedContractOf(
+  instance: Pick<Instance, "component" | "contract">,
+  contracts: ContractRegistry,
+): { name: string; contract?: ComponentContract; problem?: string } {
+  const name = instanceName(instance);
+  if (instance.contract !== undefined) {
+    const found = contractOf(instance.contract, contracts);
+    return found.contract === undefined ? { name, problem: found.problem! } : { name, contract: found.contract };
+  }
+  const contract = Object.hasOwn(contracts, name) ? contracts[name] : undefined;
+  if (contract === undefined) return { name, problem: `nessun contratto "${name}". I contratti sono [${Object.keys(contracts).sort().join(", ")}].` };
+  return { name, contract };
 }
 
 function labelOf(variant: Readonly<Record<string, string>>): string {
@@ -318,10 +341,9 @@ export function analyzeComponent(lettura: { readonly component: string; readonly
 
   const visitInstance = (cell: ModelCell, layer: LetturaLayer, part: ModelPart, where: string): void => {
     const instance = layer.instance!;
-    const name = instanceName(instance.component);
-    const nested = Object.hasOwn(contracts, name) ? contracts[name] : undefined;
+    const { name, contract: nested, problem } = nestedContractOf(instance, contracts);
     if (nested === undefined) {
-      block(where, `Istanza di "${instance.component}": nessun contratto "${name}". I contratti sono [${Object.keys(contracts).sort().join(", ")}].`);
+      block(where, `Istanza di "${instance.component}": ${problem!}`);
       return;
     }
     if (part.instance !== undefined && part.instance.name !== name) {
@@ -421,7 +443,7 @@ export function analyzeComponent(lettura: { readonly component: string; readonly
       const part = register(cell, layer, key, parentKey, classes, where);
       if (part === undefined) return;
       if (part.plainLayer === true) {
-        block(where, `La parte "${key}" è un layer in un'altra cella e un'istanza di "${instanceName(layer.instance.component)}" qui.`);
+        block(where, `La parte "${key}" è un layer in un'altra cella e un'istanza di "${instanceName(layer.instance)}" qui.`);
         return;
       }
       visitInstance(cell, layer, part, where);

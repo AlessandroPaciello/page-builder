@@ -90,6 +90,30 @@ describe("verifyComponent — matrice della spec", () => {
   });
 });
 
+describe("verifyComponent — contratto dell'istanza annidata (Story 2.23)", () => {
+  const withContract = (component: string, contract: string): Lettura =>
+    shopCardLettura(() => ({ ...badgeInstance(), instance: { component, contract, variant: { variant: "destructive" }, overrides: [] } }));
+
+  it("verde: `instance.contract` decide il contratto, il nome del componente non conta", () => {
+    expect(verify(withContract("Pill", "badge@1"))).toEqual([]);
+    expect(verify(withContract("Components / Badge", "badge"))).toEqual([]);
+  });
+
+  it("rosso: versione diversa dal codice → blocco che nomina la versione", () => {
+    const blocks = of(verify(withContract("Badge", "badge@2")), "blocco");
+    // Uno per cella di ShopCard.
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0]!.message).toContain('"badge@2"');
+    expect(blocks[0]!.message).toContain("versione");
+  });
+
+  it("rosso: contratto sconosciuto → blocco anche se il nome del componente ne ha uno", () => {
+    const blocks = of(verify(withContract("Badge", "chip@1")), "blocco");
+    expect(blocks).toHaveLength(2);
+    expect(blocks[0]!.message).toContain('"chip@1"');
+  });
+});
+
 describe("verifyComponent — contratto, assi e stati", () => {
   it("rosso: contratto mancante, sconosciuto o di un'altra versione → blocco", () => {
     for (const pluginData of [undefined, { contract: "chip" }, { contract: "badge@2" }]) {

@@ -27,9 +27,15 @@ export const StyleValue = z.union([z.string(), z.number(), z.boolean()]);
 
 export type StyleValue = z.infer<typeof StyleValue>;
 
-/** Istanza di un altro componente: componente d'origine, variante scelta e override rispetto all'istanza principale. */
+/**
+ * Istanza di un altro componente: componente d'origine, variante scelta e
+ * override rispetto all'istanza principale. `contract` (`nome@versione`) è il
+ * plugin data `contract` del container del componente d'origine (Story
+ * 2.23): quando c'è, il contratto annidato si ricava da lì, non dal nome.
+ */
 export const Instance = z.object({
   component: z.string().min(1),
+  contract: z.string().min(1).optional(),
   variant: z.record(z.string(), z.string()),
   overrides: z.array(z.string()),
 });
