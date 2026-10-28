@@ -1,4 +1,5 @@
 import { contractOf, instanceName, type ContractRegistry } from "./verify";
+import { byString } from "./internal";
 import { kebabOf } from "./naming";
 import type { Finding, Lettura, LetturaLayer } from "./schemas";
 import { COMPONENT_CONTRACTS } from "@app/contracts";
@@ -66,12 +67,12 @@ export function buildOrder(letture: readonly Pick<Lettura, "component" | "plugin
       // Anche la radice: un componente che è un'istanza di sé stesso è un ciclo.
       instancesOf(cell.root, set, problems, contracts);
     }
-    for (const [value, problem] of [...problems].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
+    for (const [value, problem] of [...problems].sort(([a], [b]) => byString(a, b))) {
       findings.push({ level: "blocco", where: `componente "${lettura.component}"`, message: `Istanza annidata "${value}": ${problem}` });
     }
     deps.set(name, set);
   }
-  for (const [name, set] of [...deps].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
+  for (const [name, set] of [...deps].sort(([a], [b]) => byString(a, b))) {
     for (const dep of [...set].sort()) {
       if (!deps.has(dep) && !generated.includes(dep)) {
         findings.push({ level: "blocco", where: `componente "${name}"`, message: `Contiene "${dep}", che non è né da generare né già generato: leggi anche "${dep}" o generalo prima.` });

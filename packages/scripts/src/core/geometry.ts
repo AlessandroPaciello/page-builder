@@ -1,3 +1,4 @@
+import { byString, SIZING_DEFAULT, SIZING_VALUES, variantLabel, withInvalidAnswer } from "./internal";
 import type { Cella, Finding, LetturaLayer } from "./schemas";
 
 /**
@@ -92,13 +93,11 @@ const isAbsolute = (layer: LetturaLayer): boolean => pick(layer, "position") ===
 
 export type Axis = "H" | "V";
 
-const SIZINGS = ["fix", "fill", "auto"];
-
 /** Dimensionamento del layer sull'asse (`auto` = hug); `fix` se manca, `undefined` se malformato. */
 export function sizingOf(layer: LetturaLayer, axis: Axis): string | undefined {
   const value = styleOf(layer, `sizing${axis}`);
-  if (value === undefined) return "fix";
-  return typeof value === "string" && SIZINGS.includes(value) ? value : undefined;
+  if (value === undefined) return SIZING_DEFAULT;
+  return typeof value === "string" && (SIZING_VALUES as readonly string[]).includes(value) ? value : undefined;
 }
 
 /**
@@ -129,7 +128,7 @@ export function scaleClass(prefix: string, px: number, scale: Scale): ScaleClass
   const size = Math.abs(px);
   const sign = px < 0 ? "-" : "";
   // Più token con la stessa misura: vince il suffisso minore, così il risultato non dipende dall'ordine del catalogo.
-  const exact = scale.filter((step) => step.px === size).sort((a, b) => (a.suffix < b.suffix ? -1 : a.suffix > b.suffix ? 1 : 0))[0];
+  const exact = scale.filter((step) => step.px === size).sort((a, b) => byString(a.suffix, b.suffix))[0];
   if (exact !== undefined) return { cls: `${sign}${prefix}-${exact.suffix}`, offScale: false };
   let nearest: ScaleStep | undefined;
   for (const step of scale) {
@@ -342,12 +341,14 @@ export function geometryClasses(layer: LetturaLayer, input: GeometryInput): Geom
       const answer = layer.pluginData?.[OVERFLOW_KEY];
       if (answer === "hidden") out.push("overflow-hidden");
       else if (answer !== "visible") {
-        const invalid = answer === undefined ? "" : ` La risposta "${answer}" non è valida.`;
         findings.push({
           level: "domanda",
           where,
           key: OVERFLOW_KEY,
-          message: `Il layer ritaglia il contenuto ("clip") e oggi niente esce, ma un discendente ha contenuto variabile (testo, immagine o slot): "hidden" lo taglia se cresce (e taglia anche l'anello di focus), "visible" lo lascia uscire.${invalid}`,
+          message: withInvalidAnswer(
+            `Il layer ritaglia il contenuto ("clip") e oggi niente esce, ma un discendente ha contenuto variabile (testo, immagine o slot): "hidden" lo taglia se cresce (e taglia anche l'anello di focus), "visible" lo lascia uscire.`,
+            answer,
+          ),
           options: [...OVERFLOW_ANSWERS],
         });
       }
@@ -355,11 +356,6 @@ export function geometryClasses(layer: LetturaLayer, input: GeometryInput): Geom
   }
 
   return { classes: out, findings };
-}
-
-function cellLabel(cell: Cella): string {
-  const entries = Object.entries(cell.variant);
-  return entries.length === 0 ? "senza varianti" : entries.map(([key, value]) => `${key}=${value}`).join(", ");
 }
 
 function rootMeasure(root: LetturaLayer, axis: Axis): number | undefined {
@@ -391,7 +387,7 @@ export function rootSizeClasses(cells: readonly Cella[], input: { readonly scale
       const result = scaleClass(AXES[axis].measure, px, input.scale);
       classes[i]!.push(result.cls);
       if (result.offScale) {
-        findings.push({ level: "avviso", where: `layer "${cell.root.name}" (cella ${cellLabel(cell)})`, message: offScaleMessage(`Misura "${AXES[axis].size}"`, px, result) });
+        findings.push({ level: "avviso", where: `layer "${cell.root.name}" (cella ${variantLabel(cell.variant)})`, message: offScaleMessage(`Misura "${AXES[axis].size}"`, px, result) });
       }
     });
   }

@@ -8,6 +8,7 @@ import {
   type GeometryQuestion,
   type Scale,
 } from "./geometry";
+import { SIZING_DEFAULT, SIZING_VALUES, withInvalidAnswer } from "./internal";
 import type { Finding, LetturaLayer, PluginData } from "./schemas";
 import { varSuffix, type TokenType } from "./token-names";
 
@@ -117,12 +118,14 @@ const fillSizing =
       const answer = answers?.[key];
       if (answer === "hug") return classes();
       if (answer !== "fill") {
-        const invalid = answer === undefined ? "" : ` La risposta "${answer}" non è valida.`;
         const label = axis === "H" ? "orizzontale" : "verticale";
         return {
           question: {
             key,
-            message: `Il layer è "fill" in ${label} ma il genitore abbraccia il contenuto (hug) sullo stesso asse: "fill" lo allarga quanto il genitore, "hug" lo lascia della sua misura.${invalid}`,
+            message: withInvalidAnswer(
+              `Il layer è "fill" in ${label} ma il genitore abbraccia il contenuto (hug) sullo stesso asse: "fill" lo allarga quanto il genitore, "hug" lo lascia della sua misura.`,
+              answer,
+            ),
             options: [...FILL_IN_HUG_ANSWERS],
           },
         };
@@ -184,8 +187,8 @@ export const REGISTRY = {
   ),
   layoutWrap: keyword({ nowrap: "", wrap: "flex-wrap" }, "nowrap"),
   // Bug 3: dimensionamento. `fix` e `auto` (hug) non danno classi qui: la misura fissa è una regola di geometria (`geometry.ts`).
-  sizingH: { kind: "keyword", values: ["fix", "fill", "auto"], default: "fix", translate: fillSizing("H") },
-  sizingV: { kind: "keyword", values: ["fix", "fill", "auto"], default: "fix", translate: fillSizing("V") },
+  sizingH: { kind: "keyword", values: SIZING_VALUES, default: SIZING_DEFAULT, translate: fillSizing("H") },
+  sizingV: { kind: "keyword", values: SIZING_VALUES, default: SIZING_DEFAULT, translate: fillSizing("V") },
   // Story 2.21: misure, posizione, vincoli e ritaglio (bug 11, lato nucleo).
   ...GEOMETRY_ENTRIES,
 } as const satisfies Record<string, RegistryEntry>;
