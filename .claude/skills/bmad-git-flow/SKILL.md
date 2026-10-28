@@ -16,7 +16,7 @@ Applies the team's Git & GitHub Collaboration Playbook to **this** project's rea
 | `.copilot-instructions.md` | N/A — skip                                                                                                                    |
 | `CLAUDE.md`                | `{project-root}/CLAUDE.md` — doesn't exist yet; if a session needs it, offer to create one only when asked, not proactively |
 
-Story key format: whatever `bmad-create-story` produced for `{{story_key}}` (check `_bmad-output/implementation-artifacts/` for existing examples, typically `{epic}.{story}` e.g. `1.2`). Don't assume `S12` — read the real key.
+Story key format: whatever `bmad-build` produced for `{{story_key}}` (check `_bmad-output/implementation-artifacts/` for existing examples, typically `{epic}.{story}` e.g. `1.2`). Don't assume `S12` — read the real key.
 
 **Important divergence from the playbook:** the playbook's §2.2 tells you to gitignore `.claude/` as a local-only Claude Code cache. In this project `.claude/`, `.agents/`, and `.opencode/` hold the actual BMAD skill definitions (same skills, mirrored for different tool integrations) — this is committed, shared team content, not personal session state. Never suggest gitignoring these directories wholesale.
 

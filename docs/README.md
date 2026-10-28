@@ -1,6 +1,6 @@
 # Documentazione — page-builder
 
-Questa cartella è il `project_knowledge` del progetto (vedi `_bmad/config.toml`): è qui che gli skill BMad cercano il contesto sulla codebase, ed è qui che atterra la documentazione generata da `bmad-document-project` (`[DP]`) o `bmad-generate-project-context` (`[GPC]`).
+Questa cartella è il `project_knowledge` del progetto (vedi `_bmad/config.toml`): è qui che gli skill BMad cercano il contesto sulla codebase, ed è qui che atterra la documentazione generata da `bmad-project-context`.
 
 **Al momento è vuota** — il progetto è agli inizi (Epic 1). Ha senso popolarla quando ci sarà abbastanza codice da documentare, indicativamente a Epic 1 completata.
 

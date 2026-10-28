@@ -1,0 +1,5 @@
+code: gitflow
+name: "Git Flow"
+description: "Playbook Git & GitHub del team applicato al layout BMAD del progetto: branch, commit, PR e conflitti negli artefatti."
+module_version: 1.0.0
+default_selected: false
