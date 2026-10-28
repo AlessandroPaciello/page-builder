@@ -50,6 +50,11 @@ yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
 
+# Python (script delle skill BMAD)
+__pycache__/
+*.pyc
+.pytest_cache
+
 # Turbo
 .turbo
 .nx

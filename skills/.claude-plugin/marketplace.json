@@ -1,0 +1,18 @@
+{
+  "name": "page-builder",
+  "description": "Moduli BMAD custom del page builder. Ogni nuova skill va aggiunta all'array skills del suo plugin, altrimenti l'installer la ignora.",
+  "plugins": [
+    {
+      "name": "pds",
+      "source": ".",
+      "version": "1.0.0",
+      "skills": ["./pds/pds-setup"]
+    },
+    {
+      "name": "gitflow",
+      "source": ".",
+      "version": "1.0.0",
+      "skills": ["./git-flow/bmad-git-flow"]
+    }
+  ]
+}

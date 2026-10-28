@@ -1,0 +1,2 @@
+module,skill,display-name,menu-code,description,action,args,phase,preceded-by,followed-by,required,output-location,outputs
+gitflow,bmad-git-flow,[GF] Git Flow,GF,"Nome del branch, commit message, body della PR e conflitti negli artefatti BMAD secondo il playbook del team",,,anytime,,,false,,
