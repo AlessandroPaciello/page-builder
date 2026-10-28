@@ -4,27 +4,20 @@ import { describe, expect, it } from "vitest";
 
 import { GENERATOR_VERSION, isGenerated, readGeneratedHeader, sha256Hex, withGeneratedHeader } from "../../src/core";
 
-/** Livello 1 della CI (Story 2.22): SHA-256 puro contro `node:crypto`, intestazione `@generated`. */
+/** Livello 1 della CI (Story 2.22): SHA-256 su vettori noti, intestazione `@generated`. */
 
 const reference = (text: string): string => createHash("sha256").update(text, "utf8").digest("hex");
 
-describe("sha256Hex — uguale a node:crypto", () => {
-  const samples = [
-    "",
-    "abc",
-    "a".repeat(55),
-    "a".repeat(56),
-    "a".repeat(63),
-    "a".repeat(64),
-    "a".repeat(65),
-    "x".repeat(1000),
-    "àèìòù — non modificare a mano",
-    "emoji 🎨 e CJK 漢字",
-    'export const badgeParts = ["root", "label"] as const;\n',
+describe("sha256Hex — vettori noti", () => {
+  // Calcolati fuori da Node (`printf '%s' … | sha256sum`).
+  const vectors: [string, string][] = [
+    ["", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"],
+    ["abc", "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"],
+    ["emoji 🎨 e CJK 漢字", "6d8c935809f9ed99192718b58c2fc3a42eb482f01041eb2e735d0c11c1dca967"],
   ];
-  for (const sample of samples) {
-    it(`${JSON.stringify(sample.slice(0, 24))} (${sample.length} caratteri)`, () => {
-      expect(sha256Hex(sample)).toBe(reference(sample));
+  for (const [text, hex] of vectors) {
+    it(`${JSON.stringify(text)} (${text.length} caratteri)`, () => {
+      expect(sha256Hex(text)).toBe(hex);
     });
   }
 

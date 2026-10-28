@@ -44,10 +44,7 @@ export interface GenerateResult {
   readonly suggestions: Suggerimento[];
 }
 
-// La parola chiave si compone: il gate del nucleo legge come import ogni literal con la parola seguita da un path tra virgolette.
-const FROM = ["fr", "om"].join("");
-
-const importLine = (what: string, specifier: string): string => `import ${what} ${FROM} ${JSON.stringify(specifier)};`;
+const importLine = (what: string, specifier: string): string => `import ${what} from ${JSON.stringify(specifier)};`;
 
 const q = (text: string): string => JSON.stringify(text);
 

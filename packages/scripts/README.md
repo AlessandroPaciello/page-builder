@@ -87,17 +87,19 @@ Quattro funzioni pure, `Lettura` → dati, guidate dal contratto di `@app/contra
   - Un `styles.ts`/`stories.tsx` esistente senza marker `@generated` è un blocco (non si sovrascrive mai); identico al nuovo → nessun `Change`; modificato a mano → `aggiorna` con un avviso.
   - **Cambio di struttura:** con `existingStyles`, le `<id>Parts`/`<id>ListParts` vecchie si confrontano con le nuove; ogni parte aggiunta, tolta o diventata lista dà un `Suggerimento {part, kind, message, example}`, mai applicato, con l'esempio preso dal TSX attuale.
 - `buildOrder(letture, generated)` → `{ order, findings }`: ordine topologico dalle istanze (a parità alfabetico); un annidato né letto né generato, un `instance.contract` sconosciuto o di un'altra versione, un ciclo, una lettura senza contratto valido e due letture con lo stesso contratto sono blocchi (ordine vuoto).
-- `readGeneratedHeader(text)` → `{ version, hash, ok } | undefined`: la prima riga `// @generated pds <GENERATOR_VERSION> sha256:<hex> — non modificare a mano`, con l'hash del corpo dopo la prima riga (LF). SHA-256 è scritto in TS puro (`hash.ts`), confrontato con `node:crypto` nel test. Serve al livello 3 (Story 2.24, `checkGeneratedFiles` in `src/server/generated-files.ts`).
+- `readGeneratedHeader(text)` → `{ version, hash, ok } | undefined`: la prima riga `// @generated pds <GENERATOR_VERSION> sha256:<hex> — non modificare a mano`, con l'hash del corpo dopo la prima riga (LF). SHA-256 viene da `node:crypto` (`hash.ts`), l'unico builtin ammesso nel nucleo; il test lo controlla su vettori noti. Serve al livello 3 (Story 2.24, `checkGeneratedFiles` in `src/server/generated-files.ts`).
 
 Il livello 4 (`tests/core/registry-tailwind.test.ts`) compila anche ogni classe del registro e della geometria con il prefisso di ogni stato.
 
 ## Confini (`pnpm --filter @penpot-ds/scripts lint`)
 
-Oltre alle regole di package (`@app/*` vietato tranne `@app/contracts`, `@penpot-ds/ui`, `apps/*`, relativi fuori dal package), il gate conosce le cartelle della v3 (Story 2.19), anche prima che esistano:
+Oltre alle regole di package (`@app/*` vietato tranne `@app/contracts`, `@penpot-ds/ui`, `apps/*`, relativi fuori dal package), il gate conosce le cartelle della v3 (Story 2.19), anche prima che esistano.
+
+Gli import sono letti con il parser del compilatore TypeScript: dichiarazioni `import`/`export … from`, `import x = require()`, `import()`, `require()` e `import("x")` di tipo. Un testo che sembra un import dentro una stringa o un template non lo è; un sorgente che il parser non legge fa uscire il gate con 1. Sul testo senza commenti resta un backstop: `@app/` fuori dai casi ammessi, `@penpot-ds/ui` e `apps/` sono rossi anche dentro una stringa, il client MCP fuori da `src/penpot` anche in un literal qualunque.
 
 | Regola | Cosa vieta |
 |---|---|
-| `core` | in `src/core` ogni import che non sia un relativo interno a `src/core`, `@app/contracts` o `zod`; import dinamici e `require` con argomento non letterale; `process`, `console`, `fetch`, `globalThis`, `global`, `eval`, `Buffer`, `__dirname`, `__filename` e `import.meta` nel testo senza commenti (gli accessi a membro come `job.process()` restano ammessi) |
+| `core` | in `src/core` ogni import che non sia un relativo interno a `src/core`, `@app/contracts`, `zod` o `node:crypto` (esatto: un hash è deterministico); import dinamici e `require` con argomento non letterale; `process`, `console`, `fetch`, `globalThis`, `global`, `eval`, `Buffer`, `__dirname`, `__filename` e `import.meta` nel testo senza commenti (gli accessi a membro come `job.process()` restano ammessi) |
 | `penpot` | il client MCP (`@modelcontextprotocol/sdk/…/client…`) fuori da `src/penpot`, e gli import di `src/penpot` da `src/shared` (un re-export lì aggirerebbe `server`). Il gate controlla il client MCP, non ogni accesso di rete: non garantisce da solo che nessun altro file parli con Penpot |
 | `server` | gli import di `src/penpot` da `src/server`, tranne il punto di iniezione `src/server/main.ts` |
 | `v3` | una cartella `v3` in `src/` (anche vuota) e gli import relativi verso una cartella `v3` |

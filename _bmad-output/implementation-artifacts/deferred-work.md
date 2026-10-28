@@ -350,7 +350,7 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor
   summary: **spostata alla 2.31** — nessun test automatico compila l'output del generatore (`styles.ts`, `stories.tsx`, scaffold) con `tsc` né lo passa allo smoke delle story; il controllo della 2.22 è stato fatto una volta a mano.
   evidence: review 2.22 (VG). I test controllano solo singole righe dell'output: una virgola mancante in `compoundVariants` o un path sbagliato di `cn` passerebbero. Spostata alla Story 2.31 (decisione di Alessandro, 2026-10-26, spec 2.24): la compilazione arriva quando `pnpm check-types` compila i file generati in `packages/ui`.
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-22-verifica-e-generazione-chiavi-di-parte-styles-scaffold-story.md`
-  summary: il gate `core` di `check-boundaries.mjs` legge come import ogni testo con `from "<path>"`, anche dentro un template literal; `generate.ts` compone la parola (`FROM = ["fr","om"].join("")`) per scrivere le righe di import dei file generati.
+  summary: **chiusa con la spec `spec-confini-core-crypto-e-gate-import.md`** (2026-10-28) — il gate legge gli import veri con il parser TypeScript, `FROM` e `["ap","ps"].join("")` tolti, `node:crypto` ammesso nel nucleo. Voce originale: il gate `core` di `check-boundaries.mjs` legge come import ogni testo con `from "<path>"`, anche dentro un template literal; `generate.ts` compone la parola (`FROM = ["fr","om"].join("")`) per scrivere le righe di import dei file generati.
   evidence: review 2.22 (Blind). È un limite del gate, preesistente (azione della retro Epic 1 sui gate fragili). Correzione: leggere le dichiarazioni di import vere, con un test rosso/verde sul testo dentro le stringhe, poi togliere `FROM`.
 
 ## Deferred from: Story 2.23 — adattatore Penpot readComponent (2026-10-24)
@@ -376,3 +376,9 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor
 - source_spec: `_bmad-output/implementation-artifacts/spec-refactor-core-analyze-component.md`
   summary: nessun test fissa il comportamento che il refactor ha riscritto. Mancano il massimo delle copie di una lista quando le celle ne hanno numeri diversi (oggi tutte le fixture ne hanno 2) e un test di caratterizzazione sull'ordine dei `Finding` di tutte le fasi; il golden del refactor è rimasto in scratchpad.
   evidence: review del refactor (VG, Blind). Se `Math.max(...)` diventasse `count + 1`, la suite resterebbe verde, sia sul baseline sia sul branch. Il refactor non poteva aggiungere test (vincolo di Alessandro: `tests/` invariato). Correzione: un caso in `generate.test.ts` con 3 copie in una cella e 2 nelle altre, che si aspetta `length: 3`, più uno snapshot dei `Finding` su una fixture che esercita ogni fase.
+
+## Deferred from: refactor confini core crypto e gate import (2026-10-28)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-confini-core-crypto-e-gate-import.md`
+  summary: fuori da `src/core` un import con specifier assoluto o `file:` (`"/repo/apps/web/x"`) che esce dal package è verde: il controllo dei relativi guarda solo `./`/`../` e `FORBIDDEN_RAW` non vede `apps/` preceduto da `/`.
+  evidence: review Edge Case Hunter; preesistente (il gate del baseline aveva lo stesso buco). Correzione: risolvere anche gli specifier assoluti e `file:` con `escapesPackageRoot`, con un caso rosso/verde.

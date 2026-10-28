@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -147,8 +147,11 @@ describe("checkBoundaries: rosso", () => {
     expectRed(checkSource('import { page } from "apps/web";\n'), "apps/web");
   });
 
-  it("lo specifier vietato in una stringa non-import è comunque rosso (fail-closed)", () => {
-    expectRed(checkSource('export const target = "@app/domain";\n'), "@app/domain");
+  it("lo specifier vietato in una stringa non-import è comunque rosso via backstop raw (fail-closed)", () => {
+    const report = checkSource('export const target = "@app/domain";\n');
+    expect(report.violations.some((violation) => violation.line === "?" && violation.text?.includes("backstop raw")), JSON.stringify(report)).toBe(true);
+    // Non è un import: il parser non lo legge come specifier.
+    expect(report.violations.some((violation) => violation.specifier === "@app/domain")).toBe(false);
   });
 
   it("il CLI invocato come in CI (`node scripts/check-boundaries.mjs`) scansiona davvero ed esce 0", () => {
@@ -168,7 +171,7 @@ describe("checkBoundaries: rosso", () => {
         "src/index.ts": "const from = `@app/domain`;\n",
       }),
     });
-    expect(report.violations.some((violation) => violation.text?.includes("desincronizzato"))).toBe(true);
+    expect(report.violations.some((violation) => violation.text?.includes("backstop raw"))).toBe(true);
   });
 
   it("import apps/web mascherato da apici misti sulla stessa riga è rosso (review 2.4)", () => {
@@ -204,6 +207,137 @@ describe("checkBoundaries: rosso", () => {
       }),
     });
     expect(report.violations.length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * Il gate legge gli import veri con il parser TypeScript, non con regex sul
+ * testo, e ammette `node:crypto` nel nucleo (spec confini-core-crypto-e-gate-import).
+ */
+describe("checkBoundaries: import veri e node:crypto nel nucleo", () => {
+  const coreFile = join("src", "core", "a.ts");
+
+  function check(files: Record<string, string>): BoundaryReport {
+    return checkBoundaries({ packageRoot: fakePackage({ "src/index.ts": "export const ok = 1;\n", ...files }) });
+  }
+
+  function coreViolations(report: BoundaryReport) {
+    return report.violations.filter((violation) => violation.rule === "core");
+  }
+
+  it("verde: `node:crypto` nel nucleo", () => {
+    const report = check({
+      "src/core/a.ts": 'import { createHash } from "node:crypto";\nexport const h = createHash("sha256").update("x").digest("hex");\n',
+    });
+    expect(report).toEqual({ violations: [], scanErrors: [], scannedFileCount: 2 });
+  });
+
+  it("rosso: altri builtin, `crypto` senza prefisso e sottopercorsi di `node:crypto`, con la riga", () => {
+    for (const specifier of ["node:fs", "crypto", "node:crypto/x"]) {
+      const report = check({ "src/core/a.ts": `export const a = 1;\nimport x from ${JSON.stringify(specifier)};\nexport { x };\n` });
+      const found = coreViolations(report);
+      expect(found.length, JSON.stringify(report)).toBeGreaterThan(0);
+      expect(found[0], JSON.stringify(report)).toMatchObject({ file: coreFile, line: 2, specifier });
+    }
+  });
+
+  it("verde: un testo che sembra un import, in un template o in una stringa del nucleo", () => {
+    const report = check({
+      "src/core/a.ts":
+        'export const line = `import x from "node:fs";`;\nexport const copy = "copia from \'x\'";\nexport const call = "require(\'fs\') e import(\'fs\')";\n',
+    });
+    expect(report.violations, JSON.stringify(report)).toEqual([]);
+    expect(report.scanErrors).toEqual([]);
+  });
+
+  it("rosso: ogni forma di import vero fuori dalla lista bianca del nucleo", () => {
+    const sources = [
+      'import x from "lodash";\nexport { x };\n',
+      'export * from "lodash";\n',
+      'export const m = await import("lodash");\n',
+      'const m = require("lodash");\nexport { m };\n',
+      'export type M = typeof import("lodash");\n',
+      'import m = require("lodash");\nexport { m };\n',
+      'import type { X } from "lodash";\nexport type Y = X;\n',
+      'export type { X } from "lodash";\n',
+      'export { x } from "lodash";\n',
+      'export const m = module.require("lodash");\n',
+      'export const m = (require)("lodash");\n',
+    ];
+    for (const source of sources) {
+      const report = check({ "src/core/a.ts": source });
+      const found = coreViolations(report);
+      expect(found.length, `${source}\n${JSON.stringify(report)}`).toBeGreaterThan(0);
+      expect(found[0]).toMatchObject({ file: coreFile, line: 1, specifier: "lodash" });
+      expect(found[0]!.reason).toContain("core");
+    }
+  });
+
+  it("rosso: `require(name)` con argomento non letterale nel nucleo, con la riga", () => {
+    const report = check({ "src/core/a.ts": 'const name = "lodash";\nexport const m = require(name);\n' });
+    expect(coreViolations(report)[0], JSON.stringify(report)).toMatchObject({ file: coreFile, line: 2 });
+  });
+
+  it("rosso: un import dinamico con template che esce dal package, fuori dal nucleo", () => {
+    const report = check({ "src/server/x.ts": "const x = \"y\";\nexport const m = await import(`../../../ui/${x}`);\n" });
+    const found = report.violations.find((violation) => violation.specifier === "../../../ui/${x}");
+    expect(found, JSON.stringify(report)).toMatchObject({ file: join("src", "server", "x.ts"), line: 2 });
+    expect(found?.reason).toMatch(/fuori dalla radice del package/);
+  });
+
+  it("verde: JSX in `.tsx` e `.jsx` si legge senza errori", () => {
+    const report = check({
+      "src/shared/view.tsx": 'import { z } from "zod";\nexport const V = () => <div>{String(z)}</div>;\n',
+      "src/shared/plain.jsx": 'import { z } from "zod";\nexport const P = () => <span>{String(z)}</span>;\n',
+    });
+    expect(report.violations, JSON.stringify(report)).toEqual([]);
+    expect(report.scanErrors, JSON.stringify(report)).toEqual([]);
+  });
+
+  it("verde: il literal `apps` fuori dal nucleo non è un accesso alle app", () => {
+    const report = check({ "src/server/roots.ts": 'export const roots = ["packages", "apps"] as const;\n' });
+    expect(report.violations, JSON.stringify(report)).toEqual([]);
+  });
+
+  it("rosso: un import vero di `apps` resta rosso", () => {
+    const report = check({ "src/server/x.ts": 'import x from "apps";\nexport { x };\n' });
+    expect(report.violations.some((violation) => violation.specifier === "apps" && violation.line === 1), JSON.stringify(report)).toBe(true);
+  });
+
+  it("rosso: `apps/` e `@app/domain` dentro una stringa, via backstop raw", () => {
+    for (const source of ['export const hint = "usa apps/web";\n', 'export const target = "@app/domain";\n']) {
+      const report = check({ "src/shared/x.ts": source });
+      expect(report.violations.some((violation) => violation.line === "?" && violation.text?.includes("backstop raw")), JSON.stringify(report)).toBe(true);
+    }
+  });
+
+  it("rosso: un sorgente che il parser non legge è uno scanError con il file", () => {
+    const report = check({ "src/shared/broken.ts": "export const = ;\n" });
+    expect(report.scanErrors.some((error) => error.path.endsWith(join("src", "shared", "broken.ts"))), JSON.stringify(report)).toBe(true);
+  });
+
+  it("il CLI esce 1 su un sorgente che il parser non legge", () => {
+    const root = fakePackage({ "src/index.ts": "export const = ;\n" });
+    mkdirSync(join(root, "scripts"));
+    copyFileSync(join(REAL_PACKAGE_ROOT, "scripts", "check-boundaries.mjs"), join(root, "scripts", "check-boundaries.mjs"));
+    mkdirSync(join(root, "node_modules"));
+    symlinkSync(join(REAL_PACKAGE_ROOT, "node_modules", "typescript"), join(root, "node_modules", "typescript"), "dir");
+    let status: number | null = 0;
+    let stderr = "";
+    try {
+      execFileSync("node", ["./scripts/check-boundaries.mjs"], { cwd: root, encoding: "utf8", stdio: "pipe" });
+    } catch (error) {
+      status = (error as { status: number | null }).status;
+      stderr = String((error as { stderr: unknown }).stderr);
+    }
+    expect(status).toBe(1);
+    expect(stderr).toContain(join("src", "index.ts"));
+  });
+
+  it("il CLI nomina `node:crypto` nella regola core", () => {
+    const stdout = execFileSync("node", ["./scripts/check-boundaries.mjs"], { cwd: REAL_PACKAGE_ROOT, encoding: "utf8" });
+    expect(stdout).toContain(BOUNDARY_RULES.core);
+    expect(BOUNDARY_RULES.core).toContain("node:crypto");
   });
 });
 

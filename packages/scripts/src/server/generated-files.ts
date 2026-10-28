@@ -10,12 +10,8 @@ import { componentPaths, DOMAINS_DIR, GENERATOR_VERSION, isGenerated, readGenera
  * (avviso). I file senza marker non si guardano.
  */
 
-/**
- * Le radici scansionate. Il nome della cartella delle app è composto: il gate
- * dei confini legge ogni literal uguale al nome della cartella come un accesso
- * vietato alle app, mentre qui si leggono solo i file per controllarne l'hash.
- */
-const SCANNED_ROOTS = ["packages", ["ap", "ps"].join("")] as const;
+/** Le radici scansionate. */
+const SCANNED_ROOTS = ["packages", "apps"] as const;
 
 /** Cartelle mai scansionate: dipendenze e output di build. */
 const SKIPPED_DIRS = new Set(["node_modules", "dist", ".next", "storybook-static"]);
