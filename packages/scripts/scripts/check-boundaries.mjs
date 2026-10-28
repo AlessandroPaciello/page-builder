@@ -16,7 +16,8 @@
  * Regole delle cartelle v3 (Story 2.19, `BOUNDARY_RULES`), ognuna con il suo
  * caso rosso/verde in `tests/check-boundaries.test.ts`:
  * - `core`: `src/core` importa solo relativi interni a `src/core`,
- *   `@app/contracts` e `zod`; import dinamici e `require` hanno un argomento
+ *   `@app/contracts`, `zod` e `node:crypto` (esatto: un hash è deterministico,
+ *   non rompe la purezza); import dinamici e `require` hanno un argomento
  *   letterale; il testo senza commenti non nomina `process`, `console`,
  *   `fetch`, `globalThis`, `global`, `eval`, `Buffer`, `__dirname`,
  *   `__filename` né `import.meta` (gli accessi a membro come `job.process()`
@@ -39,17 +40,27 @@
  * al processo (niente exit, niente console) e il CLI gira solo se lo script
  * è invocato direttamente.
  *
- * Limiti dichiarati (gate regex, non un lexer JS), tutti in direzione
- * chiusa: gli specifier sono cercati nei literal riga per riga; la vista
- * `raw` (commenti tolti, literal intatti) è un backstop anti-desync che
- * segnala qualunque `@app/` fuori dai casi ammessi e il client MCP fuori da
- * `src/penpot`. Un literal che sembra un import (`"copia from 'x'"`) dentro
- * `src/core` è rosso anche se non lo è: meglio un falso rosso che un buco.
+ * Come legge gli import: con il parser del compilatore TypeScript
+ * (`ts.createSourceFile`, la stessa grammatica di `tsc`), non con regex sul
+ * testo. Sono import le dichiarazioni `import`/`export … from`,
+ * `import x = require()`, `import()`, `require()` e gli `import("x")` di
+ * tipo: un testo che sembra un import dentro una stringa o un template
+ * (`"copia from 'x'"`) non lo è. Un sorgente che il parser non legge è uno
+ * `scanError` (il CLI esce 1).
+ *
+ * Limiti dichiarati, tutti in direzione chiusa: la vista `raw` (commenti
+ * tolti, literal intatti) resta un backstop sul testo, e segnala qualunque
+ * `@app/` fuori dai casi ammessi, `@penpot-ds/ui` e `apps/` anche dentro una
+ * stringa, e il client MCP fuori da `src/penpot` (cercato in ogni literal).
+ * Un path composto a runtime fuori dal nucleo sfugge a un gate statico; nel
+ * nucleo `import()`/`require()` con argomento non letterale sono rossi.
  */
 
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+
+import ts from "typescript";
 
 const SOURCE_EXTENSION = /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs)$/;
 
@@ -65,24 +76,16 @@ export function isForbiddenSpecifier(specifier) {
   return false;
 }
 
-/** Tutte le stringhe literal di una riga (le stesse che il gate originale ispezionava). */
+/** Tutte le stringhe literal di una riga: servono solo al client MCP (regola `penpot`, fail-closed). */
 const STRING_LITERAL = /["'`]([^"'`\n]+)["'`]/g;
 
-/** Backstop anti-desync: `@app/` fuori dai casi ammessi, anche non in forma di import. */
+/** Backstop sul testo: `@app/` fuori dai casi ammessi, `@penpot-ds/ui` e `apps/`, anche non in forma di import. */
 const FORBIDDEN_RAW = [
   /@app\/(?!contracts(?![a-zA-Z0-9_-]))/,
   /@app\/contracts\/\.\./,
   /@penpot-ds\/ui/,
   /(^|[^\w@./-])apps\//,
 ];
-
-/**
- * Specifier relativi in posizione di import: `from "…"`, `import "…"`,
- * `import("…")`, `require("…")`. Solo questi si risolvono rispetto al file:
- * un literal qualunque che comincia con `../` (un path in un messaggio) non è
- * un import.
- */
-const RELATIVE_IMPORT = /(?:\bfrom|\bimport|\brequire)\s*\(?\s*(["'`])(\.{1,2}\/[^"'`\n]*)\1/g;
 
 /**
  * Un import relativo che, risolto rispetto al file, esce dalla radice del
@@ -97,7 +100,7 @@ export function escapesPackageRoot(packageRoot, file, specifier) {
 
 /** Le regole delle cartelle v3 (Story 2.19): la chiave compare in ogni `reason`. */
 export const BOUNDARY_RULES = Object.freeze({
-  core: "core: src/core puro (solo relativi interni, @app/contracts e zod; niente process, console, fetch, globalThis, global, eval, Buffer, __dirname, __filename, import.meta)",
+  core: "core: src/core puro (solo relativi interni, @app/contracts, zod e node:crypto; niente process, console, fetch, globalThis, global, eval, Buffer, __dirname, __filename, import.meta)",
   penpot: "penpot: solo src/penpot importa il client MCP, e src/shared non importa src/penpot",
   server: "server: src/server non importa src/penpot (tranne src/server/main.ts)",
   v3: "v3: nessuna cartella v3",
@@ -112,18 +115,15 @@ export function isMcpClientSpecifier(specifier) {
     .some((segment) => segment === "client" || segment.startsWith("client."));
 }
 
-/** Specifier non relativi ammessi nel nucleo: `@app/contracts` (senza traversate) e `zod`. */
+/** Specifier non relativi ammessi nel nucleo: `@app/contracts` e `zod` (senza traversate), `node:crypto` esatto. */
 function isCoreAllowedPackage(specifier) {
+  if (specifier === "node:crypto") return true;
   const traverses = specifier.split("/").some((segment) => segment === ".." || segment === ".");
   if (specifier === "@app/contracts" || specifier.startsWith("@app/contracts/")) return !traverses;
   if (specifier === "zod" || specifier.startsWith("zod/")) return !traverses;
   return false;
 }
 
-/** Qualunque specifier letterale in posizione di import (`from`, `import`, `import(`, `require(`). */
-const IMPORT_SPECIFIER = /(?:\bfrom|\bimport|\brequire)\s*\(?\s*(["'`])([^"'`\n]+)\1/g;
-/** `import(` o `require(` con un argomento che non è un literal: il gate non può verificarlo. */
-const NON_LITERAL_LOAD = /(?:\bimport|\brequire)\s*\(\s*(?!["'`\s])/;
 /** Nel nucleo il testo senza commenti non nomina il processo, la console, la rete né il globale. */
 const CORE_FORBIDDEN_GLOBAL =
   /(?<![.\w$])(?:\b(process|console|fetch|globalThis|global|eval|Buffer|__dirname|__filename)\b|\b(import)\s*\.\s*meta\b)/;
@@ -193,6 +193,82 @@ function stripComments(source) {
   return out;
 }
 
+const SCRIPT_KIND = {
+  ".ts": ts.ScriptKind.TS,
+  ".mts": ts.ScriptKind.TS,
+  ".cts": ts.ScriptKind.TS,
+  ".tsx": ts.ScriptKind.TSX,
+  ".js": ts.ScriptKind.JS,
+  ".mjs": ts.ScriptKind.JS,
+  ".cjs": ts.ScriptKind.JS,
+  ".jsx": ts.ScriptKind.JSX,
+};
+
+/** Un argomento letterale: stringa o template senza interpolazioni. */
+function literalText(node) {
+  return node !== undefined && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) ? node.text : undefined;
+}
+
+/**
+ * Gli import veri di un sorgente, letti dal parser TypeScript: `imports` con
+ * specifier e riga, `nonLiteralLoads` con la riga di ogni `import()`/`require()`
+ * (o `import x = require()`) il cui argomento non è un literal, `parseErrors`
+ * con i messaggi del parser.
+ */
+function extractImports(path, raw) {
+  const extension = path.slice(path.lastIndexOf("."));
+  const sourceFile = ts.createSourceFile(path, raw, ts.ScriptTarget.Latest, true, SCRIPT_KIND[extension] ?? ts.ScriptKind.TS);
+  const lineOf = (node) => sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
+  const imports = [];
+  const nonLiteralLoads = [];
+  const load = (node, argument) => {
+    const specifier = literalText(argument);
+    if (specifier !== undefined) {
+      imports.push({ specifier, line: lineOf(argument) });
+      return;
+    }
+    nonLiteralLoads.push({ line: lineOf(node) });
+    // Un template con interpolazioni passa anche come testo (`../../ui/${x}`):
+    // le regole di package e di cartella lo giudicano dal prefisso.
+    if (argument !== undefined && ts.isTemplateExpression(argument)) {
+      imports.push({ specifier: argument.getText(sourceFile).slice(1, -1), line: lineOf(argument) });
+    }
+  };
+  /** Il callee senza parentesi: `(require)` vale `require`. */
+  const unwrap = (node) => (ts.isParenthesizedExpression(node) ? unwrap(node.expression) : node);
+  /** `import(…)`, `require(…)`, `(require)(…)` e `x.require(…)` (es. `module.require`). */
+  const isLoadCallee = (node) =>
+    node.kind === ts.SyntaxKind.ImportKeyword ||
+    (ts.isIdentifier(node) && node.text === "require") ||
+    (ts.isPropertyAccessExpression(node) && node.name.text === "require");
+
+  const visit = (node) => {
+    if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier !== undefined) {
+      load(node, node.moduleSpecifier);
+    } else if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference)) {
+      load(node, node.moduleReference.expression);
+    } else if (ts.isCallExpression(node)) {
+      if (isLoadCallee(unwrap(node.expression))) load(node, node.arguments[0]);
+    } else if (ts.isImportTypeNode(node)) {
+      const argument = ts.isLiteralTypeNode(node.argument) ? node.argument.literal : undefined;
+      load(node, argument);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+
+  // `parseDiagnostics` non è nell'API pubblica: se sparisse, il gate non saprebbe
+  // se ha letto tutto, e lo dice (fail-closed).
+  const diagnostics = sourceFile.parseDiagnostics;
+  const parseErrors = Array.isArray(diagnostics)
+    ? diagnostics.map((diagnostic) => {
+        const line = diagnostic.start !== undefined ? sourceFile.getLineAndCharacterOfPosition(diagnostic.start).line + 1 : "?";
+        return `riga ${line}: ${ts.flattenDiagnosticMessageText(diagnostic.messageText, " ")}`;
+      })
+    : ["il parser TypeScript non espone parseDiagnostics: impossibile sapere se il sorgente è stato letto"];
+  return { imports, nonLiteralLoads, parseErrors };
+}
+
 function sourceFiles(dir, visitedRealDirs, errors, dirs = []) {
   let out = [];
   let realDir;
@@ -232,10 +308,11 @@ function sourceFiles(dir, visitedRealDirs, errors, dirs = []) {
 }
 
 /**
- * Violazioni delle regole v3 per un file. `scanned` è il sorgente senza
- * commenti; `rawLines` serve solo a citare la riga originale.
+ * Violazioni delle regole v3 per un file. `parsed` sono gli import veri
+ * (`extractImports`), `scanned` è il sorgente senza commenti; `rawLines` serve
+ * solo a citare la riga originale.
  */
-function v3RuleViolations(packageRoot, path, scanned, rawLines) {
+function v3RuleViolations(packageRoot, path, parsed, scanned, rawLines) {
   const out = [];
   const file = relative(packageRoot, path);
   const segments = segmentsOf(packageRoot, path);
@@ -268,30 +345,32 @@ function v3RuleViolations(packageRoot, path, scanned, rawLines) {
         push("penpot", line, "il client MCP si importa solo da src/penpot", match[1]);
       }
     }
-    for (const match of lineText.matchAll(IMPORT_SPECIFIER)) {
-      const specifier = match[2];
-      const relativeSpecifier = specifier.startsWith("./") || specifier.startsWith("../");
-      const target = relativeSpecifier ? resolve(dirname(path), specifier) : undefined;
-      if (target !== undefined && hasV3Segment(segmentsOf(packageRoot, target))) {
-        push("v3", line, `import relativo verso una cartella v3 (${relative(packageRoot, target)})`, specifier);
-      }
-      if (inCore) {
-        const allowed = target !== undefined ? isInside(coreDir, target) && !specifier.includes("${") : isCoreAllowedPackage(specifier);
-        if (!allowed) push("core", line, `import di "${specifier}" non ammesso nel nucleo`, specifier);
-      }
-      if (area === "shared" && target !== undefined && isInside(penpotDir, target)) {
-        push("penpot", line, `src/shared non importa src/penpot (${relative(packageRoot, target)})`, specifier);
-      }
-      if (inServer && !isInjectionPoint && target !== undefined && isInside(penpotDir, target)) {
-        push("server", line, `import di src/penpot fuori dal punto di iniezione (${relative(packageRoot, target)})`, specifier);
-      }
-    }
     if (inCore) {
-      if (NON_LITERAL_LOAD.test(lineText)) push("core", line, "import dinamico o require con argomento non letterale");
       const global = CORE_FORBIDDEN_GLOBAL.exec(lineText);
       if (global) push("core", line, `\`${global[1] ?? "import.meta"}\` nel nucleo (niente processo, console né rete)`);
     }
   });
+
+  for (const { specifier, line } of parsed.imports) {
+    const relativeSpecifier = specifier.startsWith("./") || specifier.startsWith("../");
+    const target = relativeSpecifier ? resolve(dirname(path), specifier) : undefined;
+    if (target !== undefined && hasV3Segment(segmentsOf(packageRoot, target))) {
+      push("v3", line, `import relativo verso una cartella v3 (${relative(packageRoot, target)})`, specifier);
+    }
+    if (inCore) {
+      const allowed = target !== undefined ? isInside(coreDir, target) && !specifier.includes("${") : isCoreAllowedPackage(specifier);
+      if (!allowed) push("core", line, `import di "${specifier}" non ammesso nel nucleo`, specifier);
+    }
+    if (area === "shared" && target !== undefined && isInside(penpotDir, target)) {
+      push("penpot", line, `src/shared non importa src/penpot (${relative(packageRoot, target)})`, specifier);
+    }
+    if (inServer && !isInjectionPoint && target !== undefined && isInside(penpotDir, target)) {
+      push("server", line, `import di src/penpot fuori dal punto di iniezione (${relative(packageRoot, target)})`, specifier);
+    }
+  }
+  if (inCore) {
+    for (const { line } of parsed.nonLiteralLoads) push("core", line, "import dinamico o require con argomento non letterale");
+  }
 
   if (!inPenpot && !penpotSeen && MCP_CLIENT_RAW.test(scanned)) {
     push("penpot", "?", "il client MCP compare fuori da qualunque literal scannerizzato (possibile scanner desincronizzato)");
@@ -322,33 +401,30 @@ export function checkBoundaries({ packageRoot }) {
     const file = relative(packageRoot, path);
     const rawLines = raw.split("\n");
     const scanned = stripComments(raw);
-    scanned.split("\n").forEach((line, index) => {
-      for (const match of line.matchAll(STRING_LITERAL)) {
-        if (isForbiddenSpecifier(match[1])) {
-          violations.push({ file, line: index + 1, specifier: match[1], text: rawLines[index]?.trim() ?? "" });
-        }
+    const parsed = extractImports(path, raw);
+    for (const message of parsed.parseErrors) scanErrors.push({ path, reason: `sintassi non leggibile dal parser TypeScript (${message})` });
+    for (const { specifier, line } of parsed.imports) {
+      const text = rawLines[line - 1]?.trim() ?? "";
+      if (isForbiddenSpecifier(specifier)) violations.push({ file, line, specifier, text });
+      const relativeSpecifier = specifier.startsWith("./") || specifier.startsWith("../");
+      if (relativeSpecifier && escapesPackageRoot(packageRoot, path, specifier)) {
+        violations.push({
+          file,
+          line,
+          specifier,
+          reason: `import relativo fuori dalla radice del package (${relative(packageRoot, resolve(dirname(path), specifier))})`,
+          text,
+        });
       }
-      for (const match of line.matchAll(RELATIVE_IMPORT)) {
-        const specifier = match[2];
-        if (escapesPackageRoot(packageRoot, path, specifier)) {
-          violations.push({
-            file,
-            line: index + 1,
-            specifier,
-            reason: `import relativo fuori dalla radice del package (${relative(packageRoot, resolve(dirname(path), specifier))})`,
-            text: rawLines[index]?.trim() ?? "",
-          });
-        }
-      }
-    });
+    }
     if (FORBIDDEN_RAW.some((pattern) => pattern.test(scanned))) {
       violations.push({
         file,
         line: "?",
-        text: "contiene uno specifier vietato fuori da qualunque literal scannerizzato (possibile scanner desincronizzato)",
+        text: "contiene uno specifier vietato nel testo, anche fuori dagli import (backstop raw)",
       });
     }
-    violations.push(...v3RuleViolations(packageRoot, path, scanned, rawLines));
+    violations.push(...v3RuleViolations(packageRoot, path, parsed, scanned, rawLines));
   }
 
   // Una cartella v3 senza sorgenti (anche vuota) è rossa lo stesso; se
@@ -371,8 +447,9 @@ export function checkBoundaries({ packageRoot }) {
 
 function fail(header, items) {
   console.error(`\n✖ ${header} (${items.length}):\n`);
-  for (const { file, line, text, reason, specifier } of items) {
-    console.error(`  ${file}${line !== undefined ? `:${line}` : ""}${specifier ? ` (${specifier})` : ""}${reason ? ` — ${reason}` : ""}`);
+  // Le violazioni hanno `file`, gli errori di scansione `path`.
+  for (const { file, path, line, text, reason, specifier } of items) {
+    console.error(`  ${file ?? path}${line !== undefined ? `:${line}` : ""}${specifier ? ` (${specifier})` : ""}${reason ? ` — ${reason}` : ""}`);
     if (text) console.error(`    ${text}`);
     console.error();
   }
@@ -387,7 +464,7 @@ function main() {
   console.log(
     [
       `✔ Confine scripts rispettato (${scannedFileCount} file)`,
-      "  package: @app/contracts ammesso, resto di @app/*, @penpot-ds/ui, apps/* e relativi fuori dal package vietati",
+      "  package: @app/contracts ammesso, resto di @app/*, @penpot-ds/ui, apps/* e relativi fuori dal package vietati (import letti dal parser TypeScript)",
       ...Object.values(BOUNDARY_RULES).map((rule) => `  ${rule}`),
     ].join("\n"),
   );
