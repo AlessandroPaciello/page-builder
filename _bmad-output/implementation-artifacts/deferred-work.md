@@ -370,3 +370,9 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-24-server-mcp-pds-e-controllo-dei-file-generati-in-ci.md`
   summary: la scala che il server ricava dal catalogo (`coreContext`: `scaleFromThemeCss(generateTheme(catalog).css)`) non è esercitata dai test di livello 2, perché le fixture di Badge e ShopCard non hanno geometria in px.
   evidence: review 2.24 (VG). Un catalogo che desse una scala vuota o sbagliata lascerebbe verdi tutti i test del server; i componenti veri avrebbero classi arbitrarie o avvisi. Da chiudere nel collaudo 2.25 (campione con geometria) o con una fixture con misure.
+
+## Deferred from: refactor del nucleo, analyzeComponent in fasi (2026-10-28)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-refactor-core-analyze-component.md`
+  summary: nessun test fissa il comportamento che il refactor ha riscritto. Mancano il massimo delle copie di una lista quando le celle ne hanno numeri diversi (oggi tutte le fixture ne hanno 2) e un test di caratterizzazione sull'ordine dei `Finding` di tutte le fasi; il golden del refactor è rimasto in scratchpad.
+  evidence: review del refactor (VG, Blind). Se `Math.max(...)` diventasse `count + 1`, la suite resterebbe verde, sia sul baseline sia sul branch. Il refactor non poteva aggiungere test (vincolo di Alessandro: `tests/` invariato). Correzione: un caso in `generate.test.ts` con 3 copie in una cella e 2 nelle altre, che si aspetta `length: 3`, più uno snapshot dei `Finding` su una fixture che esercita ogni fase.
