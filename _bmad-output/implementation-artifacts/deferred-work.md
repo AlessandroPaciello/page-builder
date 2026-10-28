@@ -323,7 +323,7 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor
   evidence: registrazione della chiusura; nessuna azione residua.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-20-nucleo-puro-e-registro-delle-proprieta.md`
-  summary: `Change.path` accetta path assoluti e segmenti `..`; il server MCP `pds` (Story 2.24) deve limitare i path alla cartella del componente prima di scrivere o eliminare.
+  summary: **chiusa con la Story 2.24** — il server `pds` controlla ogni `Change` prima di scrivere (`packages/scripts/src/server/write-changes.ts`): path assoluto, con `..`/`.`/segmenti vuoti, fuori da `packages/ui/src/domains/<name>/` o che esce attraverso un symlink è un errore e non si scrive nessun file; `crea` su un file esistente è un errore; `aggiorna`/`elimina` toccano solo un file con marker. Test rosso/verde in `tests/server/write-changes.test.ts` e `tests/server/server.test.ts`. Voce originale: `Change.path` accetta path assoluti e segmenti `..`; il server MCP `pds` (Story 2.24) deve limitare i path alla cartella del componente prima di scrivere o eliminare.
   evidence: lo schema del nucleo controlla solo `min(1)`; review 2.20 (Edge, Blind), danno reale solo quando la 2.24 scrive su disco.
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-20-nucleo-puro-e-registro-delle-proprieta.md`
   summary: **chiusa con la Story 2.23 per i valori di default** — `readComponent` scrive in `style` le proprietà legabili a un token solo se non di default (fill/tratto presenti, raggio, padding e gap > 0, opacità ≠ 1, ombre non vuote, `letterSpacing` ≠ 0); verificato dal vivo sul file "tailwind" (l'opacità di default arriva come null). Resta aperto, per il collaudo 2.25: il default Penpot di `alignItems` (il file "tailwind" ha solo valori espliciti, `start`/`center`) e `min-w-0`/`min-h-0` con `flex-1`. Voce originale: verificare nell'adattatore (2.23) e nel collaudo (2.25) che i valori di default (padding 0, opacità 1, spessore 0) non arrivino come stile grezzo e che il default Penpot di `alignItems` sia davvero `stretch`; valutare `min-w-0`/`min-h-0` con `flex-1`.
@@ -347,8 +347,8 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor
   summary: una parte presente solo in alcune celle (es. un nastro "offerta") lo scaffold la rende sempre, e nessun finding né suggerimento dice in quali celle manca.
   evidence: review 2.22 (Blind, Edge). Servono le regole `when` (forgia punti aperti: `part`/`when` scritti da `pds-code`) per sapere da quale field o asse dipende la presenza; da fare con le sezioni (2.27) o con `pds-code` (2.29).
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-22-verifica-e-generazione-chiavi-di-parte-styles-scaffold-story.md`
-  summary: nessun test automatico compila l'output del generatore (`styles.ts`, `stories.tsx`, scaffold) con `tsc` né lo passa allo smoke delle story; il controllo della 2.22 è stato fatto una volta a mano.
-  evidence: review 2.22 (VG). I test controllano solo singole righe dell'output: una virgola mancante in `compoundVariants` o un path sbagliato di `cn` passerebbero. Da fare nella 2.24, quando il server scrive i file (oppure un test di compilazione in memoria).
+  summary: **spostata alla 2.31** — nessun test automatico compila l'output del generatore (`styles.ts`, `stories.tsx`, scaffold) con `tsc` né lo passa allo smoke delle story; il controllo della 2.22 è stato fatto una volta a mano.
+  evidence: review 2.22 (VG). I test controllano solo singole righe dell'output: una virgola mancante in `compoundVariants` o un path sbagliato di `cn` passerebbero. Spostata alla Story 2.31 (decisione di Alessandro, 2026-10-26, spec 2.24): la compilazione arriva quando `pnpm check-types` compila i file generati in `packages/ui`.
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-22-verifica-e-generazione-chiavi-di-parte-styles-scaffold-story.md`
   summary: il gate `core` di `check-boundaries.mjs` legge come import ogni testo con `from "<path>"`, anche dentro un template literal; `generate.ts` compone la parola (`FROM = ["fr","om"].join("")`) per scrivere le righe di import dei file generati.
   evidence: review 2.22 (Blind). È un limite del gate, preesistente (azione della retro Epic 1 sui gate fragili). Correzione: leggere le dichiarazioni di import vere, con un test rosso/verde sul testo dentro le stringhe, poi togliere `FROM`.
@@ -364,3 +364,9 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-23-adattatore-penpot-readcomponent.md`
   summary: un layer nascosto in Penpot diventa una parte come gli altri (oggi dà solo l'avviso "hidden non registrata"); serve decidere con le regole `when` se è una parte assente in quella cella.
   evidence: review 2.23 (Blind, Edge). Da fare con le sezioni (2.27) o con `pds-code` (2.29).
+
+## Deferred from: Story 2.24 — server MCP pds (2026-10-26)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-24-server-mcp-pds-e-controllo-dei-file-generati-in-ci.md`
+  summary: la scala che il server ricava dal catalogo (`coreContext`: `scaleFromThemeCss(generateTheme(catalog).css)`) non è esercitata dai test di livello 2, perché le fixture di Badge e ShopCard non hanno geometria in px.
+  evidence: review 2.24 (VG). Un catalogo che desse una scala vuota o sbagliata lascerebbe verdi tutti i test del server; i componenti veri avrebbero classi arbitrarie o avvisi. Da chiudere nel collaudo 2.25 (campione con geometria) o con una fixture con misure.

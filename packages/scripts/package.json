@@ -2,13 +2,14 @@
   "name": "@penpot-ds/scripts",
   "version": "0.0.0",
   "private": true,
-  "description": "Rigenerazione del tema dal catalogo token Penpot (fixture o live), nucleo puro della pipeline v3 (schemi, registro delle proprietà, geometria, verifica e generazione dei componenti, Story 2.20–2.22) e adattatore Penpot readComponent (Story 2.23).",
+  "description": "Rigenerazione del tema dal catalogo token Penpot (fixture o live); nucleo puro della pipeline v3 (schemi, registro delle proprietà, geometria, verifica e generazione dei componenti, Story 2.20–2.22); adattatore Penpot readComponent (Story 2.23); server MCP pds (Story 2.24).",
   "type": "module",
   "scripts": {
     "check-types": "tsc --noEmit",
     "lint": "node ./scripts/check-boundaries.mjs",
     "test": "vitest run",
-    "theme": "node --import tsx src/theme/main.ts"
+    "theme": "node --import tsx src/theme/main.ts",
+    "pds": "node --import tsx src/server/main.ts"
   },
   "dependencies": {
     "@app/contracts": "workspace:*",

@@ -89,6 +89,8 @@ Il design system viene letto da un'istanza Penpot self-hosted tramite il suo ser
 
 `.mcp.json` (Claude Code) e `opencode.json` (OpenCode) sono già nel repo e contengono il token solo come variabile. Gli script leggono la stessa variabile. **Il token non va mai scritto in un file tracciato.**
 
+`.mcp.json` registra anche il server `pds` (Story 2.24, stdio, `pnpm --silent --filter @penpot-ds/scripts pds`): legge Penpot con la stessa variabile e scrive solo in `packages/ui/src/domains/<nome>/`: `<Comp>.styles.ts` e `<Comp>.stories.tsx` generati e, una volta sola se manca, lo scaffold di `<Comp>.tsx`, che poi è dello sviluppatore e non si tocca più. Dopo una modifica di `packages/scripts/src/core` o `src/server`: `/mcp` → `pds` → reconnect. Dettagli: [packages/scripts/src/server/README.md](packages/scripts/src/server/README.md).
+
 **Dopo aver rigenerato il token:** quello vecchio smette di funzionare e il plugin si scollega. Aggiorna il `.env`, riconnetti il plugin (passo 6), poi chiudi VS Code e riaprilo da un terminale nuovo con `direnv reload && code .`.
 
 Direnv carica tutto il `.env`. Per isolare il token, mettilo in `.env.penpot` (anche questo ignorato) e scrivi `dotenv .env.penpot` nel `.envrc`. Senza direnv basta `export PENPOT_MCP_TOKEN=...` nella shell o in `~/.bashrc`.
