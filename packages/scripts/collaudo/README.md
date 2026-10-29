@@ -144,4 +144,4 @@ Il campione lo costruisce Claude via MCP Penpot sull'istanza di collaudo, mai su
 | "fill dentro hug" (`FillDentroHug`) | da registrare al primo collaudo: leggibile, e arriva come domanda `fillInHugH`? |
 | default di `layoutAlign` su un flex non toccato | da registrare al primo collaudo (il registro dichiara `stretch`) |
 
-Quali operazioni di Penpot cancellano i plugin data (raggruppa, booleana, copia tra file, ripristino di versione, stacco dell'istanza, duplica) non si misura qui: è una voce di `deferred-work.md`, da fare sul campione prima della 2.29.
+Quali operazioni di Penpot cancellano i plugin data (raggruppa, booleana, copia tra file, ripristino di versione, stacco dell'istanza, duplica) non si misura qui: lo misura la Story 2.29 sul campione, prima che `pds-code` scriva plugin data.
