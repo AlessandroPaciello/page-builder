@@ -1,0 +1,48 @@
+# A container's agreed children, in its tickets/ folder; tickets.py ignores unknown keys.
+# Table order is build order. `id` is permanent, never reused.
+# No status here: the plan carries `status`.
+# next_id = 5 # written by `tickets.py move`; the folder's counter never goes below it
+
+[[entry]]
+id = 1
+type = "story"
+title = "Shell editor con canvas Puck"
+description = "La rotta editor autenticata monta il canvas Puck con i blocchi disponibili e carica il payload della pagina, isolando `use client`."
+verify = "Aprendo la rotta il canvas si monta con i blocchi e carica il payload, e l'accesso è limitato a Admin/Editor, o Cliente su pagina assegnata."
+covers = ["R1"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 2
+type = "story"
+title = "Salvataggio bozza con snapshot immutabile"
+description = "Salvare il layout crea una nuova PageVersion DRAFT con payload jsonb `{content, root, zones}` e `versionNumber` allocato dal core, preservando i block-id coniati dal client."
+verify = "Ogni salvataggio è una nuova versione immutabile con `UNIQUE(page_id, version_number)`, i block-id del client sono preservati invariati e nessuna versione esistente è mutata in-place."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 3
+type = "story"
+title = "Pipeline payload server — validazione, structure/content, sanitizzazione XSS"
+description = "Il core valida e sanifica il payload lato server prima di persistere: validazione con gli schemi di `@app/contracts` inclusi `allow`/`max` degli slot, classificazione structure/content e sanitizzazione dei campi content."
+verify = "Un payload non conforme agli schemi è rifiutato con errore tipizzato, un Cliente che modifica un campo `structure` è rifiutato dal core, e un blocco fuori dall'allow-list o oltre il `max` di uno slot è rifiutato."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 4
+type = "story"
+title = "Autosave con indicatore di stato"
+description = "Le modifiche sono salvate automaticamente come bozza, con il SaveStateIndicator che comunica lo stato salvato/non-salvato."
+verify = "Dopo una pausa l'autosave crea o aggiorna la bozza, il SaveStateIndicator mostra lo stato con `aria-live=\"polite\"`, e ricaricando la pagina la bozza è ripristinata identica (round-trip lossless)."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"

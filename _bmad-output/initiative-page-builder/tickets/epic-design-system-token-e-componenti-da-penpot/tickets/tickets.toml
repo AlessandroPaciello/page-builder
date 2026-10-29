@@ -1,0 +1,356 @@
+# A container's agreed children, in its tickets/ folder; tickets.py ignores unknown keys.
+# Table order is build order. `id` is permanent, never reused.
+# No status here: the plan carries `status`.
+# next_id = 33 # written by `tickets.py move`; the folder's counter never goes below it
+
+[[entry]]
+id = 1
+type = "story"
+title = "Pipeline token Penpot→codice"
+description = "Lo strato token è generato dal catalogo Penpot: CSS custom properties `@generated` (Tailwind v4 `@theme`) e scala TS raggruppati per set, con il catalogo serializzato in fixture committata e le variabili non-Penpot in un file hand-owned."
+verify = "Un nuovo set Penpot produce una nuova sezione senza modifiche al codice, i file generati portano il marker `@generated`, e la rigenerazione dalla fixture gira offline."
+covers = ["R1"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 2
+type = "story"
+title = "Estrazione componenti e schema delle ricette"
+description = "Un singolo componente si estrae da Penpot su richiesta (mai in CI né in build) producendo `<comp>.fixture.json` e `<comp>.recipe.json` committati, con il giudizio su varianti, headless e a11y congelato in un artefatto rivedibile."
+verify = "La ricetta è validata contro lo schema e contro il vocabolario dei token — una classe con valore literal fallisce — e fixture e ricetta rispettano il confine fra ciò che si legge da Penpot e ciò che richiede React."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 3
+type = "story"
+title = "Package dei contratti (Badge, Input, Accordion)"
+description = "`@app/contracts` esporta gli schemi Zod delle props, gli assi (`option`/`state`/`behavior`), le parti, il classifier structure/content per Badge, Input e AccordionItem e il tipo «definizione di sezione», senza dipendenze da React/Puck/UI."
+verify = "Il package compila e i test passano con lint bloccante che vieta dipendenze UI (prova rosso/verde), `schemaVersion` è esportata e un campo ignoto risulta `content`."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 4
+type = "story"
+title = "Bootstrap della library Penpot sui contratti"
+description = "Una skill crea la library Penpot partendo dai contratti: token semantici (inclusi shadow/ring), un VariantContainer per contratto con gli assi del contratto, token legati su ogni proprietà di stile e plugin data `pagebuilder/contract = nome@versione`."
+verify = "L'esito è deciso da uno script di verifica (un container per contratto, assi e valori coincidenti, 0 `variantError`), il bootstrap rifiuta su library esistente e la modalità additiva crea solo ciò che manca."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 5
+type = "story"
+title = "Estrazione adeguata — ricette per parti e token, validate contro il contratto"
+description = "L'estrazione legge il legame al contratto dal plugin data e produce ricette per parti con celle proprietà→token, coprendo esattamente assi e valori del contratto e alimentando qualunque emitter."
+verify = "Contratto duplicato, nome incoerente o contratto senza container falliscono, e `RecipeSchema` rifiuta i literal e le parti annidate con assi propri (criterio di stop meccanico con test rosso/verde)."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 6
+type = "story"
+title = "Emitter shadcn deterministico e gate CI"
+description = "Un emitter puro traduce ricetta e binding in componenti shadcn riproducibili: `.tsx` + test + story + barrel `@generated` con provenienza (`penpotComponentId` + `fixtureHash`), assi instradati per tipo."
+verify = "Rigenerare produce diff zero, un file senza marker non viene mai sovrascritto, e i gate completezza, rigenerazione, a11y (vitest-axe) e conformità al contratto sono bloccanti in CI ciascuno con la sua prova rosso/verde."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 7
+type = "story"
+title = "Pipeline pronta per più componenti"
+description = "La pipeline regge un catalogo di componenti che cresce e un design che evolve: a11y dichiarata emessa e verificata, liste derivate dai design, e comandi CLI per far evolvere contratti e container Penpot, ogni controllo con la sua prova rosso/verde."
+verify = "Aggiungere un contratto con il suo design non richiede liste a mano, `adopt:variant -- <Comp>` aggiorna i cinque file con `--yes` e rifiuta con errore nominativo la variante non esprimibile, e `render:check` resta a diff zero."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 8
+type = "story"
+title = "Registro delle proprietà e blocco per componente"
+description = "Le proprietà di stile Penpot vivono in un registro unico letto da reader, `verify:library` ed emitter: nessuna fedeltà è persa in silenzio, ciò che la pipeline non sa esprimere blocca solo il componente interessato, e l'emitter è esteso una volta per tutte per le proprietà assenti in una variante."
+verify = "Una proprietà non espressibile rende rossa solo la sua voce nel report, `strokeStyle` è una lista chiusa letta dal reader, l'output dei componenti committati resta byte-identico e una variante senza il fill del default emette la classe di rimozione dichiarata nel registro."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 9
+type = "story"
+title = "Skill `pds-component` — creare e sincronizzare i componenti"
+description = "La skill `pds-component` guida il ciclo di vita di un componente: la voce [PC] crea contratto, design e container e guida giudizio, binding, estrazione, render e gate; la voce [PS] legge lo stato per componente e instrada ogni stato verso il comando giusto."
+verify = "Eseguendo i due percorsi su un componente reale la skill si ferma solo sulle decisioni umane, non scrive mai su Penpot né sui contratti fuori dai comandi CLI, e l'esito è sempre l'exit code degli script."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 10
+type = "story"
+title = "Fedeltà live ed estrazione guidata dal contratto"
+description = "L'estrazione prende il contratto come riferimento, misura il contrasto sullo snapshot live e supporta l'a11y per variante; quando Penpot si allontana dal contratto il solo componente va «in attesa» con gli adattamenti proposti in ordine."
+verify = "Un token fuori ruolo mette in attesa il solo componente con messaggio nominativo, un contrasto sotto soglia rende rossa la sua voce (prova Alert `status=warning` a 1.82:1) e `sync:design` riallinea il design committato."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 11
+type = "story"
+title = "Storybook del design system"
+description = "Uno Storybook aggrega le storie dei componenti `ui/domains` con i token applicati e l'addon a11y attivo, e un gate esegue le story generate come smoke test, con build statico come job di CI."
+verify = "Le story sono CSF3 valido con le props in `args`, una story che rende il componente senza props è un test rosso, e il build statico di Storybook è prodotto senza errori in CI."
+covers = ["R3"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 12
+type = "story"
+title = "Fondamenta v2 — due contratti, registro, guscio"
+description = "Il modello v2 vive in `packages/scripts/src/v2`: contratto del page builder ridotto a `name`, `version`, assi `option`, `fields` e slot, `defineExtraction` che fallisce a module load, registro con `layout`/`position`/ruolo `image`, e un unico guscio CLI con `ScriptError` tipizzato."
+verify = "Il fingerprint copre solo i campi ridotti, ogni controllo di `defineExtraction` ha la sua prova rosso/verde, i due contratti della ProductCard esistono, e la v1 resta intatta con `gates:render` a diff zero."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 13
+type = "story"
+title = "`library` e `propose` — Penpot dal contratto di estrazione"
+description = "`library add <Comp>` fa nascere in Penpot il VariantContainer con plugin data, assi, board e layer con i nomi delle parti e token legati su ogni proprietà di stile; `propose <Comp>` legge Penpot e stampa il diff proposto sui due contratti senza scrivere nulla."
+verify = "Rilanciato `library add` non modifica né cancella nulla e segnala le differenze, `--dry-run` stampa senza scrivere, e `propose` nomina file e riga senza scrivere né su Penpot né sui contratti."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 14
+type = "story"
+title = "`extract` e `render` — una istantanea, quattro file"
+description = "Un'unica istantanea Penpot validata (live o `--snapshot`) produce `data/components/<comp>.json` e da lì `<Comp>.tsx`, test, story e barrel `@generated`, senza più `judgments/`, `bindings/`, `designs/`, `bases/` né la coppia fixture+ricetta."
+verify = "Un layer fuori posto fa fallire `extract` nominando componente, cella e parte senza scrivere nulla, e `render --check --all` rigenera a diff zero accumulando i fallimenti per componente."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 15
+type = "story"
+title = "ProductCard end-to-end e gate in CI"
+description = "La ProductCard disegnata in Penpot arriva in `packages/ui` senza codice a mano, e la CI la rigenera e la valuta per componente con report, senza comandi live."
+verify = "Extract e render sono verdi, test generati e axe verdi, la story compare in Storybook con il giudizio visivo registrato, e non c'è nessuna riga di codice a mano per la card (diff zero dal primo commit)."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 16
+type = "story"
+title = "Rimozione della v1 e rigenerazione dei quattro componenti"
+description = "La v1 è cancellata (dati, otto comandi, codice, `shadcn`, Radix) e Badge, Input, Alert e AccordionItem rinascono uno alla volta dalla v2 su `@base-ui/react`, con una sola pipeline e un solo modo di descrivere un componente."
+verify = "Gli artefatti v1 non esistono più, i quattro componenti sono rigenerati uno alla volta con contratto ridotto, `extract`, `render`, diff zero, test e axe verdi, e le voci di `deferred-work.md` legate alla v1 sono chiuse."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 17
+type = "story"
+title = "Il tema Penpot nel CSS compilato"
+description = "I valori del tema Penpot sono quelli che arrivano nel CSS che il browser riceve: `@import` del tema in testa, niente blocchi che ridefiniscono colori, raggi e font posseduti dal tema."
+verify = "Un test compila il CSS con la Tailwind installata e verifica che `bg-primary`, `rounded-lg` e `font-sans` usino i valori del tema Penpot, e Storybook e `apps/web` caricano lo stesso CSS globale."
+covers = ["R1"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 18
+type = "story"
+title = "Rimozione dei componenti di prova e della pipeline v2"
+description = "I componenti generati per prova e il codice della v2 sono rimossi: la v3 parte da un terreno pulito, conservando contratti dell'editor, registro delle proprietà, Storybook e il dropdown dell'editor su Base UI."
+verify = "Non restano né componenti di prova né comandi v2, `tsc` e build verificano che `apps/web` e `ui/editor` non importino nulla di rimosso, le skill obsolete sono tolte e la CI è verde."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 19
+type = "story"
+title = "Fixture sul catalogo Tailwind e codice nuovo dentro i confini"
+description = "I test di `scripts` leggono il catalogo token derivato dal seme Tailwind dello spike, e `check-boundaries.mjs` copre `src/core`, `src/penpot` e `src/server` con regole testate in automatico."
+verify = "La suite di `scripts` è verde sul catalogo nuovo, il nucleo non importa disco, rete né MCP e solo `src/penpot` parla con Penpot, e ogni regola di confine ha un test rosso/verde."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 20
+type = "story"
+title = "Nucleo puro e registro delle proprietà"
+description = "`packages/scripts/src/core` espone gli schemi zod `Lettura`, `Finding` e `Change` e funzioni dati→ dati che non toccano disco, rete, console né codice di uscita, con il registro unico come fonte della traduzione in classi Tailwind."
+verify = "Ogni voce del registro ha un test rosso/verde nel livello 1 della CI, `strokeWidth`, `fontFamily` e i due fill producono classi, e ogni classe del registro espansa sui token del tema produce CSS con la Tailwind installata."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 21
+type = "story"
+title = "Geometria e larghezza nel registro"
+description = "Dimensioni, posizioni, dimensionamento e ritaglio disegnati in Penpot arrivano nel codice con regole fisse del nucleo: la misura fissa uguale in tutte le celle si ignora, un valore fuori scala diventa un valore arbitrario con avviso, e il ritaglio segue tre regole dichiarate."
+verify = "Ogni regola di geometria e ritaglio ha un test rosso/verde nel livello 1 della CI, `left+right` e `top+bottom` si traducono, e il ritaglio non taglia l'anello di focus."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 22
+type = "story"
+title = "Verifica e generazione — chiavi di parte, `styles.ts`, scaffold, story"
+description = "Un generatore unico verifica la `Lettura`, ordina le parti e genera `<Comp>.styles.ts` (una `cva` per chiave, intestazione `@generated` con versione del generatore e hash) e una story per cella, creando lo scaffold una sola volta."
+verify = "Le parti senza chiave e le chiavi doppie diventano domande che bloccano la generazione, un `<Comp>.tsx` esistente resta identico byte per byte dopo ogni rigenerazione, e `build_order` rifiuta un componente che contiene uno non ancora generato."
+covers = ["R2", "R3"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 23
+type = "story"
+title = "Adattatore Penpot `readComponent`"
+description = "Un unico punto legge un componente da Penpot e lo restituisce come `Lettura` validata dallo schema zod del nucleo: celle, token, layout flex, dimensionamento, ritaglio, dimensioni, posizione, vincoli, istanze e shared plugin data `pagebuilder`."
+verify = "La `Lettura` porta ogni proprietà del registro (una mancante è un errore che la nomina), le istanze si riconoscono dal componente d'origine, e l'adattatore non ha fixture di lettura: i suoi test girano solo nel collaudo."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 24
+type = "story"
+title = "Server MCP `pds` e controllo dei file generati in CI"
+description = "Il server MCP `pds` espone il nucleo come strumenti validati (`tokens_from_css`, `describe_component`, `verify_component`, `build_order`, `generate_component`, `extract_theme`), senza stato e senza scrivere su Penpot, e scrive lui i file `@generated`."
+verify = "Un test per strumento gira in memoria con adattatore finto, `generate_component` non scrive con domande aperte e restituisce `Change[]`, e ogni file `@generated` con hash che non torna è un blocco che nomina il file."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 25
+type = "story"
+title = "Collaudo degli aggiornamenti di Penpot"
+description = "Un componente campione salvato come `.penpot` nel repo, che usa ogni voce del registro e ogni chiave di plugin data, e una procedura di collaudo dicono se una versione nuova di Penpot rompe la lettura."
+verify = "Il collaudo verifica che ogni proprietà del registro compaia nella lettura e che il campione le usi tutte (un'esclusione è un errore che nomina la proprietà), e l'esito è registrato nel README del collaudo e in `penpot-pipeline.md`."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 26
+type = "story"
+title = "Tema da seme CSS, varianti di tema e font"
+description = "Il seme `theme.css` Tailwind diventa tema Penpot e ritorna in codice con le sue varianti e i suoi font: `tokens_from_css` produce set e temi, `extract_theme` legge tutti i set e i temi e scrive `theme.css`, un file per variante e `fonts.css` `@generated`."
+verify = "Il giro seme → Penpot → CSS chiude senza perdite sullo seme dello spike, le varianti dichiarate come `[data-<gruppo>=\"<nome>\"]` sono lette, e Next e Storybook caricano lo stesso `fonts.css`."
+covers = ["R1"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 27
+type = "story"
+title = "Sezioni"
+description = "Una sezione con slot si legge e si genera come un componente: un field `structure` diventa un asse o un rendering condizionale, uno slot è riconosciuto dai figli istanza dei componenti ammessi, e una forma disegnata è una parte con la sua chiave."
+verify = "Verificando e generando la sezione dello spike (Carousel) ogni regola ha un test rosso/verde nel livello 1 della CI, e la story della sezione usa i figli di default del contratto."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 28
+type = "story"
+title = "Skill `pds-design` e configurazione di progetto"
+description = "La skill `pds-design` porta tema e componenti in Penpot attraverso il kit ufficiale, con le voci TB, TV, CN, DC, CD e MS, facendo da wrapper alle skill del kit dove ha senso e senza scrivere metadati in Penpot."
+verify = "Le sei voci sono costruite con `bmad-workflow-builder` e verificate sulle due strade su un componente reale, `pds-setup` accetta solo i valori fissati e rifiuta gli altri, e ogni scrittura passa da una conferma."
+covers = ["R1", "R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 29
+type = "story"
+title = "Skill `pds-code`"
+description = "La skill `pds-code` porta un componente da Penpot al codice con le voci ET, VC, GC, AC e GA, risponde alle domande del nucleo scrivendo le risposte in Penpot come plugin data solo dopo conferma, e non scrive mai un file `@generated`."
+verify = "GC e AC sono verificati su un componente reale, ogni `Finding` domanda mostra le opzioni e persiste la risposta solo dopo conferma, e GA (tsc, test, tema nel CSS, contrasto, axe, un pacchetto font per famiglia) è un gate verde."
+covers = ["R2", "R3"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 30
+type = "story"
+title = "Comportamento accessibile"
+description = "Il comportamento accessibile entra nel componente un pezzo alla volta: il primitivo Base UI se esiste, altrimenti la ricetta shadcn `base` e il pattern APG letti dal vivo, con un piccolo diff e un test per comportamento."
+verify = "Ogni comportamento proposto ha il suo diff con conferma e il suo test, axe in GA è bloccante su ogni story `@generated` con prova rosso/verde, e `a11y-baseline.md` riceve la §6."
+covers = ["R3"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 31
+type = "story"
+title = "Rigenerazione dei componenti di prova con la v3"
+description = "Badge, ShopCard e Carousel sono rifatti con le due skill, dal disegno al componente, dimostrando il modello v3 su un atomo, una card con istanze e una sezione prima della libreria."
+verify = "Ciascuno ha `styles.ts` e story `@generated`, il componente dello sviluppatore, test e axe verdi e il giudizio visivo in Storybook; Badge passa dalla strada dal contratto e ShopCard da quella dal design, e la CI a quattro livelli è verde senza leggere Penpot."
+covers = ["R1", "R2", "R3"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 32
+type = "story"
+title = "Libreria componenti accessibile"
+description = "La libreria dei domini (data-display, inputs, feedback, layout, navigation, overlays, commerce) vive in `packages/ui/src/domains`, ciascun componente con contratto dell'editor, `styles.ts` e story `@generated` e componente dello sviluppatore, conforme alla a11y baseline."
+verify = "Ogni componente interattivo ha focus visibile WCAG AA, stato comunicato da testo + colore e ARIA corretto, axe è verde su ogni story generata, e `domains/` non importa da `editor/` (lint bloccante)."
+covers = ["R3"]
+after = []
+hitl = false
+risk = "low"

@@ -1,0 +1,46 @@
+# A container's agreed children, in its tickets/ folder; tickets.py ignores unknown keys.
+# Table order is build order. `id` is permanent, never reused.
+# No status here: the plan carries `status`.
+# next_id = 7 # written by `tickets.py move`; the folder's counter never goes below it
+
+[[epic]]
+id = 1
+slug = "epic-fondamenta-e-accesso"
+title = "Fondamenta e accesso"
+description = "Un utente si autentica, il sistema riconosce il suo ruolo e la shell dell'app gira, sopra un core di dominio esagonale e un modello dati con l'invariante ≤1 pubblicata garantito dal DB."
+covers = ["R12"]
+
+[[epic]]
+id = 2
+slug = "epic-design-system-token-e-componenti-da-penpot"
+title = "Design system — token e componenti da Penpot"
+description = "Dal catalogo Penpot si generano in modo riproducibile tema e stili; i componenti dei domini sono accessibili, visibili e testati in Storybook, e la CI li verifica senza Penpot."
+covers = ["R1", "R2", "R3"]
+
+[[epic]]
+id = 3
+slug = "epic-blocchi-ed-elementi-dell-editor"
+title = "Blocchi ed elementi dell'editor"
+description = "Esistono i blocchi Puck token-driven, le sezioni e le composizioni dell'editor; la config Puck è pronta per il montaggio nell'editor."
+covers = ["R4", "R5", "R13"]
+
+[[epic]]
+id = 4
+slug = "epic-editor-e-bozze"
+title = "Editor e bozze"
+description = "Un Editor costruisce una pagina in drag-and-drop e la salva come bozza, con round-trip lossless e payload validato e sanitizzato lato server."
+covers = ["R6", "R7"]
+
+[[epic]]
+id = 5
+slug = "epic-ciclo-di-vita-e-pubblicazione"
+title = "Ciclo di vita e pubblicazione"
+description = "Un Editor pubblica, fa rollback e archivia pagine con l'invariante ≤1 pubblicata garantito e l'audit tracciato."
+covers = ["R8", "R9", "R10", "R14"]
+
+[[epic]]
+id = 6
+slug = "epic-render-pubblico-e-vetrina-commerce"
+title = "Render pubblico e vetrina commerce"
+description = "Un visitatore vede la pagina pubblicata by-slug, inclusi dati commerce reali risolti a render-time da un provider intercambiabile."
+covers = ["R11", "R15"]

@@ -1,0 +1,7 @@
+# Store config del progetto — stratificato sopra lo starter
+# .agents/skills/bmad-agent-po/config/github-ticketing.toml da read_store.py.
+# Solo le chiavi del progetto; il resto viene dallo starter.
+
+[tickets]
+store = "github"
+repo = "AlessandroPaciello/page-builder"
