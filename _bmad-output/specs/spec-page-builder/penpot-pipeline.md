@@ -101,7 +101,7 @@ Penpot (dal vivo) ─────┘                                │
 
 Nessuna lettura di Penpot salvata nel repo. Penpot si verifica solo in sessione, quando si rigenera.
 
-**Collaudo degli aggiornamenti di Penpot.** Un componente campione che usa tutte le proprietà del registro e tutte le chiavi di plugin data, salvato come `.penpot` nel repo. A ogni aggiornamento: istanza nuova, import del campione, collaudo lanciato a mano; ogni proprietà del registro deve comparire nella lettura. Il Penpot vero (oggi 2.18.3) si aggiorna solo se il collaudo passa. Il collaudo misura anche quali operazioni di Penpot cancellano i plugin data *(esito da registrare qui con la Story 2.25)*.
+**Collaudo degli aggiornamenti di Penpot.** Un componente campione che usa tutte le proprietà del registro e tutte le chiavi di plugin data, salvato come `.penpot` nel repo. A ogni aggiornamento: istanza nuova, import del campione, collaudo lanciato a mano; ogni proprietà del registro deve comparire nella lettura. Il Penpot vero (oggi 2.18.3) si aggiorna solo se il collaudo passa. Campione, test e procedura (backup, istanza `penpot-collaudo` sullo stesso compose, import, collaudo) stanno in `packages/scripts/collaudo/` (Story 2.25, [README](../../../packages/scripts/collaudo/README.md)). Quali operazioni di Penpot cancellano i plugin data si misura sul campione in un passo a parte *(voce di `deferred-work.md`, prima della 2.29)*.
 
 ## Limiti noti di Penpot e del kit
 

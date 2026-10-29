@@ -44,7 +44,7 @@
 #   la chiusura review no (1-2 done prima). Precondizione Epic 2 = 1-4-tracciante, non 1-2.
 
 generated: '2026-07-26'
-last_updated: "2026-10-28"  # sprint-planning: 2.24 → done (PR #65 mergiata)
+last_updated: "2026-10-29"  # bmad-build: 2.25 → in-progress
 project: page-builder
 project_key: NOKEY
 tracking_system: file-system
@@ -92,7 +92,7 @@ development_status:
   2-22-verifica-e-generazione-chiavi-di-parte-styles-scaffold-story: done  # PR #63, b5bbd80
   2-23-adattatore-penpot-readcomponent: done  # PR #64, dfeea07
   2-24-server-mcp-pds-e-controllo-dei-file-generati-in-ci: done  # PR #65, 7b6eccc
-  2-25-collaudo-degli-aggiornamenti-di-penpot: backlog
+  2-25-collaudo-degli-aggiornamenti-di-penpot: in-progress
   2-26-tema-da-seme-css-varianti-di-tema-e-font: backlog
   2-27-sezioni: backlog
   2-28-skill-pds-design-e-configurazione-di-progetto: backlog

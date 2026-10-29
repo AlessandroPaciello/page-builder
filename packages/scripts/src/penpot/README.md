@@ -63,3 +63,7 @@ Il plugin MCP gira nella scheda di Penpot. Se il browser la sospende (scheda in 
 ```
 PDS_PENPOT_LIVE=1 pnpm --filter @penpot-ds/scripts exec vitest run tests/penpot/read-component.live.test.ts
 ```
+
+## Collaudo degli aggiornamenti di Penpot
+
+Prima di aggiornare il Penpot vero, `readComponent` e `readPenpotTokenCatalog` si collaudano su un'istanza nuova con il campione `collaudo/campione.penpot` (Story 2.25): ogni proprietà del registro e ogni chiave di plugin data deve comparire nella lettura, e il caso con due container dello stesso contratto deve dare l'errore che li elenca. Procedura, campione e regola migrazione/guasto: [`collaudo/README.md`](../../collaudo/README.md).

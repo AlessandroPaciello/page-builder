@@ -10,7 +10,8 @@
   },
   "include": [
     "src/**/*.ts",
-    "tests/**/*.ts"
+    "tests/**/*.ts",
+    "collaudo/**/*.ts"
   ],
   "exclude": [
     "node_modules"
