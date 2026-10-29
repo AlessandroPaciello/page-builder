@@ -10,8 +10,9 @@ La pipeline v1 (Story 2.1–2.11) e la v2 (Story 2.12–2.16) sono state rimosse
 |---|---|
 | `pnpm --filter @penpot-ds/scripts theme` | Rigenera `tailwind-theme.css` + `tokens.generated.ts` **dalla fixture committata** (`data/penpot-catalog.json`), offline. |
 | `pnpm --filter @penpot-ds/scripts theme -- --live` | Si connette al server MCP Penpot (vedi [Connessione a Penpot](#connessione-a-penpot)), legge il catalogo reale, **aggiorna anche la fixture committata** (solo dopo che la generazione è riuscita), poi rigenera. Mai in CI né in build. |
-| `pnpm --filter @penpot-ds/scripts test` | Test unitari, offline e deterministici: nessuna rete (la lettura live nei test è un seam). Il test dal vivo di `readComponent` si salta senza `PDS_PENPOT_LIVE=1`. |
+| `pnpm --filter @penpot-ds/scripts test` | Test unitari, offline e deterministici: nessuna rete (la lettura live nei test è un seam). Il test dal vivo di `readComponent` si salta senza `PDS_PENPOT_LIVE=1`, il collaudo senza `PDS_PENPOT_COLLAUDO=1`. |
 | `PDS_PENPOT_LIVE=1 pnpm --filter @penpot-ds/scripts exec vitest run tests/penpot/read-component.live.test.ts` | Legge Badge, ShopCard e Carousel dal Penpot locale (a mano, mai in CI). |
+| `PDS_PENPOT_COLLAUDO=1 pnpm --filter @penpot-ds/scripts exec vitest run collaudo/` | Collaudo di Penpot sul campione `collaudo/campione.penpot`, su un'istanza nuova (a mano, mai in CI; procedura in [`collaudo/README.md`](collaudo/README.md)). |
 | `pnpm --silent --filter @penpot-ds/scripts pds` | Avvia il server MCP `pds` su stdio. Non si lancia a mano: lo avvia Claude Code da `.mcp.json`. Dopo una modifica del nucleo o del server: `/mcp` → `pds` → reconnect. Non è una CLI: gli strumenti si chiamano solo via MCP. |
 
 Uscite di `theme` (entrypoint `src/theme/main.ts`): `0` tema rigenerato · `1` input (argomento ignoto, fixture illeggibile, catalogo che non genera) · `2` penpot (lettura live fallita).
@@ -49,6 +50,7 @@ Se manca il token, se è stato rigenerato o se il plugin non è connesso, `theme
 - `src/core/` — il nucleo puro (Story 2.20): `schemas.ts` (zod `Lettura`, `Finding`, `Change`, `Suggerimento`, con un nome e senza versione), `registry.ts` (registro delle proprietà), `geometry.ts` (regole di geometria e `scaleFromThemeCss`, Story 2.21–2.22), `verify.ts`, `generate.ts`, `build-order.ts`, `hash.ts` (verifica, generazione, ordine e intestazione `@generated`, Story 2.22), `naming.ts` (nomi; `src/shared/naming.ts` li riesporta), `token-names.ts` (tipo, namespace e suffisso dei token), `index.ts`.
 - `tests/core/` — i test del nucleo: livello 1 (`schemas.test.ts`, `registry.test.ts`, `geometry.test.ts`, `verify.test.ts`, `generate.test.ts`, `build-order.test.ts`, `hash.test.ts`, dati scritti a mano) e livello 4 (`registry-tailwind.test.ts`). Stanno fuori da `src/core` perché importano `vitest`, che il confine `core` vieta.
 - `tests/server/` — livello 2 (`server.test.ts`, server in memoria con adattatore finto; `write-changes.test.ts`, limiti dei path) e livello 3 (`generated-files.test.ts`, sul repo vero e su una cartella temporanea).
+- `collaudo/` — collaudo degli aggiornamenti di Penpot (Story 2.25): `campione.penpot`, `collaudo.live.test.ts` (saltato senza `PDS_PENPOT_COLLAUDO=1`) e la procedura in [`collaudo/README.md`](collaudo/README.md).
 - `tests/penpot/` — `read-component.test.ts` (livello 1, `callTool` finto) e `read-component.live.test.ts` (dal vivo, saltato senza `PDS_PENPOT_LIVE=1`).
 - `tests/fixtures/` — il catalogo Tailwind dei test e il suo loader; `components.ts`, le `Lettura` scritte a mano di Badge e ShopCard⊃Badge (ShopCard è un contratto di prova, definito lì).
 - `scripts/check-boundaries.mjs` + `tests/check-boundaries.test.ts` — gate di confine con prova rosso/verde per ogni regola.

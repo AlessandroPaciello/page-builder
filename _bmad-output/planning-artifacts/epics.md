@@ -616,7 +616,7 @@ So that il Penpot vero si aggiorni solo quando la pipeline lo legge ancora tutto
 **When** costruisco il campione e lancio il collaudo a mano su un'istanza Penpot nuova
 **Then** esiste un componente campione salvato come `.penpot` nel repo che usa **ogni** voce del registro (geometria compresa) e ogni chiave di plugin data (`contract`, `part`, `when`, `slot`)
 **And** la procedura (istanza nuova → import del campione → collaudo) verifica che ogni proprietà del registro compaia nella lettura e che il campione le usi tutte; un'esclusione è un errore che nomina la proprietà
-**And** il collaudo misura quali operazioni di Penpot cancellano gli shared plugin data (raggruppa, booleane, copia tra file, ripristino, stacco) e se "fill" dentro hug è leggibile; l'esito è registrato nel README del collaudo e nel `penpot-pipeline.md`
+**And** il collaudo dice se "fill" dentro hug è leggibile; l'esito è registrato nel README del collaudo e nel `penpot-pipeline.md` (quali operazioni cancellano i plugin data si misura nella Story 2.29)
 **And** la procedura dice che il Penpot vero (oggi 2.18.3, backup prima della migrazione) si aggiorna solo se il collaudo passa, e come distinguere una migrazione dell'import `.penpot` da un guasto dell'adattatore.
 
 ### Story 2.26: Tema da seme CSS, varianti di tema e font
@@ -674,6 +674,11 @@ I want una skill che porti un componente da Penpot al codice, risponda alle doma
 So that generare e riallineare un componente sia una sequenza di conferme e non di comandi (FR2, FR3, NFR1, AD-11).
 
 **Acceptance Criteria:**
+
+**Given** una copia del campione del collaudo (Story 2.25) sull'istanza di collaudo
+**When**, prima che la skill scriva plugin data, misuro a mano raggruppa, booleane, copia tra file, ripristino di versione, stacco dell'istanza e duplica
+**Then** per ogni operazione l'esito sugli shared plugin data `pagebuilder` (resta / si perde / si perde in parte) è registrato nel README del collaudo e in `penpot-pipeline.md` § CI e collaudo
+**And** la procedura del collaudo ripete queste operazioni come checklist a ogni aggiornamento di Penpot.
 
 **Given** il server `pds`, il collaudo (Story 2.25) e `pds-design`
 **When** costruisco `pds-code` con `bmad-workflow-builder`
