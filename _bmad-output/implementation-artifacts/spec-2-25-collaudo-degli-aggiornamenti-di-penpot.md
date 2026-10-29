@@ -2,7 +2,7 @@
 title: 'Story 2.25 — Collaudo degli aggiornamenti di Penpot'
 type: 'feature'
 created: '2026-10-29'
-status: 'in-progress'
+status: 'done'
 baseline_commit: 'd0c86ffcd54416e1d59b44268b9545cddd985d22'
 route: 'dispatch'
 review_loop_iteration: 0
@@ -38,7 +38,7 @@ context:
   - la scala ricavata dal catalogo (`scaleFromThemeCss(generateTheme(catalog).css)`) non sia vuota, e una misura in scala dia la sua classe;
   - il "fill dentro hug" sia leggibile e arrivi come domanda;
   - il doppione dia l'errore che elenca i due;
-  - il default reale di `layoutAlign` su un flex non toccato sia `stretch`.
+  - il default reale di `layoutAlign` su un flex non toccato sia `start` (misurato su 2.18.3) e dia `items-start`. *Rinegoziato da Alessandro il 2026-10-29: era `stretch`, che è il default del CSS e non quello di Penpot.*
 - **Procedura** (`collaudo/README.md`):
   - backup del Penpot vero (`pg_dump` più il volume degli asset) prima di una migrazione;
   - istanza nuova → utente → token MCP → plugin → import → collaudo;
@@ -86,9 +86,9 @@ context:
 **Execution:**
 - [x] `packages/scripts/collaudo/README.md`: procedura, tabella proprietà → layer → valore, regola migrazione/guasto, esito di "fill dentro hug".
 - [x] `packages/scripts/collaudo/collaudo.live.test.ts` e `tsconfig.json`: i controlli dei Boundaries.
-- [ ] `packages/scripts/collaudo/campione.penpot`: costruito ed esportato dall'istanza di collaudo.
+- [x] `packages/scripts/collaudo/campione.penpot`: costruito ed esportato dall'istanza di collaudo.
 - [x] `penpot-pipeline.md` (§ CI e collaudo), `packages/scripts/README.md` e `src/penpot/README.md`: i rimandi al collaudo.
-- [ ] `deferred-work.md` e `sprint-status.yaml`: il bookkeeping.
+- [x] `deferred-work.md` e `sprint-status.yaml`: il bookkeeping.
 
 **Acceptance Criteria:**
 - Given l'istanza di collaudo con il campione importato e il plugin collegato, when lancio `PDS_PENPOT_COLLAUDO=1 pnpm --filter @penpot-ds/scripts exec vitest run collaudo/`, then è verde.
@@ -98,10 +98,13 @@ context:
 
 - **Il doppione e la lettura del principale.** Con due container `collaudo@1` nello stesso file, `readComponent("collaudo")` e `readComponent("collaudo@1")` trovano sempre i due (la ricerca per contratto viene prima del nome). Senza toccare l'adattatore, il principale si legge per nome del layer: `readComponent("Collaudo")` non corrisponde a nessun contratto (confronto esatto, sensibile alle maiuscole), quindi passa al nome e trova solo il container `Collaudo`; il doppione si chiama `CollaudoDoppione`. Scritto nel README del collaudo.
 - **Layer atteso dal README.** Il test legge la tabella proprietà → layer → valore di `collaudo/README.md` (righe `| \`nome\` | layer | valore |`): una voce nuova del registro senza riga fallisce dicendo di aggiungerla.
-- **Valore diverso dal default.** Per le voci `keyword` e le `list` di geometria il test vuole almeno un valore diverso dal default; `layoutAlign` ha in più il default `stretch` su `FlexNonToccato`.
+- **Valore diverso dal default.** Per le voci `keyword` e le `list` di geometria il test vuole almeno un valore diverso dal default; `layoutAlign` ha in più il default reale di Penpot, `start`, su `FlexNonToccato`. Il `default` del registro (`stretch`) è il valore che non dà classi perché è già il comportamento del CSS: non è il default di Penpot.
 - **Non fatto dal sub-agente (2026-10-29):** `campione.penpot` e il collaudo dal vivo. Richiedono di fermare lo stack `penpot`, l'istanza `penpot-collaudo`, utente, token e plugin collegato nel browser, e le conferme di Alessandro a ogni scrittura via MCP. L'MCP Penpot della sessione punta al Penpot vero, dove non si scrive. Le voci di `deferred-work.md` sono marcate "in chiusura", non chiuse; la story resta `in-progress`.
+- **Fatto in sessione (2026-10-29).** Campione costruito da Claude via MCP sull'istanza `penpot-collaudo` 2.18.3, con la conferma di Alessandro a ogni scrittura, ed esportato in `campione.penpot`. Trovato costruendolo: i token non possono essere prefisso l'uno dell'altro (finding 17), quindi nomi coi namespace Tailwind v4; la proprietà del token font è `fontFamily` (Bug 5 del registro), non `fontFamilies` come dice la documentazione dell'API; un container di varianti vuole almeno due celle (il doppione ne ha due); il "fill dentro hug" si costruisce solo mettendo prima il figlio in *fill* (README, § Esiti). Prova sul file sorgente: 9/10, rosso su `layoutAlign` (`start`, rinegoziato, vedi Spec Change Log). Collaudo sul file importato: 10/10. Prova a mano su una copia importata (`slot` vuoto, token `opacity.muted` staccato da `Assoluto`): i due rossi attesi, che nominano `slot`/`Slot` e `opacity`/`Assoluto`. Voci di `deferred-work.md` chiuse; restano aperti `min-w-0`/`min-h-0`, il limite degli override e `variantError`.
 
 ## Spec Change Log
+
+- **2026-10-29, default di `layoutAlign` (rinegoziato da Alessandro).** La prova del collaudo sul file del campione ha dato `layoutAlign = start` su `FlexNonToccato`: è il valore grezzo di Penpot 2.18.3 (`flex.alignItems`), la `Lettura` lo riporta uguale, quindi non è un guasto né una migrazione. La Boundary chiedeva `stretch`, che è il default del CSS: nel registro `default` vuol dire "nessuna classe" (`core/registry.ts`), e un flex non toccato dà `items-start`, fedele a Penpot. Il controllo ora vuole `start` e `items-start`, così una versione di Penpot che cambia il default fa diventare rosso il collaudo.
 
 ## Review Triage Log
 
@@ -125,8 +128,35 @@ Review del 2026-10-29 (Blind Hunter, Edge Case Hunter, Verification Gap), iteraz
 | 14 | Edge | Il test non registra la versione di Penpot | low | serve un `execute_code` in più; la versione la fissa `PENPOT_VERSION` nella procedura | rifiutato |
 | 15 | Blind, Edge | Stato della spec, checkbox del bookkeeping, "verde" in Verification, esito di "fill dentro hug" dato per fatto | — | la correzione modifica la spec di questa build | rifiutato (regola) |
 | 16 | Blind | I documenti descrivono `campione.penpot` che non c'è ancora | low | arriva nella stessa story, prima della chiusura | rifiutato |
-| 17 | Blind | `bordo` (color) e `bordo.sottile` potrebbero collidere come token e gruppo in Penpot | maybe-false | da vedere quando si costruisce il campione; anche se fosse vero sarebbe solo low | rifiutato |
+| 17 | Blind | `bordo` (color) e `bordo.sottile` potrebbero collidere come token e gruppo in Penpot | low | confermato il 2026-10-29 costruendo il campione: Penpot rifiuta `bordo.sottile` ("A token already exists at the path … or at a prefix thereof") | patch (token rinominati con i namespace Tailwind v4: `color.border`, `border-width.thin`, `font-weight.bold`, `opacity.muted`, …; README del collaudo aggiornato) |
 | 18 | VG | Il collaudo non è mai stato eseguito | — | già noto e dichiarato nelle Implementation Notes | rifiutato (duplicato) |
+
+Review del 2026-10-29 (Blind Hunter, Edge Case Hunter, Verification Gap), iterazione 0, dopo la costruzione del campione e il collaudo dal vivo.
+
+| # | Layer | Finding | Verdetto | Evidenza | Esito |
+|---|---|---|---|---|---|
+| 19 | Blind, VG, Edge | La soppressione dei default su `FlexNonToccato` copre padding, gap e opacità ma non raggi, tratto e ombra, che `READ_COMPONENT_SOURCE` sopprime allo stesso modo | medium | `read-component.ts:190-227`; la voce di deferred cita "default soppressi" | patch (`DEFAULT_SUPPRESSED` esteso) |
+| 20 | Blind | Le voci geometriche senza default (`clip`, `width`, `height`) sono controllate solo come presenti: `clip: false` o `Quadrato` a 15 px passano | medium | `core/geometry.ts:49-56`; il test di copertura salta il confronto senza `default` | patch (test su `clip` delle celle e su 16×16 di `Quadrato`) |
+| 21 | Edge | Token e valore grezzo si cercano su layer qualsiasi: un import che perde il legame su un layer passa se un altro layer ha lo stesso token | medium | il test di copertura usa `all.some` separati per `tokens` e `style` | patch (ogni layer legato deve avere anche il grezzo) |
+| 22 | Edge | Un token legato che manca dal catalogo dà solo un avviso di `layerClasses`, e il collaudo resta verde | low | `beforeAll` costruisce `tokenTypeOf` dal catalogo, nessuna asserzione lo confronta coi legami | patch (test "ogni token legato è nel catalogo") |
+| 23 | Blind | Il README dice "almeno una cella" per il doppione, ma Penpot vuole almeno due componenti per un container di varianti | low | `createVariantContainer` con un componente non crea il container (prova del 2026-10-29) | patch |
+| 24 | Blind | La prova del rosso della matrice non è nella procedura: al prossimo aggiornamento nessuno la ripete | medium | `collaudo/README.md`, passo 8 | patch (passo "Prova del rosso") |
+| 25 | Blind, Edge | Il ripristino usa `$B` della shell del backup: in una shell nuova o in un altro giorno punta a una cartella vuota, e il volume degli asset è già svuotato | medium | `collaudo/README.md`, passo 1 | patch (`B` esplicito e controllo dei file) |
+| 26 | Edge | Un `pg_dump` fallito crea comunque il file del dump, e il backup sembra valido | medium | il `>` crea il file prima dell'esito del comando | patch (`test -s` e "dump ok") |
+| 27 | Edge | `rm -rf /assets/*` non toglie i file nascosti prima del ripristino | low | glob della shell | patch (`find -mindepth 1 -delete`) |
+| 28 | Edge | Con `restart: always` un riavvio di Docker riaccende tutti e due gli stack sulle stesse porte | low | `docker/penpot/docker-compose.yml`, 7 servizi | patch (nota nel passo 2) |
+| 29 | Blind | La checklist dell'aggiornamento dimentica il commento di `UNTOUCHED_ALIGN`, la tabella degli esiti e la riesportazione del campione | low | `collaudo/README.md`, § Procedura | patch |
+| 30 | Blind | Il campione non dice da quale versione e quando è stato esportato | low | `collaudo/README.md`, prima lista | patch |
+| 31 | VG | La voce di deferred sulla scala del server è data chiusa, ma il collaudo riscrive la formula e non passa da `coreContext` | medium | `src/server/server.ts:91-97`; nessun test del server con misure in px | patch (voce riaperta per il cablaggio del server) |
+| 32 | VG | Il rilevamento degli override non è verificato dal vivo: il campione ha solo un'istanza senza override, quindi un `overridesOf` che restituisce sempre `[]` passa | medium | `collaudo.live.test.ts`, test del container | defer (voce nuova; la chiusura di `READ_COMPONENT_SOURCE` ora la nomina) |
+| 33 | VG | La chiusura di `READ_COMPONENT_SOURCE` dice più di quanto il collaudo verifica (regole di stile e override) | low | stessa radice di 19 e 32 | patch (testo della chiusura) |
+| 34 | Blind | Paragrafo "Non fatto dal sub-agente" e righe 16 e 18 superati dal lavoro in sessione | — | la correzione modifica la spec di questa build | rifiutato (regola) |
+| 35 | Blind | `sprint-status.yaml` dice `in-progress` mentre la spec dice `in-review` | false | lo stato lo allinea il passo di presentazione del workflow | rifiutato |
+| 36 | Blind | Il PRIMA del § 4.3 del correct-course non corrisponde a `main` | false | il correct-course descrive lo stato del branch al momento (dopo `df197a5`); `penpot-pipeline.md` non è su `main` con quel percorso | rifiutato |
+| 37 | Blind | Voci aperte (`min-w-0`, override, `variantError`) senza `routed:` | low | voci precedenti alla 2.25, che la spec lascia aperte | rifiutato |
+| 38 | Blind | La Boundary `Lettura.parse` non ha un'asserzione esplicita | low | carried: riga 5 | carried, patch |
+| 39 | Edge | La regex della tabella (`[A-Za-z]+`) non prende nomi con cifre o trattini | false | tutte le proprietà del registro e le chiavi di plugin data sono solo lettere | rifiutato |
+| 40 | Edge | Il README si legge anche quando la suite è saltata: senza README la raccolta in CI si rompe | low | caso improbabile, il README sta accanto al test; la correzione aggiunge un ramo | rifiutato |
 
 ## Verification
 

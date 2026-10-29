@@ -38,8 +38,14 @@ const CONTRACT = "collaudo@1";
 const SCALE_LAYER = "Quadrato";
 const UNTOUCHED_FLEX = "FlexNonToccato";
 const NESTED = "Etichetta";
+/** Il default reale di `flex.alignItems` su un flex appena creato, misurato su Penpot 2.18.3 (README, § Esiti). */
+const UNTOUCHED_ALIGN = "start";
 /** Proprietà che l'adattatore scrive solo se non di default: su un flex non toccato non devono esserci. */
-const DEFAULT_SUPPRESSED = ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft", "rowGap", "columnGap", "opacity"];
+const DEFAULT_SUPPRESSED = [
+  "paddingTop", "paddingRight", "paddingBottom", "paddingLeft", "rowGap", "columnGap", "opacity",
+  "borderRadiusTopLeft", "borderRadiusTopRight", "borderRadiusBottomRight", "borderRadiusBottomLeft",
+  "strokeColor", "strokeWidth", "shadow",
+];
 
 const PLUGIN_DATA_KEYS = ["contract", "part", "when", "slot"] as const;
 
@@ -120,8 +126,13 @@ describe.skipIf(!COLLAUDO)("collaudo di Penpot sul campione", { timeout: 120_000
       const inTokens = all.some((layer) => Object.hasOwn(layer.tokens, property));
       const styleValues = all.filter((layer) => Object.hasOwn(layer.style, property)).map((layer) => layer.style[property]);
       if (entry.kind === "token") {
+        // Ogni layer legato deve avere anche il valore grezzo: un import che perde il legame su un layer non si nasconde dietro un altro.
+        const bound = all.filter((layer) => Object.hasOwn(layer.tokens, property));
         if (!inTokens) problems.push(`"${property}" non compare in tokens: legame del token perso (layer atteso: ${where(property)})`);
         if (styleValues.length === 0) problems.push(`"${property}" non compare in style: valore grezzo non letto (layer atteso: ${where(property)})`);
+        for (const layer of bound.filter((candidate) => !Object.hasOwn(candidate.style, property))) {
+          problems.push(`"${property}" su "${layer.name}" ha il token ma non il valore grezzo (layer atteso: ${where(property)})`);
+        }
         continue;
       }
       const values = [...(inTokens ? all.filter((layer) => Object.hasOwn(layer.tokens, property)).map((layer) => layer.tokens[property]) : []), ...styleValues];
@@ -135,6 +146,22 @@ describe.skipIf(!COLLAUDO)("collaudo di Penpot sul campione", { timeout: 120_000
       }
     }
     expect(problems).toEqual([]);
+  });
+
+  it("i valori senza default della tabella arrivano come nel campione", () => {
+    const all = visitedOf(main).map((entry) => entry.layer);
+    for (const cell of main.cells) expect(cell.root.style["clip"], `clip della cella "${cell.root.name}" (${where("clip")})`).toBe(true);
+    const squares = all.filter((layer) => layer.name === SCALE_LAYER);
+    expect(squares.length, `layer "${SCALE_LAYER}" nel campione`).toBeGreaterThan(0);
+    for (const layer of squares) {
+      expect([layer.style["width"], layer.style["height"]], `misura di "${SCALE_LAYER}" (${where("width")})`).toEqual([16, 16]);
+    }
+  });
+
+  it("ogni token legato nella lettura è nel catalogo", () => {
+    const all = [...visitedOf(main), ...visitedOf(fillInHug)].map((entry) => entry.layer);
+    const unknown = [...new Set(all.flatMap((layer) => Object.values(layer.tokens)))].filter((name) => tokenTypeOf(name) === undefined);
+    expect(unknown.map((name) => `il token "${name}" è legato nel campione ma manca nel catalogo letto da readPenpotTokenCatalog`)).toEqual([]);
   });
 
   it("ogni chiave di plugin data compare nella lettura", () => {
@@ -180,11 +207,14 @@ describe.skipIf(!COLLAUDO)("collaudo di Penpot sul campione", { timeout: 120_000
     for (const name of [MAIN, DOUBLE]) expect(message).toContain(`"${name}" (id `);
   });
 
-  it(`il default reale di layoutAlign su un flex non toccato ("${UNTOUCHED_FLEX}") è stretch`, () => {
+  // Il default reale di Penpot 2.18.3 è `start`, non il `default` del registro (`stretch`, il valore senza classi del CSS):
+  // un flex non toccato dà quindi `items-start`. Se Penpot cambia default, questo controllo va rosso.
+  it(`il default reale di layoutAlign su un flex non toccato ("${UNTOUCHED_FLEX}") è ${UNTOUCHED_ALIGN} e dà items-start`, () => {
     const flexes = visitedOf(main).filter((entry) => entry.layer.name === UNTOUCHED_FLEX);
     expect(flexes.length, `layer "${UNTOUCHED_FLEX}" nel campione`).toBeGreaterThan(0);
-    for (const { layer } of flexes) {
-      expect(layer.style["layoutAlign"], `layoutAlign di "${UNTOUCHED_FLEX}"`).toBe("stretch");
+    for (const { layer, parent } of flexes) {
+      expect(layer.style["layoutAlign"], `layoutAlign di "${UNTOUCHED_FLEX}"`).toBe(UNTOUCHED_ALIGN);
+      expect(layerClasses(layer, { parent, tokenTypeOf, scale }).classes, `classi di "${UNTOUCHED_FLEX}"`).toContain("items-start");
       expect(DEFAULT_SUPPRESSED.filter((property) => Object.hasOwn(layer.style, property)), `proprietà di default in style su "${UNTOUCHED_FLEX}"`).toEqual([]);
     }
   });

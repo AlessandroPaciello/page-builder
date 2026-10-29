@@ -2,7 +2,7 @@
 
 `readComponent` e `readPenpotTokenCatalog` leggono Penpot dal vivo. Il collaudo dice se una versione di Penpot li rompe. Prima di aggiornare il Penpot vero, si importa un campione in un'istanza nuova e si lancia un test a mano.
 
-- `campione.penpot` è il file Penpot del campione, con i suoi token: usa ogni voce del registro e ogni chiave di plugin data. Non è una lettura: nel repo non si salvano letture, JSON della `Lettura` né snapshot (regola 5).
+- `campione.penpot` è il file Penpot del campione, con i suoi token: usa ogni voce del registro e ogni chiave di plugin data. Esportato da Penpot 2.18.3 il 2026-10-29 (*File → Export*, formato `.penpot`), dal file costruito sull'istanza di collaudo. Non è una lettura: nel repo non si salvano letture, JSON della `Lettura` né snapshot (regola 5).
 - `collaudo.live.test.ts` è il test. Si salta senza `PDS_PENPOT_COLLAUDO=1`, quindi in CI non gira mai.
 - Questo README: la procedura, il campione e la tabella proprietà → layer → valore. Il test legge la tabella per dire quale layer guardare quando manca qualcosa.
 
@@ -15,17 +15,19 @@ I comandi partono dalla root del repo. Il compose è lo stesso del Penpot vero (
 1. **Backup del Penpot vero**, prima di ogni migrazione, fuori dal repo:
    ```bash
    B=~/penpot-backup/$(date +%F) && mkdir -p "$B"
-   docker compose -f docker/penpot/docker-compose.yml exec -T penpot-postgres pg_dump -U penpot -d penpot -Fc > "$B/penpot.dump"
+   docker compose -f docker/penpot/docker-compose.yml exec -T penpot-postgres pg_dump -U penpot -d penpot -Fc > "$B/penpot.dump" && test -s "$B/penpot.dump" && echo "dump ok"
    docker run --rm -v penpot_penpot_assets:/assets:ro -v "$B":/backup alpine tar czf /backup/penpot-assets.tgz -C /assets .
    ```
-   **Ripristino**, solo se l'aggiornamento del Penpot vero fallisce: riporta `PENPOT_VERSION` alla versione di prima, poi
+   Il dump va fatto con lo stack vero acceso. Senza "dump ok" il backup non vale: non andare avanti.
+   **Ripristino**, solo se l'aggiornamento del Penpot vero fallisce: riporta `PENPOT_VERSION` alla versione di prima (il default `${PENPOT_VERSION:-…}` nel compose, o la variabile se l'avevi esportata), poi rimetti in `B` la cartella del backup (anche in una shell nuova o in un altro giorno) e
    ```bash
+   B=~/penpot-backup/<data-del-backup> && test -s "$B/penpot.dump" && test -s "$B/penpot-assets.tgz" || echo "backup non trovato"
    docker compose -f docker/penpot/docker-compose.yml stop penpot-frontend penpot-backend penpot-exporter penpot-mcp
    docker compose -f docker/penpot/docker-compose.yml exec -T penpot-postgres pg_restore -U penpot -d penpot --clean --if-exists < "$B/penpot.dump"
-   docker run --rm -v penpot_penpot_assets:/assets -v "$B":/backup alpine sh -c 'rm -rf /assets/* && tar xzf /backup/penpot-assets.tgz -C /assets'
+   docker run --rm -v penpot_penpot_assets:/assets -v "$B":/backup alpine sh -c 'find /assets -mindepth 1 -delete && tar xzf /backup/penpot-assets.tgz -C /assets'
    docker compose -f docker/penpot/docker-compose.yml up -d
    ```
-2. **Ferma il Penpot vero** (le porte 9001, 4401, 4402 e 1080 sono le stesse): `docker compose -f docker/penpot/docker-compose.yml stop`. Solo `stop`: mai `down -v` senza `-p penpot-collaudo`.
+2. **Ferma il Penpot vero** (le porte 9001, 4401, 4402 e 1080 sono le stesse): `docker compose -f docker/penpot/docker-compose.yml stop`. Solo `stop`: mai `down -v` senza `-p penpot-collaudo`. I servizi hanno `restart: always`: se Docker o la macchina ripartono, ripartono tutti e due gli stack e si contendono le porte. Dopo un riavvio rifai `stop` dello stack che non serve, prima di lanciare il collaudo.
 3. **Istanza nuova** (per una versione candidata, `PENPOT_VERSION=<versione>` davanti al comando; senza, 2.18.3):
    ```bash
    docker compose -p penpot-collaudo -f docker/penpot/docker-compose.yml up -d
@@ -38,9 +40,10 @@ I comandi partono dalla root del repo. Il compose è lo stesso del Penpot vero (
    ```bash
    PENPOT_MCP_TOKEN=<token-collaudo> PDS_PENPOT_COLLAUDO=1 pnpm --filter @penpot-ds/scripts exec vitest run collaudo/
    ```
+   **Prova del rosso**, dopo il verde: su una seconda copia importata del campione togli, in tutte e due le celle di `Collaudo`, il plugin data `slot` da `Slot` (valore vuoto) e il legame di `opacity.muted` da `Assoluto` (cambia l'opacità grezza, per esempio a 0.4). Rilancia: il collaudo deve dare due rossi, `"slot" non compare nella lettura (layer atteso: Slot)` e `"opacity" non compare in tokens … (layer atteso: Assoluto)`. Se resta verde, è il collaudo a non vedere più cosa manca. Poi la copia si butta.
 9. **Chiusura**: `docker compose -p penpot-collaudo -f docker/penpot/docker-compose.yml down -v` (cancella solo i volumi `penpot-collaudo_*`), poi `docker compose -f docker/penpot/docker-compose.yml start`. Se al passo 5 hai messo il token di collaudo nel `.env`, rimetti quello vero e riapri VS Code. Controlla con `docker volume ls` che i volumi `penpot_penpot_*` ci siano ancora.
 
-**Il Penpot vero si aggiorna solo se il collaudo passa** sulla versione candidata. Poi si alza `PENPOT_VERSION` (default nel compose) e la versione di riferimento in questo README, in `src/penpot/README.md` e in `penpot-pipeline.md`.
+**Il Penpot vero si aggiorna solo se il collaudo passa** sulla versione candidata. Poi si alza `PENPOT_VERSION` (default nel compose) e la versione di riferimento in questo README (anche la tabella § Esiti), in `src/penpot/README.md`, in `penpot-pipeline.md` e nel commento di `UNTOUCHED_ALIGN` in `collaudo.live.test.ts`. Se un esito cambia (per esempio il default di `layoutAlign`), si aggiorna la costante e la riga degli esiti, si riesporta il campione dalla versione nuova e si annota la data.
 
 ## Migrazione o guasto
 
@@ -63,7 +66,7 @@ Un file Penpot con due pagine e un set di token suo, `collaudo` (attivo).
   - `Assoluto`: rettangolo con *Ignora layout* (assoluto), ancorato a destra e in basso.
 - `FillDentroHug`: componente principale senza contratto. Board flex in riga che abbraccia il contenuto in orizzontale (hug), con un figlio `Pieno` (rettangolo) in *fill* orizzontale.
 
-**Pagina "doppione":** `CollaudoDoppione`, un secondo container di varianti con lo stesso plugin data `contract = collaudo@1` e almeno una cella.
+**Pagina "doppione":** `CollaudoDoppione`, un secondo container di varianti con lo stesso plugin data `contract = collaudo@1` e almeno due celle: Penpot 2.18.3 non fa un container di varianti con un solo componente.
 
 Il test legge il container principale per nome (`readComponent("Collaudo")`): la ricerca per contratto confronta il nome esatto, e "Collaudo" non è un contratto, quindi si passa al nome del layer e si trova solo il container principale. `readComponent("collaudo")` trova invece i due container per contratto e deve dare l'errore che li elenca.
 
@@ -71,28 +74,28 @@ Il test legge il container principale per nome (`readComponent("Collaudo")`): la
 
 | Token | Tipo | Valore |
 |---|---|---|
-| `sfondo`, `primario`, `bordo` | color | `#f8fafc`, `#2563eb`, `#94a3b8` |
+| `color.background`, `color.primary`, `color.border` | color | `#f8fafc`, `#2563eb`, `#94a3b8` |
 | `spacing.2`, `spacing.4`, `spacing.6` | spacing | `8`, `16`, `24` |
 | `radius.md` | borderRadius | `6` |
-| `bordo.sottile` | borderWidth | `2` |
+| `border-width.thin` | borderWidth | `2` |
 | `text.lg` | fontSizes | `18` |
-| `peso.bold` | fontWeights | `700` |
+| `font-weight.bold` | fontWeights | `700` |
 | `font.sans` | fontFamilies | `Source Sans Pro` |
 | `tracking.wide` | letterSpacing | `0.5px` |
-| `opacity.meta` | opacity | `0.5` |
+| `opacity.muted` | opacity | `0.5` |
 | `shadow.sm` | shadow | `0 1 2 0 #0000001a` |
 
-`spacing.4` = 16px è il passo della scala (`--spacing-4`) che dà `w-4` a `Quadrato`.
+`spacing.4` = 16px è il passo della scala (`--spacing-4`) che dà `w-4` a `Quadrato`. I nomi seguono i namespace Tailwind v4 del generatore del tema (`core/token-names.ts`): `color.border` dà `--color-border`, senza ripetere il namespace. Un token non può essere anche il prefisso di un altro (Penpot rifiuta `bordo.sottile` se esiste `bordo`).
 
 ### Proprietà e chiavi → layer → valore
 
-Il layer è quello di ogni cella di `Collaudo`, se non è detto altro. Le parole chiave hanno un valore diverso dal default (il test lo controlla); `layoutAlign` ha anche il default `stretch` su `FlexNonToccato`.
+Il layer è quello di ogni cella di `Collaudo`, se non è detto altro. Le parole chiave hanno un valore diverso dal default (il test lo controlla); `layoutAlign` ha anche il default reale di Penpot, `start`, su `FlexNonToccato`.
 
 | Proprietà o chiave | Layer | Valore |
 |---|---|---|
-| `fill` | radice della cella e `Testo` | token `sfondo` (radice), `primario` (`Testo`) |
-| `strokeColor` | radice della cella | token `bordo` |
-| `strokeWidth` | radice della cella | token `bordo.sottile` |
+| `fill` | radice della cella e `Testo` | token `color.background` (radice), `color.primary` (`Testo`) |
+| `strokeColor` | radice della cella | token `color.border` |
+| `strokeWidth` | radice della cella | token `border-width.thin` |
 | `strokeStyle` | radice della cella | `dashed` |
 | `strokeAlignment` | radice della cella | `center` |
 | `borderRadiusTopLeft` | radice della cella | token `radius.md` |
@@ -106,13 +109,13 @@ Il layer è quello di ogni cella di `Collaudo`, se non è detto altro. Le parole
 | `rowGap` | radice della cella | token `spacing.2` |
 | `columnGap` | `Riga` | token `spacing.2` |
 | `fontSize` | `Testo` | token `text.lg` |
-| `fontWeight` | `Testo` | token `peso.bold` |
+| `fontWeight` | `Testo` | token `font-weight.bold` |
 | `letterSpacing` | `Testo` | token `tracking.wide` |
 | `fontFamily` | `Testo` | token `font.sans` |
-| `opacity` | `Assoluto` | token `opacity.meta` |
+| `opacity` | `Assoluto` | token `opacity.muted` |
 | `shadow` | radice della cella | token `shadow.sm` |
 | `layoutDir` | radice della cella e `Riga` | `column` (radice), `row` (`Riga`) |
-| `layoutAlign` | `Riga` (e `FlexNonToccato`) | `center` (`Riga`), `stretch` non toccato (`FlexNonToccato`) |
+| `layoutAlign` | `Riga` (e `FlexNonToccato`) | `center` (`Riga`), `start` non toccato (`FlexNonToccato`) |
 | `layoutJustify` | `Riga` | `space-between` |
 | `layoutWrap` | `Riga` | `wrap` |
 | `sizingH` | `Riga` (e `Pieno` di `FillDentroHug`) | `fill` |
@@ -141,7 +144,7 @@ Il campione lo costruisce Claude via MCP Penpot sull'istanza di collaudo, mai su
 
 | Controllo | Esito su 2.18.3 |
 |---|---|
-| "fill dentro hug" (`FillDentroHug`) | da registrare al primo collaudo: leggibile, e arriva come domanda `fillInHugH`? |
-| default di `layoutAlign` su un flex non toccato | da registrare al primo collaudo (il registro dichiara `stretch`) |
+| "fill dentro hug" (`FillDentroHug`) | leggibile, arriva come domanda `fillInHugH`. Si costruisce solo mettendo prima il figlio in *fill* e poi il genitore in hug: nell'ordine inverso Penpot riporta il genitore a *fix*. Genitore e figlio collassano a 0.01 px di larghezza |
+| default di `layoutAlign` su un flex non toccato | `start` (`flex.alignItems`), quindi `items-start`. Il `default` del registro, `stretch`, è il valore senza classi del CSS, non il default di Penpot |
 
 Quali operazioni di Penpot cancellano i plugin data (raggruppa, booleana, copia tra file, ripristino di versione, stacco dell'istanza, duplica) non si misura qui: lo misura la Story 2.29 sul campione, prima che `pds-code` scriva plugin data.
