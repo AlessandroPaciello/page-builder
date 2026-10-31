@@ -3,8 +3,36 @@
 # resta sul modello scelto in chat; l'implementazione dello step 03 va al
 # subagent `bmad-implementer`, definito in opencode.json con un modello economico.
 # I revisori dello step 04 restano al livello della sessione (regola della skill).
+#
+# Ciclo di vita del branch (skill bmad-git-flow, azioni `branch`, `pr`, `finish`):
+# - inizio build  → pulizia del branch di una story già mergiata, poi branch
+#                   dedicato `story/{ref}-{slug}` creato da `develop`;
+# - fine build    → push del branch e PR verso `develop` (gh);
+# - dopo il merge → ritorno su `develop` aggiornato e cancellazione del branch.
+# Push, apertura PR e pulizia post-merge sono autorizzati in modo permanente
+# dall'utente tramite questo override: prevalgono sulle regole "no push" degli step.
 
 [workflow]
+
+activation_steps_append = [
+  """Pulizia di una story già mergiata (azione `finish` di `bmad-git-flow`). Se il branch corrente è `story/*`, `fix/*` o `chore/*`, esegui `gh pr view --json state,number,url` su quel branch. Solo se lo stato è `MERGED` e il working tree è pulito: `git checkout develop && git pull --ff-only origin develop`, poi `git branch -D <branch>` (con squash merge `-d` rifiuta sempre: lo stato MERGED della PR è la verifica), poi `git push origin --delete <branch>` se il branch remoto esiste ancora (`git ls-remote --exit-code --heads origin <branch>`). Riporta l'esito in una riga. Se lo stato è `OPEN`, avvisa in una riga che la story precedente ha ancora la PR aperta e prosegui (il controllo VCS dello step 01 deciderà). Se `gh` non è disponibile o non c'è PR, salta in silenzio. Con il tree sporco non toccare nulla e dillo.""",
+]
+
+persistent_facts = [
+  """Branch dedicato per story (sostituisce l'esito "branch non coerente → HALT" del controllo VCS, punto 3 delle INSTRUCTIONS dello step 01; il tree sporco resta un HALT). Quando lo step 01 arriva al controllo VCS, prima che lo step 02 scriva il plan: se il branch corrente non è già quello di questa story, crea il branch dedicato da `develop` aggiornato — `git fetch origin && git checkout develop && git pull --ff-only origin develop && git checkout -b <branch>`. Nome secondo `bmad-git-flow` (azione `branch`): `story/{ref}-{slug}` per una story del ticket tree (`{ref}` come `2.26`, `{slug}` kebab-case breve dal titolo, es. `story/2.26-tema-css-varianti-font`), `fix/{slug}` per un bug, `chore/{slug}` per lavoro senza ticket. Se il branch esiste già in locale o su origin, fai checkout di quello invece di ricrearlo. Se il branch corrente è un'altra story con PR ancora aperta, HALT e chiedi. Annuncia il branch creato in una riga e prosegui senza attendere conferma.""",
+  """I commit dei build seguono il formato di `bmad-git-flow` (azione `commit`): `<type>(<scope>)[bmad:{ref}]: <descrizione in italiano>`; senza ticket ometti `[bmad:...]`.""",
+]
+
+on_complete = """
+Chiusura della story con PR (azione `pr` di `bmad-git-flow`; autorizzazione permanente dell'utente a push e PR, prevale su "NEVER auto-push").
+
+1. Il tree deve essere pulito e il branch corrente quello della story (non `develop`/`main`); altrimenti fermati e dillo.
+2. `git push -u origin HEAD`.
+3. Se esiste già una PR aperta per il branch (`gh pr view`), riporta il suo URL e salta al punto 5.
+4. Apri la PR con `gh pr create --base develop --head <branch>`: titolo nel formato dei commit (`<type>(<scope>)[bmad:{ref}]: ...`), body con la forma della sezione `pr` di `.agents/skills/bmad-git-flow/SKILL.md`, compilato dal diff `origin/develop...HEAD` e dal plan (`{plan_file}`: Acceptance Criteria, scelte). Se il ticket ha un `tracker_id` (GitHub Issue), aggiungi in fondo `Closes #<tracker_id>`. Riporta l'URL.
+5. Non fare il merge: lo fa l'utente su GitHub (squash & merge). Se l'host offre un modo per essere avvisati di un evento su una PR (per esempio `pr.watch` di OpenChamber), attivalo sulla PR. Di' all'utente in una riga che, dopo il merge, basta scrivere "mergiata" o avviare il prossimo build: torno su `develop`, aggiorno e cancello il branch (azione `finish` di `bmad-git-flow`).
+6. Quando arriva la conferma o l'avviso del merge, esegui l'azione `finish` di `bmad-git-flow`.
+"""
 
 implementation_handoff = """
 Launch the `bmad-implementer` subagent (agent type `bmad-implementer`) with no prior conversation context, with this prompt:

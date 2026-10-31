@@ -1,22 +1,31 @@
 ---
 name: bmad-git-flow
-description: Guides branch naming, generates BMAD-flavored commit messages, drafts PR descriptions, and helps resolve conflicts in BMAD artifacts (_bmad/, _bmad-output/, docs/), following the team's Git & GitHub playbook. Use when the user says "che branch uso", "crea il branch per la story", "genera il commit message", "apri la PR", "bmad git flow", or has a conflict in file BMAD.
+description: Guides branch naming, generates BMAD-flavored commit messages, drafts PR descriptions, and helps resolve conflicts in BMAD artifacts (_bmad/, _bmad-output/, docs/), following the team's Git & GitHub playbook. Use when the user says "che branch uso", "crea il branch per la story", "genera il commit message", "apri la PR", "chiudi il branch", "ho mergiato la PR", "bmad git flow", or has a conflict in file BMAD.
 ---
 # BMad Git Flow
 
-Applies the team's Git & GitHub Collaboration Playbook to **this** project's real layout — not the generic `.bmad/` layout the playbook document describes. This project uses `_bmad/` (installer-managed, mostly read-only), `_bmad-output/planning-artifacts/` and `_bmad-output/implementation-artifacts/` (BMAD-generated documents), and `docs/` (project knowledge). There is no GitHub Copilot in this workflow — Claude Code is the only AI agent, so skip any Copilot-specific instruction from the source playbook.
+> **Aggiornato alla migrazione v6→v7 (2026-10-29).** I percorsi puntano al nuovo store
+> `initiative-page-builder/`. **Attenzione — meccanica in parte superata:** questa skill descrive
+> il flusso v6 (story file con campo `Status` in `implementation-artifacts/`, fonti `epics.md` +
+> `sprint-status.yaml`). Dopo la migrazione le fonti vivono in `initiative-page-builder/archive-v6/`
+> e il build record di una story è il plan `initiative-page-builder/tickets/<epic>/tickets/story-*-plan.md`
+> (lo **stato** è nel frontmatter del plan, non in un campo `Status` del story file). Per il tracking
+> usa Sofia (`bmad-agent-po`) e l'albero ticket; rivedere la meccanica di chiusura/merge story di
+> questa skill prima di applicarla.
+
+Applies the team's Git & GitHub Collaboration Playbook to **this** project's real layout — not the generic `.bmad/` layout the playbook document describes. This project uses `_bmad/` (installer-managed, mostly read-only), `_bmad-output/initiative-page-builder/` and `_bmad-output/initiative-page-builder/tickets/` (BMAD-generated documents), and `docs/` (project knowledge). There is no GitHub Copilot in this workflow — Claude Code is the only AI agent, so skip any Copilot-specific instruction from the source playbook.
 
 ## Path mapping (playbook → this project)
 
 | Playbook concept             | Real path here                                                                                                                 |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `.bmad/context/`           | `docs/` (project knowledge) + `_bmad-output/planning-artifacts/` (prd.md, architecture.md, epics.md)                       |
+| `.bmad/context/`           | `docs/` (project knowledge) + `_bmad-output/initiative-page-builder/` (prd.md, architecture.md, epics.md)                       |
 | `.bmad/stories/active        | completed                                                                                                                      |
 | `.bmad/agents/`            | `_bmad/custom/*.toml` (agent/workflow overrides) — installer-managed `_bmad/` itself is read-only, never edit directly    |
 | `.copilot-instructions.md` | N/A — skip                                                                                                                    |
 | `CLAUDE.md`                | `{project-root}/CLAUDE.md` — doesn't exist yet; if a session needs it, offer to create one only when asked, not proactively |
 
-Story key format: whatever `bmad-build` produced for `{{story_key}}` (check `_bmad-output/implementation-artifacts/` for existing examples, typically `{epic}.{story}` e.g. `1.2`). Don't assume `S12` — read the real key.
+Story key format: whatever `bmad-build` produced for `{{story_key}}` (check `_bmad-output/initiative-page-builder/tickets/` for existing examples, typically `{epic}.{story}` e.g. `1.2`). Don't assume `S12` — read the real key.
 
 **Important divergence from the playbook:** the playbook's §2.2 tells you to gitignore `.claude/` as a local-only Claude Code cache. In this project `.claude/`, `.agents/`, and `.opencode/` hold the actual BMAD skill definitions (same skills, mirrored for different tool integrations) — this is committed, shared team content, not personal session state. Never suggest gitignoring these directories wholesale.
 
@@ -37,10 +46,25 @@ If the user names a clear action (branch, commit, pr, conflict), do that. If the
 2. Devo iniziare a lavorare su una story → branch
 3. Ho modifiche pronte da salvare → commit
 4. Ho finito una story, apro una PR → pr
-5. Ho un conflitto in file BMAD → conflict
+5. La PR è stata mergiata, chiudo il branch → finish
+6. Ho un conflitto in file BMAD → conflict
 ```
 
 Never make the user read the playbook or this file directly to figure out which one applies — that defeats the point.
+
+## Story lifecycle inside `bmad-build`
+
+`bmad-build` runs this skill's actions automatically, per the override in `_bmad/custom/bmad-build.toml` — the user authorized those side effects there once, so inside a build they run without asking again:
+
+| Moment | Action | What happens |
+| --- | --- | --- |
+| Build start (activation) | `finish` | If the current branch's PR is already merged, back to `develop` and delete the branch |
+| Build start (step 01, VCS check) | `branch` | Create `story/{ref}-{slug}` from an up-to-date `develop` (or check it out if it exists) |
+| Every build commit | `commit` | Message in this skill's format |
+| Build end (`on_complete`) | `pr` | Push the branch, open the PR towards `develop` with `gh`, report the URL |
+| After the user merges on GitHub | `finish` | Back to `develop`, pull, delete local + remote branch |
+
+The merge itself is always the user's, on GitHub (squash & merge) — never run `gh pr merge` on their behalf. Invoked outside a build, every action keeps the confirmation rules in **Repo-safety rules**.
 
 ### Action: setup
 
@@ -80,7 +104,7 @@ Keep this to what's actually relevant here — no Copilot-cache or `.bmad/sessio
 **4. `.github/CODEOWNERS`** — only the high-risk paths from the `conflict` action's table, so GitHub can request the right reviewer automatically instead of relying on someone remembering the rule:
 
 ```
-_bmad-output/planning-artifacts/ @team-lead
+_bmad-output/initiative-page-builder/ @team-lead
 _bmad/custom/ @team-lead
 ```
 
@@ -110,7 +134,7 @@ If `develop` is behind `origin`, warn before branching.
 
 - **Keep current**: rebase onto `develop` regularly while the branch is open — `git fetch origin && git rebase origin/develop`. Prefer rebase over merge for story branches, per the playbook; flag it if the user reaches for `git merge develop` instead and ask if that's intentional.
 - **Story branch lifetime**: the playbook targets short-lived branches (under ~3-5 days). If a story branch looks like it's been open a long time (check `git log develop..story/{branch} --oneline` for a rough sense, or ask), mention the risk of a harder rebase later — don't block on it, just flag it.
-- **After the story PR merges**: delete the branch — `git branch -d story/{story_key}-{slug}` locally, and the remote one via GitHub's post-merge prompt or `git push origin --delete story/{story_key}-{slug}`.
+- **After the story PR merges**: run the `finish` action below.
 - **`develop` → `main`**: a distinct event from a story PR — a **release PR**, opened when a milestone is complete, not per-story. Don't conflate the two when the user asks to "open a PR" — check which direction they mean.
 - Never commit directly to `main` or `develop` — always through a PR, even for small fixes. This is a hard rule from the playbook, not a suggestion.
 
@@ -123,7 +147,7 @@ Types: `feat`, `fix`, `bmad` (changes under `_bmad-output/`, `_bmad/custom/`, `d
 | Path touched                                                                                              | Type                                                                                                         |
 | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `src/`, `tests/` (once they exist)                                                                    | `feat` / `fix` / `refactor` / `test` — normal conventional-commit rules                             |
-| `_bmad-output/planning-artifacts/`, `_bmad-output/implementation-artifacts/`, `_bmad/custom/*.toml` | `bmad` — artifacts the BMAD workflow itself generates or consumes (stories, PRD, architecture, overrides) |
+| `_bmad-output/initiative-page-builder/`, `_bmad-output/initiative-page-builder/tickets/`, `_bmad/custom/*.toml` | `bmad` — artifacts the BMAD workflow itself generates or consumes (stories, PRD, architecture, overrides) |
 | `docs/`, `README.md`                                                                                  | `docs` — human-authored project knowledge, not BMAD-workflow output                                       |
 | `.gitignore`, `.github/**`, CI config, other repo tooling                                             | `chore`                                                                                                    |
 
@@ -159,12 +183,12 @@ BMAD-Reviewed-By: <human, only once an actual human has reviewed — never fill 
 
 If `.github/PULL_REQUEST_TEMPLATE.md` doesn't exist yet, mention that GitHub will pre-fill new PRs with it once created — offer to write it (via `setup`, not here) using the same shape below, so the user doesn't have to paste this manually every time. Don't create it inline as a side effect of drafting one PR body.
 
-Draft a PR body from this shape, filled from the actual diff and the story file (read `_bmad-output/implementation-artifacts/{story_key}.md` for the AC list — don't fabricate acceptance criteria):
+Draft a PR body from this shape, filled from the actual diff and the story's plan (`tickets.py find <ref>` gives its `plan` path, `<epic>/tickets/story-*-plan.md`; read it for the AC list — don't fabricate acceptance criteria):
 
 ```markdown
 ## Story Reference
 - **Story:** {story_key} — {title}
-- **Story file:** `_bmad-output/implementation-artifacts/{story_key}.md`
+- **Plan:** `_bmad-output/initiative-page-builder/tickets/<epic>/tickets/story-<slug>-plan.md`
 - **Acceptance Criteria met:** ...
 
 ## Summary of Changes
@@ -176,8 +200,8 @@ Draft a PR body from this shape, filled from the actual diff and the story file 
 - **Key AI decisions made (and rationale):** ...
 
 ## BMAD Context Changes
-- [ ] `docs/` or `_bmad-output/planning-artifacts/` updated
-- [ ] `_bmad-output/implementation-artifacts/{story_key}.md` updated (ACs checked off)
+- [ ] `docs/` or `_bmad-output/initiative-page-builder/` updated
+- [ ] Story plan updated (status, ACs)
 - [ ] `_bmad/custom/` overrides updated
 - [ ] No BMAD context changes in this PR
 
@@ -186,14 +210,28 @@ Draft a PR body from this shape, filled from the actual diff and the story file 
 
 ## Checklist
 - [ ] Tests added/updated
-- [ ] `_bmad-output/planning-artifacts/architecture.md` updated if a new architectural decision was made
+- [ ] `_bmad-output/initiative-page-builder/architecture.md` updated if a new architectural decision was made
 - [ ] Self-reviewed all AI-generated code line by line
 - [ ] No secrets in any file
 ```
 
 Squash & merge story branches into `develop`. Merge commit (not squash, not rebase) for `develop` → `main`. Never rebase-merge — it's the playbook's explicit rule to preserve the BMAD-Decision footer trail.
 
-**After the story PR merges**: the playbook moves the story file from `active/` to `completed/`; here there's no such folder, so the equivalent is updating the `Status` field inside `_bmad-output/implementation-artifacts/{story_key}.md` (e.g. to `Done`). Offer this as a small follow-up `chore` commit on `develop`, not bundled into the feature PR itself.
+If the ticket has a `tracker_id` (a GitHub Issue — `tickets.py find <ref>` shows it), end the body with `Closes #<tracker_id>` so the merge closes the issue.
+
+**After the story PR merges**: run `finish`.
+
+### Action: finish
+
+Closes a story branch after its PR has been merged on GitHub. Never merges anything itself.
+
+1. Verify, don't assume: `gh pr view <branch> --json state,mergedAt,url` must say `MERGED`. `OPEN` → say the PR isn't merged yet and stop. `CLOSED` without merge → ask the user what to do with the branch; don't delete it.
+2. Working tree must be clean (`git status --porcelain`); otherwise stop and say what's uncommitted.
+3. Back to an up-to-date `develop`: `git checkout develop && git pull --ff-only origin develop`.
+4. Delete the local branch: `git branch -D <branch>`. Use `-D`, not `-d`: with squash & merge the branch's commits never land in `develop` as-is, so `-d` always refuses — the `MERGED` state from step 1 is the safety check.
+5. Delete the remote branch if GitHub didn't already: `git ls-remote --exit-code --heads origin <branch>` and, if it exists, `git push origin --delete <branch>`; then `git fetch --prune origin`.
+6. Tracking (v7): the merged PR's `Closes #<n>` closes the GitHub Issue. The plan's `status` (`built` → `done`) and the board state are Sofia's (`bmad-agent-po`) — offer it in one line, don't edit the plan here.
+7. Report in one line: branch deleted, current branch `develop` at `<short hash>`.
 
 ### Action: conflict
 
@@ -202,19 +240,21 @@ Conflict risk levels, from the playbook, mapped to real paths:
 | Files in conflict                                               | Risk        | Resolution owner                               |
 | --------------------------------------------------------------- | ----------- | ---------------------------------------------- |
 | App source code                                                 | Low–Medium | Story owner, AI-assisted                       |
-| `_bmad-output/planning-artifacts/` (prd, architecture, epics) | High        | Story owner + team lead review                 |
-| `_bmad-output/implementation-artifacts/{story_key}.md`        | Medium      | Story owner's version wins; notify other party |
+| `_bmad-output/initiative-page-builder/` (prd, architecture, epics) | High        | Story owner + team lead review                 |
+| `_bmad-output/initiative-page-builder/tickets/{story_key}.md`        | Medium      | Story owner's version wins; notify other party |
 | `_bmad/custom/*.toml`                                         | High        | Team lead decision, notify whole team          |
 | `docs/`                                                       | Medium      | Team consensus — read by every agent session  |
 
-**Preventing conflicts, not just resolving them** (playbook §5.3): treat `_bmad-output/planning-artifacts/` as read-only while any story branch is active — updates to it go through their own dedicated PR to `develop`, never bundled silently into a story branch. If the user is mid-story and wants to change `architecture.md` or `prd.md`, suggest splitting that into a separate `chore/update-shared-context` branch instead of carrying it on the story branch — it's what causes the high-risk conflicts in the first place.
+**Preventing conflicts, not just resolving them** (playbook §5.3): treat `_bmad-output/initiative-page-builder/` as read-only while any story branch is active — updates to it go through their own dedicated PR to `develop`, never bundled silently into a story branch. If the user is mid-story and wants to change `architecture.md` or `prd.md`, suggest splitting that into a separate `chore/update-shared-context` branch instead of carrying it on the story branch — it's what causes the high-risk conflicts in the first place.
 
 Never auto-resolve conflicts in these files with a blind merge. When asked to help resolve one:
 
 1. Read both sides of the conflict plus the relevant story/architecture file for context.
 2. Propose a resolution grounded in what's actually in those files — quote them, don't paraphrase from memory.
-3. For `planning-artifacts` or `_bmad/custom/` conflicts, flag explicitly that this needs a second human reviewer before merge; don't present the resolution as final.
+3. For `initiative-page-builder` or `_bmad/custom/` conflicts, flag explicitly that this needs a second human reviewer before merge; don't present the resolution as final.
 
 ## Repo-safety rules
 
-`setup` is the one action that touches the repo directly (`git init`, creating `main`/`develop`, writing `.gitignore`/`CODEOWNERS`/PR template) — confirm each step individually as described there, never batch them into one silent pass. Every other action (`branch`, `commit`, `pr`, `conflict`) only drafts names, messages, and bodies — it does not push, force-push, merge, delete branches, or commit on the user's behalf. Handing over a ready-to-run command is not the same as running it; wait for explicit "yes, do it" before any command with real side effects.
+`setup` is the one action that touches the repo directly (`git init`, creating `main`/`develop`, writing `.gitignore`/`CODEOWNERS`/PR template) — confirm each step individually as described there, never batch them into one silent pass. Invoked directly, every other action (`branch`, `commit`, `pr`, `finish`, `conflict`) only drafts names, messages, bodies, and commands — it does not push, merge, delete branches, or commit on the user's behalf. Handing over a ready-to-run command is not the same as running it; wait for explicit "yes, do it" before any command with real side effects.
+
+Exception — **inside `bmad-build`** (see **Story lifecycle inside `bmad-build`**): `branch`, `commit`, push + `gh pr create` from `pr`, and `finish` run without asking, because the user authorized them once in `_bmad/custom/bmad-build.toml`. Even there: never force-push, never `gh pr merge`, never delete a branch whose PR isn't `MERGED`, never touch a dirty tree.
