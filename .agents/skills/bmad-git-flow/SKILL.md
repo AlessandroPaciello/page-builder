@@ -4,19 +4,28 @@ description: Guides branch naming, generates BMAD-flavored commit messages, draf
 ---
 # BMad Git Flow
 
-Applies the team's Git & GitHub Collaboration Playbook to **this** project's real layout — not the generic `.bmad/` layout the playbook document describes. This project uses `_bmad/` (installer-managed, mostly read-only), `_bmad-output/planning-artifacts/` and `_bmad-output/implementation-artifacts/` (BMAD-generated documents), and `docs/` (project knowledge). There is no GitHub Copilot in this workflow — Claude Code is the only AI agent, so skip any Copilot-specific instruction from the source playbook.
+> **Aggiornato alla migrazione v6→v7 (2026-10-29).** I percorsi puntano al nuovo store
+> `initiative-page-builder/`. **Attenzione — meccanica in parte superata:** questa skill descrive
+> il flusso v6 (story file con campo `Status` in `implementation-artifacts/`, fonti `epics.md` +
+> `sprint-status.yaml`). Dopo la migrazione le fonti vivono in `initiative-page-builder/archive-v6/`
+> e il build record di una story è il plan `initiative-page-builder/tickets/<epic>/tickets/story-*-plan.md`
+> (lo **stato** è nel frontmatter del plan, non in un campo `Status` del story file). Per il tracking
+> usa Sofia (`bmad-agent-po`) e l'albero ticket; rivedere la meccanica di chiusura/merge story di
+> questa skill prima di applicarla.
+
+Applies the team's Git & GitHub Collaboration Playbook to **this** project's real layout — not the generic `.bmad/` layout the playbook document describes. This project uses `_bmad/` (installer-managed, mostly read-only), `_bmad-output/initiative-page-builder/` and `_bmad-output/initiative-page-builder/tickets/` (BMAD-generated documents), and `docs/` (project knowledge). There is no GitHub Copilot in this workflow — Claude Code is the only AI agent, so skip any Copilot-specific instruction from the source playbook.
 
 ## Path mapping (playbook → this project)
 
 | Playbook concept             | Real path here                                                                                                                 |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `.bmad/context/`           | `docs/` (project knowledge) + `_bmad-output/planning-artifacts/` (prd.md, architecture.md, epics.md)                       |
+| `.bmad/context/`           | `docs/` (project knowledge) + `_bmad-output/initiative-page-builder/` (prd.md, architecture.md, epics.md)                       |
 | `.bmad/stories/active        | completed                                                                                                                      |
 | `.bmad/agents/`            | `_bmad/custom/*.toml` (agent/workflow overrides) — installer-managed `_bmad/` itself is read-only, never edit directly    |
 | `.copilot-instructions.md` | N/A — skip                                                                                                                    |
 | `CLAUDE.md`                | `{project-root}/CLAUDE.md` — doesn't exist yet; if a session needs it, offer to create one only when asked, not proactively |
 
-Story key format: whatever `bmad-build` produced for `{{story_key}}` (check `_bmad-output/implementation-artifacts/` for existing examples, typically `{epic}.{story}` e.g. `1.2`). Don't assume `S12` — read the real key.
+Story key format: whatever `bmad-build` produced for `{{story_key}}` (check `_bmad-output/initiative-page-builder/tickets/` for existing examples, typically `{epic}.{story}` e.g. `1.2`). Don't assume `S12` — read the real key.
 
 **Important divergence from the playbook:** the playbook's §2.2 tells you to gitignore `.claude/` as a local-only Claude Code cache. In this project `.claude/`, `.agents/`, and `.opencode/` hold the actual BMAD skill definitions (same skills, mirrored for different tool integrations) — this is committed, shared team content, not personal session state. Never suggest gitignoring these directories wholesale.
 
@@ -80,7 +89,7 @@ Keep this to what's actually relevant here — no Copilot-cache or `.bmad/sessio
 **4. `.github/CODEOWNERS`** — only the high-risk paths from the `conflict` action's table, so GitHub can request the right reviewer automatically instead of relying on someone remembering the rule:
 
 ```
-_bmad-output/planning-artifacts/ @team-lead
+_bmad-output/initiative-page-builder/ @team-lead
 _bmad/custom/ @team-lead
 ```
 
@@ -123,7 +132,7 @@ Types: `feat`, `fix`, `bmad` (changes under `_bmad-output/`, `_bmad/custom/`, `d
 | Path touched                                                                                              | Type                                                                                                         |
 | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `src/`, `tests/` (once they exist)                                                                    | `feat` / `fix` / `refactor` / `test` — normal conventional-commit rules                             |
-| `_bmad-output/planning-artifacts/`, `_bmad-output/implementation-artifacts/`, `_bmad/custom/*.toml` | `bmad` — artifacts the BMAD workflow itself generates or consumes (stories, PRD, architecture, overrides) |
+| `_bmad-output/initiative-page-builder/`, `_bmad-output/initiative-page-builder/tickets/`, `_bmad/custom/*.toml` | `bmad` — artifacts the BMAD workflow itself generates or consumes (stories, PRD, architecture, overrides) |
 | `docs/`, `README.md`                                                                                  | `docs` — human-authored project knowledge, not BMAD-workflow output                                       |
 | `.gitignore`, `.github/**`, CI config, other repo tooling                                             | `chore`                                                                                                    |
 
@@ -159,12 +168,12 @@ BMAD-Reviewed-By: <human, only once an actual human has reviewed — never fill 
 
 If `.github/PULL_REQUEST_TEMPLATE.md` doesn't exist yet, mention that GitHub will pre-fill new PRs with it once created — offer to write it (via `setup`, not here) using the same shape below, so the user doesn't have to paste this manually every time. Don't create it inline as a side effect of drafting one PR body.
 
-Draft a PR body from this shape, filled from the actual diff and the story file (read `_bmad-output/implementation-artifacts/{story_key}.md` for the AC list — don't fabricate acceptance criteria):
+Draft a PR body from this shape, filled from the actual diff and the story file (read `_bmad-output/initiative-page-builder/tickets/{story_key}.md` for the AC list — don't fabricate acceptance criteria):
 
 ```markdown
 ## Story Reference
 - **Story:** {story_key} — {title}
-- **Story file:** `_bmad-output/implementation-artifacts/{story_key}.md`
+- **Story file:** `_bmad-output/initiative-page-builder/tickets/{story_key}.md`
 - **Acceptance Criteria met:** ...
 
 ## Summary of Changes
@@ -176,8 +185,8 @@ Draft a PR body from this shape, filled from the actual diff and the story file 
 - **Key AI decisions made (and rationale):** ...
 
 ## BMAD Context Changes
-- [ ] `docs/` or `_bmad-output/planning-artifacts/` updated
-- [ ] `_bmad-output/implementation-artifacts/{story_key}.md` updated (ACs checked off)
+- [ ] `docs/` or `_bmad-output/initiative-page-builder/` updated
+- [ ] `_bmad-output/initiative-page-builder/tickets/{story_key}.md` updated (ACs checked off)
 - [ ] `_bmad/custom/` overrides updated
 - [ ] No BMAD context changes in this PR
 
@@ -186,14 +195,14 @@ Draft a PR body from this shape, filled from the actual diff and the story file 
 
 ## Checklist
 - [ ] Tests added/updated
-- [ ] `_bmad-output/planning-artifacts/architecture.md` updated if a new architectural decision was made
+- [ ] `_bmad-output/initiative-page-builder/architecture.md` updated if a new architectural decision was made
 - [ ] Self-reviewed all AI-generated code line by line
 - [ ] No secrets in any file
 ```
 
 Squash & merge story branches into `develop`. Merge commit (not squash, not rebase) for `develop` → `main`. Never rebase-merge — it's the playbook's explicit rule to preserve the BMAD-Decision footer trail.
 
-**After the story PR merges**: the playbook moves the story file from `active/` to `completed/`; here there's no such folder, so the equivalent is updating the `Status` field inside `_bmad-output/implementation-artifacts/{story_key}.md` (e.g. to `Done`). Offer this as a small follow-up `chore` commit on `develop`, not bundled into the feature PR itself.
+**After the story PR merges**: the playbook moves the story file from `active/` to `completed/`; here there's no such folder, so the equivalent is updating the `Status` field inside `_bmad-output/initiative-page-builder/tickets/{story_key}.md` (e.g. to `Done`). Offer this as a small follow-up `chore` commit on `develop`, not bundled into the feature PR itself.
 
 ### Action: conflict
 
@@ -202,18 +211,18 @@ Conflict risk levels, from the playbook, mapped to real paths:
 | Files in conflict                                               | Risk        | Resolution owner                               |
 | --------------------------------------------------------------- | ----------- | ---------------------------------------------- |
 | App source code                                                 | Low–Medium | Story owner, AI-assisted                       |
-| `_bmad-output/planning-artifacts/` (prd, architecture, epics) | High        | Story owner + team lead review                 |
-| `_bmad-output/implementation-artifacts/{story_key}.md`        | Medium      | Story owner's version wins; notify other party |
+| `_bmad-output/initiative-page-builder/` (prd, architecture, epics) | High        | Story owner + team lead review                 |
+| `_bmad-output/initiative-page-builder/tickets/{story_key}.md`        | Medium      | Story owner's version wins; notify other party |
 | `_bmad/custom/*.toml`                                         | High        | Team lead decision, notify whole team          |
 | `docs/`                                                       | Medium      | Team consensus — read by every agent session  |
 
-**Preventing conflicts, not just resolving them** (playbook §5.3): treat `_bmad-output/planning-artifacts/` as read-only while any story branch is active — updates to it go through their own dedicated PR to `develop`, never bundled silently into a story branch. If the user is mid-story and wants to change `architecture.md` or `prd.md`, suggest splitting that into a separate `chore/update-shared-context` branch instead of carrying it on the story branch — it's what causes the high-risk conflicts in the first place.
+**Preventing conflicts, not just resolving them** (playbook §5.3): treat `_bmad-output/initiative-page-builder/` as read-only while any story branch is active — updates to it go through their own dedicated PR to `develop`, never bundled silently into a story branch. If the user is mid-story and wants to change `architecture.md` or `prd.md`, suggest splitting that into a separate `chore/update-shared-context` branch instead of carrying it on the story branch — it's what causes the high-risk conflicts in the first place.
 
 Never auto-resolve conflicts in these files with a blind merge. When asked to help resolve one:
 
 1. Read both sides of the conflict plus the relevant story/architecture file for context.
 2. Propose a resolution grounded in what's actually in those files — quote them, don't paraphrase from memory.
-3. For `planning-artifacts` or `_bmad/custom/` conflicts, flag explicitly that this needs a second human reviewer before merge; don't present the resolution as final.
+3. For `initiative-page-builder` or `_bmad/custom/` conflicts, flag explicitly that this needs a second human reviewer before merge; don't present the resolution as final.
 
 ## Repo-safety rules
 

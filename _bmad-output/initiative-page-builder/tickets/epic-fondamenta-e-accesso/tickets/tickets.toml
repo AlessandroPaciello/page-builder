@@ -1,0 +1,114 @@
+# A container's agreed children, in its tickets/ folder; tickets.py ignores unknown keys.
+# Table order is build order. `id` is permanent, never reused.
+# No status here: the plan carries `status`.
+# next_id = 11 # written by `tickets.py move`; the folder's counter never goes below it
+
+[[entry]]
+id = 1
+type = "story"
+title = "Scaffolding greenfield del workspace"
+description = "Il workspace è un monorepo full-TypeScript avviabile: `apps/web` (Next.js App Router) e `packages/`, creati con create-better-t-stack, pnpm + Turborepo, versioni pinnate come da spine e nessun residuo legacy."
+verify = "L'app Next parte in dev senza errori, il monorepo espone `apps/web` e `packages/` con le versioni pinnate, e nessun residuo JHipster/Strapi è presente."
+covers = ["R1"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 2
+type = "story"
+title = "Skeleton del core di dominio esagonale"
+description = "`packages/domain` esiste con casi d'uso e port outbound (Repository, AuditWriter, CacheInvalidator, CommerceProvider) privi di dipendenze da React/HTTP, e una regola di lint ne vieta l'import verso `apps/web`."
+verify = "Il package compila e i suoi test girano senza importare React né moduli HTTP/Next, e la regola di dipendenze fallisce se `packages/domain` importa da `apps/web`."
+covers = ["R1"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 3
+type = "story"
+title = "Modello dati e invariante di pubblicazione a livello DB"
+description = "Le entità Page, PageVersion, PageAssignment e AuditLog sono persistite via Prisma su PostgreSQL con migration SQL esplicita, e l'indice univoco parziale garantisce al massimo una versione PUBLISHED per pagina."
+verify = "`prisma migrate deploy` applica schema e indice parziale `UNIQUE(page_id) WHERE status='PUBLISHED'`, e il DB rifiuta una seconda PageVersion PUBLISHED per la stessa Page."
+covers = ["R1"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 4
+type = "story"
+title = "Autenticazione con ruoli Admin/Editor/Cliente"
+description = "Better Auth con adapter Prisma emette sessioni valide con il ruolo Admin/Editor/Cliente disponibile, e le richieste senza sessione valida verso risorse protette sono respinte."
+verify = "Dopo il login la sessione espone il ruolo, e una richiesta senza sessione valida verso una risorsa protetta è respinta (deny-by-default)."
+covers = ["R1"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 5
+type = "story"
+title = "Context oRPC con Principal e policy deny-by-default"
+description = "Ogni procedura oRPC riceve un Principal (userId + ruolo) e delega al core, che applica l'autorizzazione deny-by-default in un unico punto su ogni via di accesso al dominio."
+verify = "Il Principal è presente nel context, il core autorizza solo se il ruolo lo consente, e una procedura che accede al dominio senza passare dal core è impedita da una convenzione/lint verificabile."
+covers = ["R1"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 6
+type = "story"
+title = "Envelope Docker e migration in release"
+description = "L'app è deployabile in un'immagine Docker standalone (`output: standalone`) con le migration eseguite in fase di release prima dell'avvio, portabile tra dev/staging/prod con configurazione via env."
+verify = "Avviando con docker compose (app + Postgres), `prisma migrate deploy` gira prima dell'avvio dell'app e l'app risponde in ambiente containerizzato."
+covers = ["R1"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 7
+type = "story"
+title = "Prima lettura live con disciplina"
+description = "Una lettura live di Penpot via MCP più repo è congelata come unica base citabile (struttura, token, screenshot, stato repo), con le violazioni proposte come fix e nessun artefatto generato."
+verify = "La base live è registrata nel build record, `git grep` non trova metadati scritti a mano e nessun file `@generated` o profilo è stato prodotto."
+covers = ["R1"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 8
+type = "story"
+title = "Diff token e proposta in un colpo"
+description = "Il diff fra i token live di Penpot e il codice è prodotto come proposta unica e citabile, con ogni violazione di regola trasformata in un fix proponibile."
+verify = "Esiste un diff live-vs-codice documentato nel build record, ogni violazione è una proposta di fix e nessuna correzione silenziosa è stata applicata."
+covers = ["R1"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 9
+type = "story"
+title = "Canarino del primo gate H1"
+description = "Il primo gate H1 della pipeline Penpot è esercitato con un canarino che dimostra, sul momento, che fallisce in rosso prima di passare in verde."
+verify = "Il build record documenta il momento in cui il gate è rosso e quello in cui diventa verde, senza artefatti fuori dai canali previsti."
+covers = ["R1"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 10
+type = "story"
+title = "Tracciante verticale su un token"
+description = "Un tracciante verticale accompagna un singolo token dal disegno Penpot fino al codice, esercitando la disciplina rules-as-fixes su un caso reale."
+verify = "Il percorso del token è documentato nel build record con la `baseline_revision` registrata e nessun artefatto generato fuori dai canali previsti."
+covers = ["R1"]
+after = []
+hitl = false
+risk = "low"

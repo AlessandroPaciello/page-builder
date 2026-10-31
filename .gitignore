@@ -72,3 +72,6 @@ coverage
 .cache
 tmp
 temp
+
+# backup della migrazione BMad v6→v7 (non committare)
+.v6-v7-migration-backup-*/

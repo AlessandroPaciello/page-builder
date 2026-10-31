@@ -147,7 +147,7 @@ Provato sulla ShopCard (prove.md, T4b-2, T5, T6: file modificato a mano rimasto 
 
 ## Confronto con le decisioni precedenti
 
-Lo spike non è partito dalle decisioni già prese: va confrontato con la [spine 2026-10-03](../../planning-artifacts/architecture/architecture-page-builder-2026-10-03/ARCHITECTURE-SPINE.md) (estrazione-costruzione, con la [spec](../../specs/spec-penpot-estrazione-costruzione/SPEC.md)) e con AD-11 v2 della [spine 2026-07-25](../../planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md), che la prima eredita. Esito: ✅ coerente · ⚠️ in conflitto, da decidere · 🔁 cambia consapevolmente (da registrare nel correct-course).
+Lo spike non è partito dalle decisioni già prese: va confrontato con la [spine 2026-10-03](../../initiative-page-builder/architecture-page-builder-2026-10-03/ARCHITECTURE-SPINE.md) (estrazione-costruzione, con la [spec](../../specs/spec-penpot-estrazione-costruzione/SPEC.md)) e con AD-11 v2 della [spine 2026-07-25](../../initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md), che la prima eredita. Esito: ✅ coerente · ⚠️ in conflitto, da decidere · 🔁 cambia consapevolmente (da registrare nel correct-course).
 
 ### Spine 2026-10-03 (estrazione-costruzione)
 

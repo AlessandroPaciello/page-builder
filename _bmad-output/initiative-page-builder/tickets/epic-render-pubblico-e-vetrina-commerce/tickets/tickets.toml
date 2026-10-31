@@ -1,0 +1,48 @@
+# A container's agreed children, in its tickets/ folder; tickets.py ignores unknown keys.
+# Table order is build order. `id` is permanent, never reused.
+# No status here: the plan carries `status`.
+# next_id = 5 # written by `tickets.py move`; the folder's counter never goes below it
+
+[[entry]]
+id = 1
+type = "story"
+title = "Render pubblico by-slug (SSG)"
+description = "Una pagina con una versione PUBLISHED è resa come HTML statico (SSG) dalla proiezione pubblicata tramite il suo slug, senza campi interni né draft."
+verify = "Aprendo `/[slug]` la pagina è resa staticamente dalla proiezione pubblicata, e uno slug senza versione pubblicata risponde not-found senza che nessuna lettura anonima esponga dati non pubblicati."
+covers = ["R1"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 2
+type = "story"
+title = "Invalidazione ISR su publish e anteprima draft"
+description = "Dopo ogni publish, rollback o archiviazione il core invoca post-commit il port CacheInvalidator per lo slug, e l'anteprima della bozza è resa dinamicamente e protetta."
+verify = "La richiesta successiva all'invalidazione rigenera l'HTML statico, e l'anteprima `?version=draft` è non cachata, accessibile solo agli utenti autorizzati, con cache draft e published disgiunte."
+covers = ["R1"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 3
+type = "story"
+title = "Port CommerceProvider e adapter di riferimento"
+description = "`packages/commerce-provider` espone il port canonico consumabile server-side (es. `getProduct`/`listProducts`, DTO `ProductRef` e `Price {amount, currency}`) e un adapter di riferimento che risolve i dati di prova."
+verify = "Il port è consumabile server-side, l'adapter risolve i dati di prova secondo il contratto, e aggiungere un secondo adapter non richiede modifiche ai blocchi che usano il port."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 4
+type = "story"
+title = "Blocchi commerce data-driven"
+description = "I blocchi commerce (ProductCard, ProductGrid, AddToCart) risolvono i dati commerce server-side a render-time tramite il provider e rendono la pagina una vetrina e-commerce."
+verify = "Pubblicando una pagina con un blocco commerce il dato reale compare nella pagina pubblicata, e cambiando l'adapter del provider lo stesso blocco rende dati dalla nuova sorgente senza modifiche al blocco."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"

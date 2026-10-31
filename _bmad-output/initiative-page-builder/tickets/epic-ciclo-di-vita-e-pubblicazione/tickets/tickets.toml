@@ -1,0 +1,48 @@
+# A container's agreed children, in its tickets/ folder; tickets.py ignores unknown keys.
+# Table order is build order. `id` is permanent, never reused.
+# No status here: the plan carries `status`.
+# next_id = 5 # written by `tickets.py move`; the folder's counter never goes below it
+
+[[entry]]
+id = 1
+type = "story"
+title = "Pubblicazione con invariante atomico"
+description = "Pubblicare una versione la promuove a PUBLISHED in un'unica transazione, retrocedendo a DRAFT l'eventuale precedente PUBLISHED, con Page.status che riflette lo stato."
+verify = "In un'unica transazione la versione scelta diventa PUBLISHED e l'eventuale precedente è retrocessa, e l'indice parziale DB impedisce qualsiasi stato con due versioni pubblicate."
+covers = ["R1"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 2
+type = "story"
+title = "Rollback a una versione precedente"
+description = "Il rollback ripristina una versione precedente promuovendola a PUBLISHED e retrocedendo l'attuale a DRAFT, tutto in transazione."
+verify = "Dopo il rollback la versione scelta è quella pubblicata, l'invariante ≤1 pubblicata resta rispettato e l'operazione è registrata nell'audit."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 3
+type = "story"
+title = "Archiviazione e ripristino"
+description = "Archiviare una pagina porta Page.status a ARCHIVED demotendo l'eventuale versione PUBLISHED e preservando tutte le versioni; il restore riporta la pagina a DRAFT."
+verify = "Nessuna pagina archiviata resta pubblicata, tutte le versioni sono preservate, e il restore riporta la pagina a DRAFT con le versioni intatte."
+covers = ["R3"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 4
+type = "story"
+title = "Audit trail delle operazioni"
+description = "Un'unica via (AuditWriter) scrive una riga AuditLog canonica per ogni mutazione del core (save/publish/rollback/archive/restore/assign), con metadati e non il blob."
+verify = "Ogni mutazione produce una riga canonica (actor/action/entity/timestamp/metadataDiff), e solo un Admin può consultare l'audit: un non-Admin riceve 404 senza rivelarne l'esistenza."
+covers = ["R4"]
+after = []
+hitl = false
+risk = "low"

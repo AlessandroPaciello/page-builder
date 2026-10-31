@@ -1,0 +1,59 @@
+# A container's agreed children, in its tickets/ folder; tickets.py ignores unknown keys.
+# Table order is build order. `id` is permanent, never reused.
+# No status here: the plan carries `status`.
+# next_id = 6 # written by `tickets.py move`; the folder's counter never goes below it
+
+[[entry]]
+id = 1
+type = "story"
+title = "Ponte token→controlli Puck"
+description = "Le opzioni dei campi Puck (gap/padding, radius) derivano dai token generati, così una modifica ai token propaghi sia alle classi sia ai menu dei blocchi."
+verify = "Cambiare un token spacing o radius aggiorna sia le classi sia le opzioni disponibili nei campi dei blocchi."
+covers = ["R1"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 2
+type = "story"
+title = "Blocchi Puck come adapter dei contratti"
+description = "I blocchi Puck espongono i contratti tramite la libreria del design system: campi dagli assi `option`, `permissions` derivate e render senza copie, con slot annidabili per Box, Flex, Grid e Columns."
+verify = "Ogni blocco valida con lo schema di `@app/contracts` senza alcuna copia in `puck-components`, e solo gli assi `option` diventano campi."
+covers = ["R1"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 3
+type = "story"
+title = "Classifier structure/content esteso a tutti i contratti"
+description = "La classificazione structure/content dei campi è definita una sola volta in `packages/contracts` per ogni contratto e blocco, e pilota i permessi dell'editor e la sanitizzazione server-side."
+verify = "Ogni campo di ogni blocco è classificato, un campo o blocco sconosciuto è trattato come `content` (fail-safe), e `puck-components` deriva i permessi dal classifier senza una seconda copia."
+covers = ["R3"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 4
+type = "story"
+title = "Sezioni nell'editor"
+description = "Le sezioni disegnate in Penpot sono esposte in Puck rigide, aperte solo negli slot dichiarati (`allow` + `max`), con le forme disegnate come parti e i default del contratto come valori iniziali."
+verify = "La sezione è registrata in `puckConfig`, gli slot accettano solo i blocchi dell'`allow` fino a `max`, e uno slot del contratto che in Penpot non si trova più è un blocco di `verify_component` che nomina slot e sezione."
+covers = ["R1"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 5
+type = "story"
+title = "Composizioni dell'editor"
+description = "LifecycleBadge, SaveStateIndicator, TopBar, PageList, VersionList ed EmptyState esistono in `packages/ui/src/editor`, costruiti solo su componenti `ui/domains` e token."
+verify = "Le composizioni usano solo `ui/domains` + token, rispettano la a11y baseline (SaveStateIndicator con `aria-live`), e `editor/` non è importato da `domains/` (lint bloccante) con le sue story in Storybook."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"

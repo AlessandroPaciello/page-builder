@@ -5,7 +5,7 @@ pagine a blocchi (authoring drag-and-drop, versioning/publish/rollback) e render
 pubblico by-slug, con RBAC, audit e integrazione commerce pluggable.
 
 Il contratto vincolante dell'architettura è
-[`ARCHITECTURE-SPINE.md`](_bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md).
+[`ARCHITECTURE-SPINE.md`](_bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md).
 
 Lo scaffold è stato generato con [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack).
 

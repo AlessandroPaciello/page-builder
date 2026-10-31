@@ -3,13 +3,13 @@ id: SPEC-penpot-estrazione-costruzione
 companions:
   - ./scope-roadmap.md
   - ./extraction-flow.md
-  - ../../planning-artifacts/architecture/architecture-page-builder-2026-10-03/ARCHITECTURE-SPINE.md
+  - _bmad-output/initiative-page-builder/architecture-page-builder-2026-10-03/ARCHITECTURE-SPINE.md
 sources:
   - ../../brainstorming/brainstorm-penpot-estrazione-costruzione-2026-10-03/brainstorm-intent.md
 status: superseded
 superseded_by: 'sprint-change-proposal-2026-10-17.md'
 ---
-> **Superato (correct-course 2026-10-17).** Questo SPEC (CAP-1…CAP-10) è sostituito dalla pipeline v3: AD-11 v3 nella [spine 2026-07-25](../../planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md) e [sprint-change-proposal-2026-10-17](../../planning-artifacts/sprint-change-proposal-2026-10-17.md). Resta come storia; dove una sua regola preveniva un rischio ancora valido, il rischio è ripreso nella proposta (§2.3).
+> **Superato (correct-course 2026-10-17).** Questo SPEC (CAP-1…CAP-10) è sostituito dalla pipeline v3: AD-11 v3 nella [spine 2026-07-25](../../initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md) e [sprint-change-proposal-2026-10-17](../../initiative-page-builder/archive-v6/sprint-change-proposal-2026-10-17.md). Resta come storia; dove una sua regola preveniva un rischio ancora valido, il rischio è ripreso nella proposta (§2.3).
 
 
 > **Canonical contract.** This SPEC and the files in `companions:` are the complete, preservation-validated contract for what to build, test, and validate. Source documents listed in frontmatter are for traceability — consult them only if you need narrative rationale or prose color this contract intentionally omits.

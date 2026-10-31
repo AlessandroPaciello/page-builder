@@ -6,5 +6,16 @@
       "enabled": true,
       "url": "http://localhost:9001/mcp/stream?userToken={env:PENPOT_MCP_TOKEN}"
     }
+  },
+  "agent": {
+    "explore": {
+      "model": "claude-agent/haiku"
+    },
+    "bmad-implementer": {
+      "description": "Implements a bmad-build spec file end to end (step 03 of bmad-build). Use only when bmad-build hands off implementation.",
+      "mode": "subagent",
+      "model": "opencode-go/deepseek-v4-pro",
+      "prompt": "You implement a single bmad-build spec. The spec file you are given is the sole source of truth: read it fully, load every file in its frontmatter `context:` list, then implement it following the repository's AGENTS.md. Run the checks the spec names. Do not commit, push, invoke skills, or spawn subagents. Finish with a concise report: what you changed, how you verified it, and anything incomplete or risky."
+    }
   }
 }
