@@ -1,0 +1,17 @@
+# Team override per bmad-build (vedi .agents/skills/bmad-build/customize.toml).
+# Ottimizzazione token: la sessione principale (pianificazione, triage, review)
+# resta sul modello scelto in chat; l'implementazione dello step 03 va al
+# subagent `bmad-implementer`, definito in opencode.json con un modello economico.
+# I revisori dello step 04 restano al livello della sessione (regola della skill).
+
+[workflow]
+
+implementation_handoff = """
+Launch the `bmad-implementer` subagent (agent type `bmad-implementer`) with no prior conversation context, with this prompt:
+
+> Read {spec_file} fully and implement it — the spec is the sole source of truth. Load every file listed in its frontmatter `context:` before you start.
+>
+> When done, report what you changed, how you verified it, and anything left incomplete or risky.
+
+If the host has no `bmad-implementer` agent (for example Claude Code), launch a general-purpose subagent with no prior conversation context and the same prompt.
+"""
