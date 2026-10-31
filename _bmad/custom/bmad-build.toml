@@ -21,6 +21,7 @@ activation_steps_append = [
 persistent_facts = [
   """Branch dedicato per story (sostituisce l'esito "branch non coerente → HALT" del controllo VCS, punto 3 delle INSTRUCTIONS dello step 01; il tree sporco resta un HALT). Quando lo step 01 arriva al controllo VCS, prima che lo step 02 scriva il plan: se il branch corrente non è già quello di questa story, crea il branch dedicato da `develop` aggiornato — `git fetch origin && git checkout develop && git pull --ff-only origin develop && git checkout -b <branch>`. Nome secondo `bmad-git-flow` (azione `branch`): `story/{ref}-{slug}` per una story del ticket tree (`{ref}` come `2.26`, `{slug}` kebab-case breve dal titolo, es. `story/2.26-tema-css-varianti-font`), `fix/{slug}` per un bug, `chore/{slug}` per lavoro senza ticket. Se il branch esiste già in locale o su origin, fai checkout di quello invece di ricrearlo. Se il branch corrente è un'altra story con PR ancora aperta, HALT e chiedi. Annuncia il branch creato in una riga e prosegui senza attendere conferma.""",
   """I commit dei build seguono il formato di `bmad-git-flow` (azione `commit`): `<type>(<scope>)[bmad:{ref}]: <descrizione in italiano>`; senza ticket ometti `[bmad:...]`.""",
+  """`deferred-work.md` si aggiorna solo in coda: `cat >> file <<'EOF'` con le righe della voce, oppure una scrittura append equivalente. Non aprire mai il file con `read` o `edit` per aggiungere una voce, e non rileggerlo per controllare: è grande e finirebbe intero in contesto per poche righe.""",
 ]
 
 on_complete = """
@@ -29,9 +30,15 @@ Chiusura della story con PR (azione `pr` di `bmad-git-flow`; autorizzazione perm
 1. Il tree deve essere pulito e il branch corrente quello della story (non `develop`/`main`); altrimenti fermati e dillo.
 2. `git push -u origin HEAD`.
 3. Se esiste già una PR aperta per il branch (`gh pr view`), riporta il suo URL e salta al punto 5.
-4. Apri la PR con `gh pr create --base develop --head <branch>`: titolo nel formato dei commit (`<type>(<scope>)[bmad:{ref}]: ...`), body con la forma della sezione `pr` di `.agents/skills/bmad-git-flow/SKILL.md`, compilato dal diff `origin/develop...HEAD` e dal plan (`{plan_file}`: Acceptance Criteria, scelte). Se il ticket ha un `tracker_id` (GitHub Issue), aggiungi in fondo `Closes #<tracker_id>`. Riporta l'URL.
+4. Apri la PR con `gh pr create --base develop --head <branch>`: titolo nel formato dei commit (`<type>(<scope>)[bmad:{ref}]: ...`), body con la forma della sezione `pr` di `.agents/skills/bmad-git-flow/SKILL.md`, compilato dal diff già letto in step-03/04 (lo stesso `{diff_file}`: non rilanciare `git diff origin/develop...HEAD` solo per rileggerlo) e dal plan (`{plan_file}`: Acceptance Criteria, scelte). Non mettere `Closes #<tracker_id>`: il default branch del repo è `main`, quindi una PR verso `develop` non chiude la issue — la chiusura è al punto 6. Riporta l'URL.
 5. Non fare il merge: lo fa l'utente su GitHub (squash & merge). Se l'host offre un modo per essere avvisati di un evento su una PR (per esempio `pr.watch` di OpenChamber), attivalo sulla PR. Di' all'utente in una riga che, dopo il merge, basta scrivere "mergiata" o avviare il prossimo build: torno su `develop`, aggiorno e cancello il branch (azione `finish` di `bmad-git-flow`).
-6. Quando arriva la conferma o l'avviso del merge, esegui l'azione `finish` di `bmad-git-flow`.
+6. Quando arriva la conferma o l'avviso del merge: esegui l'azione `finish` di `bmad-git-flow` (checkout di `develop`, pull, cancellazione del branch locale e remoto), poi chiudi il ticket sul tracker — togli la label di stato presente (`gh issue view <tracker_id> --json labels`) e `gh issue close <tracker_id> --reason completed` — e sincronizza:
+
+   ```bash
+   echo '[{"tracker_id":"<tracker_id>","tracker_status":"done"}]' | uv run _bmad/method/scripts/tickets.py --project-root . mirror
+   ```
+
+   Porta `status` del plan a `done` nel frontmatter (con store tracker `tickets.py mark` rifiuta: è l'unico modo), committa `chore(bmad)[bmad:{ref}]: chiudi la story` e push diretto su `develop`, che non è protetto. Se il ticket non ha `tracker_id`, salta chiusura remota e mirror e fai solo plan e commit.
 """
 
 implementation_handoff = """
