@@ -9,7 +9,7 @@ hitl: false
 risk: medium
 tracker_id: "102"
 remote: "https://github.com/AlessandroPaciello/page-builder/issues/102"
-tracker_status: in-progress
+tracker_status: done
 ---
 
 # Sezioni
