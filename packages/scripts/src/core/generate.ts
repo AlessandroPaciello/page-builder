@@ -275,13 +275,40 @@ function fieldArgs(contract: ComponentContract): string[] {
   return fieldsOf(contract).flatMap(([name, shape]) => (shape.optional || shape.sample === undefined ? [] : [`${propKey(name)}: ${literal(shape.sample)}`]));
 }
 
+/** Un figlio di default della sezione come JSX: `<ProductCard key="slide-1" … />`. */
+function defaultChild(node: { readonly id: string; readonly component: string; readonly props: Readonly<Record<string, unknown>> }): string {
+  const attributes = [`key=${q(node.id)}`, ...Object.entries(node.props).map(([name, value]) => `${propKey(name)}={${literal(value)}}`)];
+  return `<${pascalCase(node.component)} ${attributes.join(" ")} />`;
+}
+
+interface DefaultChildren {
+  /** Gli import dei componenti dei figli di default, una volta sola e in ordine di dichiarazione. */
+  readonly imports: string[];
+  /** Il valore di `children` per le story; assente se la sezione non ha figli di default. */
+  readonly jsx?: string;
+}
+
+/** I figli di default di una sezione: `section.root.children`, come li passa la story. */
+function defaultChildren(model: ComponentModel): DefaultChildren {
+  const children = model.section?.root.children ?? [];
+  if (children.length === 0) return { imports: [] };
+  const names = [...new Set(children.map((child) => child.component))];
+  const imports = names.map((name) => importLine(`{ ${pascalCase(name)} }`, `../${name}/${pascalCase(name)}`));
+  return { imports, jsx: `<>${children.map(defaultChild).join("")}</>` };
+}
+
 /** Il corpo di `<Comp>.stories.tsx`, senza intestazione: una story per cella non di stato. */
 export function renderStories(model: ComponentModel): string {
   const { comp, contract } = model;
   const taken = new Set<string>();
   const fields = fieldArgs(contract);
+  const children = defaultChildren(model);
   const stories = model.baseCells.map((cell) => {
-    const args = [...contract.axes.map((axis) => `${propKey(axis.name)}: ${q(cell.axes[axis.name]!)}`), ...fields];
+    const args = [
+      ...contract.axes.map((axis) => `${propKey(axis.name)}: ${q(cell.axes[axis.name]!)}`),
+      ...fields,
+      ...(children.jsx === undefined ? [] : [`children: (${children.jsx})`]),
+    ];
     return `export const ${storyName(contract, cell, taken)}: Story = { args: { ${args.join(", ")} } };`;
   });
   return [
@@ -289,6 +316,7 @@ export function renderStories(model: ComponentModel): string {
     "",
     importLine(`{ ${comp} }`, `./${comp}`),
     "",
+    ...(children.imports.length === 0 ? [] : [...children.imports, ""]),
     `const meta = { title: ${q(`Domains/${comp}`)}, component: ${comp} } satisfies Meta<typeof ${comp}>;`,
     "",
     "export default meta;",
@@ -315,7 +343,10 @@ function renderPart(model: ComponentModel, part: ModelPart, fields: ReadonlySet<
   const { id } = model;
   const className = `s${propAccess(part.key)}(axes)`;
   let lines: string[];
-  if (part.instance !== undefined) {
+  if (part.slot !== undefined) {
+    const tag = part.element ?? "div";
+    lines = [`${pad}<${tag} data-slot=${q(part.key)} className={${className}}>{children}</${tag}>`];
+  } else if (part.instance !== undefined) {
     const nested = pascalCase(part.instance.name);
     lines = [`${pad}<${nested} className={${className}} {...${id}Instances${propAccess(part.key)}(axes)}${nestedFieldAttributes(part.instance.contract)} />`];
   } else {
@@ -349,9 +380,10 @@ export function renderScaffold(model: ComponentModel): string {
   const fields = fieldsOf(contract);
   const fieldNames = new Set(fields.map(([name]) => name));
   const instances = [...new Set(parts.filter((part) => part.instance !== undefined).map((part) => part.instance!.name))].sort();
+  const hasSlot = parts.some((part) => part.slot !== undefined);
   const stylesImports = [`type ${comp}Axes`, ...(instances.length > 0 ? [`${id}Instances`] : []), `${id}Styles as s`];
   const axisNames = contract.axes.map((axis) => axis.name);
-  const destructured = ["className", ...axisNames, ...fields.map(([name]) => name), "...props"];
+  const destructured = ["className", ...axisNames, ...fields.map(([name]) => name), ...(hasSlot ? ["children"] : []), "...props"];
   const fieldsType =
     fields.length === 0
       ? `export type ${comp}Fields = Record<never, never>;`

@@ -6,6 +6,7 @@ import { productCard } from "./components/product-card";
 import type { ComponentContract } from "./contract";
 import type { SectionDefinition } from "./section";
 import { accordion } from "./sections/accordion";
+import { carousel } from "./sections/carousel";
 
 /**
  * Unico punto che elenca i contratti: classifier, fingerprint e test leggono
@@ -23,4 +24,5 @@ export const COMPONENT_CONTRACTS = {
 /** Unico punto che elenca le definizioni di sezione. */
 export const SECTION_DEFINITIONS = {
   [accordion.name]: accordion,
+  [carousel.name]: carousel,
 } as const satisfies Readonly<Record<string, SectionDefinition>>;

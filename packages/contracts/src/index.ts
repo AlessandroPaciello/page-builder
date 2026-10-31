@@ -27,3 +27,4 @@ export {
   validateSectionDefinition,
 } from "./section";
 export { accordion } from "./sections/accordion";
+export { carousel } from "./sections/carousel";

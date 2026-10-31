@@ -89,6 +89,15 @@ Quattro funzioni pure, `Lettura` → dati, guidate dal contratto di `@app/contra
 - `buildOrder(letture, generated)` → `{ order, findings }`: ordine topologico dalle istanze (a parità alfabetico); un annidato né letto né generato, un `instance.contract` sconosciuto o di un'altra versione, un ciclo, una lettura senza contratto valido e due letture con lo stesso contratto sono blocchi (ordine vuoto).
 - `readGeneratedHeader(text)` → `{ version, hash, ok } | undefined`: la prima riga `// @generated pds <GENERATOR_VERSION> sha256:<hex> — non modificare a mano`, con l'hash del corpo dopo la prima riga (LF). SHA-256 viene da `node:crypto` (`hash.ts`), l'unico builtin ammesso nel nucleo; il test lo controlla su vettori noti. Serve al livello 3 (Story 2.24, `checkGeneratedFiles` in `src/server/generated-files.ts`).
 
+### Sezioni (Story 2.27)
+
+`pluginData.contract` può nominare anche una definizione di `SECTION_DEFINITIONS` (o `input.sections`); verifica e generazione sono le stesse del componente, con queste regole in più (`src/core/section.ts`). Il rendering condizionale `when` è fuori (vedi `deferred-work.md`).
+
+- **Asse:** un field `structure` disegnato come nome di variante, con schema enum, diventa un asse (valori e default dallo schema) e non resta anche field. Disegnato ma non enum → blocco. Non disegnato → domanda `asse` [`asse`, `content`]: disegna le celle con quel nome, oppure il field passa a `content`. Nessun `Change` finché è aperta.
+- **Slot:** vale `pluginData.slot`; altrimenti il layer è uno slot se tutti i figli sono istanze e uno solo slot le ammette. Più candidati → domanda `slot` con gli id; id non dichiarato → blocco. I figli dello slot sono esempi: non diventano parti e non si visitano.
+- **Forma disegnata** (layer `path`): una parte come le altre. Con `pluginData.part` ha `cva` e `data-slot`; senza, domanda `part` [kebab del nome, `ignora`].
+- **Output:** lo scaffold rende `{children}` dentro `data-slot="<slot>"`; ogni story passa come `children` i figli di default del contratto (`section.root.children`), con import fra pari (`../product-card/ProductCard`) una volta sola.
+
 Il livello 4 (`tests/core/registry-tailwind.test.ts`) compila anche ogni classe del registro e della geometria con il prefisso di ogni stato.
 
 ## Confini (`pnpm --filter @penpot-ds/scripts lint`)
