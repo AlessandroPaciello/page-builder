@@ -1,9 +1,10 @@
-import { COMPONENT_CONTRACTS, type ComponentContract } from "@app/contracts";
+import { COMPONENT_CONTRACTS, SECTION_DEFINITIONS, type ComponentContract, type SectionDefinition } from "@app/contracts";
 
 import { GEOMETRY_ENTRIES, rootSizeClasses, type Scale } from "./geometry";
 import { byString, variantLabel, withInvalidAnswer } from "./internal";
 import { camelCase, kebabOf, pascalCase, PART_KEY, wordsOf } from "./naming";
 import { layerClasses, type TokenTypeOf } from "./registry";
+import { sectionContract, slotOf } from "./section";
 import type { Cella, Finding, Instance, LetturaLayer, PluginData } from "./schemas";
 
 /**
@@ -23,6 +24,8 @@ export interface CoreInput {
   readonly scale: Scale;
   /** I contratti; di default `COMPONENT_CONTRACTS`. I test ne passano di scritti a mano. */
   readonly contracts?: ContractRegistry;
+  /** Le sezioni; di default `SECTION_DEFINITIONS`. Una `Lettura` può portare il contratto di una sezione. */
+  readonly sections?: Readonly<Record<string, SectionDefinition>>;
   /** Il `<Comp>.tsx` dello sviluppatore, se esiste: senza, serve lo scaffold e le sue domande. */
   readonly existingTsx?: string;
 }
@@ -88,6 +91,8 @@ export interface ModelPart {
   readonly instance?: ModelInstance;
   /** La parte è un layer (non un'istanza) in almeno una cella. */
   readonly plainLayer?: boolean;
+  /** L'id dello slot della sezione: il suo contenuto è `children`, non una parte. */
+  readonly slot?: string;
   /** Indice della cella → classi finali (stati compresi), solo celle non di stato. */
   readonly classes: ReadonlyMap<number, readonly string[]>;
   /** Indice della cella → props di variante dell'istanza annidata. */
@@ -107,6 +112,8 @@ export interface ComponentModel {
   readonly baseCells: readonly ModelCell[];
   /** Le parti in ordine d'albero (la radice per prima). */
   readonly parts: readonly ModelPart[];
+  /** La definizione della sezione, quando la `Lettura` ne porta il contratto. */
+  readonly section?: SectionDefinition;
 }
 
 export interface Analysis {
@@ -319,6 +326,8 @@ interface CollectedParts {
   readonly instances: ReadonlyMap<string, ModelInstance>;
   /** Le parti che sono un layer (non un'istanza) in almeno una cella. */
   readonly plainLayers: ReadonlySet<string>;
+  /** Le chiavi delle parti che sono uno slot della sezione. */
+  readonly slots: ReadonlySet<string>;
   readonly instanceProps: ReadonlyMap<string, ReadonlyMap<number, Readonly<Record<string, string>>>>;
   /** Chiave → la prima risposta `element` nei plugin data. */
   readonly elementAnswers: ReadonlyMap<string, string>;
@@ -329,12 +338,14 @@ interface CollectedParts {
 interface Visit {
   readonly input: Pick<CoreInput, "tokenTypeOf" | "scale">;
   readonly contracts: ContractRegistry;
+  readonly section: SectionDefinition | undefined;
   readonly findings: Finding[];
   readonly drafts: Map<string, { readonly draft: PartDraft; readonly children: string[] }>;
   readonly occurrences: Map<string, Occurrence[]>;
   readonly copies: Map<string, number>;
   readonly instances: Map<string, ModelInstance>;
   readonly plainLayers: Set<string>;
+  readonly slots: Set<string>;
   readonly instanceProps: Map<string, Map<number, Record<string, string>>>;
   readonly elementAnswers: Map<string, string>;
 }
@@ -410,6 +421,27 @@ function visitInstance(visit: Visit, cell: ModelCell, layer: LetturaLayer, key: 
 
 function visitLayer(visit: Visit, cell: ModelCell, layer: LetturaLayer, parent: LetturaLayer, parentKey: string, siblings: Map<string, number>, taken: Set<string>): void {
   const where = `${cell.label} › layer "${layer.name}"`;
+  if (visit.section !== undefined) {
+    const resolution = slotOf(layer, visit.section);
+    if (resolution.findings.length > 0) {
+      visit.findings.push(...resolution.findings);
+      return;
+    }
+    if (resolution.slot !== undefined) {
+      const key = resolution.slot.id;
+      const count = siblings.get(key) ?? 0;
+      siblings.set(key, count + 1);
+      if (count > 0) {
+        visit.findings.push(blocco(where, `Lo slot "${key}" compare due volte tra fratelli: uno slot è un layer solo.`));
+        return;
+      }
+      taken.add(key);
+      if (!register(visit, cell, layer, key, parentKey, classesOf(visit, cell, layer, parent), where)) return;
+      visit.slots.add(key);
+      // I figli di uno slot sono esempi: non diventano parti né si visitano.
+      return;
+    }
+  }
   const data = layer.pluginData;
   const raw = data?.[PART_KEY_NAME];
   const visitChildren = (structural: string, childSiblings: Map<string, number>): void => {
@@ -494,16 +526,19 @@ function collectParts(
   rootSizes: readonly string[][],
   input: Pick<CoreInput, "tokenTypeOf" | "scale">,
   contracts: ContractRegistry,
+  section: SectionDefinition | undefined,
 ): CollectedParts {
   const visit: Visit = {
     input: { tokenTypeOf: input.tokenTypeOf, scale: input.scale },
     contracts,
+    section,
     findings: [],
     drafts: new Map(),
     occurrences: new Map(),
     copies: new Map(),
     instances: new Map(),
     plainLayers: new Set(),
+    slots: new Set(),
     instanceProps: new Map(),
     elementAnswers: new Map(),
   };
@@ -529,9 +564,9 @@ function collectParts(
     const siblings = new Map<string, number>();
     for (const child of root.children) visitLayer(visit, cell, child, root, rootKey, siblings, taken);
   });
-  const { findings, occurrences, copies, instances, plainLayers, instanceProps, elementAnswers } = visit;
+  const { findings, occurrences, copies, instances, plainLayers, slots, instanceProps, elementAnswers } = visit;
   const drafts = new Map([...visit.drafts].map(([key, { draft, children }]) => [key, { ...draft, children: [...children] }]));
-  return { drafts, occurrences, copies, instances, plainLayers, instanceProps, elementAnswers, findings };
+  return { drafts, occurrences, copies, instances, plainLayers, slots, instanceProps, elementAnswers, findings };
 }
 
 interface StatedClasses {
@@ -665,6 +700,54 @@ function findUnusedParts(ordered: readonly PartDraft[], contract: ComponentContr
     }));
 }
 
+interface ResolvedDefinition {
+  readonly contract?: ComponentContract;
+  readonly section?: SectionDefinition;
+  readonly findings: Finding[];
+}
+
+/**
+ * Componente o sezione (Story 2.27): il nome in `pluginData.contract` può
+ * essere di un contratto di componente o di una definizione di sezione. Per una
+ * sezione il contratto effettivo si deriva dalla definizione e dalle celle
+ * (`sectionContract`); un blocco o una domanda lasciano il modello assente.
+ */
+function resolveDefinition(
+  lettura: ComponentReading,
+  contracts: ContractRegistry,
+  sections: Readonly<Record<string, SectionDefinition>>,
+): ResolvedDefinition {
+  const where = `componente "${lettura.component}"`;
+  const value = lettura.pluginData?.contract;
+  if (value === undefined) {
+    return { findings: [blocco(where, 'Contratto: manca il contratto: il container non ha "contract" nei plugin data (pagebuilder).')] };
+  }
+  const [name, version] = value.split("@") as [string, string | undefined];
+  const component = Object.hasOwn(contracts, name) ? contracts[name] : undefined;
+  const section = Object.hasOwn(sections, name) ? sections[name] : undefined;
+  if (component !== undefined && section !== undefined) {
+    return { findings: [blocco(where, `Contratto: "${name}" è sia un contratto di componente sia una sezione: i nomi devono essere distinti.`)] };
+  }
+  const definition = component ?? section;
+  if (definition === undefined) {
+    return {
+      findings: [
+        blocco(
+          where,
+          `Contratto: contratto "${value}" sconosciuto: i contratti sono [${Object.keys(contracts).sort().join(", ")}], le sezioni sono [${Object.keys(sections).sort().join(", ")}].`,
+        ),
+      ],
+    };
+  }
+  if (version !== undefined && version !== String(definition.version)) {
+    return {
+      findings: [blocco(where, `Contratto: contratto "${value}": la versione nel codice è ${definition.version}. Allinea i plugin data o il contratto.`)],
+    };
+  }
+  if (component !== undefined) return { contract: component, findings: [] };
+  return { ...sectionContract(section!, lettura.cells), section: section! };
+}
+
 /**
  * Il modello del componente e i suoi `Finding`. Senza contratto valido il
  * modello manca; con blocchi o domande il modello c'è ma il generatore si
@@ -676,15 +759,17 @@ function findUnusedParts(ordered: readonly PartDraft[], contract: ComponentContr
  */
 export function analyzeComponent(lettura: ComponentReading, input: CoreInput): Analysis {
   const contracts: ContractRegistry = input.contracts ?? COMPONENT_CONTRACTS;
-  const found = contractOf(lettura.pluginData?.contract, contracts);
-  if (found.contract === undefined) return { findings: [blocco(`componente "${lettura.component}"`, `Contratto: ${found.problem!}`)] };
-  const contract = found.contract;
+  const sections = input.sections ?? SECTION_DEFINITIONS;
+  const resolved = resolveDefinition(lettura, contracts, sections);
+  if (resolved.contract === undefined) return { findings: resolved.findings };
+  const contract = resolved.contract;
+  const section = resolved.section;
 
   const normalized = normalizeCells(lettura.cells, contract);
   // Le celle disegnate, allineate a `normalized.cells`: le misure della radice e la visita usano le stesse posizioni.
   const drawn = normalized.cells.map((cell) => lettura.cells[cell.index]!);
   const rootSizes = rootSizeClasses(drawn, { scale: input.scale });
-  const collected = collectParts(normalized.cells, drawn, rootSizes.classes, input, contracts);
+  const collected = collectParts(normalized.cells, drawn, rootSizes.classes, input, contracts, section);
   const stated = applyStates(contract, normalized, collected.occurrences);
   const ordered = treeOrder(collected.drafts);
   const proposed = proposeElements(ordered, collected, input.existingTsx === undefined);
@@ -701,6 +786,7 @@ export function analyzeComponent(lettura: ComponentReading, input: CoreInput): A
       ...(element === undefined ? {} : { element }),
       ...(instance === undefined ? {} : { instance }),
       ...(collected.plainLayers.has(draft.key) ? { plainLayer: true } : {}),
+      ...(collected.slots.has(draft.key) ? { slot: draft.key } : {}),
       classes: stated.classes.get(draft.key) ?? new Map(),
       instanceProps: collected.instanceProps.get(draft.key) ?? new Map(),
     };
@@ -714,9 +800,10 @@ export function analyzeComponent(lettura: ComponentReading, input: CoreInput): A
     cells: normalized.cells,
     baseCells: normalized.baseCells,
     parts,
+    ...(section === undefined ? {} : { section }),
   };
   // L'ordine dei `Finding` è parte dell'output: segue l'ordine delle fasi, non cambiarlo.
-  const findings = [...normalized.findings, ...rootSizes.findings, ...collected.findings, ...stated.findings, ...proposed.findings, ...unused];
+  const findings = [...resolved.findings, ...normalized.findings, ...rootSizes.findings, ...collected.findings, ...stated.findings, ...proposed.findings, ...unused];
   return { model, findings: dedupe(findings) };
 }
 

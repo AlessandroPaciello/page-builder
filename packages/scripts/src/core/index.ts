@@ -10,5 +10,6 @@ export * from "./hash";
 export * from "./naming";
 export * from "./registry";
 export * from "./schemas";
+export * from "./section";
 export * from "./token-names";
 export * from "./verify";

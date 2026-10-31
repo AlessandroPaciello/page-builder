@@ -6,10 +6,10 @@ parent: epic-design-system-token-e-componenti-da-penpot
 covers: [R2]
 after: []
 hitl: false
-risk: low
+risk: medium
 tracker_id: "102"
 remote: "https://github.com/AlessandroPaciello/page-builder/issues/102"
-tracker_status: backlog
+tracker_status: in-progress
 ---
 
 # Sezioni

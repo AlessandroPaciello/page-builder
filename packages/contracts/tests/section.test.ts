@@ -4,6 +4,7 @@ import { z } from "zod";
 import { SECTION_DEFINITIONS } from "../src/registry";
 import { type SectionDefinition, type SectionNode, SectionDefinitionSchema, validateSectionDefinition } from "../src/section";
 import { accordion } from "../src/sections/accordion";
+import { carousel } from "../src/sections/carousel";
 
 /** Sezione di test con `max: 1`, per non dipendere dall'Accordion (che non ha `max`). */
 function demoList(overrides: Partial<SectionDefinition> = {}): SectionDefinition {
@@ -48,13 +49,39 @@ describe("Accordion Root", () => {
   });
 
   it("è elencata nel registry delle sezioni", () => {
-    expect(SECTION_DEFINITIONS).toEqual({ accordion });
+    expect(SECTION_DEFINITIONS).toEqual({ accordion, carousel });
   });
 
   it("ogni sezione del registry è valida (iterazione, come il classifier)", () => {
     for (const section of Object.values(SECTION_DEFINITIONS)) {
       expect(validateSectionDefinition(section), `sezione "${section.name}"`).toEqual({ valid: true });
     }
+  });
+});
+
+describe("Carousel", () => {
+  it("è una definizione di sezione valida", () => {
+    expect(validateSectionDefinition(carousel)).toEqual({ valid: true });
+    expect(SectionDefinitionSchema.safeParse(carousel).success).toBe(true);
+  });
+
+  it("ha perView structure enum default 3 e tre field content", () => {
+    expect(carousel.name).toBe("carousel");
+    expect(carousel.version).toBe(1);
+    expect(carousel.fields.perView?.kind).toBe("structure");
+    expect(carousel.fields.perView?.schema.parse(undefined)).toBe("3");
+    for (const value of ["1", "2", "3"]) expect(carousel.fields.perView?.schema.safeParse(value).success).toBe(true);
+    expect(carousel.fields.autoplay?.kind).toBe("content");
+    expect(carousel.fields.interval?.kind).toBe("content");
+    expect(carousel.fields.label?.kind).toBe("content");
+  });
+
+  it("ha lo slot slides su product-card e tre figli di default", () => {
+    expect(carousel.slots).toEqual([{ id: "slides", allow: ["product-card"] }]);
+    expect(carousel.root.component).toBe("carousel");
+    expect(carousel.root.slot).toBe("slides");
+    expect(carousel.root.children?.map((child) => child.component)).toEqual(["product-card", "product-card", "product-card"]);
+    expect(carousel.root.children?.map((child) => child.id)).toEqual(["slide-1", "slide-2", "slide-3"]);
   });
 });
 

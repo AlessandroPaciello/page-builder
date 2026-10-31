@@ -394,3 +394,11 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `_bmad-output/initia
 - source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-collaudo-degli-aggiornamenti-di-penpot-plan.md`
   summary: il collaudo controlla solo un'istanza senza override (`overrides: []`), quindi un confronto degli override che restituisce sempre `[]` resta verde; serve nel campione un'istanza di `Etichetta` con un override noto (per esempio il testo di `Label` cambiato) e un'asserzione che `overrides` lo nomini.
   evidence: review della 2.25 (Verification Gap). Il campione ha una sola istanza, senza override; coprirlo vuol dire cambiare e riesportare `campione.penpot` con scritture MCP confermate. Da fare alla prima ricostruzione del campione, o nella 2.29 quando si torna sul campione.
+
+- source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-sezioni-plan.md`
+  summary: `when=<field>` su una parte non è interpretato: un field `structure` senza variante in Penpot si risolve solo disegnando l'asse (domanda `asse`), non con un rendering condizionale nello scaffold (`{field && (…)}`).
+  evidence: split della Story 2.27 (~2.400 token): `when` tocca risoluzione del field, validazione del plugin data, modello delle parti e scaffold, ed è indipendente dalla sezione Carousel, che non ha parti condizionali.
+
+- source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-sezioni-plan.md`
+  summary: La risposta `content` alla domanda `asse` (field structure non disegnato) non viene letta: la domanda non si chiude.
+  evidence: `sectionContract` riceve solo sezione e celle, non le risposte; il piano non dice dove si registra "passa a content" (verificato in revisione, severità medium).
