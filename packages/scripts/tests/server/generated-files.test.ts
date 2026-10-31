@@ -4,7 +4,7 @@ import { join, sep } from "node:path";
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { GENERATOR_VERSION, sha256Hex, withGeneratedHeader } from "../../src/core";
+import { GENERATOR_VERSION, sha256Hex, withGeneratedCssHeader, withGeneratedHeader } from "../../src/core";
 import { checkGeneratedFiles, generatedComponents, sourceFilesOf } from "../../src/server/generated-files";
 import { PATHS } from "../../src/shared/paths";
 
@@ -113,6 +113,37 @@ describe("livello 3 — rosso/verde su una cartella temporanea", () => {
 
   it("una root senza packages/ né apps/ → nessun esito", () => {
     expect(checkGeneratedFiles(tempRoot())).toEqual([]);
+  });
+});
+
+describe("livello 3 — file CSS (Story 2.26)", () => {
+  it("un .css @generated intatto → nessun esito", () => {
+    const root = tempRoot();
+    put(root, "packages/tokens/src/theme.css", withGeneratedCssHeader("body {}\n"));
+    expect(checkGeneratedFiles(root)).toEqual([]);
+  });
+
+  it("un .css @generated modificato a mano → blocco che nomina il file e extract_theme", () => {
+    const root = tempRoot();
+    put(root, "packages/tokens/src/theme.css", `${withGeneratedCssHeader("body {}\n")}/* a mano */\n`);
+    const findings = checkGeneratedFiles(root);
+    expect(findings).toMatchObject([{ level: "blocco", where: "packages/tokens/src/theme.css" }]);
+    expect(findings[0]!.message).toContain("extract_theme");
+  });
+
+  it("un .css con marker rovinato (hash troncato) → blocco", () => {
+    const root = tempRoot();
+    put(root, "packages/tokens/src/fonts.css", `/* @generated pds 1 sha256:abc — non modificare a mano */\nbody {}\n`);
+    expect(checkGeneratedFiles(root)).toMatchObject([{ level: "blocco", where: "packages/tokens/src/fonts.css" }]);
+  });
+
+  it("tokens.generated.ts (sotto packages/tokens/src/) si rigenera con extract_theme", () => {
+    const root = tempRoot();
+    expect(GENERATOR_VERSION).not.toBe("0");
+    put(root, "packages/tokens/src/tokens.generated.ts", `// @generated pds 0 sha256:${sha256Hex(BODY)} — non modificare a mano\n${BODY}`);
+    const findings = checkGeneratedFiles(root);
+    expect(findings).toMatchObject([{ level: "avviso", where: "packages/tokens/src/tokens.generated.ts" }]);
+    expect(findings[0]!.message).toContain("extract_theme");
   });
 });
 

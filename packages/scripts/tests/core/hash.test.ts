@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 import { describe, expect, it } from "vitest";
 
-import { GENERATOR_VERSION, isGenerated, readGeneratedHeader, sha256Hex, withGeneratedHeader } from "../../src/core";
+import { GENERATOR_VERSION, isGenerated, readGeneratedHeader, sha256Hex, withGeneratedCssHeader, withGeneratedHeader } from "../../src/core";
 
 /** Livello 1 della CI (Story 2.22): SHA-256 su vettori noti, intestazione `@generated`. */
 
@@ -56,5 +56,26 @@ describe("intestazione @generated", () => {
     expect(readGeneratedHeader("// @generated da qualcun altro\nx")).toBeUndefined();
     expect(readGeneratedHeader("")).toBeUndefined();
     expect(isGenerated(`\n${withGeneratedHeader(body)}`)).toBe(false);
+  });
+});
+
+describe("intestazione @generated — forma CSS (Story 2.26)", () => {
+  const cssBody = '@import "./tailwind-extras.css";\n\n@theme static {\n  --color-primary: #000000;\n}\n';
+
+  it("il CSS porta un'intestazione a commento, con lo stesso hash del corpo", () => {
+    const file = withGeneratedCssHeader(cssBody);
+    const [first, ...rest] = file.split("\n");
+    expect(first).toBe(`/* @generated pds ${GENERATOR_VERSION} sha256:${reference(cssBody)} — non modificare a mano */`);
+    expect(rest.join("\n")).toBe(cssBody);
+    expect(readGeneratedHeader(file)).toEqual({ version: GENERATOR_VERSION, hash: reference(cssBody), ok: true });
+    expect(isGenerated(file)).toBe(true);
+  });
+
+  it("la lettura accetta entrambe le forme: un CSS modificato a mano dà ok: false", () => {
+    const file = withGeneratedCssHeader(cssBody);
+    expect(readGeneratedHeader(file.replace("#000000", "#ffffff"))).toMatchObject({ ok: false });
+    // Il CSS si legge anche se l'intestazione è in forma `//` (e viceversa).
+    expect(readGeneratedHeader(withGeneratedHeader(cssBody))?.ok).toBe(true);
+    expect(readGeneratedHeader(withGeneratedCssHeader(cssBody))?.ok).toBe(true);
   });
 });

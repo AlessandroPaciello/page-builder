@@ -1,15 +1,18 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 /*
- * Tema dei token Penpot (generato da `generate:theme`): è l'unico proprietario
+ * Tema dei token Penpot (generato da `extract_theme`): è l'unico proprietario
  * di colori, raggi e font che definisce, e nessun blocco qui sotto li
  * ridefinisce (Story 2.17: via le variabili shadcn `:root`/`.dark` e il loro
- * `@theme inline`). L'import sta in testa, prima di ogni regola: la pipeline
- * CSS di Vite (Storybook) scarta un `@import` messo dopo altre regole, mentre
- * `@tailwindcss/node` lo accetta ovunque. Lo verificano `theme-in-css.test.ts`
- * (pipeline di Vite) e `generated-classes.test.ts`.
+ * `@theme inline`). Gli import stanno in testa, prima di ogni regola: la
+ * pipeline CSS di Vite (Storybook) scarta un `@import` messo dopo altre
+ * regole, mentre `@tailwindcss/node` lo accetta ovunque. Lo verificano
+ * `theme-in-css.test.ts` (pipeline di Vite) e `generated-classes.test.ts`.
+ * `fonts.css` carica le famiglie del tema da `@fontsource/*`: lo stesso file
+ * in Next e Storybook (nessun caricatore di font specifico del framework).
  */
-@import "@penpot-ds/tokens/tailwind-theme.css";
+@import "@penpot-ds/tokens/theme.css";
+@import "@penpot-ds/tokens/fonts.css";
 @source "../../../../apps/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
 

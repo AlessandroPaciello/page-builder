@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { join } from "node:path";
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -19,10 +20,13 @@ import {
   type Lettura,
   type TokenType,
 } from "../core";
-import { generateTheme, type TokenCatalog } from "../shared/theme-generator";
+import { baseCatalog, extractTheme } from "../shared/extract-theme";
+import { generateTheme, type ThemeCatalog } from "../shared/theme-generator";
+import { tokensFromCss } from "../shared/tokens-from-css";
 import { generatedComponents } from "./generated-files";
-import { NOT_YET, TOOLS } from "./tools";
+import { TOOLS } from "./tools";
 import { writeChanges } from "./write-changes";
+import { writeThemeFiles } from "./write-theme";
 
 /**
  * Il server MCP `pds` (Story 2.24): l'unico guscio sopra il nucleo puro.
@@ -44,7 +48,7 @@ import { writeChanges } from "./write-changes";
 /** Le letture di Penpot di cui il server ha bisogno. */
 export interface PenpotAdapter {
   readonly readComponent: (name: string) => Promise<Lettura>;
-  readonly readTokenCatalog: () => Promise<TokenCatalog>;
+  readonly readTokenCatalog: () => Promise<ThemeCatalog>;
 }
 
 export interface PdsServerOptions {
@@ -87,13 +91,21 @@ function readIfExists(path: string): string | undefined {
   return existsSync(path) ? readFileSync(path, "utf8") : undefined;
 }
 
-/** `tokenTypeOf` e `scale` dal catalogo token: si rileggono a ogni chiamata. */
-function coreContext(catalog: TokenCatalog, contracts: ContractRegistry | undefined): CoreInput {
+/** Il default di Tailwind (`tailwindcss/theme.css` installato), anteposto al seme da `tokens_from_css`. */
+const require = createRequire(import.meta.url);
+
+function readTailwindDefaultCss(): string {
+  return readFileSync(require.resolve("tailwindcss/theme.css"), "utf8");
+}
+
+/** `tokenTypeOf` e `scale` dal catalogo token: si rileggono a ogni chiamata. Solo la base (le varianti ripetono i nomi). */
+function coreContext(catalog: ThemeCatalog, contracts: ContractRegistry | undefined): CoreInput {
+  const base = baseCatalog(catalog);
   const types = new Map<string, TokenType>();
-  for (const set of catalog.sets) for (const token of set.tokens) types.set(token.name, token.type);
+  for (const set of base.sets) for (const token of set.tokens) types.set(token.name, token.type);
   return {
     tokenTypeOf: (tokenName) => types.get(tokenName),
-    scale: scaleFromThemeCss(generateTheme(catalog).css),
+    scale: scaleFromThemeCss(generateTheme(base).css),
     ...(contracts === undefined ? {} : { contracts }),
   };
 }
@@ -158,9 +170,21 @@ export function createPdsServer(options: PdsServerOptions): McpServer {
     }),
   );
 
-  server.registerTool("tokens_from_css", { description: TOOLS.tokens_from_css.description, inputSchema: TOOLS.tokens_from_css.input }, () => fail(`tokens_from_css: ${NOT_YET}.`));
+  server.registerTool("tokens_from_css", { description: TOOLS.tokens_from_css.description, inputSchema: TOOLS.tokens_from_css.input, outputSchema: TOOLS.tokens_from_css.output }, guarded(async ({ css }) => {
+    const { sets, themes, warnings } = tokensFromCss(readTailwindDefaultCss(), css);
+    return { sets, themes, warnings };
+  }));
 
-  server.registerTool("extract_theme", { description: TOOLS.extract_theme.description, inputSchema: TOOLS.extract_theme.input }, () => fail(`extract_theme: ${NOT_YET}.`));
+  server.registerTool(
+    "extract_theme",
+    { description: TOOLS.extract_theme.description, inputSchema: TOOLS.extract_theme.input, outputSchema: TOOLS.extract_theme.output },
+    guarded(async ({ fonts }) => {
+      const catalog = await penpot.readTokenCatalog();
+      const result = extractTheme(catalog, { fonts });
+      const written = writeThemeFiles(root, result.files);
+      return { written, packages: result.packages };
+    }),
+  );
 
   return server;
 }

@@ -20,23 +20,24 @@ Il processo MCP eredita l'ambiente in cui parte Claude Code: lì servono **Node 
 | `verify_component` | `{ name }` | `{ findings }` (`existingTsx` letto dal disco) | no |
 | `build_order` | `{ names[] }` | `{ order, findings }` | no |
 | `generate_component` | `{ name }` | `{ changes, findings, suggestions, written }` | sì, solo in `packages/ui/src/domains/<name>/` |
-| `tokens_from_css` | `{ css }` | — | `isError` "disponibile dalla Story 2.26" |
-| `extract_theme` | `{}` | — | `isError` "disponibile dalla Story 2.26" |
+| `tokens_from_css` | `{ css }` | `{ sets, themes, warnings }` | no |
+| `extract_theme` | `{ fonts? }` | `{ written, packages }` | sì, solo in `packages/tokens/src/` |
 
 `name` è il nome del contratto (`badge`, `badge@1`) o del layer in Penpot, come in `readComponent`. Ingressi e uscite sono schemi zod (`tools.ts`); l'uscita arriva sia come `structuredContent` sia come testo JSON.
 
 ## Regole
 
 - **Iniezione.** `createPdsServer({ penpot, root, contracts? })` riceve l'adattatore `{ readComponent, readTokenCatalog }` e non importa da `src/penpot`. Solo `main.ts` lega l'adattatore vero e la root del repo (`PATHS.repoRoot`); la regola `server` di `check-boundaries.mjs` lo impone.
-- **Nessuno stato.** Ogni chiamata rilegge da Penpot il catalogo token e i componenti. Dal catalogo: `tokenTypeOf` (nome → tipo) e `scale` (`scaleFromThemeCss(generateTheme(catalog).css)`).
+- **Nessuno stato.** Ogni chiamata rilegge da Penpot il catalogo token (tutti i set più i temi) e i componenti. Dal catalogo: `tokenTypeOf` (nome → tipo) e `scale` (`scaleFromThemeCss(generateTheme(baseCatalog(catalog)).css)`) — solo la base, perché le varianti ripetono i nomi dei token.
 - **Mai su Penpot.** L'adattatore espone solo letture. Gli esiti del nucleo tornano così come sono: il server non decide niente.
 - **`generated`** = le cartelle di `packages/ui/src/domains/` con un `<Comp>.styles.ts` che ha il marker `@generated` (`generated-files.ts`).
 - **Scrittura** (`write-changes.ts`). Si applicano solo i `Change` del nucleo. Prima si controllano tutti, poi si scrive: un path assoluto, con `..`/`.`/segmenti vuoti, fuori da `packages/ui/src/domains/<name>/` o che esce attraverso un symlink è un errore e non si scrive nessun file; `crea` su un file che esiste è un errore; `aggiorna` ed `elimina` toccano solo un file con marker. Con un blocco o una domanda aperta non si scrive niente (`written: []`). Il `<Comp>.tsx` dello sviluppatore non si tocca mai.
+- **Scrittura del tema** (`write-theme.ts`, Story 2.26). `extract_theme` scrive in `packages/tokens/src/` con le stesse regole (path confinato, niente symlink, sovrascrive solo file con il marker).
 - **Errori.** Ingresso non valido (schema zod), errore dell'adattatore, del nucleo o della scrittura → risultato MCP `isError` con il messaggio. Il processo non cade.
 
 ## Livello 3: file `@generated` (`generated-files.ts`)
 
-`checkGeneratedFiles(root)` scorre i `.ts`/`.tsx` di `packages/` e `apps/` (esclusi `node_modules`, `dist`, `.next`, `storybook-static`; i symlink non si seguono). Per ogni file con il marker di pds: hash che non torna → blocco che nomina il file; `GENERATOR_VERSION` diversa con l'hash giusto → avviso. Gira in CI come test di vitest sul repo vero (`tests/server/generated-files.test.ts`, nessun blocco ammesso), insieme al suo rosso/verde su una cartella temporanea.
+`checkGeneratedFiles(root)` scorre i `.ts`/`.tsx`/`.css` di `packages/` e `apps/` (esclusi `node_modules`, `dist`, `.next`, `storybook-static`; i symlink non si seguono). Per ogni file con il marker di pds: hash che non torna → blocco che nomina il file; `GENERATOR_VERSION` diversa con l'hash giusto → avviso. Il comando di rigenerazione citato dipende dal file: `extract_theme` per i file sotto `packages/tokens/src/` (il tema), `generate_component` per gli altri. Gira in CI come test di vitest sul repo vero (`tests/server/generated-files.test.ts`, nessun blocco ammesso), insieme al suo rosso/verde su una cartella temporanea.
 
 ## Test (livello 2)
 

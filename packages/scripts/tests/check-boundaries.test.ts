@@ -513,8 +513,8 @@ describe("checkBoundaries: regole v3 (Story 2.19)", () => {
       );
     });
 
-    it("verde: src/theme importa src/penpot (fino alla 2.26)", () => {
-      const report = check({ "src/penpot/read.ts": "export const read = 1;\n", "src/theme/cmd.ts": 'import { read } from "../penpot/read";\nexport { read };\n' });
+    it("verde: una cartella fuori da shared/server importa src/penpot", () => {
+      const report = check({ "src/penpot/read.ts": "export const read = 1;\n", "src/misc/cmd.ts": 'import { read } from "../penpot/read";\nexport { read };\n' });
       expect(report.violations).toEqual([]);
     });
 

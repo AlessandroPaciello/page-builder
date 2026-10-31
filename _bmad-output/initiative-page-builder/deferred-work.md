@@ -310,7 +310,7 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `_bmad-output/initia
 ## Deferred from: build review of 2-18-rimozione-dei-componenti-di-prova-e-della-pipeline-v2 (2026-10-17)
 
 - source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-rimozione-dei-componenti-di-prova-e-della-pipeline-v2-plan.md`
-  summary: il comando di rigenerazione del tema è ancora citato come `generate:theme` (inesistente dalla 2.16) in `REGEN_COMMAND` di `packages/scripts/src/shared/theme-generator.ts`, negli header `@generated` di `tailwind-theme.css`/`tokens.generated.ts`, in `packages/tokens/README.md` e nella descrizione di `packages/tokens/package.json`.
+  summary: **chiusa con la Story 2.26** — il comando `theme` e `REGEN_COMMAND` sono stati rimossi: il tema si rigenera con lo strumento `extract_theme` del server `pds`, che scrive `theme.css`, `themes/*.css`, `fonts.css` e `tokens.generated.ts` con l'intestazione `@generated` di pds. Aggiornati anche `packages/tokens/README.md` e la descrizione di `packages/tokens/package.json`.
   evidence: review 2.18 (Blind) — pre-esistente; cambiare `REGEN_COMMAND` rigenera il tema, fuori perimetro della 2.18. Da riallineare con `extract_theme` (Story 2.26).
 
 ## Deferred from: Story 2.19 — fixture sul catalogo Tailwind e confini (2026-10-18)

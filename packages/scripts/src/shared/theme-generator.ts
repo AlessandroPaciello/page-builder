@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 
+import { withGeneratedCssHeader, withGeneratedHeader } from "../core/hash";
 import { TYPE_NAMESPACE, varName, type TokenType } from "../core/token-names";
 
 // Nomi dei token: vivono nel nucleo (Story 2.20); riesportati per chi li importa da qui.
@@ -34,6 +35,22 @@ export interface PenpotTokenSet {
  */
 export interface TokenCatalog {
   sets: PenpotTokenSet[];
+}
+
+/** Un tema Penpot (Story 2.26): gruppo (l'asse), nome e i set attivi che lo compongono. */
+export interface PenpotTheme {
+  group: string;
+  name: string;
+  sets: string[];
+}
+
+/**
+ * Il catalogo completo letto da Penpot (Story 2.26): tutti i set (attivi e
+ * non) più i temi. `extract_theme` lo divide in base e varianti; la base è un
+ * `TokenCatalog` (senza temi) che `generateTheme` sa generare.
+ */
+export interface ThemeCatalog extends TokenCatalog {
+  themes: PenpotTheme[];
 }
 
 export interface GeneratedTheme {
@@ -352,39 +369,22 @@ function renderMap(exportName: string, entries: ScaleEntry[], namespace: string)
  * Impronta di provenienza del catalogo: sha256 del JSON serializzato, tronco
  * a 12 caratteri. Riusata da Story 2.2 (fixture/ricetta componenti) come
  * campo `fixtureHash` della ricetta — esportata invece di duplicare
- * l'algoritmo.
+ * l'algoritmo. Dalla Story 2.26 non è più la provenienza dell'intestazione
+ * (il marker `@generated` di pds porta l'hash del corpo), ma resta per chi la
+ * importa ancora.
  */
 export function fixtureHash(catalog: TokenCatalog): string {
   return createHash("sha256").update(JSON.stringify(catalog)).digest("hex").slice(0, 12);
 }
 
-const REGEN_COMMAND = "pnpm --filter @penpot-ds/scripts generate:theme";
-
-function cssHeader(hash: string): string {
-  return [
-    "/* @generated from Penpot design tokens — DO NOT EDIT BY HAND. */",
-    `/* Regenerate with: ${REGEN_COMMAND} */`,
-    `/* Source catalog fixture hash: ${hash} */`,
-  ].join("\n");
-}
-
-function tsHeader(hash: string): string {
-  return [
-    "// @generated from Penpot design tokens — DO NOT EDIT BY HAND.",
-    `// Regenerate with: ${REGEN_COMMAND}`,
-    `// Source catalog fixture hash: ${hash}`,
-  ].join("\n");
-}
-
 /**
  * Mapping puro e testabile TokenCatalog → { css, ts }. Nessuna I/O, nessuna
  * chiamata di rete: la stessa fixture produce sempre lo stesso output byte
- * per byte (l'hash della fixture sostituisce un timestamp come provenienza,
- * evitando non-determinismo da Date.now()).
+ * per byte. L'intestazione è il marker `@generated` di pds (forma CSS per il
+ * CSS, `//` per il TS): un solo meccanismo per tutti i file generati.
  */
 export function generateTheme(catalog: TokenCatalog): GeneratedTheme {
   const index = buildIndex(catalog);
-  const hash = fixtureHash(catalog);
 
   const cssSections = catalog.sets.map((set) => {
     const lines = set.tokens.map((token) => {
@@ -394,20 +394,17 @@ export function generateTheme(catalog: TokenCatalog): GeneratedTheme {
     return `  /* set: ${set.name} */\n${lines.join("\n")}`;
   });
 
-  const css = `${cssHeader(hash)}
-@import "./tailwind-extras.css";
+  const css = withGeneratedCssHeader(`@import "./tailwind-extras.css";
 
 @theme static {
 ${cssSections.join("\n\n")}
 }
-`;
+`);
 
   const spacingEntries = collectByType(catalog, index, "spacing");
   const radiusEntries = collectByType(catalog, index, "borderRadius");
 
-  const ts = `${tsHeader(hash)}
-
-${renderScale("spacing", spacingEntries)}
+  const ts = withGeneratedHeader(`${renderScale("spacing", spacingEntries)}
 
 ${renderOptions("spacingOptions", spacingEntries)}
 
@@ -430,7 +427,7 @@ ${renderNames("fontWeightNames", collectSuffixes(catalog, index, "fontWeights"))
 ${renderNames("trackingNames", collectSuffixes(catalog, index, "letterSpacing"))}
 
 ${renderNames("fontFamilyNames", collectSuffixes(catalog, index, "fontFamilies"))}
-`;
+`);
 
   return { css, ts };
 }

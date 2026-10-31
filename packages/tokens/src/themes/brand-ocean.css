@@ -1,0 +1,6 @@
+/* @generated pds 1 sha256:79177956d58e60b45f596a5777676a3380e18b39594daabe85de8344926d9d30 — non modificare a mano */
+[data-brand="ocean"] {
+  --color-primary: var(--color-blue-600);
+  --color-primary-foreground: var(--color-white);
+  --color-ring: var(--color-blue-400);
+}
