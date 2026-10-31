@@ -37,7 +37,7 @@ Chiusura della story con PR (azione `pr` di `bmad-git-flow`; autorizzazione perm
 implementation_handoff = """
 Launch the `bmad-implementer` subagent (agent type `bmad-implementer`) with no prior conversation context, with this prompt:
 
-> Read {spec_file} fully and implement it — the spec is the sole source of truth. Load every file listed in its frontmatter `context:` before you start.
+> Read {plan_file} fully and implement it — the plan is the sole source of truth. Load every file listed in its frontmatter `context:` before you start.
 >
 > When done, report what you changed, how you verified it, and anything left incomplete or risky.
 
