@@ -9,7 +9,7 @@ hitl: false
 risk: low
 tracker_id: "107"
 remote: "https://github.com/AlessandroPaciello/page-builder/issues/107"
-tracker_status: in-progress
+tracker_status: done
 ---
 
 # Tema da seme CSS, varianti di tema e font
