@@ -2,7 +2,7 @@
 type: initiative
 title: "page-builder"
 sources: [_bmad-output/initiative-page-builder/spec-page-builder/SPEC.md]
-companions: [_bmad-output/initiative-page-builder/spec-page-builder/design-system.md, _bmad-output/initiative-page-builder/spec-page-builder/penpot-pipeline.md, _bmad-output/initiative-page-builder/spec-page-builder/rbac-matrix.md, _bmad-output/initiative-page-builder/spec-page-builder/a11y-baseline.md, _bmad-output/initiative-page-builder/spec-page-builder/glossary.md, _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md, _bmad-output/initiative-page-builder/architecture-page-builder-2026-10-03/ARCHITECTURE-SPINE.md, _bmad-output/initiative-page-builder/ux-page-builder-2026-07-26/DESIGN.md, _bmad-output/initiative-page-builder/ux-page-builder-2026-07-26/EXPERIENCE.md]
+companions: [_bmad-output/initiative-page-builder/spec-page-builder/design-system.md, _bmad-output/initiative-page-builder/spec-page-builder/penpot-pipeline.md, _bmad-output/initiative-page-builder/spec-page-builder/rbac-matrix.md, _bmad-output/initiative-page-builder/spec-page-builder/a11y-baseline.md, _bmad-output/initiative-page-builder/spec-page-builder/glossary.md, _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md, _bmad-output/initiative-page-builder/ux-page-builder-2026-07-26/DESIGN.md, _bmad-output/initiative-page-builder/ux-page-builder-2026-07-26/EXPERIENCE.md]
 status: in-progress
 risk: low
 ---
@@ -71,8 +71,8 @@ Un workspace riscritto in cui il flusso Penpot → token → blocco → pagina p
 - companion — `_bmad-output/initiative-page-builder/spec-page-builder/rbac-matrix.md` (matrice dei ruoli Admin/Editor/Cliente)
 - companion — `_bmad-output/initiative-page-builder/spec-page-builder/a11y-baseline.md` (baseline di accessibilità WCAG 2.1 AA)
 - companion — `_bmad-output/initiative-page-builder/spec-page-builder/glossary.md` (glossario di dominio)
-- architecture — `_bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md` (AD-1…13, stack pinnato)
-- architecture — `_bmad-output/initiative-page-builder/architecture-page-builder-2026-10-03/ARCHITECTURE-SPINE.md` (spine aggiornata)
+- architecture — `_bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md` (**autorevole**: `status: final`, `updated: 2026-10-17`, AD-1…13 con AD-11 v3 che supera esplicitamente la spine 2026-10-03, stack pinnato)
+- architecture (storico, non autoritativo) — `_bmad-output/initiative-page-builder/architecture-page-builder-2026-10-03/ARCHITECTURE-SPINE.md` (spine del sotto-sistema estrazione-costruzione, `status: superseded`; il suo gate H2 con riferimento `card-reference` è ora in `spec-page-builder/penpot-pipeline.md`. Attenzione: la numerazione AD di questa spine non coincide con quella della 2026-07-25 — AD-7 qui è il giudizio umano a H2, AD-7 là è l'invariante di pubblicazione; AD-9 qui impone i livelli L0→L3 che AD-11 v3 della 2026-07-25 abolisce)
 - design — `_bmad-output/initiative-page-builder/ux-page-builder-2026-07-26/DESIGN.md`
 - design — `_bmad-output/initiative-page-builder/ux-page-builder-2026-07-26/EXPERIENCE.md`
 - tracking v6 (archiviato) — `_bmad-output/initiative-page-builder/archive-v6/epics.md`, `_bmad-output/initiative-page-builder/archive-v6/sprint-status.yaml`
@@ -81,4 +81,5 @@ Un workspace riscritto in cui il flusso Penpot → token → blocco → pagina p
 ## Notes
 
 - Decision: 2026-10-29 — il tracking è migrato da v6 (epics.md + sprint-status.yaml + build record in implementation-artifacts) a v7 (questo ticket tree); le fonti v6 sono archiviate in `_bmad-output/initiative-page-builder/archive-v6/`.
+- Decision: 2026-10-31 — spine autorevole unica = `architecture-page-builder-2026-07-25/` (`status: final`, AD-11 v3). La spine `2026-10-03` è `status: superseded` nel suo stesso frontmatter ed è stata rimossa dai `companions:` di questa iniziativa e dei tre epic che la citavano (che non avevano la 07-25 affatto); il suo gate H2 con riferimento `card-reference` — unica copia esistente, assente sia nella 07-25 sia nel suo `superseded_by` — è stato trasferito in `spec-page-builder/penpot-pipeline.md` prima della demozione.
 - Action item: Aggiungere test automatici rosso/verde per gli script check-boundaries.mjs (packages/ui, packages/domain, packages/api), oggi verificati solo con canary manuali. Per packages/scripts si chiude nella Story 2.19 (correct-course 2026-10-17) — owner: Charlie (Dev), epic: 1, status: open.

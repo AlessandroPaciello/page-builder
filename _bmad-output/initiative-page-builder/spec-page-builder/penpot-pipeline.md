@@ -1,6 +1,6 @@
 # Pipeline Penpot → codice (v3)
 
-Companion di [SPEC.md](./SPEC.md). Descrive **cosa** fa la pipeline design → codice e le regole di aderenza. Regole vincolanti in AD-11 v3 della [spine 2026-07-25](../../planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md); razionale nello [spike penpot-ai-kit](../../spikes/penpot-ai-kit-2026-10-10/README.md) e nelle tre forgie pds v3 ([regole](../../forge/pds-v3-penpot-ai-kit/forged-idea.md), [script](../../forge/pds-v3-scripts/forged-idea.md), [punti aperti](../../forge/pds-v3-punti-aperti/forged-idea.md)). *(Riscritto dal correct-course 2026-10-17: le versioni v1 e v2 — fixture e ricetta, poi due contratti, istantanea e sei comandi — restano nella storia git e nelle sprint change proposal del 2026-09.)*
+Companion di [SPEC.md](./SPEC.md). Descrive **cosa** fa la pipeline design → codice e le regole di aderenza. Regole vincolanti in AD-11 v3 della [spine 2026-07-25](../architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md); razionale nello [spike penpot-ai-kit](../../spikes/penpot-ai-kit-2026-10-10/README.md) e nelle tre forgie pds v3 ([regole](../../forge/pds-v3-penpot-ai-kit/forged-idea.md), [script](../../forge/pds-v3-scripts/forged-idea.md), [punti aperti](../../forge/pds-v3-punti-aperti/forged-idea.md)). *(Riscritto dal correct-course 2026-10-17: le versioni v1 e v2 — fixture e ricetta, poi due contratti, istantanea e sei comandi — restano nella storia git e nelle sprint change proposal del 2026-09.)*
 
 ## Principio guida
 
@@ -102,6 +102,14 @@ Penpot (dal vivo) ─────┘                                │
 Nessuna lettura di Penpot salvata nel repo. Penpot si verifica solo in sessione, quando si rigenera.
 
 **Collaudo degli aggiornamenti di Penpot.** Un componente campione che usa tutte le proprietà del registro e tutte le chiavi di plugin data, salvato come `.penpot` nel repo. A ogni aggiornamento: istanza nuova, import del campione, collaudo lanciato a mano; ogni proprietà del registro deve comparire nella lettura. Il Penpot vero (oggi 2.18.3) si aggiorna solo se il collaudo passa. Campione, test e procedura (backup, istanza `penpot-collaudo` sullo stesso compose, import, collaudo) stanno in `packages/scripts/collaudo/` (Story 2.25, [README](../../../packages/scripts/collaudo/README.md)). Quali operazioni di Penpot cancellano i plugin data si misura sul campione nella Story 2.29, prima che `pds-code` scriva plugin data *(esito da registrare qui)*.
+
+## Gate H2 — fedeltà e giudizio umano
+
+Regola trasferita dalla [spine 2026-10-03](../architecture-page-builder-2026-10-03/ARCHITECTURE-SPINE.md), dove viveva come AD-7 del sotto-sistema estrazione-costruzione. **I numeri AD di quella spine non coincidono con quelli della spine 2026-07-25** (AD-7 là è l'invariante di pubblicazione): da qui in poi la regola si cita per nome, non per numero.
+
+- **Binds:** CAP-7, CAP-10.
+- **Prevents:** score automatici che sostituiscono il giudizio; React che deriva senza verifica dalla lettura Penpot; demo card bloccata perché manca il materiale di riferimento.
+- **Rule:** contratto 1 giudicato dall'umano con segnalazione esplicita; nessuno score pixel-perfect. Contratto 2 verificato al gate H2: l'umano confronta i file proposti con la lettura Penpot congelata — struttura e token devono rispecchiarla, scostamenti solo se segnalati. Il riferimento vive in `_bmad-output/specs/spec-penpot-estrazione-costruzione/assets/card-reference/` (`screenshot.png` + `penpot-link.md`); se assente si procede con segnalazione, senza bloccare.
 
 ## Limiti noti di Penpot e del kit
 

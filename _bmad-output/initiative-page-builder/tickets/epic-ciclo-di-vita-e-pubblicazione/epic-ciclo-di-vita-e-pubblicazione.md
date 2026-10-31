@@ -4,7 +4,7 @@ title: Ciclo di Vita e Pubblicazione
 parent: initiative-page-builder
 covers: [R8, R9, R10, R14]
 sources: [_bmad-output/initiative-page-builder/archive-v6/epics.md]
-companions: [_bmad-output/initiative-page-builder/archive-v6/spec-confini-core-crypto-e-gate-import.md, _bmad-output/initiative-page-builder/spec-page-builder/rbac-matrix.md, _bmad-output/initiative-page-builder/architecture-page-builder-2026-10-03/ARCHITECTURE-SPINE.md, _bmad-output/initiative-page-builder/ux-page-builder-2026-07-26/DESIGN.md, _bmad-output/initiative-page-builder/ux-page-builder-2026-07-26/EXPERIENCE.md]
+companions: [_bmad-output/initiative-page-builder/archive-v6/spec-confini-core-crypto-e-gate-import.md, _bmad-output/initiative-page-builder/spec-page-builder/rbac-matrix.md, _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md, _bmad-output/initiative-page-builder/ux-page-builder-2026-07-26/DESIGN.md, _bmad-output/initiative-page-builder/ux-page-builder-2026-07-26/EXPERIENCE.md]
 risk: low
 ---
 
