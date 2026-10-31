@@ -5,6 +5,8 @@ sources: [_bmad-output/initiative-page-builder/spec-page-builder/SPEC.md]
 companions: [_bmad-output/initiative-page-builder/spec-page-builder/design-system.md, _bmad-output/initiative-page-builder/spec-page-builder/penpot-pipeline.md, _bmad-output/initiative-page-builder/spec-page-builder/rbac-matrix.md, _bmad-output/initiative-page-builder/spec-page-builder/a11y-baseline.md, _bmad-output/initiative-page-builder/spec-page-builder/glossary.md, _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md, _bmad-output/initiative-page-builder/ux-page-builder-2026-07-26/DESIGN.md, _bmad-output/initiative-page-builder/ux-page-builder-2026-07-26/EXPERIENCE.md]
 status: in-progress
 risk: low
+tracker_id: "1"
+remote: "https://github.com/AlessandroPaciello/page-builder/milestone/1"
 ---
 
 # page-builder
