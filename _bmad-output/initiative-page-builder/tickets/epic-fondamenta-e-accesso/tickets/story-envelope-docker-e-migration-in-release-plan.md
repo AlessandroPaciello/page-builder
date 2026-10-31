@@ -91,8 +91,8 @@ So that l'app sia deployabile in modo portabile con lo schema sempre applicato p
   packages/env/src/server.ts         # MODIFICATO — variabile TRUSTED_PROXIES (opzionale, default [])
   .github/workflows/ci.yml           # MODIFICATO — job docker build + step drift check
   README.md                          # MODIFICATO — sezione Deploy
-  _bmad-output/implementation-artifacts/deferred-work.md  # MODIFICATO — 6 voci aggiornate
-  _bmad-output/implementation-artifacts/sprint-status.yaml  # MODIFICATO
+  _bmad-output/initiative-page-builder/deferred-work.md  # MODIFICATO — 6 voci aggiornate
+  _bmad-output/initiative-page-builder/archive-v6/sprint-status.yaml  # MODIFICATO
   ```
 - Allineamento allo Structural Seed: l'envelope operativo dello Spine ("deploy container Docker self-host, Next `output: standalone`, Postgres containerizzato/gestito, migration via `prisma migrate deploy` in release prima dell'avvio app, gate in CI") è il contratto di questa story — nessuna nuova decisione architetturale da registrare nello Spine. La posizione `deploy/` vs `docker-compose.release.yml` alla root: scegliere il più semplice (root) a meno che il numero di file release cresca.
 - Conflitti rilevati: nessuno con le story precedenti. Nota: il container migrate usa lo stage builder — se in futuro il build diventa pesante, valutare un'immagine `tools` dedicata (split dei stage), non una regressione al pattern "migrate nell'app".
@@ -109,14 +109,14 @@ So that l'app sia deployabile in modo portabile con lo schema sempre applicato p
 
 ### References
 
-- [Source: _bmad-output/planning-artifacts/epics.md#Story 1.6: Envelope Docker e migration in release] — user story e AC originali.
-- [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#Structural Seed → Envelope operativo] — Docker self-host, `output: standalone`, ambienti dev/staging/prod, migration in release prima dell'avvio app con gate CI, secret via env/secret manager, Postgres containerizzato/gestito.
-- [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-7] — l'indice parziale vive nella migration SQL esplicita: il deploy DEVE passare da `migrate deploy`, mai `db push`.
-- [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#Deferred] — logging/monitoring di dettaglio, provider DB/orchestratore concreti, cadenza backup: fuori scope, envelope li rende intercambiabili.
-- [Source: _bmad-output/implementation-artifacts/deferred-work.md#Deferred from: code review of 1-1 (2026-07-26)] — voci puntate a questa story: `output: standalone` assente; CSRF SameSite da verificare; `trustedProxies` CIDR reale; email verification come gate di release; rate limit storage da valutare; docker compose dev poco robusto (pinnatura).
-- [Source: _bmad-output/implementation-artifacts/deferred-work.md#Deferred from: code review of 1-3 (2026-09-05)] — check di drift schema↔migrations in CI ("prima di Story 1.6"); lockstep client generato committato (deferred, facoltativo qui).
-- [Source: _bmad-output/implementation-artifacts/1-3-modello-dati-e-invariante-di-pubblicazione-a-livello-db.md#Dev Agent Record] — percorso release verificato (`migrate deploy` su DB vuoto, indice in `pg_indexes`), pitfall drift dell'indice parziale, guard su `db:push`, step CI `migrate deploy` già esistente.
-- [Source: _bmad-output/implementation-artifacts/1-5-context-orpc-con-principal-e-policy-deny-by-default.md#Dev Agent Record] — lezioni: catalog pnpm, gate rosso/verde, CORS_ORIGIN letto da process.env nella route (l'app in container lo eredita senza modifiche).
+- [Source: _bmad-output/initiative-page-builder/archive-v6/epics.md#Story 1.6: Envelope Docker e migration in release] — user story e AC originali.
+- [Source: _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#Structural Seed → Envelope operativo] — Docker self-host, `output: standalone`, ambienti dev/staging/prod, migration in release prima dell'avvio app con gate CI, secret via env/secret manager, Postgres containerizzato/gestito.
+- [Source: _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-7] — l'indice parziale vive nella migration SQL esplicita: il deploy DEVE passare da `migrate deploy`, mai `db push`.
+- [Source: _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#Deferred] — logging/monitoring di dettaglio, provider DB/orchestratore concreti, cadenza backup: fuori scope, envelope li rende intercambiabili.
+- [Source: _bmad-output/initiative-page-builder/deferred-work.md#Deferred from: code review of 1-1 (2026-07-26)] — voci puntate a questa story: `output: standalone` assente; CSRF SameSite da verificare; `trustedProxies` CIDR reale; email verification come gate di release; rate limit storage da valutare; docker compose dev poco robusto (pinnatura).
+- [Source: _bmad-output/initiative-page-builder/deferred-work.md#Deferred from: code review of 1-3 (2026-09-05)] — check di drift schema↔migrations in CI ("prima di Story 1.6"); lockstep client generato committato (deferred, facoltativo qui).
+- [Source: _bmad-output/initiative-page-builder/tickets/epic-fondamenta-e-accesso/tickets/story-modello-dati-e-invariante-di-pubblicazione-a-livello-db-plan.md#Dev Agent Record] — percorso release verificato (`migrate deploy` su DB vuoto, indice in `pg_indexes`), pitfall drift dell'indice parziale, guard su `db:push`, step CI `migrate deploy` già esistente.
+- [Source: _bmad-output/initiative-page-builder/tickets/epic-fondamenta-e-accesso/tickets/story-context-orpc-con-principal-e-policy-deny-by-default-plan.md#Dev Agent Record] — lezioni: catalog pnpm, gate rosso/verde, CORS_ORIGIN letto da process.env nella route (l'app in container lo eredita senza modifiche).
 - [Source: .github/workflows/ci.yml] — pattern env placeholder + SKIP_ENV_VALIDATION + `migrate deploy` prima dei test (da replicare nel job docker).
 - [Source: apps/web/next.config.ts, apps/web/package.json, packages/db/prisma.config.ts, packages/db/docker-compose.yml, apps/web/.env.example, packages/env/src/*.ts] — stato attuale dei file toccati.
 - [Source: nextjs.org/docs/app/guides/self-hosting + examples/with-docker] — pattern multi-stage standalone, copia static, non-root user, ISR cache writable, PORT/HOSTNAME.
@@ -161,8 +161,8 @@ opencode-go/glm-5.3-flash (2026-09-06)
 - packages/db/docker-compose.yml (modificato — pin `postgres:18.1`)
 - .github/workflows/ci.yml (modificato — job `docker` con smoke compose + step drift check)
 - README.md (modificato — sezione "Deploy")
-- _bmad-output/implementation-artifacts/deferred-work.md (modificato — 6 voci chiuse)
-- _bmad-output/implementation-artifacts/sprint-status.yaml (modificato — status story)
+- _bmad-output/initiative-page-builder/deferred-work.md (modificato — 6 voci chiuse)
+- _bmad-output/initiative-page-builder/archive-v6/sprint-status.yaml (modificato — status story)
 
 ### Review Findings
 

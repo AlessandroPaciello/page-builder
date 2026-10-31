@@ -6,7 +6,7 @@ companions:
   - ./rbac-matrix.md
   - ./a11y-baseline.md
   - ./glossary.md
-  - ../../planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md
+  - _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md
 sources: []
 ---
 

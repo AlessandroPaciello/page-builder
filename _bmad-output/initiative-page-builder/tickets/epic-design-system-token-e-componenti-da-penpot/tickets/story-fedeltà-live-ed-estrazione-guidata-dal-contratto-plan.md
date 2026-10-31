@@ -8,8 +8,8 @@ route: 'dispatch'
 baseline_revision: '54019c03ae600db50aa082366e114a49779e8318'
 review_loop_iteration: 0
 context:
-  - '{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md'
-  - '{project-root}/_bmad-output/planning-artifacts/sprint-change-proposal-2026-09-15.md'
+  - '{project-root}/_bmad-output/initiative-page-builder/archive-v6/epic-2-context.md'
+  - '{project-root}/_bmad-output/initiative-page-builder/archive-v6/sprint-change-proposal-2026-09-15.md'
 ---
 
 <frozen-after-approval reason="human-owned intent — do not modify unless human renegotiates">

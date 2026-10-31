@@ -48,7 +48,7 @@ so that la logica di dominio ha una casa unica e resta estraibile (AD-1, AD-2).
 - [x] Task 4: Introdurre il framework di test e collegarlo a Turborepo (AC: #1) — deferred da Story 1.1
   - [x] Aggiungere `vitest` come devDependency di `packages/domain` (prima introduzione di un test runner nel repo: verificare l'ultima versione stabile compatibile con TS `~6.0`/Node 22 al momento dell'implementazione, non fissare a occhio una versione).
   - [x] Script `"test": "vitest run"` in `packages/domain/package.json`.
-  - [x] Aggiungere il task `test` in `turbo.json` (`dependsOn: ["^test"]`, cache abilitata di default su `test`/`vitest`) — mancava ed è esplicitamente segnalato come deferred a questa story in `_bmad-output/implementation-artifacts/deferred-work.md`.
+  - [x] Aggiungere il task `test` in `turbo.json` (`dependsOn: ["^test"]`, cache abilitata di default su `test`/`vitest`) — mancava ed è esplicitamente segnalato come deferred a questa story in `_bmad-output/initiative-page-builder/deferred-work.md`.
   - [x] Aggiungere `"test": "turbo run test"` allo script `package.json` root, accanto a `lint`/`check-types`/`build`.
   - [x] Introdurre un workflow CI in `.github/workflows/` (oggi `.github/` ha solo `CODEOWNERS` e `PULL_REQUEST_TEMPLATE.md`, nessun workflow — anch'esso deferred a questa story) che esegua almeno `pnpm install`, `pnpm check-types`, `pnpm lint`, `pnpm build`, `pnpm test` su push/PR. Non introdurre step non richiesti (deploy, coverage upload, matrix multi-OS): il gate minimo è questi cinque comandi verdi.
 - [x] Task 5: Regola di lint/dipendenze `packages/domain` ↛ `apps/web` (AC: #2)
@@ -72,7 +72,7 @@ so that la logica di dominio ha una casa unica e resta estraibile (AD-1, AD-2).
 - **Niente Prisma/DB in questa story.** Il modello dati (Page/PageVersion/PageAssignment/AuditLog) arriva in Story 1.3. Qui i port sono interfacce pure e il caso d'uso di prova usa un doppio in-memory nei test — non collegarsi a `@app/db` né a un Postgres reale.
 - **Niente oRPC/HTTP in questa story.** L'esposizione del caso d'uso tramite una procedura oRPC (con `Principal` nel context) arriva in Story 1.5. `packages/domain` non deve importare `@orpc/*`, `next`, `@app/api`.
 - **Non anticipare le firme definitive dei port.** `Repository`/`CacheInvalidator`/`CommerceProvider` qui sono contratti minimi e verranno probabilmente ampliati man mano che Story 1.3 (schema dati), 6.2 (invalidazione ISR) e 6.3 (adapter commerce) concretizzano i rispettivi domini. Lo scopo di questa story è la **forma** (core esagonale, dependency inversion via port, test senza framework) non la copertura completa dei metodi.
-- **Deferred work da chiudere in questa story** (da `_bmad-output/implementation-artifacts/deferred-work.md`, registrato durante la review di Story 1.1): assenza di test runner/task `test`/CI — questa story introduce entrambi (Task 4). Se, implementando, risultasse che introdurre CI in questa story è troppo ampio, discuterne esplicitamente nel Completion Note piuttosto che ometterlo silenziosamente: il deferred-work lo attribuisce esplicitamente a questa story.
+- **Deferred work da chiudere in questa story** (da `_bmad-output/initiative-page-builder/deferred-work.md`, registrato durante la review di Story 1.1): assenza di test runner/task `test`/CI — questa story introduce entrambi (Task 4). Se, implementando, risultasse che introdurre CI in questa story è troppo ampio, discuterne esplicitamente nel Completion Note piuttosto che ometterlo silenziosamente: il deferred-work lo attribuisce esplicitamente a questa story.
 - **Non toccare:** `apps/web/**` non ha bisogno di modifiche per questa story (nessun consumer del caso d'uso di prova nell'app — quello arriva con l'esposizione oRPC in Story 1.5). Se emergesse la tentazione di "collegare" il caso d'uso a una rotta per "vederlo funzionare", è fuori scope: l'AC chiede che il package compili e i test girino, non un endpoint.
 
 ### Project Structure Notes
@@ -107,16 +107,16 @@ so that la logica di dominio ha una casa unica e resta estraibile (AD-1, AD-2).
 
 ### References
 
-- [Source: _bmad-output/planning-artifacts/epics.md#Story 1.2: Skeleton del core di dominio esagonale] — user story e acceptance criteria originali.
-- [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-1] — core esagonale, unico punto di accesso al dominio, niente React/HTTP nel core.
-- [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-2] — topologia monolite fullstack, core estraibile in `packages/domain`.
-- [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-8] — forma canonica `AuditWriter`/`AuditLog` (actor/action/entityType/entityId/timestamp/metadataDiff, non il blob).
-- [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-9] — port `CacheInvalidator`, invocato post-commit.
-- [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-10] — port `CommerceProvider`, DTO `ProductRef`/`Price{amount,currency}`.
-- [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#Structural Seed] — albero cartelle target, `packages/domain` come CORE.
-- [Source: _bmad-output/implementation-artifacts/1-1-scaffolding-greenfield-del-workspace.md#Dev Agent Record] — pattern package (`packages/api`), pattern lint di confine (`packages/ui/scripts/check-boundaries.mjs`), namespace `@app/*` vs `@penpot-ds/*`, versioni correnti (Node 22.23.1 via nvm, pnpm 10.33.0, TypeScript ~6.0).
-- [Source: _bmad-output/implementation-artifacts/deferred-work.md#Deferred from: code review of 1-1-scaffolding-greenfield-del-workspace (2026-07-26)] — assenza di test/CI esplicitamente rimandata a questa story.
-- [Source: _bmad-output/specs/spec-page-builder/glossary.md] — vocabolario di dominio (Page, PageVersion, Payload, Audit trail) per coerenza nominale, anche se le entità concrete arrivano in Story 1.3.
+- [Source: _bmad-output/initiative-page-builder/archive-v6/epics.md#Story 1.2: Skeleton del core di dominio esagonale] — user story e acceptance criteria originali.
+- [Source: _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-1] — core esagonale, unico punto di accesso al dominio, niente React/HTTP nel core.
+- [Source: _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-2] — topologia monolite fullstack, core estraibile in `packages/domain`.
+- [Source: _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-8] — forma canonica `AuditWriter`/`AuditLog` (actor/action/entityType/entityId/timestamp/metadataDiff, non il blob).
+- [Source: _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-9] — port `CacheInvalidator`, invocato post-commit.
+- [Source: _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-10] — port `CommerceProvider`, DTO `ProductRef`/`Price{amount,currency}`.
+- [Source: _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#Structural Seed] — albero cartelle target, `packages/domain` come CORE.
+- [Source: _bmad-output/initiative-page-builder/tickets/epic-fondamenta-e-accesso/tickets/story-scaffolding-greenfield-del-workspace-plan.md#Dev Agent Record] — pattern package (`packages/api`), pattern lint di confine (`packages/ui/scripts/check-boundaries.mjs`), namespace `@app/*` vs `@penpot-ds/*`, versioni correnti (Node 22.23.1 via nvm, pnpm 10.33.0, TypeScript ~6.0).
+- [Source: _bmad-output/initiative-page-builder/deferred-work.md#Deferred from: code review of 1-1-scaffolding-greenfield-del-workspace (2026-07-26)] — assenza di test/CI esplicitamente rimandata a questa story.
+- [Source: _bmad-output/initiative-page-builder/spec-page-builder/glossary.md] — vocabolario di dominio (Page, PageVersion, Payload, Audit trail) per coerenza nominale, anche se le entità concrete arrivano in Story 1.3.
 
 ## Dev Agent Record
 

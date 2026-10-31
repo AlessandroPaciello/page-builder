@@ -5,9 +5,9 @@ status: draft
 updated: 2026-07-26
 reviewer: "revisore accessibilità (agente)"
 scope:
-  - "_bmad-output/planning-artifacts/ux-designs/ux-page-builder-2026-07-26/EXPERIENCE.md"
-  - "_bmad-output/planning-artifacts/ux-designs/ux-page-builder-2026-07-26/DESIGN.md"
-baseline: "_bmad-output/specs/spec-page-builder/a11y-baseline.md"
+  - "_bmad-output/initiative-page-builder/ux-page-builder-2026-07-26/EXPERIENCE.md"
+  - "_bmad-output/initiative-page-builder/ux-page-builder-2026-07-26/DESIGN.md"
+baseline: "_bmad-output/initiative-page-builder/spec-page-builder/a11y-baseline.md"
 ---
 
 # Accessibility Review — Page Builder UX (DESIGN.md + EXPERIENCE.md)

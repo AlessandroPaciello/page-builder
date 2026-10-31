@@ -45,10 +45,10 @@ baseline_revision: df8547c1bfcd4acfdb1b2b7109680dd9e6e89905
 - `packages/scripts/src/theme/theme-command.ts` -- corpo `runTheme`: `loadThemeCatalog(live)` poi `writeTheme` atomica (temp + rename); con `live` aggiorna anche la fixture committata solo dopo generazione riuscita
 - `packages/scripts/src/theme/penpot-reader.ts` -- lettura live via MCP (usata per la chiusura, mai toccata)
 - `_bmad-output/specs/spec-penpot-estrazione-costruzione/.memlog.md` -- append osservazione chiusura 1.4 (punta, non duplica)
-- `_bmad-output/implementation-artifacts/sprint-status.yaml` -- chiave `1-4-tracciante-verticale-su-un-token` backlog → in-progress → review
-- `_bmad-output/implementation-artifacts/epic-1-context.md` -- contesto Epic 1 valido, fonte primaria (non ricompilare: scarto timestamp <1ms con epics file)
-- `_bmad-output/implementation-artifacts/spec-1-2-diff-token-e-proposta-in-un-colpo.md` -- piano P1–P4 e base congelata (pagina `fc8b08ee-95fa-810f-8008-bbcc18aa1c06`, 0 token live, 76 + 6 variabili codice)
-- `_bmad-output/implementation-artifacts/spec-1-3-canarino-del-primo-gate-h1.md` -- verdetto H1 (sì-a via Penpot, handoff 1.4, regole invalidazione)
+- `_bmad-output/initiative-page-builder/archive-v6/sprint-status.yaml` -- chiave `1-4-tracciante-verticale-su-un-token` backlog → in-progress → review
+- `_bmad-output/initiative-page-builder/archive-v6/epic-1-context.md` -- contesto Epic 1 valido, fonte primaria (non ricompilare: scarto timestamp <1ms con epics file)
+- `_bmad-output/initiative-page-builder/tickets/epic-fondamenta-e-accesso/tickets/story-diff-token-e-proposta-in-un-colpo-plan.md` -- piano P1–P4 e base congelata (pagina `fc8b08ee-95fa-810f-8008-bbcc18aa1c06`, 0 token live, 76 + 6 variabili codice)
+- `_bmad-output/initiative-page-builder/tickets/epic-fondamenta-e-accesso/tickets/story-canarino-del-primo-gate-h1-plan.md` -- verdetto H1 (sì-a via Penpot, handoff 1.4, regole invalidazione)
 
 ## Tasks & Acceptance
 
@@ -57,7 +57,7 @@ baseline_revision: df8547c1bfcd4acfdb1b2b7109680dd9e6e89905
 - [x] `packages/tokens/src/tailwind-extras.css` -- apply additivo di una sola var `--color-tracer-primary: #0E5A3C` per `tracer.primary` -- unico punto di scrittura lecita
 - [x] Rilettura MCP + repo -- fotografia di chiusura che cita la base 1.2, diff vuoto sulla voce `tracer.primary` -- prova senza basi miste
 - [x] `_bmad-output/specs/spec-penpot-estrazione-costruzione/.memlog.md` -- append esito chiusura (tenuta, token, via, L0) -- traccia canarino completa
-- [x] `_bmad-output/implementation-artifacts/sprint-status.yaml` -- avanzare `1-4-tracciante-verticale-su-un-token` -- tracking senza duplicare voci deferred
+- [x] `_bmad-output/initiative-page-builder/archive-v6/sprint-status.yaml` -- avanzare `1-4-tracciante-verticale-su-un-token` -- tracking senza duplicare voci deferred
 
 **Acceptance Criteria:**
 - Given H1 concessa sul piano della Story 1.2, when applico, then un solo token cambia per la via decisa senza parziali silenziosi

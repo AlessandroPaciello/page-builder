@@ -8,7 +8,7 @@ baseline_revision: 'd0c86ffcd54416e1d59b44268b9545cddd985d22'
 route: 'dispatch'
 review_loop_iteration: 0
 context:
-  - '{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md'
+  - '{project-root}/_bmad-output/initiative-page-builder/archive-v6/epic-2-context.md'
   - '{project-root}/packages/scripts/src/penpot/README.md'
 ---
 

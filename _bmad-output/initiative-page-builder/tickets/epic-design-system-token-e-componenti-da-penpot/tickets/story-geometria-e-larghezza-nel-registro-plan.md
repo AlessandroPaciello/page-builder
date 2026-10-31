@@ -8,7 +8,7 @@ baseline_revision: '5630a1a099abf0edc61fdd9fc1662600deafa937'
 route: 'dispatch'
 review_loop_iteration: 0
 context:
-  - '{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md'
+  - '{project-root}/_bmad-output/initiative-page-builder/archive-v6/epic-2-context.md'
 ---
 
 <frozen-after-approval reason="human-owned intent — do not modify unless human renegotiates">

@@ -18,7 +18,7 @@ companions:
   - '../../../specs/spec-penpot-estrazione-costruzione/extraction-flow.md'
   - '../../architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md'
 ---
-> **Superato (correct-course 2026-10-17).** Questa spine (AD-1…AD-9) è sostituita dalla pipeline v3: AD-11 v3 nella [spine 2026-07-25](../architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md) e [sprint-change-proposal-2026-10-17](../../sprint-change-proposal-2026-10-17.md). Resta come storia; dove una sua regola preveniva un rischio ancora valido, il rischio è ripreso nella proposta (§2.3).
+> **Superato (correct-course 2026-10-17).** Questa spine (AD-1…AD-9) è sostituita dalla pipeline v3: AD-11 v3 nella [spine 2026-07-25](../architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md) e [sprint-change-proposal-2026-10-17](../archive-v6/sprint-change-proposal-2026-10-17.md). Resta come storia; dove una sua regola preveniva un rischio ancora valido, il rischio è ripreso nella proposta (§2.3).
 
 
 # Architecture Spine — penpot-estrazione-costruzione

@@ -8,11 +8,11 @@ route: 'dispatch'
 baseline_revision: '552c6928af27569f60d74617b71a2cac13c267cd'
 review_loop_iteration: 0
 context:
-  - '{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md'
-  - '{project-root}/_bmad-output/specs/spec-refactor-packages-scripts/SPEC.md'
-  - '{project-root}/_bmad-output/specs/spec-refactor-packages-scripts/commands.md'
-  - '{project-root}/_bmad-output/specs/spec-refactor-packages-scripts/extraction-contract.md'
-  - '{project-root}/_bmad-output/planning-artifacts/sprint-change-proposal-2026-09-17.md'
+  - '{project-root}/_bmad-output/initiative-page-builder/archive-v6/epic-2-context.md'
+  - '{project-root}/_bmad-output/initiative-page-builder/archive-v6/spec-refactor-packages-scripts/SPEC.md'
+  - '{project-root}/_bmad-output/initiative-page-builder/archive-v6/spec-refactor-packages-scripts/commands.md'
+  - '{project-root}/_bmad-output/initiative-page-builder/archive-v6/spec-refactor-packages-scripts/extraction-contract.md'
+  - '{project-root}/_bmad-output/initiative-page-builder/archive-v6/sprint-change-proposal-2026-09-17.md'
 ---
 
 <frozen-after-approval reason="human-owned intent — do not modify unless human renegotiates">

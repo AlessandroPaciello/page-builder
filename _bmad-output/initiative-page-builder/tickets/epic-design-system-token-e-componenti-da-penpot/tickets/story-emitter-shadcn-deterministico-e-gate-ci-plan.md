@@ -7,8 +7,8 @@ status: 'done'
 route: 'dispatch'
 review_loop_iteration: 0
 context:
-  - '{project-root}/_bmad-output/specs/spec-page-builder/penpot-pipeline.md'
-  - '{project-root}/_bmad-output/specs/spec-page-builder/design-system.md'
+  - '{project-root}/_bmad-output/initiative-page-builder/spec-page-builder/penpot-pipeline.md'
+  - '{project-root}/_bmad-output/initiative-page-builder/spec-page-builder/design-system.md'
 baseline_revision: 'e7a3b5ef5309a3503dce882570f5ab4d41c1125f'
 ---
 

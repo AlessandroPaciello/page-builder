@@ -8,9 +8,9 @@ route: 'dispatch'
 baseline_revision: 'a35b6770b9836f9f9375dbb589a37454f0113387'
 review_loop_iteration: 0
 context:
-  - '{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md'
-  - '{project-root}/_bmad-output/specs/spec-refactor-packages-scripts/SPEC.md'
-  - '{project-root}/_bmad-output/specs/spec-refactor-packages-scripts/migration.md'
+  - '{project-root}/_bmad-output/initiative-page-builder/archive-v6/epic-2-context.md'
+  - '{project-root}/_bmad-output/initiative-page-builder/archive-v6/spec-refactor-packages-scripts/SPEC.md'
+  - '{project-root}/_bmad-output/initiative-page-builder/archive-v6/spec-refactor-packages-scripts/migration.md'
 ---
 
 <frozen-after-approval reason="human-owned intent — do not modify unless human renegotiates">

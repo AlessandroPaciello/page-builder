@@ -165,11 +165,11 @@ _Code review adversariale del 2026-09-05 (Blind Hunter + Edge Case Hunter + Acce
 
 ### References
 
-- [Source: _bmad-output/planning-artifacts/epics.md#Story 1.1: Scaffolding greenfield del workspace] — user story e acceptance criteria originali.
-- [Source: _bmad-output/planning-artifacts/epics.md#Additional Requirements] — `[STARTER] Scaffolding greenfield`: versioni pinnate (create-better-t-stack 3.37.0, Next 16.x, React 19, PostgreSQL 18, Prisma 7.9+, Better Auth, oRPC, @puckeditor/core 0.22.x, Tailwind 4, Node LTS, pnpm 10, Turborepo 2).
-- [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#Stack] — tabella versioni definitiva.
-- [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#Structural Seed] — albero cartelle target (`apps/web`, `packages/*`).
-- [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-2] — topologia monolite fullstack, core estraibile in `packages/domain` (non ancora creato in questa story).
+- [Source: _bmad-output/initiative-page-builder/archive-v6/epics.md#Story 1.1: Scaffolding greenfield del workspace] — user story e acceptance criteria originali.
+- [Source: _bmad-output/initiative-page-builder/archive-v6/epics.md#Additional Requirements] — `[STARTER] Scaffolding greenfield`: versioni pinnate (create-better-t-stack 3.37.0, Next 16.x, React 19, PostgreSQL 18, Prisma 7.9+, Better Auth, oRPC, @puckeditor/core 0.22.x, Tailwind 4, Node LTS, pnpm 10, Turborepo 2).
+- [Source: _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#Stack] — tabella versioni definitiva.
+- [Source: _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#Structural Seed] — albero cartelle target (`apps/web`, `packages/*`).
+- [Source: _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-2] — topologia monolite fullstack, core estraibile in `packages/domain` (non ancora creato in questa story).
 - Web research (luglio 2026): flag CLI `create-better-t-stack` verificati su npm/GitHub — `--frontend next --backend self --database postgres --orm prisma --api orpc --auth better-auth --addons turborepo --package-manager pnpm --db-setup docker`. Fonti: [npm](https://www.npmjs.com/package/create-better-t-stack), [GitHub AmanVarshney01/create-better-t-stack](https://github.com/AmanVarshney01/create-better-t-stack), [Quickstart](https://mintlify.wiki/amanvarshney01/create-better-t-stack/quickstart).
 
 ## Dev Agent Record
@@ -258,8 +258,8 @@ claude-sonnet-5
 - `apps/web/.env.example` (modificato — `NEXT_PUBLIC_SERVER_URL`, nome DB)
 - `package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `turbo.json`, `.gitignore`, `README.md` (modificati)
 - `.nvmrc` (nuovo)
-- `_bmad-output/implementation-artifacts/sprint-status.yaml` (modificato — status `review`)
-- `_bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md` (modificato — riga 184, TypeScript `~5.7+` → `~6.0`)
+- `_bmad-output/initiative-page-builder/archive-v6/sprint-status.yaml` (modificato — status `review`)
+- `_bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md` (modificato — riga 184, TypeScript `~5.7+` → `~6.0`)
 
 ## Change Log
 

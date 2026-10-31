@@ -10,14 +10,14 @@ created: '2026-07-25'
 updated: '2026-10-17'
 binds: [CAP-1, CAP-2, CAP-3, CAP-4, CAP-5, CAP-6, CAP-7, CAP-8, CAP-9, CAP-10, CAP-11, CAP-12, CAP-13, CAP-14]
 sources:
-  - '../../specs/spec-page-builder/SPEC.md'
+  - '../../_bmad-output/initiative-page-builder/spec-page-builder/SPEC.md'
 companions:
-  - '../../specs/spec-page-builder/SPEC.md'
-  - '../../specs/spec-page-builder/design-system.md'
-  - '../../specs/spec-page-builder/penpot-pipeline.md'
-  - '../../specs/spec-page-builder/rbac-matrix.md'
-  - '../../specs/spec-page-builder/a11y-baseline.md'
-  - '../../specs/spec-page-builder/glossary.md'
+  - '../../_bmad-output/initiative-page-builder/spec-page-builder/SPEC.md'
+  - '../../_bmad-output/initiative-page-builder/spec-page-builder/design-system.md'
+  - '../../_bmad-output/initiative-page-builder/spec-page-builder/penpot-pipeline.md'
+  - '../../_bmad-output/initiative-page-builder/spec-page-builder/rbac-matrix.md'
+  - '../../_bmad-output/initiative-page-builder/spec-page-builder/a11y-baseline.md'
+  - '../../_bmad-output/initiative-page-builder/spec-page-builder/glossary.md'
 ---
 
 # Architecture Spine — page-builder
@@ -288,4 +288,4 @@ page-builder/
 - **Strategia di migrazione dati dal legacy Strapi** — fuori scope SPEC salvo re-ingaggio esplicito.
 - **Envelope perf/latenza** (budget render/save) — da misurare in implementazione, non vincolato qui.
 - **Seconda libreria o secondo framework (es. MUI).** Oggi `pds-setup` accetta un solo valore per chiave (`framework=react`, `headless=base-ui`, `styling=tailwind-v4`, `fonts=fontsource`) e rifiuta gli altri in modo esplicito. Riaprire al primo progetto reale che li chieda: contratti dell'editor, sezioni, pagine salvate e core non cambiano (AD-11 v3, correct-course 2026-10-17; sostituisce la voce "Emitter per una seconda libreria").
-- **Pannello Penpot in sola lettura.** Plugin nostro (`content:read`) che mostra al designer le chiavi `part`/`when`/`slot` del layer selezionato e segnala layer senza chiave e chiavi doppie; la scrittura resta di `pds-code`. Attivare quando un designer lavora senza skill e una chiave si perde prima della generazione (`implementation-artifacts/deferred-work.md`).
+- **Pannello Penpot in sola lettura.** Plugin nostro (`content:read`) che mostra al designer le chiavi `part`/`when`/`slot` del layer selezionato e segnala layer senza chiave e chiavi doppie; la scrittura resta di `pds-code`. Attivare quando un designer lavora senza skill e una chiave si perde prima della generazione (`_bmad-output/initiative-page-builder/deferred-work.md`).

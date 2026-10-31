@@ -8,7 +8,7 @@ status: 'done'
 route: 'dispatch'
 review_loop_iteration: 1
 context:
-  - '_bmad-output/specs/spec-page-builder/penpot-pipeline.md'
+  - '_bmad-output/initiative-page-builder/spec-page-builder/penpot-pipeline.md'
 ---
 
 <frozen-after-approval reason="human-owned intent — do not modify unless human renegotiates">

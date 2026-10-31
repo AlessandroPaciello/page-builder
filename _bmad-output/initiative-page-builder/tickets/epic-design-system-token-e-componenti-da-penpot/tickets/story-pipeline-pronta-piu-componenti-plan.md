@@ -8,8 +8,8 @@ route: 'dispatch'
 review_loop_iteration: 0
 baseline_revision: '3fadf59c4768cffc87c6e943bcd4b4b321b58e05'
 context:
-  - '{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md'
-  - '{project-root}/_bmad-output/specs/spec-page-builder/penpot-pipeline.md'
+  - '{project-root}/_bmad-output/initiative-page-builder/archive-v6/epic-2-context.md'
+  - '{project-root}/_bmad-output/initiative-page-builder/spec-page-builder/penpot-pipeline.md'
 ---
 
 <frozen-after-approval reason="human-owned intent — do not modify unless human renegotiates">
@@ -59,7 +59,7 @@ context:
 - [x] `packages/scripts/src/emitter/axis-influence.ts` (+ test) -- `influencingAxes(axes, partCells, property)` estratta da `computePartClasses`, che la chiama con messaggi invariati (`render:check` a diff zero).
 - [x] `packages/scripts/src/library/adopt-variant.ts` (+ test) -- `planAdoption(contract, snapshot, design, binding, sources)` è puro e restituisce `nothing | error | adopt{files}`. Controlla gli errori della matrice, costruisce il contratto in memoria con i valori aggiunti in coda (default invariato), aggiunge le celle di design da `partBindings` e prende l'hash da `fingerprintPayload` + sha256. Il sorgente del contratto si modifica con l'AST TS, inserendo il valore nell'array `values` dell'asse, e il risultato si rilegge con l'AST. `SCHEMA_VERSION` si sostituisce con un match unico. I test coprono ogni riga della matrice e il fatto che la prima scrittura consuma tutti i file già calcolati.
 - [x] `packages/scripts/src/library/adopt-cli.ts` (+ test, script `adopt:variant` in `package.json`) -- parsing come in `bump-cli`, diff stampato per file, `--yes` scrive e poi stampa i passi successivi (`extract:component`, `render:component`, `gates:render`, `verify:library`). Il seam delle directory è configurabile per i test.
-- [x] `_bmad-output/specs/spec-page-builder/penpot-pipeline.md` -- nel paragrafo "Adozione di una variante nata in Penpot" va il comando, cosa scrive e i casi rifiutati.
+- [x] `_bmad-output/initiative-page-builder/spec-page-builder/penpot-pipeline.md` -- nel paragrafo "Adozione di una variante nata in Penpot" va il comando, cosa scrive e i casi rifiutati.
 
 **Acceptance Criteria:**
 - Given il flusso Adozione su una copia temporanea dei file, when eseguo `adopt:variant --yes`, then il test del fingerprint dei contratti e la validazione del binding passano sui file generati, e un secondo run restituisce "nulla da adottare".

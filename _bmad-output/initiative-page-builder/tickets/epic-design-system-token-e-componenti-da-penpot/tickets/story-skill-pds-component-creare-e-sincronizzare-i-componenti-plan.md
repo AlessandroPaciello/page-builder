@@ -8,8 +8,8 @@ route: 'dispatch'
 baseline_revision: '32ddba3c00b5db1f5aae5cbc3445daa9f7e406ab'
 review_loop_iteration: 0
 context:
-  - '{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md'
-  - '{project-root}/_bmad-output/specs/spec-page-builder/penpot-pipeline.md'
+  - '{project-root}/_bmad-output/initiative-page-builder/archive-v6/epic-2-context.md'
+  - '{project-root}/_bmad-output/initiative-page-builder/spec-page-builder/penpot-pipeline.md'
 ---
 
 <frozen-after-approval reason="human-owned intent — do not modify unless human renegotiates">

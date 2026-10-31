@@ -199,20 +199,20 @@ packages/contracts/                  # NUOVO — @app/contracts
 
 ### References
 
-- [Source: _bmad-output/planning-artifacts/epics.md#Story 2.3: Package dei contratti (Badge, Input, Accordion)] — user story e AC.
-- [Source: _bmad-output/planning-artifacts/epics.md#Epic 2, #Story 2.4, #Story 2.5, #Story 2.6, #Story 3.2, #Story 3.3, #Story 3.4, #Story 4.3] — consumer a valle delle API.
-- [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-5, #AD-6, #AD-11, #AD-3, #Consistency Conventions, #Structural Seed] — ownership, zero dipendenze UI, `schemaVersion` di `contracts`, tipi d'asse, composizione ≠ ricetta, layering `contracts` foglia.
-- [Source: _bmad-output/specs/spec-page-builder/penpot-pipeline.md#Stadio 0, #Confine contratto / fixture / ricetta / emitter, #Sezioni] — cosa vive nel contratto e cosa no.
-- [Source: _bmad-output/specs/spec-page-builder/design-system.md#Layering e confini, #puck-components] — `contracts` foglia; structure/content in `@app/contracts`; sezioni rigide con `allow` + `max`.
-- [Source: _bmad-output/specs/spec-page-builder/SPEC.md#CAP-4, #CAP-13, #Constraints] — rifiuto server fuori `allow`/`max`; fail-safe `content`.
-- [Source: _bmad-output/planning-artifacts/sprint-change-proposal-2026-09-12.md#4.2, #4.6] — riscrittura di AD-5, contenuto della nuova 2.3.
+- [Source: _bmad-output/initiative-page-builder/archive-v6/epics.md#Story 2.3: Package dei contratti (Badge, Input, Accordion)] — user story e AC.
+- [Source: _bmad-output/initiative-page-builder/archive-v6/epics.md#Epic 2, #Story 2.4, #Story 2.5, #Story 2.6, #Story 3.2, #Story 3.3, #Story 3.4, #Story 4.3] — consumer a valle delle API.
+- [Source: _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-5, #AD-6, #AD-11, #AD-3, #Consistency Conventions, #Structural Seed] — ownership, zero dipendenze UI, `schemaVersion` di `contracts`, tipi d'asse, composizione ≠ ricetta, layering `contracts` foglia.
+- [Source: _bmad-output/initiative-page-builder/spec-page-builder/penpot-pipeline.md#Stadio 0, #Confine contratto / fixture / ricetta / emitter, #Sezioni] — cosa vive nel contratto e cosa no.
+- [Source: _bmad-output/initiative-page-builder/spec-page-builder/design-system.md#Layering e confini, #puck-components] — `contracts` foglia; structure/content in `@app/contracts`; sezioni rigide con `allow` + `max`.
+- [Source: _bmad-output/initiative-page-builder/spec-page-builder/SPEC.md#CAP-4, #CAP-13, #Constraints] — rifiuto server fuori `allow`/`max`; fail-safe `content`.
+- [Source: _bmad-output/initiative-page-builder/archive-v6/sprint-change-proposal-2026-09-12.md#4.2, #4.6] — riscrittura di AD-5, contenuto della nuova 2.3.
 - [Source: _bmad-output/forge/penpot-shadcn-e-esagono-puck/.memlog.md] — tipi d'asse per Input/AccordionItem, parti di AccordionItem, criterio di stop riformulato, verifiche Puck 0.22.4 (`allow` senza `max`, `readOnly` per prop).
 - [Source: MCP Penpot, file "Nuovo File 4", lettura del 2026-09-12] — `Badge` (`badge@1`) `variant` default/secondary/destructive × `size` sm/md con figlio `label`; `Input` (`input@1`) `state` default/focus/error/disabled con figlio `placeholder`; `AccordionItem` (`accordion-item@1`) `state` closed/open con `trigger`(`label`, `chevron`), `content`(`body`), `divider`.
-- [Source: _bmad-output/planning-artifacts/ux-designs/ux-page-builder-2026-07-26/EXPERIENCE.md:65] — sezioni: struttura bloccata, pannello con soli campi content, slot con contatore `max` (consumer in Epic 3/4).
+- [Source: _bmad-output/initiative-page-builder/ux-page-builder-2026-07-26/EXPERIENCE.md:65] — sezioni: struttura bloccata, pannello con soli campi content, slot con contatore `max` (consumer in Epic 3/4).
 - [Source: packages/domain/scripts/check-boundaries.mjs] — modello del gate (stripComments, fail-closed).
 - [Source: packages/domain/package.json, packages/scripts/tsconfig.json, pnpm-workspace.yaml] — forma del package, tsconfig pulito, catalog versioni.
-- [Source: _bmad-output/implementation-artifacts/2-2-estrazione-componenti-e-schema-delle-ricette.md#Review Findings — Round 4] — guardia `isDirectInvocation`, costo delle verifiche solo manuali.
-- [Source: _bmad-output/implementation-artifacts/sprint-status.yaml#action_items] — test rosso/verde per i gate (Epic 1), criterio di stop in 2.5.
+- [Source: _bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-estrazione-componenti-e-schema-delle-ricette-plan.md#Review Findings — Round 4] — guardia `isDirectInvocation`, costo delle verifiche solo manuali.
+- [Source: _bmad-output/initiative-page-builder/archive-v6/sprint-status.yaml#action_items] — test rosso/verde per i gate (Epic 1), criterio di stop in 2.5.
 
 ## Dev Agent Record
 
@@ -267,9 +267,9 @@ Claude Opus 5 (`claude-opus-5`), workflow bmad-dev-story.
 - `packages/contracts/tests/contracts.fingerprint.json` (nuovo)
 - `packages/contracts/tests/check-boundaries.test.ts` (nuovo)
 - `pnpm-lock.yaml` (modificato)
-- `_bmad-output/implementation-artifacts/deferred-work.md` (modificato)
-- `_bmad-output/implementation-artifacts/sprint-status.yaml` (modificato)
-- `_bmad-output/implementation-artifacts/2-3-package-dei-contratti.md` (modificato)
+- `_bmad-output/initiative-page-builder/deferred-work.md` (modificato)
+- `_bmad-output/initiative-page-builder/archive-v6/sprint-status.yaml` (modificato)
+- `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-package-dei-contratti-badge-input-accordion-plan.md` (modificato)
 
 ## Change Log
 

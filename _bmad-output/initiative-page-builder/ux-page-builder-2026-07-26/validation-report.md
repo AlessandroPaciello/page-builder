@@ -1,7 +1,7 @@
 # Validation Report — page-builder
 
-- **DESIGN.md:** `_bmad-output/planning-artifacts/ux-designs/ux-page-builder-2026-07-26/DESIGN.md`
-- **EXPERIENCE.md:** `_bmad-output/planning-artifacts/ux-designs/ux-page-builder-2026-07-26/EXPERIENCE.md`
+- **DESIGN.md:** `_bmad-output/initiative-page-builder/ux-page-builder-2026-07-26/DESIGN.md`
+- **EXPERIENCE.md:** `_bmad-output/initiative-page-builder/ux-page-builder-2026-07-26/EXPERIENCE.md`
 - **Run at:** 2026-07-26T00:00:00Z
 
 ## Overall verdict

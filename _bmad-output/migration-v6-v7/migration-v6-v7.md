@@ -10,8 +10,9 @@ to: "7"
 
 # Piano di migrazione v6 → v7 (page-builder)
 
-> **Stato: DRAFT — in attesa di approvazione.** Finché non approvi, l'unica cosa
-> scritta su disco è questo piano e il backup. Nessun file viene spostato o modificato.
+> **Stato: ESEGUITO.** Applicato il 2026-10-29 (commit `ab1ecd2`). Il passo di
+> riscrittura dei link previsto da `migration-1.toml:177` **non era stato eseguito**:
+> è stato completato e verificato il 2026-10-31 — vedi §10.
 
 ## 1. Risposte confermate
 
@@ -171,9 +172,54 @@ Stato epica v6 `in-progress` → **resta `in-progress`** (ha story in backlog).
 6. `config.user.toml` nomina l'iniziativa attiva; `output_folder` risolve allo store.
 7. Store sotto git, nessun file tracciato da due repo, backup non committato.
 8. Backup `.v6-v7-migration-backup-20261029-2255/` contiene ogni file originale.
+9. Ogni riferimento a un path v6 nei file vivi risolve a un file esistente
+   (`migration-1.toml:177` e `:214`) — **eseguita e chiusa il 2026-10-31, vedi §10.3**.
 
 ## 9. Dopo l'eseguzione (prossimi passi)
 
 - Sofia (`bmad-agent-po`) **sostituisce** `bmad-sprint-planning`, `bmad-create-epics-and-stories`, `bmad-spec`, `bmad-correct-course` (e `bmad-ticket`).
 - Prossimo lavoro: `bmad-build` sulla prossima entry (niente story file pescati).
 - `bmad-project-context` per un `AGENTS.md` root che nomini l'iniziativa attiva.
+
+## 10. Report di esecuzione e verifica (2026-10-31)
+
+Applicata il 2026-10-29 (`ab1ecd2`); riferimenti fuori dallo store aggiornati il giorno dopo (`c05cd3a`). Questo §10 chiude il documento, che era rimasto col banner DRAFT.
+
+### 10.1 Cosa la migrazione non aveva fatto
+
+Il passo di `migration-1.toml:177` — *«Search the store for each old path and rewrite live references to it»* — **non era stato eseguito**: sul diff di `ab1ecd2` risultano **0 righe di contenuto rimosse** contenenti un path v6, su tutte e quattro le famiglie (`planning-artifacts`, `implementation-artifacts`, `specs/spec-page-builder`, `specs/spec-refactor-packages-scripts`); 58 file sono stati spostati con contenuto byte-identico (`R100`). Anche `:179` (ricalcolo dei link relativi dei file spostati) non era stato applicato.
+
+Il passo è sfuggito perché **le checklist §8 di questo piano avevano 8 voci e nessuna parlava di risoluzione dei link**: il piano locale ha rimpiazzato la checklist di `migration-1.toml`, che lo contiene a `:214`, senza riprodurlo.
+
+Effetto: **242 occorrenze rotte in 46 file vivi**, più 4 link relativi non ricalcolati che non contenevano alcun token v6 e quindi non erano individuabili con una ricerca di path.
+
+### 10.2 Cosa è stato fatto il 2026-10-31
+
+| Classe | N. | Trattamento |
+|---|---|---|
+| A — file spostati intatti | 192 prosa + 9 link | swap di prefisso; i target di link markdown ricalcolati relativi alla cartella del file |
+| B — build record assorbiti dai plan | 48 | puntano al `story-*-plan.md` che li ha incorporati (match sullo slug) |
+| C — caso singolo | 3 | `2-3-renderer-deterministico-e-gate-ci.md` → story 2.6; catena verificata su git: `b41c951` lo ha **rinominato** (R096) in `2-6-emitter-…`, la migrazione l'ha fuso nel plan |
+| D — link relativi mai ricalcolati | 4 | corretti a mano: 1 nella spine 10-03, 3 nel plan di story 2.1 |
+
+**Stile**: assoluto da root (`_bmad-output/…`) per prosa, frontmatter e righe `[Source: …]`; relativo alla cartella del file per i target `](…)`. Contesti sintattici diversi, richiedono forme diverse.
+
+**Non toccati, per regola**: `initiative-page-builder/archive-v6/` (fonti storiche, `migration-1:179`), `migration-v6-v7/` (questo documento), `docs/legacy/`.
+
+**Deviazione registrata**: 3 file *"lasciati al posto loro"* (`specs/spec-penpot-estrazione-costruzione/SPEC.md`, `spikes/penpot-ai-kit-2026-10-10/README.md`, `forge/pds-v3-punti-aperti/forged-idea.md`) contenevano 4 riferimenti rotti verso cartelle spostate. Sono stati riscritti comunque, contro la lettera di `migration-1:179`: 4 occorrenze, e lasciarle rotte avrebbe fatto terminare in un punto cieco chi segue `penpot-pipeline.md` → spike → README.
+
+**Residui accettati (2)**: `deferred-work.md:235` e `initiative-page-builder.md:83` nominano il *nome* della cartella v6 in prosa storica, non un path. Riscriverli ne avrebbe alterato il senso.
+
+### 10.3 Verifiche eseguite
+
+1. ✅ 125 target di link markdown nei file vivi → **tutti esistenti, 0 rotti**
+2. ✅ 335 path assoluti `_bmad-output/…` → **tutti esistenti, 0 rotti**
+3. ✅ token `planning-artifacts` / `implementation-artifacts` nei file vivi → **2**, entrambi menzioni in prosa storica
+4. ✅ `uv run _bmad/method/scripts/tickets.py --project-root . status` → **exit 0**, 59 ticket (35 done / 24 planned), 6 epic tutti `refined: true`, nessun `order_conflict` / `unpinned_after` / `undeclared_after`
+5. ✅ backup rimosso dopo verifica: `ab1ecd2^` contiene i 173 file originali di `_bmad-output`, stesso conteggio dichiarato al §1
+6. ✅ ogni file delle cartelle sorgente è sotto iniziativa / `backlog/` / `archive-v6/` o elencato al §6
+
+### 10.4 Correzioni strutturali fatte in corso
+
+- **Spine autorevole**: `architecture-page-builder-2026-10-03` è `status: superseded` nel suo frontmatter ed è stata rimossa dai `companions:` di iniziativa e dei tre epic che la citavano — **i quali non avevano la spine autorevole `2026-07-25` affatto**. Il gate H2 (`card-reference`), unica copia esistente e assente sia nella 07-25 sia nel suo `superseded_by`, è stato trasferito in `spec-page-builder/penpot-pipeline.md` prima della demozione. Registrato nei `Notes` dell'iniziativa.
+- **Pulizia**: rimossi il backup di migrazione (4,1 MB, redundante su git) e `backlog/story-bmad-setup-test.md` (dropped, issue #70).

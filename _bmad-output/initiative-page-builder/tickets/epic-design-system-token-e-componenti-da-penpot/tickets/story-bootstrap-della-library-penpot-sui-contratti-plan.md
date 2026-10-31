@@ -340,14 +340,14 @@ skills/                            # output di BMad Builder (bmb.bmad_builder_ou
 
 ### References
 
-- [Source: _bmad-output/planning-artifacts/epics.md#Story 2.4, #Epic 2 (Tooling), #Story 2.5, #Story 2.7]
-- [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-11, #AD-5, #AD-3]: ownership, plugin data, skill bootstrap/additiva, pass/fail negli script.
-- [Source: _bmad-output/specs/spec-page-builder/penpot-pipeline.md#Principio guida, #Stadio 0, #Stadio 1]: nomi shadcn, stessa funzione di nome per variabili e classi.
-- [Source: _bmad-output/specs/spec-page-builder/design-system.md#tokens]: contrasto ≥4.5:1 per il testo e ≥3:1 per gli indicatori.
-- [Source: _bmad-output/planning-artifacts/sprint-change-proposal-2026-09-12.md#2 Impatto tecnico, #4.6, #4.9-f]: correzione di AC #4 (verifica al posto del riallineamento di `ui/editor`).
+- [Source: _bmad-output/initiative-page-builder/archive-v6/epics.md#Story 2.4, #Epic 2 (Tooling), #Story 2.5, #Story 2.7]
+- [Source: _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-11, #AD-5, #AD-3]: ownership, plugin data, skill bootstrap/additiva, pass/fail negli script.
+- [Source: _bmad-output/initiative-page-builder/spec-page-builder/penpot-pipeline.md#Principio guida, #Stadio 0, #Stadio 1]: nomi shadcn, stessa funzione di nome per variabili e classi.
+- [Source: _bmad-output/initiative-page-builder/spec-page-builder/design-system.md#tokens]: contrasto ≥4.5:1 per il testo e ≥3:1 per gli indicatori.
+- [Source: _bmad-output/initiative-page-builder/archive-v6/sprint-change-proposal-2026-09-12.md#2 Impatto tecnico, #4.6, #4.9-f]: correzione di AC #4 (verifica al posto del riallineamento di `ui/editor`).
 - [Source: _bmad-output/forge/penpot-shadcn-e-esagono-puck/forged-idea.md, .memlog.md]: prototipo MCP e crack shadow/ring.
-- [Source: _bmad-output/implementation-artifacts/2-3-package-dei-contratti.md]: API dei contratti e modello del gate testato.
-- [Source: _bmad-output/implementation-artifacts/deferred-work.md]: voci "hex-match / applyToken", "dark mode", "5 token tracking".
+- [Source: _bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-package-dei-contratti-badge-input-accordion-plan.md]: API dei contratti e modello del gate testato.
+- [Source: _bmad-output/initiative-page-builder/deferred-work.md]: voci "hex-match / applyToken", "dark mode", "5 token tracking".
 - [Source: _bmad-output/specs/spec-penpot-dev-mcp/mcp-token.md, README.md#Penpot locale e server MCP]: connessione, token, plugin.
 - [Source: packages/scripts/src/theme-generator.ts, penpot-reader.ts, mcp-client.ts, generate-theme.ts]
 - [Source: Penpot MCP `high_level_overview`, 2026-09-12]: API di token, varianti, `applyToken` asincrono, `createVariantContainer`.
@@ -381,9 +381,9 @@ glm-5.3-flash (opencode-go/glm-5.3-flash), sessione dev-story del 2026-09-12.
 
 ### File List
 
-- `_bmad-output/implementation-artifacts/2-4-bootstrap-della-library-penpot-sui-contratti.md` (questo file)
-- `_bmad-output/implementation-artifacts/deferred-work.md`
-- `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-bootstrap-della-library-penpot-sui-contratti-plan.md` (questo file)
+- `_bmad-output/initiative-page-builder/deferred-work.md`
+- `_bmad-output/initiative-page-builder/archive-v6/sprint-status.yaml`
 - `packages/scripts/package.json` (+ `@app/contracts`, script `bootstrap:library`/`add:library`/`verify:library`)
 - `packages/scripts/tsconfig.json` (include `tests/**`)
 - `packages/scripts/scripts/check-boundaries.mjs` (rifattorizzato, `@app/contracts` ammesso)

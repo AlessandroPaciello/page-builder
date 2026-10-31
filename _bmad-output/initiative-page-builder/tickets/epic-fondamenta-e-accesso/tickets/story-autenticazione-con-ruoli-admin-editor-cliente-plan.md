@@ -79,7 +79,7 @@ So that le operazioni successive possano essere autorizzate per ruolo (FR12 fond
     src/roles.ts (o simile)             # NUOVO — tassonomia Role + normalizzazione
   apps/web/
     src/app/dashboard/ (o simile)       # MODIFICATO — mostra ruolo + guard
-  _bmad-output/implementation-artifacts/deferred-work.md  # MODIFICATO — chiusura voce 1-1 hardening, nuova voce assegnazione ruoli
+  _bmad-output/initiative-page-builder/deferred-work.md  # MODIFICATO — chiusura voce 1-1 hardening, nuova voce assegnazione ruoli
   ```
 - Allineamento allo Structural Seed: il ruolo vive nell'adapter auth (`packages/auth` + colonna in `packages/db`), il guard di prova vive in `apps/web`. Nessun tocco al core (`packages/domain`): Story 1.5.
 - Conflitti rilevati: nessuno. La back-relation `assignments` su `User` (Story 1.3) non è toccata.
@@ -93,12 +93,12 @@ So that le operazioni successive possano essere autorizzate per ruolo (FR12 fond
 
 ### References
 
-- [Source: _bmad-output/planning-artifacts/epics.md#Story 1.4: Autenticazione con ruoli Admin/Editor/Cliente] — user story e AC originali.
-- [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-4] — Better Auth fornisce identità + ruolo grossolano (`Principal { userId, role }`); auth ≠ authz; l'autorizzazione fine è del core (Story 1.5).
-- [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#Consistency Conventions] — `Auth`: Better Auth sessione cookie; `Principal + role` nel context oRPC; deny-by-default (read **e** write).
-- [Source: _bmad-output/specs/spec-page-builder/rbac-matrix.md] — ruoli Admin/Editor/Cliente, principio deny-by-default server-side.
-- [Source: _bmad-output/implementation-artifacts/deferred-work.md#Deferred from: code review of 1-1] — voce "Hardening dell'autenticazione assente" (minPasswordLength, requireEmailVerification, rateLimit) chiusa da questa story; voce a11y form rimirata ad Epic 2 (non toccare).
-- [Source: _bmad-output/implementation-artifacts/1-3-modello-dati-e-invariante-di-pubblicazione-a-livello-db.md#Dev Agent Record] — pattern migration (`--create-only` + revisione SQL), test DB su Postgres reale, guard "fail without DATABASE_URL".
+- [Source: _bmad-output/initiative-page-builder/archive-v6/epics.md#Story 1.4: Autenticazione con ruoli Admin/Editor/Cliente] — user story e AC originali.
+- [Source: _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-4] — Better Auth fornisce identità + ruolo grossolano (`Principal { userId, role }`); auth ≠ authz; l'autorizzazione fine è del core (Story 1.5).
+- [Source: _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#Consistency Conventions] — `Auth`: Better Auth sessione cookie; `Principal + role` nel context oRPC; deny-by-default (read **e** write).
+- [Source: _bmad-output/initiative-page-builder/spec-page-builder/rbac-matrix.md] — ruoli Admin/Editor/Cliente, principio deny-by-default server-side.
+- [Source: _bmad-output/initiative-page-builder/deferred-work.md#Deferred from: code review of 1-1] — voce "Hardening dell'autenticazione assente" (minPasswordLength, requireEmailVerification, rateLimit) chiusa da questa story; voce a11y form rimirata ad Epic 2 (non toccare).
+- [Source: _bmad-output/initiative-page-builder/tickets/epic-fondamenta-e-accesso/tickets/story-modello-dati-e-invariante-di-pubblicazione-a-livello-db-plan.md#Dev Agent Record] — pattern migration (`--create-only` + revisione SQL), test DB su Postgres reale, guard "fail without DATABASE_URL".
 - [Source: packages/auth/src/index.ts] — configurazione Better Auth corrente (punto di partenza, senza ruoli né hardening).
 - [Source: packages/db/prisma/schema/auth.prisma] — modelli Better Auth (User con `emailVerified` mai usato).
 - [Source: better-auth.com/docs/plugins/admin] — campi plugin admin (role/banned/...); qui NON adottato, solo colonna `role` + `user.additionalFields`.
@@ -142,9 +142,9 @@ opencode-go / glm-5.3-flash (opencode)
 - packages/auth/package.json (modificato: script test + devDep vitest)
 - apps/web/src/app/dashboard/page.tsx (modificato: guard ruolo + visualizzazione)
 - pnpm-lock.yaml (modificato: vitest per @app/auth)
-- _bmad-output/implementation-artifacts/deferred-work.md (modificato: chiusura voce hardening, nuove voci verifica email + assegnazione ruoli)
-- _bmad-output/implementation-artifacts/sprint-status.yaml (modificato: status story)
-- _bmad-output/implementation-artifacts/1-4-autenticazione-con-ruoli-admin-editor-cliente.md (questo file)
+- _bmad-output/initiative-page-builder/deferred-work.md (modificato: chiusura voce hardening, nuove voci verifica email + assegnazione ruoli)
+- _bmad-output/initiative-page-builder/archive-v6/sprint-status.yaml (modificato: status story)
+- _bmad-output/initiative-page-builder/tickets/epic-fondamenta-e-accesso/tickets/story-autenticazione-con-ruoli-admin-editor-cliente-plan.md (questo file)
 
 ## Change Log
 

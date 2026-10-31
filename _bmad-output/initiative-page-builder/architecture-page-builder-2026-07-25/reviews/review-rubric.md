@@ -2,7 +2,7 @@
 
 - **Target:** `../ARCHITECTURE-SPINE.md`
 - **Altitudine:** feature
-- **Contesto valutato:** SPEC + companions in `_bmad-output/specs/spec-page-builder/` (SPEC, design-system, penpot-pipeline, rbac-matrix, a11y-baseline, glossary)
+- **Contesto valutato:** SPEC + companions in `_bmad-output/initiative-page-builder/spec-page-builder` (SPEC, design-system, penpot-pipeline, rbac-matrix, a11y-baseline, glossary)
 - **Data:** 2026-07-25
 - **Verdetto:** **CONCERNS**
 

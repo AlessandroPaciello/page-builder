@@ -8,7 +8,7 @@ route: 'dispatch'
 baseline_revision: 'ddb81c2a8208f1d59c930bea7d90736397c29052'
 review_loop_iteration: 0
 context:
-  - '{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md'
+  - '{project-root}/_bmad-output/initiative-page-builder/archive-v6/epic-2-context.md'
 ---
 
 <frozen-after-approval reason="human-owned intent — do not modify unless human renegotiates">
@@ -56,7 +56,7 @@ context:
 - `packages/scripts/src/shared/theme-generator.test.ts`: oggi gira sulla fixture vecchia (`PATHS.catalogPath`), con un drift guard sui file committati che non va toccato. Ci va aggiunto il blocco sul catalogo Tailwind.
 - `_bmad-output/spikes/penpot-ai-kit-2026-10-10/tailwind-to-penpot/tokens.json`: fonte dei set. `sets` è un oggetto `{nome: token[]}`, da convertire nella forma `TokenCatalog` (`{sets: [{name, tokens}]}`). Già verificato: `generateTheme` lo accetta (394 righe di CSS, `--color-primary: var(--color-neutral-900)`).
 - `packages/scripts/README.md`: va annotato dove sta la fixture e da dove viene.
-- `_bmad-output/implementation-artifacts/deferred-work.md`, `_bmad-output/planning-artifacts/sprint-change-proposal-2026-10-17.md:176`, `README.md:198` dello spike: bug 14 e punto 13 chiusi con "Story 2.19".
+- `_bmad-output/initiative-page-builder/deferred-work.md`, `_bmad-output/initiative-page-builder/archive-v6/sprint-change-proposal-2026-10-17.md:176`, `README.md:198` dello spike: bug 14 e punto 13 chiusi con "Story 2.19".
 
 ## Tasks & Acceptance
 

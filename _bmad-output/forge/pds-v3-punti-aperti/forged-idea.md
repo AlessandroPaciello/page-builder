@@ -41,7 +41,7 @@ Il nucleo restituisce un `Finding` di tipo **domanda**, con le opzioni; la skill
 - **Semantic Tagger:** tiene i tag solo in memoria, e il suo vocabolario non è il nostro.
 
 ## Rischi residui
-- I metadati in Penpot non si vedono: una perdita si scopre alla generazione successiva. Controllo di stato in `pds-design`; pannello in sola lettura rimandato ([deferred-work](../../implementation-artifacts/deferred-work.md)).
+- I metadati in Penpot non si vedono: una perdita si scopre alla generazione successiva. Controllo di stato in `pds-design`; pannello in sola lettura rimandato ([deferred-work](../../initiative-page-builder/deferred-work.md)).
 - Un layer che tiene la chiave ma cambia significato: lo vede solo il giudizio in Storybook.
 - Quali operazioni di Penpot cancellano i plugin data (raggruppa, booleane, copia tra file, ripristino, stacco): da misurare nel collaudo. Anche "fill" dentro hug è da verificare.
 - Senza hover disegnato non c'è hover. "Testo + colore" resta affidato al giudizio umano.

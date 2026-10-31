@@ -76,7 +76,7 @@ so that il dominio ha persistenza e l'invariante ≤1 pubblicata è garantito da
   pnpm-workspace.yaml                   # MODIFICATO solo se vitest non è già in catalog (lo è: ^5.0.0)
   turbo.json                            # MODIFICATO solo se si sceglie la variante turbo per la dipendenza db:generate
   .github/workflows/ci.yml              # MODIFICATO — service postgres + gate migration/invariante
-  _bmad-output/implementation-artifacts/deferred-work.md  # MODIFICATO — aggiornamento voci mirate
+  _bmad-output/initiative-page-builder/deferred-work.md  # MODIFICATO — aggiornamento voci mirate
   ```
 - Allineamento allo Structural Seed: tutto vive in `packages/db` (adapter persistenza) — nessun file nuovo fuori dal package salvo CI e deferred-work. Nessun conflitto rilevato con lo Spine.
 
@@ -88,15 +88,15 @@ so that il dominio ha persistenza e l'invariante ≤1 pubblicata è garantito da
 
 ### References
 
-- [Source: _bmad-output/planning-artifacts/epics.md#Story 1.3: Modello dati e invariante di pubblicazione a livello DB] — user story e AC originali.
-- [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-6] — forma payload `{content,root,zones}` + `schemaVersion` in colonna `Json`; block-id client-owned; `versionNumber` core-owned con `UNIQUE(page_id, version_number)`.
-- [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-7] — indice univoco parziale via migration SQL esplicita; transazioni publish/rollback/archive che accoppiano `Page.status`↔`PageVersion.status`.
-- [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-8] — forma canonica `AuditLog` (actor/action/entityType/entityId/timestamp/metadataDiff, non il blob).
-- [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-12] — ogni salvataggio = nuova PageVersion DRAFT, mai mutazione in-place (vincolo di dominio, non DB).
-- [Source: _bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#Consistency Conventions] — naming entità/enum e regola "id/date default Prisma/Postgres".
-- [Source: _bmad-output/specs/spec-page-builder/glossary.md] — definizioni Page (slug univoco, metadati SEO, lifecycle), PageVersion (numero progressivo, stato, payload), Payload, Audit trail.
-- [Source: _bmad-output/implementation-artifacts/1-2-skeleton-del-core-di-dominio-esagonale.md#Dev Agent Record] — pattern vitest via catalog, CI esistente, lezioni (gate rosso/verde, metadataDiff senza blob).
-- [Source: _bmad-output/implementation-artifacts/deferred-work.md] — voci da chiudere/ri-mirare in questa story: `db:generate` non nei gate turbo; atomicità save-then-audit; semantica id duplicato; docker compose porta 5432 hardcoded (non in scope).
+- [Source: _bmad-output/initiative-page-builder/archive-v6/epics.md#Story 1.3: Modello dati e invariante di pubblicazione a livello DB] — user story e AC originali.
+- [Source: _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-6] — forma payload `{content,root,zones}` + `schemaVersion` in colonna `Json`; block-id client-owned; `versionNumber` core-owned con `UNIQUE(page_id, version_number)`.
+- [Source: _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-7] — indice univoco parziale via migration SQL esplicita; transazioni publish/rollback/archive che accoppiano `Page.status`↔`PageVersion.status`.
+- [Source: _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-8] — forma canonica `AuditLog` (actor/action/entityType/entityId/timestamp/metadataDiff, non il blob).
+- [Source: _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#AD-12] — ogni salvataggio = nuova PageVersion DRAFT, mai mutazione in-place (vincolo di dominio, non DB).
+- [Source: _bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md#Consistency Conventions] — naming entità/enum e regola "id/date default Prisma/Postgres".
+- [Source: _bmad-output/initiative-page-builder/spec-page-builder/glossary.md] — definizioni Page (slug univoco, metadati SEO, lifecycle), PageVersion (numero progressivo, stato, payload), Payload, Audit trail.
+- [Source: _bmad-output/initiative-page-builder/tickets/epic-fondamenta-e-accesso/tickets/story-skeleton-del-core-di-dominio-esagonale-plan.md#Dev Agent Record] — pattern vitest via catalog, CI esistente, lezioni (gate rosso/verde, metadataDiff senza blob).
+- [Source: _bmad-output/initiative-page-builder/deferred-work.md] — voci da chiudere/ri-mirare in questa story: `db:generate` non nei gate turbo; atomicità save-then-audit; semantica id duplicato; docker compose porta 5432 hardcoded (non in scope).
 - [Source: prisma.io/docs/orm/prisma-schema/data-model/indexes#configuring-partial-indexes-with-where] — Prisma 7: indici parziali supportati solo con preview feature `partialIndexes`; su PostgreSQL filtered unique = `CREATE UNIQUE INDEX ... WHERE`.
 
 ## Dev Agent Record
@@ -138,8 +138,8 @@ GLM (opencode-go/glm-5.3-flash), 2026-09-05
 - packages/db/package.json (modificato anche in review — guard esplicito su db:push)
 - README.md (modificato in review — db:migrate al posto di db:push, voce script annotata)
 - .github/workflows/ci.yml (modificato — service postgres:18 + migrate deploy)
-- _bmad-output/implementation-artifacts/deferred-work.md (modificato — 3 voci aggiornate)
-- _bmad-output/implementation-artifacts/sprint-status.yaml (modificato — stato story)
+- _bmad-output/initiative-page-builder/deferred-work.md (modificato — 3 voci aggiornate)
+- _bmad-output/initiative-page-builder/archive-v6/sprint-status.yaml (modificato — stato story)
 
 ### Change Log
 

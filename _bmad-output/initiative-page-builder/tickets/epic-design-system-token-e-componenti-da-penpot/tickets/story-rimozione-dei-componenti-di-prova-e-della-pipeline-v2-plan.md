@@ -8,7 +8,7 @@ route: 'dispatch'
 baseline_revision: '011d581400d7560c1d516098127cd1ae15f06d86'
 review_loop_iteration: 0
 context:
-  - '{project-root}/_bmad-output/implementation-artifacts/epic-2-context.md'
+  - '{project-root}/_bmad-output/initiative-page-builder/archive-v6/epic-2-context.md'
 ---
 
 <frozen-after-approval reason="human-owned intent — do not modify unless human renegotiates">
@@ -56,8 +56,8 @@ context:
 - `packages/ui/src/stories.smoke.test.tsx`, `apps/storybook/.storybook/main.ts`, `main.test.ts`, `apps/storybook/tsconfig.json:8` — glob esteso a `editor/**` (Decisioni); i commenti "4 componenti generati" aggiornati. `ui/src/editor/dropdown-menu.tsx` e il suo test esistente sono la fonte per la story (props, uso di `Menu`).
 - `.github/workflows/ci.yml:86-92` — step "Gates v2" via. `turbo.json:47-51` — task `gates:render`, `gates` via.
 - Skill: `skills/`, `.claude/skills/`, `.agents/skills/` → via `pds-{bootstrap,additive,component}`; `.opencode/commands/pds-{bootstrap,additive,component}.md` via; righe PB/PA/PC/PS in `_bmad/module-help.csv`, `_bmad/pds/module-help.csv`, `{skills,.claude/skills,.agents/skills}/pds-setup/assets/module-help.csv`; `_bmad/_config/bmad-help.csv:39-42`, `skill-manifest.csv:57-59`, `files-manifest.csv:390-392` via e hash di riga 388 ricalcolato; `pds-setup/assets/module.yaml:3,7` (tre copie) senza i quattro codici.
-- `_bmad-output/implementation-artifacts/deferred-work.md` — formato di chiusura come riga 259 ("Voci senza oggetto alla 2.16"); voci v2: 227, 261, 263–265, 270–274, 280–282, 286, 290–310, 342–347, 351–353.
-- `_bmad-output/planning-artifacts/sprint-change-proposal-2026-10-17.md:169-172` e `_bmad-output/spikes/penpot-ai-kit-2026-10-10/README.md:124-127` — bug 7–10: esito "sparito con la v2 (Story 2.18)" (bug 8: la parte 2.22 resta).
+- `_bmad-output/initiative-page-builder/deferred-work.md` — formato di chiusura come riga 259 ("Voci senza oggetto alla 2.16"); voci v2: 227, 261, 263–265, 270–274, 280–282, 286, 290–310, 342–347, 351–353.
+- `_bmad-output/initiative-page-builder/archive-v6/sprint-change-proposal-2026-10-17.md:169-172` e `_bmad-output/spikes/penpot-ai-kit-2026-10-10/README.md:124-127` — bug 7–10: esito "sparito con la v2 (Story 2.18)" (bug 8: la parte 2.22 resta).
 - Fuori perimetro: `packages/pds-engine` (non tracciato, solo `node_modules`): non si tocca, si annota.
 
 ## Tasks & Acceptance

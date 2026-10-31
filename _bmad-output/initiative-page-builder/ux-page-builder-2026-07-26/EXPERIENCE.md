@@ -4,13 +4,13 @@ description: "Comportamento, IA e flussi dell'editor drag-and-drop, del render p
 status: final
 updated: 2026-07-26
 sources:
-  - "_bmad-output/specs/spec-page-builder/SPEC.md"
-  - "_bmad-output/specs/spec-page-builder/design-system.md"
-  - "_bmad-output/specs/spec-page-builder/a11y-baseline.md"
-  - "_bmad-output/specs/spec-page-builder/penpot-pipeline.md"
-  - "_bmad-output/specs/spec-page-builder/rbac-matrix.md"
-  - "_bmad-output/specs/spec-page-builder/glossary.md"
-  - "_bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md"
+  - "_bmad-output/initiative-page-builder/spec-page-builder/SPEC.md"
+  - "_bmad-output/initiative-page-builder/spec-page-builder/design-system.md"
+  - "_bmad-output/initiative-page-builder/spec-page-builder/a11y-baseline.md"
+  - "_bmad-output/initiative-page-builder/spec-page-builder/penpot-pipeline.md"
+  - "_bmad-output/initiative-page-builder/spec-page-builder/rbac-matrix.md"
+  - "_bmad-output/initiative-page-builder/spec-page-builder/glossary.md"
+  - "_bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md"
 ---
 
 > Su conflitto con mock, wireframe o import, questo file e [DESIGN.md](./DESIGN.md) vincono sempre.
@@ -91,7 +91,7 @@ Specifica comportamentale (i visual spec vivono in DESIGN.md.components):
 
 ## Accessibility Floor
 
-Eredita integralmente [a11y-baseline.md](../../../specs/spec-page-builder/a11y-baseline.md) come pavimento comportamentale (i contrasti visivi concreti vivono in DESIGN.md):
+Eredita integralmente [a11y-baseline.md](../spec-page-builder/a11y-baseline.md) come pavimento comportamentale (i contrasti visivi concreti vivono in DESIGN.md):
 - Focus visibile su ogni interattivo, mai `outline:none` senza sostituto.
 - Ogni stato = testo + colore, mai solo colore (lifecycle, feedback, validazione form).
 - ARIA corretta per tipo (Dialog/Toast/Table/Tabs/Dropdown/Breadcrumb) come da baseline.

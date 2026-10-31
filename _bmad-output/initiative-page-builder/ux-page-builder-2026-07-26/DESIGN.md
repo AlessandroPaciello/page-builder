@@ -4,13 +4,13 @@ description: "Design system enterprise/e-commerce generato da Penpot: token → 
 status: final
 updated: 2026-07-26
 sources:
-  - "_bmad-output/specs/spec-page-builder/SPEC.md"
-  - "_bmad-output/specs/spec-page-builder/design-system.md"
-  - "_bmad-output/specs/spec-page-builder/a11y-baseline.md"
-  - "_bmad-output/specs/spec-page-builder/penpot-pipeline.md"
-  - "_bmad-output/specs/spec-page-builder/rbac-matrix.md"
-  - "_bmad-output/specs/spec-page-builder/glossary.md"
-  - "_bmad-output/planning-artifacts/architecture/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md"
+  - "_bmad-output/initiative-page-builder/spec-page-builder/SPEC.md"
+  - "_bmad-output/initiative-page-builder/spec-page-builder/design-system.md"
+  - "_bmad-output/initiative-page-builder/spec-page-builder/a11y-baseline.md"
+  - "_bmad-output/initiative-page-builder/spec-page-builder/penpot-pipeline.md"
+  - "_bmad-output/initiative-page-builder/spec-page-builder/rbac-matrix.md"
+  - "_bmad-output/initiative-page-builder/spec-page-builder/glossary.md"
+  - "_bmad-output/initiative-page-builder/architecture-page-builder-2026-07-25/ARCHITECTURE-SPINE.md"
 colors:
   # Estratti dal vivo dalla library Penpot reale (mis.color / feedback.color, set radix.color)
   # il 2026-09-06. Nomi Penpot tra parentesi dove il ruolo non è 1:1 col nome.
@@ -95,7 +95,7 @@ Gli overlay (Dialog, Toast, Drawer/SidePanel) si montano su un **portale root DO
 
 ## Components
 
-Catalogo ereditato 1:1 da [design-system.md](../../../specs/spec-page-builder/design-system.md) (ui/domains + puck-components + ui/editor; sezioni come definizioni di dati). Valori numerici (colore/spacing esatti) restano pending su Penpot; le righe sotto fissano intanto anatomia/struttura visiva dei 5 componenti-chiave, da rifinire con valori reali ai mock di Finalize.
+Catalogo ereditato 1:1 da [design-system.md](../spec-page-builder/design-system.md) (ui/domains + puck-components + ui/editor; sezioni come definizioni di dati). Valori numerici (colore/spacing esatti) restano pending su Penpot; le righe sotto fissano intanto anatomia/struttura visiva dei 5 componenti-chiave, da rifinire con valori reali ai mock di Finalize.
 
 | Componente | Anatomia | Sizing/densità | Stati visivi |
 |---|---|---|---|

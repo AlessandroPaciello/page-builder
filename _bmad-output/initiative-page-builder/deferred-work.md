@@ -2,7 +2,7 @@
 
 Lavoro identificato durante le review e rimandato consapevolmente. Ogni voce indica da dove arriva e quando va ripresa.
 
-- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/2-11-storybook-del-design-system.md`
+- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-storybook-del-design-system-plan.md`
   summary: Lo `storyName` emesso (`PropLabel` + valore asse capitalizzato) non è sanitizzato: un valore d'asse con `-`, spazi o stringa vuota produrrebbe uno `.stories.tsx` con sintassi invalida.
   evidence: review 2-11 (ECH1) — costruzione pre-esistente (identica nella vecchia forma), nessun contratto attuale la viola; da valutare con guardrail o validazione valori alla prima estensione degli assi.
 
@@ -13,7 +13,7 @@ Lavoro identificato durante le review e rimandato consapevolmente. Ogni voce ind
 - **Hardening dell'autenticazione assente** — **RISOLTO in Story 1.4 (2026-09-05)**, con due esiti parziali rimasti aperti: `minPasswordLength: 8` e `rateLimit` esplicito (window 60s / max 10, con le special rules di Better Auth su `/sign-up/*` e `/sign-in/*`) sono ora configurati server-side in `packages/auth/src/index.ts` e coperti da test di integrazione, incluso un test che verifica davvero il 429 sulle special rules (`packages/auth/tests/auth.integration.test.ts`). Regola dedicata `/get-session: false` in `rateLimit.customRules` (rotta di lettura chiamata a ogni navigazione/tab). `advanced.ipAddress.trustedProxies` — **CHIUSO in Story 1.6 (2026-09-06)**: ora alimenta `env.TRUSTED_PROXIES` (`packages/env/src/server.ts`, opzionale, default `[]`); il compose di release dichiara la subnet `172.28.0.0/16` e la passa come `TRUSTED_PROXIES`. Restano aperti: **verifica email disattivata per scelta documentata** (vedi voce dedicata qui sotto, aggiornata in 1.6) e **assegnazione ruoli senza endpoint** (voce dedicata qui sotto).
 - **Verifica email (`requireEmailVerification`) disattivata per scelta documentata** — il campo `emailVerified` esiste sul modello `User` ma non è mai usato: Better Auth non richiede la verifica per autenticare. **CHIUSO in Story 1.6 (2026-09-06) per quanto concerne l'envelope**: `requireEmailVerification` è ora flag env `REQUIRE_EMAIL_VERIFICATION` (default `false`, mai hard-coded — la decisione di attivarla al rilascio resta di Alessandro) con callback `sendVerificationEmail` stub su stdout (`packages/auth/src/index.ts`), verificata su compose reale (flag ON → link su stdout + sign-in 403 `EMAIL_NOT_VERIFIED`; flag OFF → sign-in OK). Attivare un provider email reale resta **Deferred** alla prima topologia che lo richiede.
 - **Assegnazione ruoli senza endpoint** — la matrice RBAC definisce cosa può fare ciascun ruolo, non chi assegna i ruoli. Il sign-up produce solo CLIENTE (`input: false` su `additionalFields.role` + default colonna, testato): nessun utente nasce ADMIN/EDITOR. La promozione a EDITOR/ADMIN oggi è possibile solo via SQL/seed manuale in dev; gli endpoint di gestione utenti (che il plugin `admin` di Better Auth offrirebbe) sono volutamente fuori scope (Dev Notes Story 1.4). Serve un meccanismo esplicito (plugin admin, seeded del primo ADMIN, o endpoint amministrativo) alla **prima story che ne ha bisogno** — probabile **Story 1.5** (Principal nel context oRPC) o Epic 2+.
-- **Accessibilità dei form di autenticazione** — gli `<Input>` in `apps/web/src/components/sign-in-form.tsx` e `sign-up-form.tsx` non hanno `aria-invalid` né `aria-describedby` verso il messaggio d'errore, e gli errori non sono in una live region. Contrasta con `_bmad-output/specs/spec-page-builder/a11y-baseline.md`. Da riprendere in **Epic 2** (libreria primitive accessibili), che riscrive questi componenti.
+- **Accessibilità dei form di autenticazione** — gli `<Input>` in `apps/web/src/components/sign-in-form.tsx` e `sign-up-form.tsx` non hanno `aria-invalid` né `aria-describedby` verso il messaggio d'errore, e gli errori non sono in una live region. Contrasta con `_bmad-output/initiative-page-builder/spec-page-builder/a11y-baseline.md`. Da riprendere in **Epic 2** (libreria primitive accessibili), che riscrive questi componenti.
 - **Stati di caricamento/errore non gestiti nelle pagine demo** — `apps/web/src/app/dashboard/dashboard.tsx:7-11` non distingue `isLoading` da `isError` (mostra "API: " vuoto); `apps/web/src/app/page.tsx:31-35` colora il pallino di rosso già durante il caricamento. È codice demo del template, sostituito in **Epic 4** (shell editor).
 - **Percorso SSR di oRPC è codice morto** — `apps/web/src/utils/orpc.ts:32-77`: `getQueryClient()` per-richiesta, il forwarding di `cookie`/`authorization` e la risoluzione URL server-side esistono solo per lo scenario prefetch/SSR, ma nel diff non c'è un solo `HydrationBoundary`, `prefetchQuery` o chiamata `client.*` da un Server Component. Manca anche un `MutationCache.onError` e un `AbortSignal.timeout` sul fetch loopback. I due commit di fix (`bd377bc`, `e969052`) hanno hardenizzato un percorso che nessuno esegue e nessun test copre. Si attiva in **Epic 4/6** (autosave, render pubblico SSG/ISR): rivalidare allora.
 - **`output: "standalone"` assente in `apps/web/next.config.ts`** — Spine#Envelope operativo prevede deploy container Docker self-host con Next in modalità standalone. Non richiesto dagli AC della Story 1.1. **CHIUSO in Story 1.6 (2026-09-06)**: `output: "standalone"` attivo, Dockerfile multi-stage (deps/builder/runner/migrator) alla root, compose di release `docker-compose.release.yml`, E2E verificato localmente.
@@ -116,10 +116,10 @@ Lavoro identificato durante le review e rimandato consapevolmente. Ogni voce ind
 
 ## Deferred from: build review of 2-5-estrazione-adeguata-ricette-per-parti-e-token (2026-09-12, loop 1)
 
-- source_spec: `_bmad-output/implementation-artifacts/2-5-estrazione-adeguata-ricette-per-parti-e-token.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-estrazione-adeguata-ricette-per-parti-e-token-validate-contr-plan.md`
   summary: Il CLI `extract:component` non segnala una parte del contratto con zero binding token in ogni cella né chiavi d'asse extra in `variantProps` — coperte solo dal gate separato `verify:library`.
   evidence: BH#8+ECH#7+VG-other-2 — `collectPartBindings` valida solo layer con tokens (`extract-component.ts`), `cellKeyOf` itera solo gli assi del contratto; nella library verificata (regole 6/7 di `verifyLibrary`) il caso non è raggiungibile e il workflow documenta `verify:library` come prerequisito, quindi duplicare la verifica nel CLI è ridondanza. Da rivalutare se l'estrazione viene mai eseguita senza verify a monte.
-- source_spec: `_bmad-output/implementation-artifacts/2-5-estrazione-adeguata-ricette-per-parti-e-token.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-estrazione-adeguata-ricette-per-parti-e-token-validate-contr-plan.md`
   summary: I fixture JSON embeddano internals Penpot volatili in `style` (id shadow, `style: "drop-shadow"`, `hidden: false`) — la re-estrazione churnerà su campi che la pipeline non consuma.
   evidence: BH#13 — visibile in `packages/scripts/src/recipes/input.fixture.json` (shadow con `id` UUID). Non rompe nulla oggi (`validate` non legge `style`), ma mina la riproducibilità diff-zero degli artefatti: la normalizzazione di `style` è una scelta di design da fissare nella Story 2.6 (emitter), che definisce cosa consume.
 
@@ -176,20 +176,20 @@ Sessione di Alessandro con agente forge (`_bmad-output/forge/pipeline-troppo-vin
 
 ## Deferred from: build review of 2-7a-niente-verdi-finti (2026-09-13, loop 1)
 
-- source_spec: `_bmad-output/implementation-artifacts/2-7a-niente-verdi-finti.md`
+- source_spec: `_bmad-output/initiative-page-builder/archive-v6/2-7a-niente-verdi-finti.md`
   summary: Le coppie di contrasto del focus ring non si ricavano dai design — `color.ring` su `color.card` (AccordionItem) resta dichiarata a mano in `CATALOG_PAIRS` (`library-spec.ts`), e un ring nuovo di un binding su un altro sfondo non verrebbe misurato.
   evidence: ECH#11 — il ring viene dalle classi strutturali `focus-visible:ring-ring` del binding shadcn, che `deriveDesignContrastPairs` non legge; limite preesistente (i binding non sono mai stati una sorgente di coppie). Decisione di Alessandro: esprimere il focus ring nel design (cella `focus` con `strokeColor`) oppure derivare le coppie anche dalle classi `ring-*` dei binding.
 
 ## Deferred from: bmad-build split della Story 2.7 parte B (2026-09-13)
 
 <!-- Corregge la voce "split della Story 2.7" (2026-09-13) qui sopra: la parte B è `addCell` + regola A (bump plugin data), non `adopt:variant`, che è diventata la parte C. -->
-- source_spec: `_bmad-output/implementation-artifacts/2-7b-comandi-di-evoluzione.md`
+- source_spec: `_bmad-output/initiative-page-builder/archive-v6/2-7b-comandi-di-evoluzione.md`
   summary: Comando `adopt:variant -- <Comp>` — rileva i valori d'asse presenti in Penpot e assenti dal contratto, stampa il diff e con `--yes` aggiorna contratto (AST TS), `SCHEMA_VERSION` + voce fingerprint (payload condiviso in `packages/contracts/src/`), binding `option` e cella di design ricavata da Penpot (`partBindings`); errore nominativo per assi `state`/`behavior`, proprietà che varia con due assi (funzione estratta da `computePartClasses`) e celle con literal. Per la regola A (decisa 2026-09-13) un'adozione è un cambio compatibile: alza solo `SCHEMA_VERSION`, non `contract.version`.
   evidence: split deciso da Alessandro al gate di dimensione della parte B (spec a ~2900 token): `addCell` + regola di versionamento vanno prima, perché l'adozione dal contratto verso Penpot passa da `addCell` e la regola decide se l'adozione tocca il plugin data.
 
 ## Deferred from: build review of 2-7b-comandi-di-evoluzione (2026-09-13, loop 2)
 
-- source_spec: `_bmad-output/implementation-artifacts/2-7b-comandi-di-evoluzione.md`
+- source_spec: `_bmad-output/initiative-page-builder/archive-v6/2-7b-comandi-di-evoluzione.md`
   summary: Nessun comando rimuove le celle di valori d'asse tolti o rinominati (cambio incompatibile): dopo `bump:contract` le celle vecchie restano nel container e `verify:library` (regole 4/5) resta rosso finché il designer non le cancella a mano in Penpot.
   evidence: BH#5 del loop 2 — la modalità additiva per costruzione non cancella mai; la regola A è documentata in `penpot-pipeline.md` con il passo manuale. Da riprendere se i cambi incompatibili diventano frequenti (es. un `remove:cells` con `--dry-run`/`--yes` e guardia sul contratto corrente), probabilmente insieme alla skill `pds-component` (Story 2.9, voce [PS]).
 
@@ -203,40 +203,40 @@ Sessione di Alessandro con agente forge (`_bmad-output/forge/pipeline-troppo-vin
 - source_spec: none
   summary: Story 2.8 parte C — estensione dell'emitter una volta per tutte: una variante senza una proprietà che il default ha (outline senza fill) produce classi per variante invece di stare nella base cva.
   evidence: split dalla Story 2.8 il 2026-09-13 (bmad-build, controllo multi-goal): consegna mergiabile da sola, si appoggia sul registro della parte A.
-- source_spec: `_bmad-output/implementation-artifacts/2-8a-registro-delle-proprieta.md`
+- source_spec: `_bmad-output/initiative-page-builder/archive-v6/2-8a-registro-delle-proprieta.md`
   summary: (high, non verificato) La regola icona vale solo per `strokeWidth` e solo nell'emitter. Se il chevron di AccordionItem (layer path) ha in Penpot `strokeAlignment` `center` (il default tipico dei path), alla prossima rilettura live `verify:library` e l'estrazione bloccano AccordionItem per geometria d'icona.
   evidence: `layerTreeProblems` non guarda il tipo di layer e `penpot-writer.ts` non imposta `strokeAlignment`. Si chiude con una rilettura live del chevron (con `PENPOT_MCP_TOKEN` caricato, oggi rifiutata) per vedere il suo `strokeAlignment`. Se è `center`, serve una decisione umana: estendere la regola icona anche a `strokeStyle`/`strokeAlignment` (riga del registro + lettura in `layerTreeProblems`).
-- source_spec: `_bmad-output/implementation-artifacts/2-8a-registro-delle-proprieta.md`
+- source_spec: `_bmad-output/initiative-page-builder/archive-v6/2-8a-registro-delle-proprieta.md`
   summary: (medium, non verificato) Fedeltà inversa: una classe strutturale della base (es. `border`, `disabled:opacity-50`) finisce nel codice anche se il design in Penpot non ha quella proprietà (nessuno stroke, nessuna opacità nella cella).
   evidence: comportamento delle classi strutturali precedente alla 2.8, emerso nella review (BH). Si verifica confrontando, per ogni classe strutturale del binding, le proprietà presenti nelle celle della ricetta (es. Badge: `border` in base; lo stroke c'è nel design?).
 
 ## Deferred from: verifica live Story 2.9 [PS] su Alert (2026-09-14)
 
-- source_spec: `_bmad-output/implementation-artifacts/2-9-skill-pds-component.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-skill-pds-component-creare-e-sincronizzare-i-componenti-plan.md`
   summary: la regola 10 di `verify:library` (contrasto) misura le coppie ricavate dal design committato (`designs/*.design.json`) e non i valori live di Penpot, e nessun comando aggiorna il design committato dopo un drift — un contrasto peggiorato in Penpot passa con tutti i gate verdi.
   evidence: nel giro 2 di [PS] su Alert il token `color.muted-foreground` è finito sulla root della cella `status=warning`: heading 1.93:1 e description 1.82:1 su `#3e4942`, mentre `verify:library` e `gates:render` erano verdi (verde finto). Dopo il riallineamento `alert.design.json` resta con `description` `warning` = `color.card-foreground` mentre Penpot e la fixture hanno `color.muted-foreground`. Rimandato da Alessandro (opzione a) come **prerequisito della Story 2.10**, che moltiplica i componenti.
   routed: Story 2.10 (correct-course 2026-09-15) — regola 10 per componente sui token live + sync:design; alert.design.json riallineato con il comando.
 
 ## Deferred from: code review Story 2.9 (2026-09-14)
 
-- source_spec: `_bmad-output/implementation-artifacts/2-9-skill-pds-component.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-skill-pds-component-creare-e-sincronizzare-i-componenti-plan.md`
   summary: il giudizio ammette un solo `role` fisso per componente, quindi un componente con stati informativi e bloccanti (Alert: `info`/`success` vs `warning`/`error`) non può avere `role="status"` sugli uni e `role="alert"` sugli altri.
   evidence: Alert emette `role="alert"` (live region assertiva) anche per `info`/`success`, che interrompe lo screen reader a ogni render; limite di espressività pre-esistente del giudizio (`a11y.role` stringa unica), non introdotto dalla 2.9. Da decidere prima che la 2.10 generi Toast/Alert definitivi.
   routed: Story 2.10 (correct-course 2026-09-15) — a11y.role come mappa per asse option; Alert status/alert per variante.
 
 ## Deferred from: bmad-build riordino di packages/scripts (2026-09-14)
 
-- source_spec: `_bmad-output/implementation-artifacts/spec-riordino-packages-scripts.md`
+- source_spec: `_bmad-output/initiative-page-builder/archive-v6/spec-riordino-packages-scripts.md`
   summary: Regole della library duplicate fra estrazione (`component-reader.ts`, `extract-component.ts`) e `verify-library.ts` (regole 2, 3, 6, 7: nome del container, versione del plugin data, parti con binding, valori senza token) portate in un modulo condiviso, così la futura elasticità dell'estrazione si applica in un posto solo.
   evidence: split dal riordino (controllo multi-goal, scelta di Alessandro "A+C ora, B dopo"): cambia la logica e non solo la posizione dei file, quindi rischia di alterare messaggi e ordine dei controlli dentro un refactor che deve lasciarli identici. Prerequisito del correct-course sull'elasticità dell'estrazione, prima della 2.10.
   routed: in corso in un'altra sessione (2026-09-15); è la Given della Story 2.10, che resta backlog finché non è done.
-- source_spec: `_bmad-output/implementation-artifacts/spec-riordino-packages-scripts.md`
+- source_spec: `_bmad-output/initiative-page-builder/archive-v6/spec-riordino-packages-scripts.md`
   summary: Aggiornare l'albero di `packages/scripts` in `ARCHITECTURE-SPINE.md:241-245` (oggi `penpot/ recipes/ render/ gates/`) alla struttura del riordino (`src/{shared,theme,extract,library,emitter,cli}` + `data/`), in una PR `chore/` separata.
   evidence: decisione 2a di Alessandro (2026-09-14): i planning-artifacts non si toccano dal branch del riordino; senza questa voce l'obbligo resterebbe solo nella sezione congelata della spec (review, blind-hunter).
-- source_spec: `_bmad-output/implementation-artifacts/spec-riordino-packages-scripts.md`
+- source_spec: `_bmad-output/initiative-page-builder/archive-v6/spec-riordino-packages-scripts.md`
   summary: Nessun test esegue `generate:theme` sui path di default (`PATHS.catalogPath` → `PATHS.tokensSrcDir`): lo smoke lo lancia solo con `--bogus`, che fallisce nel parsing prima di toccare i file.
   evidence: review verification-gap: un collegamento sbagliato dei path (chiave diversa ma esistente) passerebbe `paths.test`, il drift test di `theme-generator.test.ts` (chiama `generateTheme` direttamente) e lo smoke. Chiuderlo richiede comportamento nuovo: una modalità `--check` che confronta senza scrivere, o un seam per la cartella di output, perché un run reale riscrive file committati in `packages/tokens/src` mentre altri test li leggono.
-- source_spec: `_bmad-output/implementation-artifacts/spec-riordino-packages-scripts.md`
+- source_spec: `_bmad-output/initiative-page-builder/archive-v6/spec-riordino-packages-scripts.md`
   summary: `generate:theme` non chiama `process.exit` a fine run, a differenza degli altri entrypoint di `src/cli/`: con `--live` un transport MCP aperto può tenere vivo il processo.
   evidence: pre-esistente (nel baseline `src/generate-theme.ts` usava già solo `process.exitCode = 1`); gli altri CLI chiudono esplicitamente per i socket MCP/SSE (commento in `cli/extract-component.ts`). Da verificare con un run `--live` reale: se il processo resta appeso, allineare la chiusura agli altri entrypoint.
 
@@ -251,7 +251,7 @@ Pianificato da `sprint-change-proposal-2026-09-15.md`, prima della libreria:
 
 ## Register: correct-course "pipeline v2" (2026-09-17)
 
-Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor-packages-scripts/`): Epic 2 a 18 story, Storybook anticipato a 2.11, v2 nelle Story 2.12–2.17, libreria → 2.18. La v1 resta in servizio e verde finché la ProductCard non passa (2.15); poi si cancella (2.16), non si migra.
+Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `_bmad-output/initiative-page-builder/archive-v6/spec-refactor-packages-scripts`): Epic 2 a 18 story, Storybook anticipato a 2.11, v2 nelle Story 2.12–2.17, libreria → 2.18. La v1 resta in servizio e verde finché la ProductCard non passa (2.15); poi si cancella (2.16), non si migra.
 
 - **Voci senza oggetto alla 2.16 — CHIUSE in Story 2.16 (2026-10-03).** Le voci seguenti riguardavano artefatti cancellati con la v1 (ricette, judgment, binding, design committati, basi shadcn, comandi v1 `adopt:variant`/`bump:contract`/`sync:design`/`verify:library`, `gates:render`, `verify:library`): *nessuna verifica incrociata ricetta↔fixture* (code review 2.2); *parte con zero binding e chiavi d'asse extra in `extract:component`* e *`id` UUID nella fixture* (build review 2.5); *problemi 1, 3, 6, 8 e piano `adopt:variant`* del register Alert (2026-09-12); *coppie di contrasto del focus ring* (build review 2.7a); *`adopt:variant`* e *celle di valori rimossi dopo `bump:contract`* (2.7b/2.7c); *regola icona solo su `strokeWidth`* e *classi strutturali* (code review 2.7 gruppo 3); *regola 10 sul design committato* (verifica live 2.9). Chiuse come "senza oggetto": gli artefatti non esistono più (`data/bindings|designs|bases|recipes` cancellati, `src/cli|emitter|extract` cancellati, `src/v2` appiattito in `src`).
 - **Voci che restano valide in v2:** `applyToken` senza `fontFamilies` e pattern hex-match (limiti di Penpot, Stadio 0); boundary-check fragile (retro Epic 1); albero di `packages/scripts` nello spine — **riallineato alla 2.16** (`src/v2` appiattito in `src/`, `src/cli|emitter|extract` v1 cancellati, 6 comandi su `src/cli.ts`); `generate:theme` senza test sui path di default e senza `process.exit` (→ comando `theme` v2, CAP-8 e Story 2.12 — **fatto nella 2.12**, **chiuso nella 2.16**: corpo in `src/theme/theme-command.ts`, comando `theme` sul guscio `src/cli.ts` con smoke in `src/cli.test.ts`; l'entry v1 `generate:theme` cancellata con gli altri 12 script v1). *Nota 2.18: dalla Story 2.18 `theme` gira da `src/theme/main.ts` (test in `src/theme/main.test.ts`); il guscio `src/cli.ts` e `src/cli.test.ts` non esistono più.*
@@ -268,31 +268,31 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor
 
 ## Deferred from: code review of 2-14-extract-e-render-una-istantanea-quattro-file (2026-09-27)
 
-- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/spec-1-1-prima-lettura-live-con-disciplina.md`
+- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/initiative-page-builder/tickets/epic-fondamenta-e-accesso/tickets/story-prima-lettura-live-con-disciplina-plan.md`
   summary: Sciogliere la collisione di tracking `1-1…1-4` tra Epic 1 page-builder (done) e nuovo slice penpot-estrazione-costruzione nella stessa mappa `epic-1` di sprint-status.
   evidence: review 1.1 (Blind) — due `1-1` diversi coesistono (`1-1-scaffolding…` done + `1-1-prima-lettura…` in-progress); la chiave piena disambigua oggi, ma automazione e story_key resolution restano ambigue; richiede decisione su chiavi con prefisso slice.
-- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/spec-1-1-prima-lettura-live-con-disciplina.md`
+- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/initiative-page-builder/tickets/epic-fondamenta-e-accesso/tickets/story-prima-lettura-live-con-disciplina-plan.md`
   summary: Canonizzare pattern/pathscope del `git grep` metadati-manuali-per-componente dell'AC Story 1.1 (Epic penpot-estrazione-costruzione).
   evidence: review 1.1 (Blind) — AC dice solo "vuoto" senza pattern né scope; questa story usa `git grep -n "profiles/" -- packages/scripts` + assenza `packages/scripts/profiles/`; da fissare come regola riusabile prima della Epic 2.
-- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/spec-1-4-tracciante-verticale-su-un-token.md`
+- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/initiative-page-builder/tickets/epic-fondamenta-e-accesso/tickets/story-tracciante-verticale-su-un-token-plan.md`
   summary: Copertura automatica del mapping live→codice per il tracciante (oggi solo verifica manuale MCP+grep).
   evidence: review 1.4 — happy path coperto da comandi manuali eseguiti e verdi (tokenOverview + grep), come in 1-1/1-2/1-3; un test eseguibile in CI richiede Penpot raggiungibile in pipeline, da disegnare prima della Epic 2.
-- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/spec-1-4-tracciante-verticale-su-un-token.md`
+- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/initiative-page-builder/tickets/epic-fondamenta-e-accesso/tickets/story-tracciante-verticale-su-un-token-plan.md`
   summary: Decidere adozione o ritiro del set/token tracer live prima del gate 2.2.
   evidence: review 1.4 (Adversarial) — set `tracer` + token `tracer.primary` restano nella library live; il gate 2.2 (contratto esistente, token nel vocabolario) li incontrerà come estranei alla specie in modellazione.
-- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/implementation-artifacts/spec-1-4-tracciante-verticale-su-un-token.md`
+- source_spec: `/home/alessandro/Scrivania/projects/page-builder/_bmad-output/initiative-page-builder/tickets/epic-fondamenta-e-accesso/tickets/story-tracciante-verticale-su-un-token-plan.md`
   summary: Primo atomo Epic 2 disegnato da umano per completare la prova del loop su design indipendente.
   evidence: review 1.4 (Adversarial) — il tracciante 1.4 è autoreferenziale (AI ha disegnato via MCP e poi allineato su rinegoziazione); H1 prevedeva disegno umano.
 
 ## Deferred from: code review of epic-1-fondamenta-vive (1-1, 1-3, 1-4) (2026-10-03)
 
-- source_spec: `_bmad-output/implementation-artifacts/epic-1-context.md`
+- source_spec: `_bmad-output/initiative-page-builder/archive-v6/epic-1-context.md`
   summary: Provenienza rigenerabile di `epic-1-context.md` (commit sorgente, comando/data di compilazione, enum AD-1…AD-9, regola naming-convention).
   evidence: review epic-1 (Blind) — l'header dice solo "Compiled from planning artifacts" + slice sorgente, senza commit, data, comando né enum AD; da aggiungere alla prossima rigenerazione con compile-epic-context.
-- source_spec: `_bmad-output/implementation-artifacts/spec-1-4-tracciante-verticale-su-un-token.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-fondamenta-e-accesso/tickets/story-tracciante-verticale-su-un-token-plan.md`
   summary: Verificare se `runTheme --live` ha dry-run/diff/conferma contro il wipe da live a 1 token (maybe-false, sarebbe medium).
   evidence: review epic-1 (Blind) — il divieto di rigenerazione è solo prosa in spec; si dirime leggendo `packages/scripts/src/theme/theme-command.ts`; se assente, documentare l'invocazione sicura o aggiungere `--dry-run` prima della Epic 2.
-- source_spec: `_bmad-output/implementation-artifacts/spec-1-3-canarino-del-primo-gate-h1.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-fondamenta-e-accesso/tickets/story-canarino-del-primo-gate-h1-plan.md`
   summary: Checklist del gate a 4 controlli (contratto esistente, ruoli ammessi, token nel vocabolario, nomi in convenzione) con esito go/no-go per voce negli H1 di Epic 2.
   evidence: review epic-1 (Acceptance) — H1 1.3 verbatim a 3 opzioni senza checklist registrata; la sostanza era coperta in 1.4 per piano a live vuoto, ma dal primo token di specie serve il gate esplicito.
 - D1 collisione chiavi `1-1…1-4`: nessuna nuova voce — già tracciata sopra (review 1.1, riga collisione tracking). Reason odierna: richiede schema condiviso prima di rinominare.
@@ -303,94 +303,94 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `specs/spec-refactor
   summary: Pannello plugin Penpot nostro, sola lettura (`content:read`), autonomo: mostra al designer le chiavi `part`/`when`/`slot` (shared plugin data `pagebuilder`) del layer selezionato e segnala layer senza chiave e chiavi doppie. L'unica strada di scrittura resta `pds-code` via MCP Penpot con conferma. Utile anche per altri casi.
   evidence: rischio residuo della forgia — i metadati in Penpot sono invisibili e una perdita si scopre solo alla generazione successiva. Per ora basta il controllo di stato di `pds-design` (`verify_component`). Attivazione: un designer lavora senza skill e una chiave si perde senza che nessuno se ne accorga prima della generazione. Collegarlo al server `pds` solo se il server diventa un servizio sempre acceso (oggi vive nella sessione e richiede il repo). Da verificare: Penpot tiene aperti due plugin insieme? Il Semantic Tagger (elhombretecla) non serve: tiene i tag solo in memoria.
 
-- source_spec: `_bmad-output/implementation-artifacts/spec-2-17-tema-penpot-nel-css-compilato.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-il-tema-penpot-nel-css-compilato-plan.md`
   summary: `theme-in-css.test.ts` compila con il `postcss.config.mjs` di `packages/ui`, non con quello di `apps/storybook`; puntare `root` su `apps/storybook` (o un controllo sul CSS del build statico in CI) quando cambia la configurazione CSS di Storybook.
   evidence: oggi i due config sono identici (solo `@tailwindcss/postcss`), quindi il test vale; se Storybook passa a `@tailwindcss/vite` o cambia config, il bug della 2.17 può tornare con i test verdi (review 2.17, verification-gap).
 
 ## Deferred from: build review of 2-18-rimozione-dei-componenti-di-prova-e-della-pipeline-v2 (2026-10-17)
 
-- source_spec: `_bmad-output/implementation-artifacts/spec-2-18-rimozione-dei-componenti-di-prova-e-della-pipeline-v2.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-rimozione-dei-componenti-di-prova-e-della-pipeline-v2-plan.md`
   summary: il comando di rigenerazione del tema è ancora citato come `generate:theme` (inesistente dalla 2.16) in `REGEN_COMMAND` di `packages/scripts/src/shared/theme-generator.ts`, negli header `@generated` di `tailwind-theme.css`/`tokens.generated.ts`, in `packages/tokens/README.md` e nella descrizione di `packages/tokens/package.json`.
   evidence: review 2.18 (Blind) — pre-esistente; cambiare `REGEN_COMMAND` rigenera il tema, fuori perimetro della 2.18. Da riallineare con `extract_theme` (Story 2.26).
 
 ## Deferred from: Story 2.19 — fixture sul catalogo Tailwind e confini (2026-10-18)
 
-- source_spec: `_bmad-output/implementation-artifacts/spec-2-19-fixture-sul-catalogo-tailwind-e-codice-nuovo-dentro-i-confini.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-fixture-sul-catalogo-tailwind-e-codice-nuovo-dentro-i-confini-plan.md`
   summary: I gate `check-boundaries.mjs` di `packages/ui`, `packages/domain`, `packages/api` e `packages/tokens` restano senza test propri (prova rosso/verde su package finti in tmpdir più il package reale verde, come `packages/contracts` e `packages/scripts`). L'azione della retro Epic 1 è chiusa solo per `scripts`.
   evidence: decisione di Alessandro (risposta A, 2026-10-17): la 2.19 copre solo `scripts`. Da riprendere alla prima modifica di uno di questi gate o in una story di consolidamento; il modello da seguire è `packages/scripts/tests/check-boundaries.test.ts` (funzione pura `checkBoundaries({ packageRoot })`, tipi `.d.mts`, CLI dietro la guardia di invocazione diretta).
-- source_spec: `_bmad-output/implementation-artifacts/spec-2-19-fixture-sul-catalogo-tailwind-e-codice-nuovo-dentro-i-confini.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-fixture-sul-catalogo-tailwind-e-codice-nuovo-dentro-i-confini-plan.md`
   summary: Bug 14 dello spike (45 test di `scripts` rossi per fixture sul catalogo vecchio e `v3/` fuori dai confini) e punto 13 del README dello spike: **chiusi con la Story 2.19** — catalogo Tailwind dei test in `packages/scripts/tests/fixtures/tailwind-catalog.json`, regole `core`/`penpot`/`server`/`v3` nel gate di `scripts`.
   evidence: registrazione della chiusura; nessuna azione residua.
 
-- source_spec: `_bmad-output/implementation-artifacts/spec-2-20-nucleo-puro-e-registro-delle-proprieta.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-nucleo-puro-e-registro-delle-proprieta-plan.md`
   summary: **chiusa con la Story 2.24** — il server `pds` controlla ogni `Change` prima di scrivere (`packages/scripts/src/server/write-changes.ts`): path assoluto, con `..`/`.`/segmenti vuoti, fuori da `packages/ui/src/domains/<name>/` o che esce attraverso un symlink è un errore e non si scrive nessun file; `crea` su un file esistente è un errore; `aggiorna`/`elimina` toccano solo un file con marker. Test rosso/verde in `tests/server/write-changes.test.ts` e `tests/server/server.test.ts`. Voce originale: `Change.path` accetta path assoluti e segmenti `..`; il server MCP `pds` (Story 2.24) deve limitare i path alla cartella del componente prima di scrivere o eliminare.
   evidence: lo schema del nucleo controlla solo `min(1)`; review 2.20 (Edge, Blind), danno reale solo quando la 2.24 scrive su disco.
-- source_spec: `_bmad-output/implementation-artifacts/spec-2-20-nucleo-puro-e-registro-delle-proprieta.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-nucleo-puro-e-registro-delle-proprieta-plan.md`
   summary: **chiusa con la Story 2.23 per i valori di default** — `readComponent` scrive in `style` le proprietà legabili a un token solo se non di default (fill/tratto presenti, raggio, padding e gap > 0, opacità ≠ 1, ombre non vuote, `letterSpacing` ≠ 0); verificato dal vivo sul file "tailwind" (l'opacità di default arriva come null). Il default Penpot di `alignItems`: **chiuso con la Story 2.25** — primo collaudo verde il 2026-10-29 sull'istanza nuova 2.18.3, con `packages/scripts/collaudo/campione.penpot` importato (10/10): è `start` (non `stretch`), e dà `items-start`. Resta aperto `min-w-0`/`min-h-0` con `flex-1`. Prima: resta aperto, per il collaudo 2.25: il default Penpot di `alignItems` (il file "tailwind" ha solo valori espliciti, `start`/`center`) e `min-w-0`/`min-h-0` con `flex-1`. Voce originale: verificare nell'adattatore (2.23) e nel collaudo (2.25) che i valori di default (padding 0, opacità 1, spessore 0) non arrivino come stile grezzo e che il default Penpot di `alignItems` sia davvero `stretch`; valutare `min-w-0`/`min-h-0` con `flex-1`.
   evidence: non verificato (maybe-false, medium). Se l'adattatore emette i default, ogni layer dà avvisi "senza token"; se il default Penpot è `start`, un figlio hug viene stirato dal CSS.
-- source_spec: `_bmad-output/implementation-artifacts/spec-2-20-nucleo-puro-e-registro-delle-proprieta.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-nucleo-puro-e-registro-delle-proprieta-plan.md`
   summary: il registro non ha `lineHeight`, `textAlign`, `textTransform`, `textDecoration`, `fontStyle` né scorciatoie (`p-*`, `px-*`, `py-*`); vanno aggiunti quando un componente reale li usa o il collaudo 2.25 li legge.
   evidence: preesistente (il registro v1/v2 non li aveva); oggi danno un avviso e nessuna classe, review 2.20 (Blind).
-- source_spec: `_bmad-output/implementation-artifacts/spec-2-21-geometria-e-larghezza-nel-registro.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-geometria-e-larghezza-nel-registro-plan.md`
   summary: **chiusa con la Story 2.22** — `scaleFromThemeCss(css)` in `src/core/geometry.ts` (test in `tests/core/geometry.test.ts`) costruisce la `Scale` dalle `--spacing-<sfx>: <n>px` del tema; il livello 4 la usa al posto della regex `scaleOf`. Voce originale: il nucleo non ha una funzione pura che costruisce la `Scale` (token `spacing` → `{suffix, px}`) dal catalogo; va scritta, con il suo test, quando il server (2.24) o il generatore (2.22) chiamano `layerClasses`/`rootSizeClasses`, e il livello 4 deve usarla al posto della regex `scaleOf`.
   evidence: review 2.21 (Blind). Oggi l'unico costruttore è una regex nel test di livello 4 che accetta solo px e suffissi `[\w-]+`: un consumer che ne scrive un'altra rischia una scala diversa da quella collaudata.
-- source_spec: `_bmad-output/implementation-artifacts/spec-2-21-geometria-e-larghezza-nel-registro.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-geometria-e-larghezza-nel-registro-plan.md`
   summary: **chiusa con la Story 2.23** — Penpot emette davvero valori sub-pixel (288.0000114, -0.0000076): `readComponent` arrotonda `width`, `height`, `x`, `y` (e raggi, padding, gap, spessori) a 2 decimali, controllato nel test dal vivo. Voce originale: verificare nell'adattatore (2.23) e nel collaudo (2.25) se Penpot emette misure e posizioni sub-pixel (es. 15.9999999); se sì, arrotondarle nell'adattatore o usare una tolleranza nei confronti del nucleo (scala, bordo toccato, centramento).
   evidence: non verificato (maybe-false, medium). Se succede: classi arbitrarie e avvisi fuori scala spuri, "non esattamente" sul centramento, ritaglio per raggio mancato.
-- source_spec: `_bmad-output/implementation-artifacts/spec-2-21-geometria-e-larghezza-nel-registro.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-geometria-e-larghezza-nel-registro-plan.md`
   summary: gli offset degli assoluti (`left-*`, `right-*`, …) si calcolano dal riquadro esterno del genitore, ma in CSS partono dentro il bordo; con un genitore con `strokeWidth` interno risultano sfalsati dello spessore. Serve il valore del token di spessore nel nucleo, oppure un avviso.
   evidence: review 2.21 (Edge). Il risultato non è silenzioso (di solito diventa un valore fuori scala con avviso), ma la posizione è sbagliata di 1–2px.
-- source_spec: `_bmad-output/implementation-artifacts/spec-2-22-verifica-e-generazione-chiavi-di-parte-styles-scaffold-story.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-verifica-e-generazione-chiavi-di-parte-styles-scaffold-story-plan.md`
   summary: **chiusa con la Story 2.23** — `Instance.contract` (`nome@versione`, plugin data del container d'origine, letto da `readComponent`) entra nello schema; `verify.ts` (`nestedContractOf`) e `build-order.ts` lo passano a `contractOf`, che controlla anche la versione, e tornano a `kebabOf(component)` solo se manca. Test rosso/verde in `tests/core/verify.test.ts` e `tests/core/build-order.test.ts`. Voce originale: il contratto di un'istanza annidata si ricava da `kebabOf(instance.component)`, cioè dal nome del componente Penpot. Se il componente principale si chiama "Components / Badge" o "Pill" ma il contratto è `badge`, verifica e `buildOrder` danno un blocco spurio; la versione del contratto annidato non si controlla.
   evidence: non verificato (maybe-false, medium). Lo decide la 2.23: cosa porta `Instance.component` (nome del componente o `pluginData.contract` del componente d'origine). Se porta il nome, servono il `contract` del componente d'origine nell'`Instance` e un controllo della versione.
-- source_spec: `_bmad-output/implementation-artifacts/spec-2-22-verifica-e-generazione-chiavi-di-parte-styles-scaffold-story.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-verifica-e-generazione-chiavi-di-parte-styles-scaffold-story-plan.md`
   summary: una parte presente solo in alcune celle (es. un nastro "offerta") lo scaffold la rende sempre, e nessun finding né suggerimento dice in quali celle manca.
   evidence: review 2.22 (Blind, Edge). Servono le regole `when` (forgia punti aperti: `part`/`when` scritti da `pds-code`) per sapere da quale field o asse dipende la presenza; da fare con le sezioni (2.27) o con `pds-code` (2.29).
-- source_spec: `_bmad-output/implementation-artifacts/spec-2-22-verifica-e-generazione-chiavi-di-parte-styles-scaffold-story.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-verifica-e-generazione-chiavi-di-parte-styles-scaffold-story-plan.md`
   summary: **spostata alla 2.31** — nessun test automatico compila l'output del generatore (`styles.ts`, `stories.tsx`, scaffold) con `tsc` né lo passa allo smoke delle story; il controllo della 2.22 è stato fatto una volta a mano.
   evidence: review 2.22 (VG). I test controllano solo singole righe dell'output: una virgola mancante in `compoundVariants` o un path sbagliato di `cn` passerebbero. Spostata alla Story 2.31 (decisione di Alessandro, 2026-10-26, spec 2.24): la compilazione arriva quando `pnpm check-types` compila i file generati in `packages/ui`.
-- source_spec: `_bmad-output/implementation-artifacts/spec-2-22-verifica-e-generazione-chiavi-di-parte-styles-scaffold-story.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-verifica-e-generazione-chiavi-di-parte-styles-scaffold-story-plan.md`
   summary: **chiusa con la spec `spec-confini-core-crypto-e-gate-import.md`** (2026-10-28) — il gate legge gli import veri con il parser TypeScript, `FROM` e `["ap","ps"].join("")` tolti, `node:crypto` ammesso nel nucleo. Voce originale: il gate `core` di `check-boundaries.mjs` legge come import ogni testo con `from "<path>"`, anche dentro un template literal; `generate.ts` compone la parola (`FROM = ["fr","om"].join("")`) per scrivere le righe di import dei file generati.
   evidence: review 2.22 (Blind). È un limite del gate, preesistente (azione della retro Epic 1 sui gate fragili). Correzione: leggere le dichiarazioni di import vere, con un test rosso/verde sul testo dentro le stringhe, poi togliere `FROM`.
 
 ## Deferred from: Story 2.23 — adattatore Penpot readComponent (2026-10-24)
 
-- source_spec: `_bmad-output/implementation-artifacts/spec-2-23-adattatore-penpot-readcomponent.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-adattatore-penpot-readcomponent-plan.md`
   summary: il confronto degli override vede solo le proprietà che `styleOf` legge; un override su una proprietà non letta (altezza di riga, allineamento del testo, fill multipli oltre il primo) passa inosservato. Si allarga insieme al registro (voci `lineHeight`, `textAlign`, … della 2.20).
   evidence: limite dichiarato in `packages/scripts/src/penpot/README.md`; da riprendere nel collaudo 2.25.
-- source_spec: `_bmad-output/implementation-artifacts/spec-2-23-adattatore-penpot-readcomponent.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-adattatore-penpot-readcomponent-plan.md`
   summary: **chiusa con la Story 2.25** — primo collaudo verde il 2026-10-29 sull'istanza nuova 2.18.3, con `packages/scripts/collaudo/campione.penpot` importato (10/10): `READ_COMPONENT_SOURCE` gira su tutto il campione (nome per contratto e per layer, `readComponent("collaudo")` con i due container `collaudo@1`, nome ignoto, default soppressi su `FlexNonToccato` per padding, gap, opacità, raggi, tratto e ombra, istanza senza override). Restano aperti `variantError` (il campione non ha una cella rotta) e il rilevamento di un override vero (voce sotto, della 2.25). Resta aperto `variantError`: il campione non ha una cella rotta. Voce originale: il sorgente `READ_COMPONENT_SOURCE` (regole di stile, override, ricerca, nome ignoto/doppio, `variantError`) non gira mai in CI; il collaudo (2.25) deve eseguirlo su tutto il campione, compreso un caso con due container dello stesso contratto.
   evidence: review 2.23 (VG, Blind): i test di livello 1 usano solo `callTool` finti. L'AC della 2.23 vuole i test dell'adattatore solo nel collaudo; regressioni come togliere `> 0` sul padding o `PLACEMENT` dagli override passano la CI.
-- source_spec: `_bmad-output/implementation-artifacts/spec-2-23-adattatore-penpot-readcomponent.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-adattatore-penpot-readcomponent-plan.md`
   summary: un layer nascosto in Penpot diventa una parte come gli altri (oggi dà solo l'avviso "hidden non registrata"); serve decidere con le regole `when` se è una parte assente in quella cella.
   evidence: review 2.23 (Blind, Edge). Da fare con le sezioni (2.27) o con `pds-code` (2.29).
 
 ## Deferred from: Story 2.24 — server MCP pds (2026-10-26)
 
-- source_spec: `_bmad-output/implementation-artifacts/spec-2-24-server-mcp-pds-e-controllo-dei-file-generati-in-ci.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-server-mcp-pds-e-controllo-dei-file-generati-in-ci-plan.md`
   summary: **chiusa in parte con la Story 2.25** — primo collaudo verde il 2026-10-29 sull'istanza nuova 2.18.3, con `packages/scripts/collaudo/campione.penpot` importato (10/10): la formula `scaleFromThemeCss(generateTheme(catalog).css)` sul catalogo vero non è vuota e `Quadrato` (16 px) dà `w-4`. **Resta aperto** il cablaggio del server: il collaudo riscrive la formula e non passa da `coreContext` (`src/server/server.ts`), e i test del server non hanno fixture con misure in px. Si chiude con una fixture con un layer di 16 px in `tests/server/server.test.ts` e l'asserzione `w-4` sullo `styles.ts` generato. Voce originale: la scala che il server ricava dal catalogo (`coreContext`: `scaleFromThemeCss(generateTheme(catalog).css)`) non è esercitata dai test di livello 2, perché le fixture di Badge e ShopCard non hanno geometria in px.
   evidence: review 2.24 (VG). Un catalogo che desse una scala vuota o sbagliata lascerebbe verdi tutti i test del server; i componenti veri avrebbero classi arbitrarie o avvisi. Da chiudere nel collaudo 2.25 (campione con geometria) o con una fixture con misure.
 
 ## Deferred from: refactor del nucleo, analyzeComponent in fasi (2026-10-28)
 
-- source_spec: `_bmad-output/implementation-artifacts/spec-refactor-core-analyze-component.md`
+- source_spec: `_bmad-output/initiative-page-builder/archive-v6/spec-refactor-core-analyze-component.md`
   summary: nessun test fissa il comportamento che il refactor ha riscritto. Mancano il massimo delle copie di una lista quando le celle ne hanno numeri diversi (oggi tutte le fixture ne hanno 2) e un test di caratterizzazione sull'ordine dei `Finding` di tutte le fasi; il golden del refactor è rimasto in scratchpad.
   evidence: review del refactor (VG, Blind). Se `Math.max(...)` diventasse `count + 1`, la suite resterebbe verde, sia sul baseline sia sul branch. Il refactor non poteva aggiungere test (vincolo di Alessandro: `tests/` invariato). Correzione: un caso in `generate.test.ts` con 3 copie in una cella e 2 nelle altre, che si aspetta `length: 3`, più uno snapshot dei `Finding` su una fixture che esercita ogni fase.
 
 ## Deferred from: refactor confini core crypto e gate import (2026-10-28)
 
-- source_spec: `_bmad-output/implementation-artifacts/spec-confini-core-crypto-e-gate-import.md`
+- source_spec: `_bmad-output/initiative-page-builder/archive-v6/spec-confini-core-crypto-e-gate-import.md`
   summary: fuori da `src/core` un import con specifier assoluto o `file:` (`"/repo/apps/web/x"`) che esce dal package è verde: il controllo dei relativi guarda solo `./`/`../` e `FORBIDDEN_RAW` non vede `apps/` preceduto da `/`.
   evidence: review Edge Case Hunter; preesistente (il gate del baseline aveva lo stesso buco). Correzione: risolvere anche gli specifier assoluti e `file:` con `escapesPackageRoot`, con un caso rosso/verde.
 
 ## Deferred from: spec della Story 2.25 — collaudo degli aggiornamenti di Penpot (2026-10-29)
 
-- source_spec: `_bmad-output/implementation-artifacts/spec-2-25-collaudo-degli-aggiornamenti-di-penpot.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-collaudo-degli-aggiornamenti-di-penpot-plan.md`
   summary: **routed: Story 2.29** (primo AC, correct-course 2026-10-29). Misurare a mano, una volta, su una copia del campione nell'istanza di collaudo, quali operazioni di Penpot cancellano gli shared plugin data `pagebuilder` (raggruppa, booleana, copia tra file, ripristino di versione, stacco dell'istanza, duplica). L'esito (resta / si perde / si perde in parte) va nel README del collaudo e in `penpot-pipeline.md` § CI e collaudo, e la procedura del collaudo le ripete come checklist a ogni aggiornamento. Questa parte dell'AC della 2.25 è stata tolta dalla spec.
   evidence: La spec della 2.25 superava i 1600 token e Alessandro ha scelto di dividere (2026-10-29). Va fatta prima della 2.29 (`pds-code` scrive i plugin data) e dopo la 2.25, perché richiede il campione e l'istanza di collaudo.
-- source_spec: `_bmad-output/implementation-artifacts/spec-2-25-collaudo-degli-aggiornamenti-di-penpot.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-collaudo-degli-aggiornamenti-di-penpot-plan.md`
   summary: **chiusa con il correct-course del 2026-10-29** (`epics.md` allineato, misura assegnata alla 2.29). Voce originale: l'AC della Story 2.25 in `epics.md` chiede ancora di misurare quali operazioni di Penpot cancellano i plugin data, ma questa parte è stata spostata nella voce di deferred qui sopra, che non ha una story `routed:`. Va allineato `epics.md` (correct-course) e assegnata la misura a una story prima della 2.29.
   evidence: review della 2.25 (Blind Hunter). `epics.md` non è stato toccato quando la spec è stata divisa, il 2026-10-29. Senza allineamento, la 2.25 si chiude contro un AC che non soddisfa e la misura resta senza responsabile.
-- source_spec: `_bmad-output/implementation-artifacts/spec-2-25-collaudo-degli-aggiornamenti-di-penpot.md`
+- source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-collaudo-degli-aggiornamenti-di-penpot-plan.md`
   summary: il collaudo controlla solo un'istanza senza override (`overrides: []`), quindi un confronto degli override che restituisce sempre `[]` resta verde; serve nel campione un'istanza di `Etichetta` con un override noto (per esempio il testo di `Label` cambiato) e un'asserzione che `overrides` lo nomini.
   evidence: review della 2.25 (Verification Gap). Il campione ha una sola istanza, senza override; coprirlo vuol dire cambiare e riesportare `campione.penpot` con scritture MCP confermate. Da fare alla prima ricostruzione del campione, o nella 2.29 quando si torna sul campione.
