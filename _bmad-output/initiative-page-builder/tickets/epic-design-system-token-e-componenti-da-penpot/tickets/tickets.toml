@@ -293,8 +293,19 @@ risk = "low"
 id = 27
 type = "story"
 title = "Sezioni"
-description = "Una sezione con slot si legge e si genera come un componente: un field `structure` diventa un asse o un rendering condizionale, uno slot è riconosciuto dai figli istanza dei componenti ammessi, e una forma disegnata è una parte con la sua chiave."
+description = "Una sezione con slot si legge e si genera come un componente: un field `structure` diventa un asse, uno slot è riconosciuto dai figli istanza dei componenti ammessi, e una forma disegnata è una parte con la sua chiave."
 verify = "Verificando e generando la sezione dello spike (Carousel) ogni regola ha un test rosso/verde nel livello 1 della CI, e la story della sezione usa i figli di default del contratto."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 33
+type = "story"
+title = "Rendering condizionale e field structure come content"
+description = "Una parte con `when=<field>` si rende solo se il field c'è, e la risposta `content` alla domanda `asse` sposta il field `structure` tra i content: la domanda si chiude."
+verify = "Una parte con `when` genera `{field && (…)}` nello scaffold con un test rosso/verde, un `when` su un field sconosciuto è un blocco, e rispondere `content` a `asse` chiude la domanda e genera senza asse."
 covers = ["R2"]
 after = []
 hitl = false
