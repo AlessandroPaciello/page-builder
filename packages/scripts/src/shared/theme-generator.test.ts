@@ -1,17 +1,20 @@
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
 import { loadTailwindCatalog } from "../../tests/fixtures/catalog";
-import { PATHS } from "./paths";
 import { generateTheme, varName, varSuffix, type TokenCatalog } from "./theme-generator";
 
 /**
  * Dalla Story 2.5 la fixture `penpot-catalog.json` (la library della Story
- * 2.4) è l'unica: la legacy `mis` è stata cancellata e i test ripuntati.
+ * 2.4) è l'unica: la legacy `mis` è stata cancellata e i test ripuntati. Con
+ * la Story 2.26 la fixture committata `data/penpot-catalog.json` è eliminata:
+ * i test si agganciano alla copia in `tests/fixtures/penpot-catalog.json`, ora
+ * solo dati di test (il tema committato si rigenera da Penpot con
+ * `extract_theme`; le modifiche a mano le blocca il livello 3).
  */
-const fixturePath = PATHS.catalogPath;
+const fixturePath = fileURLToPath(new URL("../../tests/fixtures/penpot-catalog.json", import.meta.url));
 
 function loadFixture(): TokenCatalog {
   return JSON.parse(readFileSync(fixturePath, "utf8")) as TokenCatalog;
@@ -41,12 +44,10 @@ describe("varSuffix / varName — derivazione dal tipo, non dal set", () => {
 });
 
 describe("generateTheme — mapping puro contro la fixture committata", () => {
-  it("produce marker @generated in entrambi i file con riferimento al comando di rigenerazione", () => {
+  it("produce il marker @generated di pds in entrambi i file, forma CSS e forma TS", () => {
     const { css, ts } = generateTheme(loadFixture());
-    expect(css).toContain("@generated");
-    expect(css).toContain("pnpm --filter @penpot-ds/scripts generate:theme");
-    expect(ts).toContain("@generated");
-    expect(ts).toContain("pnpm --filter @penpot-ds/scripts generate:theme");
+    expect(css).toMatch(/^\/\* @generated pds \d+ sha256:[0-9a-f]{64} /);
+    expect(ts).toMatch(/^\/\/ @generated pds \d+ sha256:[0-9a-f]{64} /);
   });
 
   it("raggruppa il CSS per set Penpot, in ordine di catalogo", () => {
@@ -304,14 +305,6 @@ describe("generateTheme — guardie fail-loud (review 2.1)", () => {
     } as unknown as TokenCatalog;
     expect(() => generateTheme(emptyShadow)).toThrow(/non ha layer/);
   });
-
-  it("drift guard: i file generati committati coincidono byte per byte con la rigenerazione dalla fixture", () => {
-    const { css, ts } = generateTheme(JSON.parse(readFileSync(fixturePath, "utf8")) as TokenCatalog);
-    const committedCss = readFileSync(resolve(PATHS.tokensSrcDir, "tailwind-theme.css"), "utf8");
-    const committedTs = readFileSync(resolve(PATHS.tokensSrcDir, "tokens.generated.ts"), "utf8");
-    expect(css).toBe(committedCss);
-    expect(ts).toBe(committedTs);
-  });
 });
 
 describe("generateTheme — nomi delle scale per tailwind-merge (Story 2.9)", () => {
@@ -338,8 +331,8 @@ describe("generateTheme — nomi delle scale per tailwind-merge (Story 2.9)", ()
 /**
  * Catalogo Tailwind (Story 2.19, bug 14): il seme dello spike scritto come
  * dati in `tests/fixtures/tailwind-catalog.json` (vedi `tests/fixtures/catalog.ts`).
- * La fixture committata `data/penpot-catalog.json` e il drift guard sopra
- * restano quelli fino alla 2.26.
+ * I test "mis" si agganciano a `tests/fixtures/penpot-catalog.json` (vedi in
+ * testa al file).
  */
 describe("generateTheme — catalogo Tailwind", () => {
   const SHADCN_ROLES: Record<string, string> = {

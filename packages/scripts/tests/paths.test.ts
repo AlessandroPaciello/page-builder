@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { join, sep } from "node:path";
+import { join } from "node:path";
 import { tmpdir } from "node:os";
 
 import { describe, expect, it } from "vitest";
@@ -30,11 +30,7 @@ describe("PATHS", () => {
   });
 
   it("caso rosso: un path inesistente è segnalato con la chiave e il path", () => {
-    const ghost = join(tmpdir(), "scripts-paths-test-inesistente", "penpot-catalog.json");
-    expect(missingPaths({ catalogPath: ghost, packageRoot: PATHS.packageRoot })).toEqual([`catalogPath → ${ghost}`]);
-  });
-
-  it("i dati committati stanno fuori da src/", () => {
-    expect(PATHS.catalogPath.startsWith(`${PATHS.dataDir}${sep}`), `PATHS.catalogPath → ${PATHS.catalogPath}`).toBe(true);
+    const ghost = join(tmpdir(), "scripts-paths-test-inesistente", "theme.css");
+    expect(missingPaths({ tokensSrcDir: ghost, packageRoot: PATHS.packageRoot })).toEqual([`tokensSrcDir → ${ghost}`]);
   });
 });

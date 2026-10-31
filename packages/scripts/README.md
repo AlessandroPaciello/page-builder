@@ -1,6 +1,6 @@
 # @penpot-ds/scripts
 
-Legge il catalogo token da Penpot (o dalla fixture committata) e genera i file di [`@penpot-ds/tokens`](../tokens/README.md). Ospita anche il nucleo puro della pipeline v3 (`src/core`, Story 2.20–2.22): gli schemi `Lettura`, `Finding`, `Change`, `Suggerimento`, il registro delle proprietà, le regole di geometria, la verifica e la generazione dei componenti; sopra il nucleo c'è il server MCP `pds` (`src/server`, Story 2.24).
+Legge il catalogo token da Penpot e genera i file di [`@penpot-ds/tokens`](../tokens/README.md) con lo strumento `extract_theme` del server `pds`. Ospita anche il nucleo puro della pipeline v3 (`src/core`, Story 2.20–2.22): gli schemi `Lettura`, `Finding`, `Change`, `Suggerimento`, il registro delle proprietà, le regole di geometria, la verifica e la generazione dei componenti; sopra il nucleo c'è il server MCP `pds` (`src/server`, Story 2.24).
 
 La pipeline v1 (Story 2.1–2.11) e la v2 (Story 2.12–2.16) sono state rimosse (Story 2.16 e 2.18): niente più comandi `library`/`propose`/`extract`/`render`/`gates`, contratti di estrazione né istantanee. La pipeline v3 cresce dalla Story 2.19: il nucleo c'è (2.20–2.22), l'adattatore Penpot `readComponent` pure (2.23, [`src/penpot/README.md`](src/penpot/README.md)) e il server MCP `pds` (2.24, [`src/server/README.md`](src/server/README.md)).
 
@@ -8,18 +8,16 @@ La pipeline v1 (Story 2.1–2.11) e la v2 (Story 2.12–2.16) sono state rimosse
 
 | Comando | Cosa fa |
 |---|---|
-| `pnpm --filter @penpot-ds/scripts theme` | Rigenera `tailwind-theme.css` + `tokens.generated.ts` **dalla fixture committata** (`data/penpot-catalog.json`), offline. |
-| `pnpm --filter @penpot-ds/scripts theme -- --live` | Si connette al server MCP Penpot (vedi [Connessione a Penpot](#connessione-a-penpot)), legge il catalogo reale, **aggiorna anche la fixture committata** (solo dopo che la generazione è riuscita), poi rigenera. Mai in CI né in build. |
 | `pnpm --filter @penpot-ds/scripts test` | Test unitari, offline e deterministici: nessuna rete (la lettura live nei test è un seam). Il test dal vivo di `readComponent` si salta senza `PDS_PENPOT_LIVE=1`, il collaudo senza `PDS_PENPOT_COLLAUDO=1`. |
 | `PDS_PENPOT_LIVE=1 pnpm --filter @penpot-ds/scripts exec vitest run tests/penpot/read-component.live.test.ts` | Legge Badge, ShopCard e Carousel dal Penpot locale (a mano, mai in CI). |
 | `PDS_PENPOT_COLLAUDO=1 pnpm --filter @penpot-ds/scripts exec vitest run collaudo/` | Collaudo di Penpot sul campione `collaudo/campione.penpot`, su un'istanza nuova (a mano, mai in CI; procedura in [`collaudo/README.md`](collaudo/README.md)). |
 | `pnpm --silent --filter @penpot-ds/scripts pds` | Avvia il server MCP `pds` su stdio. Non si lancia a mano: lo avvia Claude Code da `.mcp.json`. Dopo una modifica del nucleo o del server: `/mcp` → `pds` → reconnect. Non è una CLI: gli strumenti si chiamano solo via MCP. |
 
-Uscite di `theme` (entrypoint `src/theme/main.ts`): `0` tema rigenerato · `1` input (argomento ignoto, fixture illeggibile, catalogo che non genera) · `2` penpot (lettura live fallita).
+Il tema non si rigenera più con un comando: lo strumento `extract_theme` del server `pds` legge Penpot e scrive `theme.css`, `themes/<gruppo>-<nome>.css`, `fonts.css` e `tokens.generated.ts` in `packages/tokens/src/` (`@generated`). Il seme CSS va in Penpot con `tokens_from_css`. Il vecchio comando `theme` e la fixture committata sono stati rimossi (Story 2.26).
 
 ## Connessione a Penpot
 
-Solo `theme --live` e `readComponent` (Story 2.23, usato dal server `pds` e dal test dal vivo) parlano con Penpot; i test di livello 1 e `theme` offline non leggono mai queste variabili.
+Solo il server `pds` e `readComponent` (Story 2.23, usato dal server e dal test dal vivo) parlano con Penpot; i test di livello 1 non leggono mai queste variabili.
 
 | Variabile | Obbligatoria | Default / effetto |
 |---|---|---|
@@ -28,33 +26,33 @@ Solo `theme --live` e `readComponent` (Story 2.23, usato dal server `pds` e dal 
 
 Setup di Penpot, del token e di direnv: [README alla root](../../README.md#penpot-locale-e-server-mcp).
 
-Se manca il token, se è stato rigenerato o se il plugin non è connesso, `theme --live` fallisce con exit 2 e un errore che nomina `PENPOT_MCP_TOKEN`.
+Se manca il token, se è stato rigenerato o se il plugin non è connesso, gli strumenti che leggono Penpot (`extract_theme`, `describe_component`, …) falliscono con un errore che nomina `PENPOT_MCP_TOKEN`.
 
-## Dove vive la fixture del catalogo token
+## La fonte del tema
 
-`data/penpot-catalog.json` — serializzazione del catalogo token Penpot (`{ sets: [{ name, tokens: [{ name, type, value }] }] }`), solo i set `active`. Committata così la generazione gira offline e il diff della fixture mostra cosa è cambiato nel design.
+Penpot è l'unica fonte di verità: non esiste più una fixture committata del catalogo (`data/penpot-catalog.json` è stato eliminato con la Story 2.26). `extract_theme` legge Penpot dal vivo e rigenera il tema committato; nessuna lettura di Penpot viene salvata nel repo. I test non leggono Penpot: usano fixture scritte come dati in `tests/fixtures/`.
 
-È l'unica fixture da cui si genera il tema committato: la vecchia library `mis` è stata cancellata. Un test (`tests/no-legacy-consumers.test.ts`) impedisce che nomi `mis-*` ricompaiano in `packages/ui/src` e `apps/web/src` (`packages/tokens` è l'eccezione ammessa).
+### Fixture dei test
 
-### Catalogo Tailwind dei test
+`tests/fixtures/penpot-catalog.json` — la library "mis" della Story 2.4, ex `data/penpot-catalog.json`: ora solo dati per i test di `generateTheme`. Il tema committato viene da Penpot (`extract_theme`); le modifiche a mano le blocca il livello 3.
 
-`tests/fixtures/tailwind-catalog.json` (Story 2.19) — catalogo token scritto come dati, **non letto da Penpot**: i set `tailwind` (palette e scale di Tailwind v4) e `semantic` (ruoli shadcn come riferimenti alla palette) del seme dello spike, `_bmad-output/spikes/penpot-ai-kit-2026-10-10/tailwind-to-penpot/tokens.json` (ricavato da `theme.css`), convertiti nella forma `TokenCatalog`. Il set `brand/ocean` resta fuori: ridefinisce i ruoli di `semantic` e collide nel generatore fino alla Story 2.26. Serve solo ai test (`tests/fixtures/catalog.ts` lo carica); `data/penpot-catalog.json` e il tema generato non cambiano fino alla 2.26.
+`tests/fixtures/tailwind-catalog.json` (Story 2.19) — catalogo token scritto come dati, **non letto da Penpot**: i set `tailwind` (palette e scale di Tailwind v4) e `semantic` (ruoli shadcn come riferimenti alla palette) del seme dello spike, `_bmad-output/spikes/penpot-ai-kit-2026-10-10/tailwind-to-penpot/tokens.json` (ricavato da `theme.css`), convertiti nella forma `TokenCatalog`. Serve solo ai test (`tests/fixtures/catalog.ts` lo carica).
+
+`tests/fixtures/seed-theme.css` — il seme dello spike, per il giro di livello 4 `tokens_from_css` → `extract_theme`.
 
 ## File
 
-- `data/penpot-catalog.json` — il catalogo token committato.
-- `src/theme/` — `main.ts` (entrypoint: argomenti e codice d'uscita), `theme-command.ts` (lettura e scrittura atomica del tema).
-- `src/penpot/` — l'unica cartella che parla con Penpot: `mcp-client.ts` (utilità MCP), `penpot-reader.ts` (client MCP minimale che legge solo `penpot.library.local.tokens`; `src/theme` lo importa da qui fino alla 2.26) e `read-component.ts` (`readComponent(nome)` → `Lettura`, Story 2.23; cosa legge e da dove in [`src/penpot/README.md`](src/penpot/README.md)).
-- `src/shared/` — `paths.ts` (l'**unico** modulo di `src/` che calcola i path: `tests/paths.test.ts` fallisce nominando la chiave che punta a un file inesistente), `theme-generator.ts` (mapping puro `TokenCatalog → { css, ts }`; i nomi dei token li prende da `src/core/token-names.ts`), `naming.ts`.
-- `src/server/` — il server MCP `pds` (Story 2.24): `server.ts` (`createPdsServer({ penpot, root })`, i sei strumenti), `tools.ts` (nomi e schemi zod), `write-changes.ts` (scrittura confinata nella cartella del componente), `generated-files.ts` (`checkGeneratedFiles`, livello 3, e i componenti già generati), `main.ts` (avvio su stdio con l'adattatore vero, unico import di `src/penpot`). Dettagli in [`src/server/README.md`](src/server/README.md).
+- `src/penpot/` — l'unica cartella che parla con Penpot: `mcp-client.ts` (utilità MCP), `penpot-reader.ts` (client MCP minimale che legge `penpot.library.local.tokens`: tutti i set più i temi) e `read-component.ts` (`readComponent(nome)` → `Lettura`, Story 2.23; cosa legge e da dove in [`src/penpot/README.md`](src/penpot/README.md)).
+- `src/shared/` — `paths.ts` (l'**unico** modulo di `src/` che calcola i path: `tests/paths.test.ts` fallisce nominando la chiave che punta a un file inesistente), `theme-generator.ts` (mapping puro `TokenCatalog → { css, ts }`; i nomi dei token li prende da `src/core/token-names.ts`), `tokens-from-css.ts` (seme → set e temi, Story 2.26), `extract-theme.ts` (set e temi → file del tema, Story 2.26), `naming.ts`.
+- `src/server/` — il server MCP `pds` (Story 2.24): `server.ts` (`createPdsServer({ penpot, root })`, i sei strumenti), `tools.ts` (nomi e schemi zod), `write-changes.ts` (scrittura confinata nella cartella del componente), `write-theme.ts` (scrittura confinata in `packages/tokens/src/`, Story 2.26), `generated-files.ts` (`checkGeneratedFiles`, livello 3, e i componenti già generati), `main.ts` (avvio su stdio con l'adattatore vero, unico import di `src/penpot`). Dettagli in [`src/server/README.md`](src/server/README.md).
 - `src/core/` — il nucleo puro (Story 2.20): `schemas.ts` (zod `Lettura`, `Finding`, `Change`, `Suggerimento`, con un nome e senza versione), `registry.ts` (registro delle proprietà), `geometry.ts` (regole di geometria e `scaleFromThemeCss`, Story 2.21–2.22), `verify.ts`, `generate.ts`, `build-order.ts`, `hash.ts` (verifica, generazione, ordine e intestazione `@generated`, Story 2.22), `naming.ts` (nomi; `src/shared/naming.ts` li riesporta), `token-names.ts` (tipo, namespace e suffisso dei token), `index.ts`.
 - `tests/core/` — i test del nucleo: livello 1 (`schemas.test.ts`, `registry.test.ts`, `geometry.test.ts`, `verify.test.ts`, `generate.test.ts`, `build-order.test.ts`, `hash.test.ts`, dati scritti a mano) e livello 4 (`registry-tailwind.test.ts`). Stanno fuori da `src/core` perché importano `vitest`, che il confine `core` vieta.
 - `tests/server/` — livello 2 (`server.test.ts`, server in memoria con adattatore finto; `write-changes.test.ts`, limiti dei path) e livello 3 (`generated-files.test.ts`, sul repo vero e su una cartella temporanea).
 - `collaudo/` — collaudo degli aggiornamenti di Penpot (Story 2.25): `campione.penpot`, `collaudo.live.test.ts` (saltato senza `PDS_PENPOT_COLLAUDO=1`) e la procedura in [`collaudo/README.md`](collaudo/README.md).
 - `tests/penpot/` — `read-component.test.ts` (livello 1, `callTool` finto) e `read-component.live.test.ts` (dal vivo, saltato senza `PDS_PENPOT_LIVE=1`).
-- `tests/fixtures/` — il catalogo Tailwind dei test e il suo loader; `components.ts`, le `Lettura` scritte a mano di Badge e ShopCard⊃Badge (ShopCard è un contratto di prova, definito lì).
+- `tests/fixtures/` — le fixture dei test: `penpot-catalog.json` (la library "mis", solo dati di test), `tailwind-catalog.json` + `catalog.ts` (il catalogo Tailwind e il suo loader), `seed-theme.css` (il seme dello spike); `components.ts`, le `Lettura` scritte a mano di Badge e ShopCard⊃Badge (ShopCard è un contratto di prova, definito lì).
 - `scripts/check-boundaries.mjs` + `tests/check-boundaries.test.ts` — gate di confine con prova rosso/verde per ogni regola.
-- `tests/pipeline-boundary.test.ts` — le directory v1/v2 non esistono e `process.exit*` compare solo in `src/theme/main.ts` (`src/server/main.ts` non lo usa).
+- `tests/pipeline-boundary.test.ts` — le directory v1/v2 non esistono e nessun modulo di `src/` scrive `process.exit*` (il comando `theme` è stato rimosso con la Story 2.26).
 
 ## Registro delle proprietà (`src/core/registry.ts`)
 

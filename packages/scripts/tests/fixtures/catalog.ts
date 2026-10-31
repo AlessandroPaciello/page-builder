@@ -12,14 +12,15 @@ import type { TokenCatalog } from "../../src/shared/theme-generator";
  * (`_bmad-output/spikes/penpot-ai-kit-2026-10-10/tailwind-to-penpot/tokens.json`,
  * ricavato da `theme.css`), convertiti nella forma `TokenCatalog`
  * (`{ sets: [{ name, tokens: [{ name, type, value }] }] }`). Il set
- * `brand/ocean` resta fuori: ridefinisce gli stessi ruoli di `semantic` e
- * collide nel generatore attuale fino alla Story 2.26. Il seme ha già lasciato
- * fuori (`skipped`) i passi frazionari della spaziatura, `--font-serif`,
- * `--font-mono` e i breakpoint, e ha portato i colori fuori sRGB
- * (`clampedColors`) al più vicino in hex.
+ * `brand/ocean` resta fuori: ridefinisce gli stessi ruoli di `semantic` — il
+ * giro completo con le varianti (set + temi) passa da `tokensFromCss` sul
+ * seme (`tests/fixtures/seed-theme.css`) e da `extractTheme`. Il seme ha già
+ * lasciato fuori (`skipped`) i passi frazionari della spaziatura,
+ * `--font-serif`, `--font-mono` e i breakpoint, e ha portato i colori fuori
+ * sRGB (`clampedColors`) al più vicino in hex.
  *
- * Non sostituisce `data/penpot-catalog.json`: il tema generato e committato
- * resta quello, fino alla 2.26.
+ * `generateTheme` (che genera la base, senza varianti) è testato anche contro
+ * `penpot-catalog.json` (la library "mis", solo dati di test).
  */
 export const TAILWIND_CATALOG_PATH = fileURLToPath(new URL("./tailwind-catalog.json", import.meta.url));
 

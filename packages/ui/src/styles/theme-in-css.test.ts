@@ -14,23 +14,23 @@ import { describe, expect, it } from "vitest";
  * pipeline CSS di Vite (Storybook) scarta quello che sta dopo altre regole.
  * Qui si compila `globals.css` con `preprocessCSS` di Vite, la stessa
  * pipeline di Storybook, e si confrontano le utility con i valori letti da
- * `tailwind-theme.css` (mai scritti nel test).
+ * `theme.css` (mai scritti nel test).
  */
 
 const stylesDir = dirname(fileURLToPath(import.meta.url));
 const uiRoot = join(stylesDir, "..", "..");
 const globalsPath = join(stylesDir, "globals.css");
 const globalsCss = readFileSync(globalsPath, "utf8");
-const THEME_IMPORT = '@import "@penpot-ds/tokens/tailwind-theme.css";';
+const THEME_IMPORT = '@import "@penpot-ds/tokens/theme.css";';
 const themeCss = readFileSync(
-  createRequire(import.meta.url).resolve("@penpot-ds/tokens/tailwind-theme.css"),
+  createRequire(import.meta.url).resolve("@penpot-ds/tokens/theme.css"),
   "utf8",
 );
 const PROBE = '\n@source inline("bg-primary rounded-lg font-sans");\n';
 
 function themeValue(name: string): string {
   const match = themeCss.match(new RegExp(`(?:^|[\\s;{])${name}\\s*:\\s*([^;]+);`));
-  if (!match) throw new Error(`${name} non è in tailwind-theme.css`);
+  if (!match) throw new Error(`${name} non è in theme.css`);
   return match[1]!.trim();
 }
 
@@ -79,7 +79,7 @@ function oldLayout(css: string): string {
 }
 
 @theme inline {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-old-sans), ui-sans-serif, system-ui, sans-serif;
   --color-primary: var(--primary);
   --radius-lg: var(--radius);
 }
@@ -106,6 +106,7 @@ describe("tema Penpot nel CSS compilato da Vite (Story 2.17)", () => {
     expect(hasShadcnVar(css, "--primary")).toBe(false);
     expect(hasShadcnVar(css, "--radius")).toBe(false);
     expect(css).not.toMatch(/geist/i);
+    expect(css).not.toMatch(/next\/font/i);
   }, 60_000);
 
   it("focus e disabled hanno un default in @layer base con --color-ring e --opacity-disabled", async () => {
@@ -141,7 +142,7 @@ describe("tema Penpot nel CSS compilato da Vite (Story 2.17)", () => {
     expect(missing).toEqual([]);
   }, 60_000);
 
-  it("rosso sul layout vecchio: var(--primary), var(--radius) e stack Geist", async () => {
+  it("rosso sul layout vecchio: var(--primary), var(--radius) e stack font custom", async () => {
     const css = await compileWithVite(oldLayout(globalsCss));
     const primaryOk = declares(css, "--color-primary", themeValue("--color-primary"));
     const radiusOk = declares(css, "--radius-lg", themeValue("--radius-lg"));
@@ -149,7 +150,7 @@ describe("tema Penpot nel CSS compilato da Vite (Story 2.17)", () => {
 
     expect(css).toMatch(/--color-primary:\s*var\(--primary\)/);
     expect(css).toMatch(/--radius-lg:\s*var\(--radius\)/);
-    expect(css).toMatch(/geist/i);
+    expect(css).toMatch(/font-old-sans/i);
     expect([primaryOk, radiusOk, fontOk]).toEqual([false, false, false]);
   }, 60_000);
 });

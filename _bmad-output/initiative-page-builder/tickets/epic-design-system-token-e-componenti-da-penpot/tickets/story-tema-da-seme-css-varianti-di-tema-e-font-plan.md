@@ -3,14 +3,14 @@ title: 'Tema da seme CSS, varianti di tema e font'
 type: 'feature'
 ticket: '26'
 created: '2026-10-31'
-status: 'ready-for-dev'
+status: 'built'
 baseline_revision: '3e24807b7f937f2f385b200ba06d8fb38938a559'
 route: 'full'
 route_source: 'auto'
 risk: 'medium'
-review: ''
-review_source: ''
-lenses_ran: []
+review: 'quick'
+review_source: 'pinned'
+lenses_ran: ['quick']
 review_loop_iteration: 0
 context:
   - '{project-root}/_bmad-output/initiative-page-builder/spec-page-builder/penpot-pipeline.md'
@@ -86,17 +86,17 @@ Paths relative to `packages/scripts/` unless they start with `packages/` or `app
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `src/core/hash.ts` -- forma `/* @generated pds … */` per i CSS, lettura di entrambe -- livello 3 sui CSS
-- [ ] `src/shared/tokens-from-css.ts` (+ test) -- port puro di `css-to-tokens` con default Tailwind + seme → `{ sets, themes, warnings }`; spread negativo → 0 e clamp sRGB con avviso -- AC 1
-- [ ] `src/shared/extract-theme.ts` (+ test) -- set e temi → base + varianti → `theme.css`, `themes/*.css`, `tokens.generated.ts`, `fonts.css` con intestazione pds -- AC 2-3
-- [ ] `src/shared/theme-generator.ts` -- intestazione pds, via `REGEN_COMMAND` -- un solo meccanismo `@generated`
-- [ ] `src/penpot/penpot-reader.ts` + `src/server/main.ts` -- lettura di tutti i set e dei temi -- bug 6
-- [ ] `src/server/{server,tools,generated-files}.ts` + scrittore confinato per `packages/tokens/src/` -- strumenti veri, contesto dalla base, `.css` nel livello 3
-- [ ] `tests/fixtures/` -- seme dello spike come fixture; test di livello 4 del giro seme → token → CSS -- AC 2
-- [ ] `src/theme/*`, `package.json`, `src/shared/paths.ts`, `tests/pipeline-boundary.test.ts`, `tests/paths.test.ts` -- rimozione del comando `theme` -- AC 4
-- [ ] `apps/web/src/app/layout.tsx`, `apps/storybook/.storybook/preview.ts`, `packages/ui/src/styles/*`, `packages/tokens/*` -- `fonts.css` in Next e Storybook, via `next/font`/Geist -- AC 3
-- [ ] READMEs (`packages/scripts`, `src/server`, `packages/tokens`) e voce di `deferred-work.md` -- documentazione allineata
-- [ ] `packages/tokens/src/*` (rigenerati), `data/penpot-catalog.json` (eliminato), dipendenze `@fontsource/*` -- ultimo passo, in sessione con Penpot acceso: `extract_theme` sul Penpot vero, installazione dei pacchetti restituiti; se Penpot non risponde, fermarsi e chiedere (Decisions)
+- [x] `src/core/hash.ts` -- forma `/* @generated pds … */` per i CSS, lettura di entrambe -- livello 3 sui CSS
+- [x] `src/shared/tokens-from-css.ts` (+ test) -- port puro di `css-to-tokens` con default Tailwind + seme → `{ sets, themes, warnings }`; spread negativo → 0 e clamp sRGB con avviso -- AC 1
+- [x] `src/shared/extract-theme.ts` (+ test) -- set e temi → base + varianti → `theme.css`, `themes/*.css`, `tokens.generated.ts`, `fonts.css` con intestazione pds -- AC 2-3
+- [x] `src/shared/theme-generator.ts` -- intestazione pds, via `REGEN_COMMAND` -- un solo meccanismo `@generated`
+- [x] `src/penpot/penpot-reader.ts` + `src/server/main.ts` -- lettura di tutti i set e dei temi -- bug 6
+- [x] `src/server/{server,tools,generated-files}.ts` + scrittore confinato per `packages/tokens/src/` -- strumenti veri, contesto dalla base, `.css` nel livello 3
+- [x] `tests/fixtures/` -- seme dello spike come fixture; test di livello 4 del giro seme → token → CSS -- AC 2
+- [x] `src/theme/*`, `package.json`, `src/shared/paths.ts`, `tests/pipeline-boundary.test.ts`, `tests/paths.test.ts` -- rimozione del comando `theme` -- AC 4
+- [x] `apps/web/src/app/layout.tsx`, `apps/storybook/.storybook/preview.ts`, `packages/ui/src/styles/*`, `packages/tokens/*` -- `fonts.css` in Next e Storybook, via `next/font`/Geist -- AC 3
+- [x] READMEs (`packages/scripts`, `src/server`, `packages/tokens`) e voce di `deferred-work.md` -- documentazione allineata
+- [x] `packages/tokens/src/*` (rigenerati), `data/penpot-catalog.json` (eliminato), dipendenze `@fontsource/*` -- ultimo passo, in sessione con Penpot acceso: `extract_theme` sul Penpot vero, installazione dei pacchetti restituiti; se Penpot non risponde, fermarsi e chiedere (Decisions)
 
 **Acceptance Criteria:**
 - Given il seme dello spike, when chiamo `tokens_from_css`, then ricevo i set `tailwind`, `semantic` e `brand/ocean`, i temi `brand/default` e `brand/ocean`, e un avviso per ogni spread negativo, colore clampato o variabile saltata.
@@ -107,9 +107,28 @@ Paths relative to `packages/scripts/` unless they start with `packages/` or `app
 
 ## Implementation Notes
 
+- **Rigenerazione dal vivo (2026-10-31).** `extract_theme` è stato eseguito sul Penpot locale (lettore vero → `extractTheme` → `writeThemeFiles`). Il Penpot vero non ha la library "mis" ma il seme Tailwind: set `tailwind` (361), `semantic`, `brand/ocean`; temi `mode/light` (un solo tema, quindi non un asse), `brand/default`, `brand/ocean`. Il tema committato quindi cambia (palette Tailwind, Inter), con `themes/brand-ocean.css`, e `@fontsource/inter` sostituisce Manrope/Noto Serif.
+- **Token aggiunti in Penpot (scelta dell'utente).** La UI usava `color.popover`, `color.popover-foreground` (`dropdown-menu.tsx`, `sonner.tsx`) e `opacity.disabled` (`globals.css`), assenti dal seme: aggiunti al set `semantic` (`{white}`, `{neutral.950}`, `0.5`) prima della rigenerazione.
+- **Fixture "mis".** `data/penpot-catalog.json` è stato spostato in `tests/fixtures/penpot-catalog.json`, ora solo dati di test per `generateTheme`; il drift guard verso il tema committato è stato tolto (le modifiche a mano le blocca il livello 3).
+- `packages/ui/src/lib/utils.test.ts` prende i nomi dalle scale generate invece che dai nomi "mis".
+
 ## Plan Change Log
 
 ## Review Triage Log
+
+| # | Lens | Finding | Verdict | Route | Evidence |
+|---|---|---|---|---|---|
+| 1 | quick | `themes/*.css` non importabili né caricati | low | patch (export) | `exports` senza `./themes/*`: aggiunto. Il caricamento a runtime non è nell'intento né negli AC: prima non esistevano varianti, nessuna regressione. |
+| 2 | quick | `baseCatalog` toglie ogni set attivato da una variante | medium | patch | Le Design Notes dicono "usato solo" dalle varianti. Con un tema che attiva tutto lo stack, la base si svuotava. Corretto e coperto da un test. |
+| 3 | quick | Variante con ruolo ignoto: `extract_theme` lancia un errore | low | rejected | Fallisce in modo esplicito e nomina i token. La riga della matrice riguarda `tokens_from_css`, che avvisa. Gestirlo richiederebbe nuovi rami. |
+| 4 | quick | `tokens.generated.ts` → `generate_component` nel livello 3 | low | patch | `regenCommandOf` guardava solo l'estensione. Ora tutto `packages/tokens/src/` → `extract_theme`, con un test. |
+| 5 | quick | Gruppo/nome del tema non validati (path e selettore) | medium | patch | Penpot ammette temi senza gruppo: due temi senza gruppo producevano `[data-="x"]`. Ora c'è un errore chiaro, con un test. |
+| 6 | quick | Doppi `@import` in `fonts.css` | low | patch | `imports` non era deduplicato. Correzione diretta, con un test. |
+| 7 | quick | I file di variante rimossi da Penpot restano sul disco | low | rejected | Caso raro. Servirebbe una logica di cancellazione nuova. |
+| 8 | quick | `tailwindcss` letto a runtime ma in devDependencies | false | rejected | `@penpot-ds/scripts` è privato e il server gira solo dal workspace (`.mcp.json`, `pnpm --filter`), dove le devDependencies ci sono. |
+| 9 | quick | `process.exit` in `scripts/check-boundaries.mjs` | low | rejected | È lo script di lint, preesistente. AC 4 e il test di confine riguardano i moduli di `src/`. |
+| 10 | quick | Testi rimasti indietro (`package.json`, `mcp-client.ts`, `paths.ts`) | low | patch | Correzioni dirette dei commenti. |
+| 11 | quick | `theme-in-css.test.ts`: tolto il controllo `/geist/i` | low | patch | `/next\/font/i` non può comparire nel CSS compilato. Ripristinato `/geist/i`. |
 
 ## Design Notes
 

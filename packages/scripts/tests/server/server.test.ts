@@ -9,7 +9,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { componentPaths, Finding, generateComponent, Lettura, withGeneratedHeader, type Change, type GenerateResult } from "../../src/core";
 import { createPdsServer, type PdsServerOptions, type PenpotAdapter } from "../../src/server/server";
 import { TOOL_NAMES } from "../../src/server/tools";
-import type { TokenCatalog } from "../../src/shared/theme-generator";
+import type { ThemeCatalog } from "../../src/shared/theme-generator";
 import { badgeLettura, CONTRACTS, layer, SCALE, shopCardLettura } from "../fixtures/components";
 
 /**
@@ -20,7 +20,8 @@ import { badgeLettura, CONTRACTS, layer, SCALE, shopCardLettura } from "../fixtu
  */
 
 /** Il catalogo dei token usati dalle fixture; la spaziatura dà la stessa scala di `SCALE`. */
-const CATALOG: TokenCatalog = {
+const CATALOG: ThemeCatalog = {
+  themes: [],
   sets: [
     {
       name: "test",
@@ -387,16 +388,31 @@ describe("generate_component", () => {
 });
 
 describe("tokens_from_css ed extract_theme (Story 2.26)", () => {
-  it("con l'ingresso valido → isError 'disponibile dalla Story 2.26'", async () => {
-    const { client } = await connect();
-    for (const [name, args] of [
-      ["tokens_from_css", { css: ":root {}" }],
-      ["extract_theme", {}],
-    ] as const) {
-      const result = await call(client, name, args);
-      expect(result.isError).toBe(true);
-      expect(textOf(result)).toContain("disponibile dalla Story 2.26");
-    }
+  const SEED = `@theme {
+  --color-primary: var(--color-neutral-900);
+  --color-ring: var(--color-neutral-400);
+}
+[data-brand="ocean"] {
+  --color-primary: var(--color-blue-600);
+}
+`;
+
+  it("tokens_from_css sul seme: set, temi e avvisi, senza toccare il disco", async () => {
+    const { client, root } = await connect();
+    const result = await call(client, "tokens_from_css", { css: SEED });
+    expect(result.isError, textOf(result)).toBeFalsy();
+    const { sets, themes, warnings } = result.structuredContent as {
+      sets: { name: string }[];
+      themes: { group: string; name: string }[];
+      warnings: { var: string; why: string }[];
+    };
+    expect(sets.map((set) => set.name)).toEqual(["tailwind", "semantic", "brand/ocean"]);
+    expect(themes).toEqual([
+      { group: "brand", name: "default", sets: [] },
+      { group: "brand", name: "ocean", sets: ["brand/ocean"] },
+    ]);
+    expect(warnings.length).toBeGreaterThan(0);
+    expect(snapshot(root)).toEqual({});
   });
 
   it("tokens_from_css senza css → isError di validazione", async () => {
@@ -406,10 +422,93 @@ describe("tokens_from_css ed extract_theme (Story 2.26)", () => {
     expect(textOf(result)).toMatch(/Input validation error/);
   });
 
-  it("extract_theme con un argomento non valido → isError di validazione", async () => {
+  it("extract_theme scrive theme.css, tokens.generated.ts e fonts.css e restituisce i pacchetti", async () => {
+    const { client, root } = await connect();
+    const result = await call(client, "extract_theme", {});
+    expect(result.isError, textOf(result)).toBeFalsy();
+    const { written, packages } = result.structuredContent as { written: string[]; packages: string[] };
+    expect(written).toEqual(["packages/tokens/src/theme.css", "packages/tokens/src/tokens.generated.ts", "packages/tokens/src/fonts.css"]);
+    expect(existsSync(join(root, "packages/tokens/src/theme.css"))).toBe(true);
+    expect(readFileSync(join(root, "packages/tokens/src/theme.css"), "utf8")).toContain("@generated pds");
+    expect(packages).toEqual([]);
+  });
+
+  it("extract_theme non sovrascrive un file del tema senza marker", async () => {
+    const { client, root } = await connect();
+    put(root, "packages/tokens/src/theme.css", "mio\n");
+    const result = await call(client, "extract_theme", {});
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("senza il marker @generated");
+    expect(readFileSync(join(root, "packages/tokens/src/theme.css"), "utf8")).toBe("mio\n");
+  });
+
+  it("extract_theme con fonts non valido → isError di validazione", async () => {
+    const { client } = await connect();
+    const result = await call(client, "extract_theme", { fonts: "woff2" });
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toMatch(/Input validation error/);
+  });
+
+  it("extract_theme con un argomento estraneo → isError di validazione", async () => {
     const { client } = await connect();
     const result = await call(client, "extract_theme", { root: 3 });
     expect(result.isError).toBe(true);
     expect(textOf(result)).toMatch(/Input validation error/);
+  });
+
+  it("extract_theme sull'uscita di tokens_from_css servita dall'adattatore finto: theme.css dalla base, brand-ocean.css con le tre variabili (AC 2)", async () => {
+    const seed = readFileSync(new URL("../fixtures/seed-theme.css", import.meta.url), "utf8");
+    const { client: first } = await connect();
+    const tokens = (await call(first, "tokens_from_css", { css: seed })).structuredContent as unknown as ThemeCatalog;
+    const { client, root } = await connect({ penpot: adapter({ readTokenCatalog: async () => ({ sets: tokens.sets, themes: tokens.themes }) }) });
+    const result = await call(client, "extract_theme", {});
+    expect(result.isError, textOf(result)).toBeFalsy();
+    const theme = readFileSync(join(root, "packages/tokens/src/theme.css"), "utf8");
+    expect(theme).toContain("--color-primary: var(--color-neutral-900);");
+    const ocean = readFileSync(join(root, "packages/tokens/src/themes/brand-ocean.css"), "utf8");
+    expect([...ocean.matchAll(/^\s*(--[\w-]+):/gm)].map((m) => m[1])).toEqual(["--color-primary", "--color-primary-foreground", "--color-ring"]);
+  });
+
+  it("extract_theme legge anche i set che nessun tema attiva (set non attivi)", async () => {
+    const catalog: ThemeCatalog = {
+      themes: [{ group: "mode", name: "light", sets: ["attivo"] }],
+      sets: [
+        { name: "attivo", tokens: [{ name: "color.primary", type: "color", value: "#111111" }] },
+        { name: "inattivo", tokens: [{ name: "color.extra", type: "color", value: "#222222" }] },
+      ],
+    };
+    const { client, root } = await connect({ penpot: adapter({ readTokenCatalog: async () => catalog }) });
+    const result = await call(client, "extract_theme", {});
+    expect(result.isError, textOf(result)).toBeFalsy();
+    expect(readFileSync(join(root, "packages/tokens/src/theme.css"), "utf8")).toContain("--color-extra: #222222;");
+  });
+
+  it("extract_theme con una collisione vera nella base → isError che nomina i due token, nessun file scritto", async () => {
+    const catalog: ThemeCatalog = {
+      themes: [],
+      sets: [
+        { name: "a", tokens: [{ name: "color.dup", type: "color", value: "#111111" }] },
+        { name: "b", tokens: [{ name: "dup", type: "color", value: "#222222" }] },
+      ],
+    };
+    const { client, root } = await connect({ penpot: adapter({ readTokenCatalog: async () => catalog }) });
+    const result = await call(client, "extract_theme", {});
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain('"color.dup"');
+    expect(textOf(result)).toContain('"dup"');
+    expect(snapshot(root)).toEqual({});
+  });
+
+  it("extract_theme: il catalogo token non si legge → isError col messaggio", async () => {
+    const { client } = await connect({
+      penpot: adapter({
+        readTokenCatalog: async () => {
+          throw new Error("catalogo irraggiungibile");
+        },
+      }),
+    });
+    const result = await call(client, "extract_theme", {});
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("catalogo irraggiungibile");
   });
 });

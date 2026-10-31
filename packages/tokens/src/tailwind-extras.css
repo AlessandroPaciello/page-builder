@@ -1,8 +1,9 @@
 /*
  * Variabili scritte a mano (di norma senza corrispondenza nel catalogo token
  * Penpot — un'eccezione registrata sotto per il tracciante 1.4).
- * `generate:theme` importa questo file ma non lo tocca mai: non porta il
- * marker `@generated` e non viene mai sovrascritto dalla rigenerazione.
+ * `extract_theme` importa questo file (via `theme.css`) ma non lo tocca mai:
+ * non porta il marker `@generated` e non viene mai sovrascritto dalla
+ * rigenerazione.
  *
  * --font-utility: font per chrome UI non di brand (non è né mis.sans né
  * mis.serif, che restano riservati al contenuto disegnato in Penpot) — usa
