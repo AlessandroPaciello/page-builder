@@ -27,7 +27,7 @@ context: ['{project-root}/packages/scripts/src/server/README.md']
 
 **Always:** la matrice attesa si calcola dal contratto (`axes` + `RENDERING_AXES` + `state`); validazione completa prima di qualunque scrittura; nomi completi `Component / Axis=Value` con tutte le proprietà; il server non importa `src/penpot` (resta `main.ts` a legare l'adattatore); chiamata idempotente.
 
-**Decisioni (2026-11-01):** (1) Multiselect Panel resta un componente singolo, come dice il ticket: `group_variants` non lo raggruppa e si correggono `draw-component.md:24` e il disegno, non il ticket; la voce `multiselect-panel` di `RENDERING_AXES` non si tocca in questa story. (2) Input `{ component }`: celle e valori si ricavano dai nomi dei board.
+**Decisioni (2026-11-01):** (3) Le combinazioni non disegnate non sono un rifiuto (deciso dopo la prova live: il disegno della Multiselect non ha «aperta con placeholder»); tornano in `notDrawn`. (1) Multiselect Panel resta un componente singolo, come dice il ticket: `group_variants` non lo raggruppa e si correggono `draw-component.md:24` e il disegno, non il ticket; la voce `multiselect-panel` di `RENDERING_AXES` non si tocca in questa story. (2) Input `{ component }`: celle e valori si ricavano dai nomi dei board.
 
 **Never:** scrivere plugin data `pagebuilder`; creare o modificare token; modificare il disegno; offrire un ripiego «componenti separati»; allentare il resto dell'adattatore di lettura.
 
@@ -37,7 +37,8 @@ context: ['{project-root}/packages/scripts/src/server/README.md']
 |----------|--------------|---------------------------|----------------|
 | Raggruppa | celle complete, nessun container | container senza `variantError`, varianti distinte, assi impostati, istanze collegate | — |
 | Idempotenza | componente già raggruppato | nessuna scrittura, esito `già raggruppato` | — |
-| Set parziale | manca una combinazione della matrice | rifiuto che nomina la cella mancante | nessuna scrittura |
+| Combinazione non disegnata | manca una combinazione della matrice | raggruppato, la cella torna in `notDrawn` | — |
+| Cella di partenza mancante | nessuna cella con gli assi al valore di default | rifiuto che nomina la cella di partenza | nessuna scrittura |
 | Nome incompleto | cella senza tutte le proprietà | rifiuto che nomina la cella | nessuna scrittura |
 | Senza assi | componente a cella sola | resta singolo, nessuna scrittura | — |
 
@@ -75,6 +76,8 @@ Il raggruppamento usa `penpot.createVariantFromComponents` («Combine as variant
 ## Plan Change Log
 
 ## Review Triage Log
+
+Passata live (2026-11-01, sul file copia): la matrice completa rifiutava la Multiselect, il cui disegno è volutamente incompleto. Decisione dell'utente: le combinazioni mancanti sono una nota (`notDrawn`), si rifiutano nomi incompleti, valori fuori contratto, celle doppie, cella sola e cella di partenza mancante. Chip, Checkbox, Option, Multiselect Trigger e Multiselect raggruppati in una chiamata ciascuno; seconda chiamata «già raggruppato»; 543 istanze collegate.
 
 Pass 1 (quick): 0 high, 1 medium, 3 low, 2 false.
 

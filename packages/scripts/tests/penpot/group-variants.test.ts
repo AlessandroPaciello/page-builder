@@ -82,6 +82,12 @@ describe("groupVariants con callTool finto", () => {
     expect(codes[1]).toContain("createVariantFromComponents");
   });
 
+  it("le combinazioni non disegnate arrivano nell'esito dopo la scrittura", async () => {
+    const { callTool } = scripted({ reading: variantReading("chip", CHIP_CELLS.filter((cell) => cell.id !== "chip-sm-true")) }, WRITTEN);
+    const result = await groupVariants("chip", (reading) => planGroupVariants(reading), { callTool });
+    expect(result.notDrawn).toEqual(["Chip / size=sm, removable=true"]);
+  });
+
   it("il lettore passa il nome chiesto al sorgente", async () => {
     const { callTool, codes } = scripted({ reading: variantReading("chip", CHIP_CELLS) }, WRITTEN);
     await groupVariants("Chip", (reading) => planGroupVariants(reading), { callTool });
@@ -106,10 +112,10 @@ describe("groupVariants con callTool finto", () => {
     expect(codes).toHaveLength(1);
   });
 
-  it("set parziale → l'errore del nucleo nomina la cella e la scrittura non parte", async () => {
-    const reading = variantReading("chip", CHIP_CELLS.filter((cell) => cell.id !== "chip-sm-true"));
+  it("cella di partenza mancante → l'errore del nucleo la nomina e la scrittura non parte", async () => {
+    const reading = variantReading("chip", CHIP_CELLS.filter((cell) => cell.id !== "chip-md-false"));
     const { callTool, codes } = scripted({ reading }, WRITTEN);
-    await expect(groupVariants("chip", (r) => planGroupVariants(r), { callTool })).rejects.toThrow(/manca la cella «Chip \/ size=sm, removable=true»/);
+    await expect(groupVariants("chip", (r) => planGroupVariants(r), { callTool })).rejects.toThrow(/cella di partenza/);
     expect(codes).toHaveLength(1);
   });
 

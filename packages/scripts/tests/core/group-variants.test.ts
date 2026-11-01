@@ -82,13 +82,20 @@ describe("planGroupVariants: raggruppa", () => {
 });
 
 describe("planGroupVariants: rifiuta senza scrivere", () => {
-  it("set parziale → nomina la cella mancante", () => {
+  it("una combinazione non disegnata non si rifiuta: è una nota", () => {
     const boards = CHIP_CELLS.filter((cell) => cell.id !== "chip-sm-true");
-    expect(() => planGroupVariants(chip(boards))).toThrow(/manca la cella «Chip \/ size=sm, removable=true»/);
+    const plan = planGroupVariants(chip(boards));
+    expect(plan.outcome).toBe("raggruppato");
+    expect(plan.notDrawn).toEqual(["Chip / size=sm, removable=true"]);
   });
 
-  it("una cella sola con le proprietà è un set parziale, non un componente singolo", () => {
-    expect(() => planGroupVariants(chip([variantCell("Chip / size=md, removable=false", "only")]))).toThrow(/manca la cella/);
+  it("senza la cella di partenza → rifiuta nominando la cella di partenza", () => {
+    const boards = CHIP_CELLS.filter((cell) => cell.id !== "chip-md-false");
+    expect(() => planGroupVariants(chip(boards))).toThrow(/cella di partenza/);
+  });
+
+  it("una cella sola con le proprietà non è un set", () => {
+    expect(() => planGroupVariants(chip([variantCell("Chip / size=md, removable=false", "only")]))).toThrow(/è sola/);
   });
 
   it("nome incompleto → nomina la cella e la proprietà mancante", () => {

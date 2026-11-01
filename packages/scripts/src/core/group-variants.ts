@@ -12,8 +12,9 @@ import { contractOf, STATE_AXIS, STATE_VALUES, type ContractRegistry } from "./v
  * disegno lo usa — e la validazione dei nomi delle celle. È logica pura: non
  * parla con Penpot e non scrive niente. Il sorgente `execute_code` che esegue
  * la sequenza sta in `src/penpot/group-variants.ts`; il server lo chiama solo
- * dopo che questo modulo ha validato tutto, così un set parziale o un nome
- * incompleto non produce nessuna scrittura.
+ * dopo che questo modulo ha validato tutto, così un nome incompleto, un valore
+ * fuori contratto o una cella doppia non producono nessuna scrittura. Le
+ * combinazioni non disegnate sono una nota (`notDrawn`), non un rifiuto.
  */
 
 /** Una cella come la restituisce Penpot: il board, il nome e (per una variante) i valori di variante. */
@@ -61,6 +62,8 @@ export const GroupVariantsResult = z.object({
   /** Le proprietà di variante impostate (o già presenti), nell'ordine in cui Penpot le elenca. */
   axes: z.array(z.string()),
   cells: z.array(z.object({ name: z.string().min(1), variant: z.record(z.string(), z.string()) })),
+  /** Le combinazioni della matrice che il disegno non ha: una nota, non un rifiuto. */
+  notDrawn: z.array(z.string()).optional(),
 });
 
 export type GroupVariantsResult = z.infer<typeof GroupVariantsResult>;
@@ -154,6 +157,8 @@ export interface GroupVariantsPlan {
   readonly container?: string;
   readonly axes: readonly string[];
   readonly cells: readonly PlannedCell[];
+  /** Le celle della matrice non disegnate (solo per `raggruppato`). */
+  readonly notDrawn?: readonly string[];
 }
 
 export interface PlanGroupVariantsInput {
@@ -307,16 +312,19 @@ export function planGroupVariants(reading: VariantCellsReading, input: PlanGroup
     seen.set(key, cell);
   }
 
-  // La matrice completa: una cella di partenza per ogni combinazione degli assi.
+  if (cells.length < 2) {
+    throw new Error(`group_variants: la cella ${quoted(cells[0]!.name)} è sola: un set ha almeno due celle.`);
+  }
+
+  // Le combinazioni non disegnate sono una nota: il disegno può non averle di proposito.
   const drawn = new Set(
     cells.filter((cell) => (cell.variant[STATE_AXIS] ?? "default") === "default").map((cell) => axisNames.map((name) => cell.variant[name]).join("|")),
   );
+  const notDrawn: string[] = [];
   for (const combination of matrixCombinations(axes)) {
     const key = axisNames.map((name) => combination[name]).join("|");
     if (drawn.has(key)) continue;
-    throw new Error(
-      `group_variants: il set di ${quoted(label)} è incompleto: manca la cella ${quoted(cellName(label, properties, usesState ? { ...combination, [STATE_AXIS]: "default" } : combination))} (matrice: ${axisNames.join(" × ")}).`,
-    );
+    notDrawn.push(cellName(label, properties, usesState ? { ...combination, [STATE_AXIS]: "default" } : combination));
   }
 
   const ordered = [...cells].sort((a, b) => {
@@ -336,6 +344,7 @@ export function planGroupVariants(reading: VariantCellsReading, input: PlanGroup
     container: label,
     axes: properties,
     cells: ordered.map(({ id, name, variant }) => ({ id, name, variant })),
+    ...(notDrawn.length > 0 ? { notDrawn } : {}),
   };
 }
 
@@ -347,5 +356,6 @@ export function groupVariantsResult(plan: GroupVariantsPlan): GroupVariantsResul
     ...(plan.container === undefined ? {} : { container: plan.container }),
     axes: [...plan.axes],
     cells: plan.cells.map((cell) => ({ name: cell.name, variant: { ...cell.variant } })),
+    ...(plan.notDrawn === undefined ? {} : { notDrawn: [...plan.notDrawn] }),
   };
 }

@@ -402,7 +402,7 @@ describe("generate_component", () => {
   });
 });
 
-describe("group_variants (Story 2.28)", () => {
+describe("group_variants (Story 2.36)", () => {
   it("set completo → raggruppato, assi e celle in ordine di matrice; nessun file scritto", async () => {
     const { client, root } = await connect({ contracts: GROUP_CONTRACTS });
     const result = await call(client, "group_variants", { component: "chip" });
@@ -420,13 +420,13 @@ describe("group_variants (Story 2.28)", () => {
     expect(snapshot(root)).toEqual({});
   });
 
-  it("set parziale → isError che nomina la cella mancante, nessuna scrittura", async () => {
+  it("cella di partenza mancante → isError che la nomina, nessuna scrittura", async () => {
     let writes = 0;
     const { client } = await connect({
       contracts: GROUP_CONTRACTS,
       penpot: adapter({
         groupVariants: async (_component, plan) => {
-          const reading = variantReading("chip", CHIP_CELLS.filter((cell) => cell.id !== "chip-sm-true"));
+          const reading = variantReading("chip", CHIP_CELLS.filter((cell) => cell.id !== "chip-md-false"));
           const decision = plan(reading);
           if (decision.write) writes += 1;
           return groupVariantsResult(decision);
@@ -435,8 +435,20 @@ describe("group_variants (Story 2.28)", () => {
     });
     const result = await call(client, "group_variants", { component: "chip" });
     expect(result.isError).toBe(true);
-    expect(textOf(result)).toContain("Chip / size=sm, removable=true");
+    expect(textOf(result)).toContain("cella di partenza");
     expect(writes).toBe(0);
+  });
+
+  it("combinazione non disegnata → raggruppato con la nota notDrawn", async () => {
+    const { client } = await connect({
+      contracts: GROUP_CONTRACTS,
+      penpot: adapter({
+        groupVariants: async (_component, plan) => groupVariantsResult(plan(variantReading("chip", CHIP_CELLS.filter((cell) => cell.id !== "chip-sm-true")))),
+      }),
+    });
+    const result = await call(client, "group_variants", { component: "chip" });
+    expect(result.isError, textOf(result)).toBeFalsy();
+    expect(result.structuredContent).toMatchObject({ outcome: "raggruppato", notDrawn: ["Chip / size=sm, removable=true"] });
   });
 
   it("componente già raggruppato → già raggruppato, una lettura sola", async () => {

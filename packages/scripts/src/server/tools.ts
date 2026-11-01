@@ -70,7 +70,7 @@ export const TOOLS = {
   },
   group_variants: {
     description:
-      "Raggruppa in un container di varianti le celle sciolte «Component / Axis=Value» di un componente, con una chiamata al posto della sequenza manuale di DC: matrice dal contratto e dagli assi di rendering, nomi completi, assi impostati, istanze annidate ancora collegate. L'unico strumento che scrive su Penpot (non plugin data, non token): un set parziale o un nome incompleto è un rifiuto, senza scrivere; un componente già raggruppato o a cella sola non si tocca.",
+      "Raggruppa in un container di varianti le celle sciolte «Component / Axis=Value» di un componente, con una chiamata al posto della sequenza manuale di DC: matrice dal contratto e dagli assi di rendering, nomi completi, assi impostati, istanze annidate ancora collegate. L'unico strumento che scrive su Penpot (non plugin data, non token): un nome incompleto, un valore fuori contratto, una cella doppia o senza cella di partenza è un rifiuto, senza scrivere, mentre le combinazioni non disegnate sono una nota (`notDrawn`); un componente già raggruppato o a cella sola non si tocca.",
     input: { component: name.describe("Il componente da raggruppare: nome del contratto (`chip`, `chip@1`) o del layer in Penpot.") },
     output: GroupVariantsResult,
   },

@@ -365,7 +365,9 @@ export async function groupVariants(component: string, plan: GroupVariantsPlanne
   const decision = plan(reading);
   if (!decision.write) return groupVariantsResult(decision);
 
-  return execute(component, "raggruppamento in varianti", groupVariantsCode(decision), options, (payload) => parseResult(payload, component));
+  const written = await execute(component, "raggruppamento in varianti", groupVariantsCode(decision), options, (payload) => parseResult(payload, component));
+  // Le combinazioni non disegnate le conosce il piano, non Penpot.
+  return decision.notDrawn === undefined ? written : { ...written, notDrawn: [...decision.notDrawn] };
 }
 
 /** L'uscita del sorgente di scrittura: `{ outcome, component, container, axes, cells }`. */
