@@ -9,7 +9,7 @@ hitl: false
 risk: low
 tracker_id: "121"
 remote: "https://github.com/AlessandroPaciello/page-builder/issues/121"
-tracker_status: backlog
+tracker_status: in-progress
 refined: true
 ---
 
