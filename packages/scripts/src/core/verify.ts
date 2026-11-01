@@ -56,6 +56,8 @@ const INTERACTIVE_STATES = Object.keys(STATE_PREFIXES) as InteractiveState[];
 export const PART_KEY_NAME = "part";
 export const REPEAT_KEY = "repeat";
 export const ELEMENT_KEY = "element";
+/** Rendering condizionale: la parte si rende solo se il field nominato è presente. */
+export const WHEN_KEY = "when";
 export const IGNORE_ANSWER = "ignora";
 export const REPEAT_ANSWERS = ["lista", "parte-nuova"] as const;
 export const TITLE_ELEMENTS = ["h2", "h3", "p"] as const;
@@ -101,6 +103,8 @@ export interface ModelPart {
   readonly plainLayer?: boolean;
   /** L'id dello slot della sezione: il suo contenuto è `children`, non una parte. */
   readonly slot?: string;
+  /** Il field del contratto che decide se la parte si rende (`pluginData.when`). */
+  readonly when?: string;
   /** Indice della cella → classi finali (stati compresi), solo celle non di stato. */
   readonly classes: ReadonlyMap<number, readonly string[]>;
   /** Indice della cella → props di variante dell'istanza annidata. */
@@ -379,6 +383,8 @@ interface CollectedParts {
   readonly instanceProps: ReadonlyMap<string, ReadonlyMap<number, Readonly<Record<string, string>>>>;
   /** Chiave → la prima risposta `element` nei plugin data. */
   readonly elementAnswers: ReadonlyMap<string, string>;
+  /** Chiave → il `when` della parte (il primo valore; valori diversi tra celle sono un blocco). */
+  readonly whenAnswers: ReadonlyMap<string, string>;
   readonly findings: Finding[];
 }
 
@@ -397,6 +403,7 @@ interface Visit {
   readonly slots: Set<string>;
   readonly instanceProps: Map<string, Map<number, Record<string, string>>>;
   readonly elementAnswers: Map<string, string>;
+  readonly whenAnswers: Map<string, string>;
 }
 
 function classesOf(visit: Visit, cell: ModelCell, layer: LetturaLayer, parent: LetturaLayer | undefined): string[] {
@@ -420,6 +427,24 @@ function register(visit: Visit, cell: ModelCell, layer: LetturaLayer, key: strin
   }
   const answer = layer.pluginData?.[ELEMENT_KEY];
   if (answer !== undefined && !visit.elementAnswers.has(key)) visit.elementAnswers.set(key, answer);
+  // Il rendering condizionale è uno solo per parte: la radice è esclusa (c'è sempre).
+  const when = layer.pluginData?.[WHEN_KEY];
+  if (parentKey !== undefined) {
+    const knownWhen = visit.whenAnswers.get(key);
+    const seen = visit.occurrences.has(key);
+    if (when !== undefined && knownWhen === undefined) {
+      visit.whenAnswers.set(key, when);
+      if (seen) {
+        visit.findings.push(blocco(where, `La parte "${key}" ha when="${when}" qui e nessun when in un'altra cella: il rendering condizionale è uno solo. Tieni lo stesso when in tutte le celle.`));
+      }
+    } else if (when !== undefined && knownWhen !== when) {
+      visit.findings.push(
+        blocco(where, `La parte "${key}" ha when="${knownWhen}" in una cella e when="${when}" qui: il rendering condizionale è uno solo. Tieni lo stesso when in tutte le celle.`),
+      );
+    } else if (when === undefined && knownWhen !== undefined) {
+      visit.findings.push(blocco(where, `La parte "${key}" ha when="${knownWhen}" in un'altra cella e nessun when qui: il rendering condizionale è uno solo. Tieni lo stesso when in tutte le celle.`));
+    }
+  }
   const list = visit.occurrences.get(key) ?? [];
   list.push({ cell, classes });
   visit.occurrences.set(key, list);
@@ -611,6 +636,7 @@ function collectParts(
     slots: new Set(),
     instanceProps: new Map(),
     elementAnswers: new Map(),
+    whenAnswers: new Map(),
   };
   const rootKeys = new Set<string>();
   cells.forEach((cell, position) => {
@@ -626,6 +652,12 @@ function collectParts(
     }
     const classes = [...new Set([...classesOf(visit, cell, root, undefined), ...(rootSizes[position] ?? [])])].sort();
     if (!register(visit, cell, root, rootKey, undefined, classes, where)) return;
+    const rootWhen = root.pluginData?.[WHEN_KEY];
+    if (rootWhen !== undefined) {
+      visit.findings.push(
+        blocco(where, `La radice ha when="${rootWhen}": la radice c'è sempre, il rendering condizionale vale solo per le parti. Togli il plugin data when="${rootWhen}" dalla radice.`),
+      );
+    }
     if (root.instance !== undefined) {
       visit.findings.push(blocco(where, "La radice del componente è un'istanza: un componente non è una copia di un altro."));
       return;
@@ -634,9 +666,9 @@ function collectParts(
     const siblings = new Map<string, number>();
     for (const child of root.children) visitLayer(visit, cell, child, root, rootKey, siblings, taken);
   });
-  const { findings, occurrences, copies, instances, plainLayers, slots, instanceProps, elementAnswers } = visit;
+  const { findings, occurrences, copies, instances, plainLayers, slots, instanceProps, elementAnswers, whenAnswers } = visit;
   const drafts = new Map([...visit.drafts].map(([key, { draft, children }]) => [key, { ...draft, children: [...children] }]));
-  return { drafts, occurrences, copies, instances, plainLayers, slots, instanceProps, elementAnswers, findings };
+  return { drafts, occurrences, copies, instances, plainLayers, slots, instanceProps, elementAnswers, whenAnswers, findings };
 }
 
 interface StatedClasses {
@@ -843,6 +875,22 @@ function findUnusedParts(ordered: readonly PartDraft[], contract: ComponentContr
     }));
 }
 
+/**
+ * `when` nomina un field del contratto (Story 2.33): un nome che non è un field
+ * — un asse, un valore, un refuso — è un blocco, con l'elenco dei field.
+ */
+function validateWhen(collected: Pick<CollectedParts, "whenAnswers">, contract: ComponentContract): Finding[] {
+  const names = Object.keys(contract.fields);
+  return [...collected.whenAnswers]
+    .filter(([, when]) => !Object.hasOwn(contract.fields, when))
+    .map(([key, when]) =>
+      blocco(
+        `parte "${key}"`,
+        `La parte "${key}" ha when="${when}", che non è un field del contratto "${contract.name}": i field sono [${names.join(", ") || "nessuno"}]. when nomina un field, non un asse né un valore.`,
+      ),
+    );
+}
+
 interface ResolvedDefinition {
   readonly contract?: ComponentContract;
   readonly section?: SectionDefinition;
@@ -888,7 +936,7 @@ function resolveDefinition(
     };
   }
   if (component !== undefined) return { contract: component, findings: [] };
-  return { ...sectionContract(section!, lettura.cells), section: section! };
+  return { ...sectionContract(section!, lettura.cells, lettura.pluginData ?? {}), section: section! };
 }
 
 /**
@@ -897,8 +945,8 @@ function resolveDefinition(
  * ferma.
  *
  * Le fasi, in ordine (è anche l'ordine dei `Finding`): celle (con le celle
- * di stato senza base), misure della radice, parti, stati, elementi
- * proposti, parti inutilizzate.
+ * di stato senza base), misure della radice, parti (e i loro `when`), stati,
+ * elementi proposti, parti inutilizzate.
  */
 export function analyzeComponent(lettura: ComponentReading, input: CoreInput): Analysis {
   const contracts: ContractRegistry = input.contracts ?? COMPONENT_CONTRACTS;
@@ -913,6 +961,7 @@ export function analyzeComponent(lettura: ComponentReading, input: CoreInput): A
   const drawn = normalized.cells.map((cell) => lettura.cells[cell.index]!);
   const rootSizes = rootSizeClasses(drawn, { scale: input.scale });
   const collected = collectParts(normalized.cells, drawn, rootSizes.classes, input, contract, contracts, section);
+  const whenFindings = validateWhen(collected, contract);
   const stated = applyStates(contract, normalized, collected.occurrences);
   const ordered = treeOrder(collected.drafts);
   const proposed = proposeElements(ordered, collected, input.existingTsx === undefined);
@@ -922,12 +971,14 @@ export function analyzeComponent(lettura: ComponentReading, input: CoreInput): A
     const copies = collected.copies.get(draft.key);
     const element = proposed.elements.get(draft.key);
     const instance = collected.instances.get(draft.key);
+    const when = collected.whenAnswers.get(draft.key);
     return {
       ...draft,
       list: copies !== undefined,
       copies: copies ?? 1,
       ...(element === undefined ? {} : { element }),
       ...(instance === undefined ? {} : { instance }),
+      ...(when === undefined ? {} : { when }),
       ...(collected.plainLayers.has(draft.key) ? { plainLayer: true } : {}),
       ...(collected.slots.has(draft.key) ? { slot: draft.key } : {}),
       classes: stated.classes.get(draft.key) ?? new Map(),
@@ -946,7 +997,7 @@ export function analyzeComponent(lettura: ComponentReading, input: CoreInput): A
     ...(section === undefined ? {} : { section }),
   };
   // L'ordine dei `Finding` è parte dell'output: segue l'ordine delle fasi, non cambiarlo.
-  const findings = [...resolved.findings, ...normalized.findings, ...rootSizes.findings, ...collected.findings, ...stated.findings, ...proposed.findings, ...unused];
+  const findings = [...resolved.findings, ...normalized.findings, ...rootSizes.findings, ...collected.findings, ...whenFindings, ...stated.findings, ...proposed.findings, ...unused];
   return { model, findings: dedupe(findings) };
 }
 
