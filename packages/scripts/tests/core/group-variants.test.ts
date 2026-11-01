@@ -67,6 +67,14 @@ describe("planGroupVariants: raggruppa", () => {
     expect(planGroupVariants(variantReading("Chip", CHIP_CELLS)).component).toBe("chip");
   });
 
+  it("gli stati stanno in griglia nell'ordine del designer: error prima di disabled", () => {
+    const states = ["disabled", "error", "focus", "default"];
+    const boards = states.map((state, index) => variantCell(`Chip / size=md, removable=false, state=${state}`, `s${index}`));
+    const sized = [...boards, variantCell("Chip / size=md, removable=true, state=default", "t"), variantCell("Chip / size=sm, removable=false, state=default", "u"), variantCell("Chip / size=sm, removable=true, state=default", "v")];
+    const plan = planGroupVariants(variantReading("chip", sized));
+    expect(plan.cells.slice(0, 4).map((cell) => cell.variant.state)).toEqual(["default", "focus", "error", "disabled"]);
+  });
+
   it("state: si valida solo quando il disegno lo usa, e serve una cella default per ogni combinazione", () => {
     const boards = [
       variantCell("Chip / size=md, removable=false, state=default", "a"),

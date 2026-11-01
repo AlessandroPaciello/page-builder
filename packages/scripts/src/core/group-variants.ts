@@ -186,6 +186,13 @@ function rankOf(axis: VariantAxis, value: string): number {
   return axis.values.indexOf(value);
 }
 
+/**
+ * L'ordine degli stati nella griglia: come li disegna di solito il designer
+ * (`error` prima di `disabled`). Vale solo per la disposizione delle celle:
+ * i valori ammessi di `state` restano quelli di `STATE_VALUES`.
+ */
+const STATE_GRID_ORDER = ["default", "hover", "active", "focus", "error", "disabled"] as const;
+
 /** L'ordine stabile delle celle: i valori nell'ordine degli assi, poi `state`. */
 function compareCells(axes: readonly VariantAxis[], a: ReadCell, b: ReadCell): number {
   for (const axis of axes) {
@@ -194,7 +201,7 @@ function compareCells(axes: readonly VariantAxis[], a: ReadCell, b: ReadCell): n
   }
   const rank = (cell: ReadCell): number => {
     const state = cell.variant[STATE_AXIS];
-    return state === undefined ? 0 : rankOf({ name: STATE_AXIS, values: STATE_VALUES, base: "default" }, state) + 1;
+    return state === undefined ? 0 : rankOf({ name: STATE_AXIS, values: STATE_GRID_ORDER, base: "default" }, state) + 1;
   };
   return rank(a) - rank(b);
 }
