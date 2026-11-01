@@ -10,7 +10,7 @@ risk: medium
 refined: true
 tracker_id: "122"
 remote: "https://github.com/AlessandroPaciello/page-builder/issues/122"
-tracker_status: backlog
+tracker_status: done
 ---
 
 # DC: aggiungere un asse a un componente già raggruppato
