@@ -3,10 +3,12 @@
 L'unico guscio sopra il nucleo puro (`src/core`). Gira su stdio, registrato in `.mcp.json` alla root del repo:
 
 ```json
-"pds": { "type": "stdio", "command": "pnpm", "args": ["--silent", "--filter", "@penpot-ds/scripts", "pds"] }
+"pds": { "type": "stdio", "command": "bash", "args": ["scripts/mcp-pds.sh"] }
 ```
 
-Il processo MCP eredita l'ambiente in cui parte Claude Code: lì servono **Node 22** (`.nvmrc` = 22.23.1, `engines` `>=22.13.0 <23` nel `package.json` alla root) e `PENPOT_MCP_TOKEN` (direnv, vedi il [README alla root](../../../../README.md#penpot-locale-e-server-mcp)). Se Claude Code parte da una shell con un altro Node o senza il token, il server parte con quelli.
+`scripts/mcp-pds.sh` è l'avviatore: serve a far partire il server anche da client che non caricano la shell dell'utente (OpenChamber, app grafiche). Carica il `.env` come fa direnv, trova Node 22 e pnpm (nvm, fnm, volta, `~/.local/share/pnpm`), entra nella root del repo e lancia `pnpm --silent --filter @penpot-ds/scripts pds`; senza pnpm esce con un messaggio su stderr. La stessa registrazione è in `opencode.json` (server `pds`, `type: "local"`).
+
+Il processo MCP eredita l'ambiente in cui parte il client: servono **Node 22** (`.nvmrc` = 22.23.1, `engines` `>=22.13.0 <23` nel `package.json` alla root) e `PENPOT_MCP_TOKEN` (direnv, vedi il [README alla root](../../../../README.md#penpot-locale-e-server-mcp)). Lo script li procura se il client non li ha passati.
 
 `--silent` serve: lo stdout è il canale del protocollo e il banner di `pnpm` lo sporcherebbe. Il server non stampa niente su stdout; gli errori di avvio vanno su stderr. Penpot si raggiunge con le stesse variabili di `theme --live` (`PENPOT_MCP_URL`, `PENPOT_MCP_TOKEN`, vedi [README del package](../../README.md#connessione-a-penpot)).
 

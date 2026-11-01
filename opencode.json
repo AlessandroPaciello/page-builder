@@ -10,6 +10,14 @@
       "type": "remote",
       "enabled": true,
       "url": "http://localhost:9001/mcp/stream?userToken={env:PENPOT_MCP_TOKEN}"
+    },
+    "pds": {
+      "type": "local",
+      "enabled": true,
+      "command": [
+        "bash",
+        "scripts/mcp-pds.sh"
+      ]
     }
   },
   "agent": {
