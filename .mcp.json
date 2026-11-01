@@ -6,12 +6,9 @@
     },
     "pds": {
       "type": "stdio",
-      "command": "pnpm",
+      "command": "bash",
       "args": [
-        "--silent",
-        "--filter",
-        "@penpot-ds/scripts",
-        "pds"
+        "scripts/mcp-pds.sh"
       ]
     }
   }
