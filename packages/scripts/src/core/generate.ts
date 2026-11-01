@@ -366,10 +366,17 @@ function renderPart(model: ComponentModel, part: ModelPart, fields: ReadonlySet<
       lines.push(`${pad}</${tag}>`);
     }
   }
-  if (!part.list) return lines;
+  if (part.list) {
+    const inner = lines.map((line) => `  ${line}`);
+    inner[0] = inner[0]!.replace(/^(\s*)<(\S+)/, "$1<$2 key={i}");
+    lines = [`${pad}{Array.from({ length: ${part.copies} }, (_, i) => (`, ...inner, `${pad}))}`];
+  }
+  // Il rendering condizionale sta fuori dalla lista: la parte (o il `.map`) c'è
+  // solo se il field è presente. Ternario e non `&&`: con un field numerico `0`
+  // `{field && (…)}` stamperebbe «0».
+  if (part.when === undefined) return lines;
   const inner = lines.map((line) => `  ${line}`);
-  inner[0] = inner[0]!.replace(/^(\s*)<(\S+)/, "$1<$2 key={i}");
-  return [`${pad}{Array.from({ length: ${part.copies} }, (_, i) => (`, ...inner, `${pad}))}`];
+  return [`${pad}{${part.when} ? (`, ...inner, `${pad}) : null}`];
 }
 
 /** Lo scaffold di `<Comp>.tsx`: si scrive una volta sola, poi è dello sviluppatore. */

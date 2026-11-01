@@ -9,7 +9,7 @@ hitl: false
 risk: low
 tracker_id: "115"
 remote: "https://github.com/AlessandroPaciello/page-builder/issues/115"
-tracker_status: backlog
+tracker_status: in-progress
 ---
 
 # Rendering condizionale e field structure come content
@@ -20,7 +20,7 @@ Una parte con `when=<field>` si rende solo se il field c'è, e la risposta `cont
 
 ## Requirements
 
-Verify: Una parte con `when` genera `{field && (…)}` nello scaffold con un test rosso/verde, un `when` su un field sconosciuto è un blocco, e rispondere `content` a `asse` chiude la domanda e genera senza asse.
+Verify: Una parte con `when` genera `{field ? (…) : null}` nello scaffold con un test rosso/verde, un `when` su un field sconosciuto è un blocco, e rispondere `content` a `asse` chiude la domanda e genera senza asse.
 
 ## References
 
@@ -31,3 +31,5 @@ Verify: Una parte con `when` genera `{field && (…)}` nello scaffold con un tes
 
 - Decision: 2026-10-31 — nata dallo split della 2.27: `when` e la risposta `content` alla domanda `asse` sono qui. Dove si registra la risposta `content` (plugin data o altro) va deciso nel plan di questa story.
 - Open question: la risposta `content` si legge dai plugin data della radice, come le altre risposte del nucleo?
+- Decision: 2026-11-01 — il rendering condizionale usa il ternario `{field ? (…) : null}` e non `{field && (…)}`: con `&&` un field numerico `0` stamperebbe «0». Verify aggiornata.
+- Decision: 2026-11-01 — la risposta `content` si legge dai plugin data del container, una chiave per field (`asse.<field>` = `content`).

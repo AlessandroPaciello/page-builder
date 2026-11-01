@@ -17,6 +17,14 @@ export interface SectionContract {
   readonly findings: Finding[];
 }
 
+/** Le risposte alla domanda `asse`: una chiave per field (`asse.<field>` = `content`). */
+export const ASSE_KEY = "asse";
+
+/** Prefisso della chiave di risposta: una per field, come `contract` sta nel container. */
+const ASSE_ANSWER_PREFIX = `${ASSE_KEY}.`;
+
+const ASSE_ANSWERS = ["asse", "content"] as const;
+
 interface EnumShape {
   readonly values: [string, ...string[]];
   readonly default: string;
@@ -45,10 +53,17 @@ function enumOf(schema: z.ZodType): EnumShape | undefined {
  * nome di variante e con uno schema enum diventa un asse (valori e default
  * dallo schema) e non resta anche field. Disegnato ma non enum è un blocco;
  * non disegnato è la domanda `asse` [`asse`, `content`], senza `Change`.
+ *
+ * `answers` sono i plugin data del container: `asse.<field>=content` chiude la
+ * domanda e lascia il field tra i `content` (non guida il disegno). Una risposta
+ * su un field non `structure`, su un field inesistente o con un valore fuori
+ * dalle opzioni è un blocco; se il field è disegnato vince il disegno (asse) con
+ * un avviso.
  */
 export function sectionContract(
   section: SectionDefinition,
   cells: readonly { readonly variant: Readonly<Record<string, string>> }[],
+  answers: Readonly<Record<string, string>> = {},
 ): SectionContract {
   const drawn = new Set<string>();
   for (const cell of cells) for (const name of Object.keys(cell.variant)) drawn.add(name);
@@ -56,18 +71,43 @@ export function sectionContract(
   const findings: Finding[] = [];
   const axes: Axis[] = [];
   const fields: Record<string, FieldDef> = {};
+  const where = (name: string): string => `sezione "${section.name}" › field "${name}"`;
+  const answerOf = (name: string): string | undefined => answers[`${ASSE_ANSWER_PREFIX}${name}`];
 
   for (const [name, field] of Object.entries(section.fields)) {
+    const answer = answerOf(name);
     if (field.kind !== "structure") {
       fields[name] = field;
+      if (answer !== undefined) {
+        findings.push({
+          level: "blocco",
+          where: where(name),
+          message: `Il field "${name}" è "${field.kind}", non "structure": la risposta "${ASSE_ANSWER_PREFIX}${name}" non si applica. Togli il plugin data.`,
+        });
+      }
       continue;
     }
     if (drawn.has(name)) {
+      if (answer !== undefined && !(ASSE_ANSWERS as readonly string[]).includes(answer)) {
+        findings.push({
+          level: "blocco",
+          where: where(name),
+          message: `La risposta "${ASSE_ANSWER_PREFIX}${name}"="${answer}" non è valida: le opzioni della domanda "asse" sono [${ASSE_ANSWERS.join(", ")}].`,
+        });
+        continue;
+      }
+      if (answer === "content") {
+        findings.push({
+          level: "avviso",
+          where: where(name),
+          message: `Il field structure "${name}" è disegnato come variante: vince il disegno e il field resta un asse, la risposta "content" si ignora. Togli il plugin data "${ASSE_ANSWER_PREFIX}${name}" o quella variante.`,
+        });
+      }
       const shape = enumOf(field.schema);
       if (shape === undefined) {
         findings.push({
           level: "blocco",
-          where: `sezione "${section.name}" › field "${name}"`,
+          where: where(name),
           message: `Il field structure "${name}" è disegnato come variante ma il suo schema non è un enum: un asse ha bisogno di valori chiusi. Trasforma lo schema in z.enum([...]) o togli il field dal disegno.`,
         });
         continue;
@@ -75,17 +115,44 @@ export function sectionContract(
       axes.push({ name, type: "option", values: shape.values, default: shape.default });
       continue;
     }
+    if (answer === "content") {
+      fields[name] = { ...field, kind: "content" };
+      continue;
+    }
+    if (answer !== undefined && answer !== "asse") {
+      findings.push({
+        level: "blocco",
+        where: where(name),
+        message: `La risposta "${ASSE_ANSWER_PREFIX}${name}"="${answer}" non è valida: le opzioni della domanda "asse" sono [${ASSE_ANSWERS.join(", ")}].`,
+      });
+      fields[name] = field;
+      continue;
+    }
     findings.push({
       level: "domanda",
-      where: `sezione "${section.name}" › field "${name}"`,
-      key: "asse",
+      where: where(name),
+      key: ASSE_KEY,
       message: `Il field structure "${name}" non ha una variante disegnata: "asse" = disegna le celle con questo nome e diventa l'asse delle varianti, "content" = il field non guida il disegno e passa a content.`,
-      options: ["asse", "content"],
+      options: [...ASSE_ANSWERS],
     });
     fields[name] = field;
   }
 
-  if (findings.length > 0) return { findings };
+  // Una risposta che nomina un field inesistente resta un blocco: il plugin data
+  // è di un'altra versione della sezione o è un refuso.
+  const names = Object.keys(section.fields);
+  for (const key of Object.keys(answers).sort()) {
+    if (!key.startsWith(ASSE_ANSWER_PREFIX)) continue;
+    const name = key.slice(ASSE_ANSWER_PREFIX.length);
+    if (Object.hasOwn(section.fields, name)) continue;
+    findings.push({
+      level: "blocco",
+      where: `sezione "${section.name}" › risposta "${key}"`,
+      message: `Il plugin data "${key}"="${answers[key]}" nomina un field che la sezione "${section.name}" non ha: i field sono [${names.join(", ")}].`,
+    });
+  }
+
+  if (findings.some((finding) => finding.level !== "avviso")) return { findings };
   return { contract: { name: section.name, version: section.version, axes, fields }, findings };
 }
 
