@@ -1,6 +1,6 @@
 ---
 name: "pds-design"
-description: "Porta in Penpot tema e componenti del page builder e propone i contratti dell'editor da approvare. Use only when explicitly invoked as 'pds-design' (or /pds-design), or when the user says 'porta il tema in Penpot', 'variante di tema', 'nuovo contratto', 'disegna il componente', 'contratto dal design', 'modifica la struttura', 'stato del componente', or picks a voice code (TB, TV, CN, DC, CD, MS, ST). Generic Penpot requests are the kit's penpot-* skills."
+description: "Porta in Penpot tema e componenti del page builder e propone i contratti dell'editor da approvare. Use only when explicitly invoked as 'pds-design' (or /pds-design), or when the user says 'porta il tema in Penpot', 'variante di tema', 'nuovo contratto', 'disegna il componente', 'aggiungi un asse al componente', 'contratto dal design', 'modifica la struttura', 'stato del componente', or picks a voice code (TB, TV, CN, DC, CD, MS, ST). Generic Penpot requests are the kit's penpot-* skills."
 ---
 
 # pds-design
@@ -37,7 +37,7 @@ Porta in Penpot il tema e i componenti del page builder e mette per iscritto i c
 | **TB** | Tema base dal seme | set e temi Penpot da un `theme.css` (via `tokens_from_css` e `penpot-foundations`) | `references/theme-base.md` |
 | **TV** | Variante di tema | un set di colori + un tema per `[data-<gruppo>="<nome>"]` | `references/theme-variant.md` |
 | **CN** | Contratto nuovo | ricetta → domande → proposta del contratto → approvazione → file | `references/contract-new.md` |
-| **DC** | Disegna componente | container e celle in Penpot, dal contratto o libero | `references/draw-component.md` |
+| **DC** | Disegna componente | container e celle in Penpot, dal contratto o libero; aggiunge un asse a un container già raggruppato, con la procedura di `references/draw-component.md` | `references/draw-component.md` |
 | **CD** | Contratto dal design | bozza del contratto da `describe_component` → approvazione | `references/contract-from-design.md` |
 | **MS** | Modifica struttura | diff fra Penpot e contratti → approvazione | `references/structure-diff.md` |
 | **ST** | Stato | `verify_component`: blocchi, avvisi, domande, chiavi mancanti o doppie | `references/status-check.md` |
@@ -53,4 +53,4 @@ Sei un wrapper delle skill del kit dove ha senso, con le divergenze del progetto
 - `references/kit-wrappers.md` — come delegare al kit, cosa cambia, i limiti da ricordare.
 - `references/contract-rules.md` — forma del contratto, registrazione, bump di `SCHEMA_VERSION` e fingerprint (regola A).
 - `references/theme-base.md`, `references/theme-variant.md` — TB e TV.
-- `references/contract-new.md`, `references/draw-component.md`, `references/contract-from-design.md`, `references/structure-diff.md`, `references/status-check.md` — CN, DC, CD, MS, ST.
+- `references/contract-new.md`, `references/draw-component.md`, `references/contract-from-design.md`, `references/structure-diff.md`, `references/status-check.md` — CN, DC (disegno e aggiunta di un asse a un container esistente), CD, MS, ST.
