@@ -2,7 +2,12 @@ document_output_language: Italiano
 output_folder: '{project-root}/_bmad-output'
 pds:
   name: Penpot DS
-  description: 'Allinea la library Penpot ai contratti del page builder: bootstrap
-    una tantum e aggiunte successive, con esito deciso dagli script di `packages/scripts`.'
+  description: 'Pipeline Penpot → codice del design system del page builder: tema
+    e componenti in Penpot con pds-design, codice con pds-code. La configurazione
+    di progetto è fissata (react, base-ui, tailwind-v4, fontsource).'
   version: 1.0.0
   default_selected: false
+  framework: react
+  headless: base-ui
+  styling: tailwind-v4
+  fonts: fontsource

@@ -1,2 +1,9 @@
 module,skill,display-name,menu-code,description,action,args,phase,preceded-by,followed-by,required,output-location,outputs
 pds,pds-setup,[SU] Setup,SU,Registra il modulo Penpot DS nel progetto,configure,,anytime,,,false,,
+pds,pds-design,[TB] Tema base,TB,Porta in Penpot set e temi dal seme theme.css,tema-base,,anytime,,,false,,
+pds,pds-design,[TV] Variante di tema,TV,Aggiunge un set di colori e un tema [data-<gruppo>=<nome>],tema-variante,,anytime,,,false,,
+pds,pds-design,[CN] Contratto nuovo,CN,"Dalla ricetta al contratto dell'editor, approvato",contratto-nuovo,,anytime,,DC,false,,
+pds,pds-design,[DC] Disegna componente,DC,"Disegna container e celle in Penpot, dal contratto o libero",disegna-componente,,anytime,CN,,false,,
+pds,pds-design,[CD] Contratto dal design,CD,"Bozza il contratto dal componente già disegnato, approvata",contratto-dal-design,,anytime,,,false,,
+pds,pds-design,[MS] Modifica struttura,MS,"Confronta Penpot e contratti, propone il diff e lo scrive su conferma",modifica-struttura,,anytime,,,false,,
+pds,pds-design,[ST] Stato,ST,"verify_component: blocchi, avvisi, domande, chiavi mancanti o doppie",stato,,anytime,,,false,,

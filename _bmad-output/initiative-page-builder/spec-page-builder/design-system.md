@@ -42,12 +42,12 @@ Componenti UI riusabili, organizzati per dominio, con varianti guidate dai token
 
 ## puck-components — blocchi del page-builder
 
-**Adapter Puck dei contratti.** Per ogni contratto: campi editor derivati dagli assi `option` (l'asse riservato `state` vive solo in Penpot e non diventa campo), `permissions`/`resolvePermissions` (lock della struttura, `max` degli slot) e render tramite la libreria dell'installazione. Schemi e classifier **non vivono qui** (AD-5). I campi spacing/radius derivano dai token (una modifica ai token propaga sia agli stili sia ai menu dei blocchi). Aggregati in un'unica config con categorie. Blocchi di riferimento:
+**Adapter Puck dei contratti.** Per ogni contratto **esposto come blocco** — il catalogo è una lista nominale, e un contratto annidato come `accordion-item` o `multiselect-trigger` resta un componente, non un blocco: campi editor derivati dagli assi `option` (l'asse riservato `state` vive solo in Penpot e non diventa campo), `permissions`/`resolvePermissions` (lock della struttura, `max` degli slot) e render tramite la libreria dell'installazione. Schemi e classifier **non vivono qui** (AD-5). I campi spacing/radius derivano dai token (una modifica ai token propaga sia agli stili sia ai menu dei blocchi). Aggregati in un'unica config con categorie. Blocchi di riferimento:
 
 | Categoria | Blocchi |
 |---|---|
 | Data Display | Badge, Card, Carousel, Image, RichText, Typography |
-| Inputs | Button, Checkbox, Input, Switch |
+| Inputs | Button, Checkbox, Input, Multiselect, Switch |
 | Feedback | Alert |
 | Layout | Accordion, Box, Collapsible, Columns, Separator, Spacer, Grid, Flex |
 

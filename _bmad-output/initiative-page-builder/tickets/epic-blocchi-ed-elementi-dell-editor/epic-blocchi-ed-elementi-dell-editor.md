@@ -64,3 +64,4 @@ L'editor deve chiamare il Tool solo tramite un'API di collaborazione chiaramente
 
 ## Notes
 - I build record storici di questo epic non erano presenti nel workspace v6: lo stato di avanzamento va tracciato in sprint planning, senza record da migrare.
+- Decision (2026-11-01): i blocchi sono la lista nominale del catalogo, non «un blocco per ogni contratto». Un contratto annidato (`multiselect-trigger`, `multiselect-panel`, `chip`, `option`, `checkbox`, `accordion-item`) resta un componente e non entra nel pannello dei blocchi; il catalogo lo nomina, come le sezioni nominano i contratti in `allow`. I field di contenuto di una composizione stanno sul contratto del suo blocco (`multiselect`) e il passaggio ai figli è nel TSX dello sviluppatore, non nel contratto (AD-5).

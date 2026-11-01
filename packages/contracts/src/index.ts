@@ -2,7 +2,13 @@ export { classifyField } from "./classifier";
 export { accordionItem } from "./components/accordion-item";
 export { alert } from "./components/alert";
 export { badge } from "./components/badge";
+export { checkbox } from "./components/checkbox";
+export { chip } from "./components/chip";
 export { input } from "./components/input";
+export { multiselect } from "./components/multiselect";
+export { multiselectPanel } from "./components/multiselect-panel";
+export { multiselectTrigger } from "./components/multiselect-trigger";
+export { option } from "./components/option";
 export { productCard } from "./components/product-card";
 export {
   type Axis,

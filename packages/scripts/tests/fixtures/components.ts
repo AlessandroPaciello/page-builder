@@ -1,4 +1,4 @@
-import { badge, defineContract, type ComponentContract } from "@app/contracts";
+import { badge, defineContract, multiselect, type ComponentContract } from "@app/contracts";
 import { z } from "zod";
 
 import type { Cella, Lettura, LetturaLayer, Scale, TokenType } from "../../src/core";
@@ -7,6 +7,8 @@ import type { Cella, Lettura, LetturaLayer, Scale, TokenType } from "../../src/c
  * Letture scritte a mano per i test del nucleo (Story 2.22, livello 1): Badge
  * (contratto vero di `@app/contracts`) e ShopCard⊃Badge (contratto di prova,
  * scritto qui: `@app/contracts` non ha una ShopCard e la story non lo tocca).
+ * Dalla Story 2.28 anche Multiselect, col contratto vero: l'asse di rendering
+ * `open` sta in `packages/scripts` (`rendering.ts`), non nel contratto.
  */
 
 export const shopCard = defineContract({
@@ -20,7 +22,7 @@ export const shopCard = defineContract({
   },
 });
 
-export const CONTRACTS: Readonly<Record<string, ComponentContract>> = { badge, "shop-card": shopCard };
+export const CONTRACTS: Readonly<Record<string, ComponentContract>> = { badge, multiselect, "shop-card": shopCard };
 
 export const SCALE: Scale = [
   { suffix: "1", px: 4 },
@@ -108,4 +110,32 @@ export function shopCardLettura(instance: (promo: string) => LetturaLayer = () =
       }),
     })),
   };
+}
+
+/**
+ * Multiselect: un asse `option` (`size`), l'asse di rendering `open` e lo stato.
+ * Il colore della radice cambia con `open` e con `state`: la cella di partenza
+ * (`open=false, state=default`) deve ricevere le classi prefissate
+ * (`data-[open=true]:bg-accent`, `hover:bg-secondary`, …).
+ */
+export function multiselectLettura(): Lettura {
+  const fills: Readonly<Record<string, string>> = {
+    "false|default": "primary",
+    "true|default": "accent",
+    "false|hover": "secondary",
+    "true|hover": "destructive",
+  };
+  const cells: Cella[] = (["false", "true"] as const).flatMap((open) =>
+    (["default", "hover"] as const).map((state) => ({
+      variant: { open, state, size: "md" },
+      root: layer({
+        name: "Multiselect",
+        kind: "board",
+        tokens: { fill: fills[`${open}|${state}`]! },
+        style: { layoutDir: "column" },
+        children: [layer({ name: "Testo", kind: "text", pluginData: { part: "label" }, tokens: { fontSize: "text.sm" } })],
+      }),
+    })),
+  );
+  return { component: "Multiselect", pluginData: { contract: "multiselect@1" }, cells };
 }

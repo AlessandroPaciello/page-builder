@@ -17,7 +17,7 @@ import {
   type Lettura,
   type LetturaLayer,
 } from "../../src/core";
-import { badgeInstance, badgeLettura, badgeRoot, CONTRACTS, layer, SCALE, shopCardLettura, tokenTypeOf } from "../fixtures/components";
+import { badgeInstance, badgeLettura, badgeRoot, CONTRACTS, layer, multiselectLettura, SCALE, shopCardLettura, tokenTypeOf } from "../fixtures/components";
 
 /**
  * Livello 1 della CI (Story 2.22): generazione di `styles.ts`, story e
@@ -172,6 +172,17 @@ describe("generateComponent — matrice della spec", () => {
     expect(styles).toContain(`        secondary: "${STATE_PREFIXES.disabled}bg-muted bg-secondary",`);
     expect(styles).not.toContain("focus-visible:");
     expect(styles).not.toContain("hover:");
+  });
+
+  it("error disegnato: le classi finiscono nella base con `[&[aria-invalid=true]]:` (Story 2.28)", () => {
+    const lettura = badgeLettura();
+    for (const size of ["sm", "md"]) {
+      const cell = badgeRoot("default", size);
+      lettura.cells.push({ variant: { variant: "default", size, state: "error" }, root: { ...cell, tokens: { ...cell.tokens, fill: "muted" } } });
+    }
+    const styles = contentOf(generate(lettura).changes, ".styles.ts");
+    expect(STATE_PREFIXES.error).toBe("[&[aria-invalid=true]]:");
+    expect(styles).toContain("[&[aria-invalid=true]]:bg-muted bg-primary");
   });
 
   it("TSX esistente: nessun Change sul .tsx; due giri danno lo stesso output byte per byte", () => {
@@ -373,5 +384,22 @@ describe("decompose", () => {
   it("contano solo le celle in cui la parte c'è", () => {
     expect(decompose(badge, cells.slice(0, 1))).toMatchObject({ base: ["bg-primary", "flex", "pl-2", "ring-1"], compounds: [] });
     expect(decompose(badge, [])).toMatchObject({ base: [], compounds: [] });
+  });
+});
+
+describe("assi di rendering (Story 2.28)", () => {
+  it("genera Badge-like Multiselect: le classi prefissate finiscono nella base della cva", () => {
+    const result = generate(multiselectLettura());
+    expect(result.findings).toEqual([]);
+    const styles = contentOf(result.changes, ".styles.ts");
+    expect(styles).toContain("data-[open=true]:bg-accent");
+    expect(styles).toContain("hover:bg-secondary");
+    expect(styles).toContain("data-[open=true]:hover:bg-destructive");
+    // `open` non è un asse del contratto: non compare in `MultiselectAxes` né tra le varianti.
+    expect(styles).toContain("export type MultiselectAxes = {\n  readonly size?: \"md\" | \"sm\";\n};");
+    expect(styles).not.toContain("readonly open");
+    // Una story per cella di partenza: gli assi di rendering non moltiplicano le story.
+    const stories = contentOf(result.changes, ".stories.tsx");
+    expect(stories.match(/export const \w+: Story = /g)).toHaveLength(1);
   });
 });

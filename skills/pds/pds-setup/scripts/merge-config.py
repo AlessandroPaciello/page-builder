@@ -16,11 +16,18 @@ Matching values serve as fallback defaults (answers override them). After a
 successful merge, the legacy config.yaml files are deleted. Only the current
 module and core directories are touched — other module directories are left alone.
 
-Exit codes: 0=success, 1=validation error, 2=runtime error
+Fixed configuration (Story 2.28): a variable declared as a `single-select` with
+exactly one option is fixed by the pipeline. Its value is written even when the
+answers leave it out, and any other value — in the answers, in the arguments or
+in a legacy config — is an explicit refusal: exit 1, nothing written, message
+naming the variable and the allowed values.
+
+Exit codes: 0=success, 1=validation error (including an unsupported value), 2=runtime error
 """
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -88,6 +95,133 @@ def load_json_file(path: str) -> dict:
 _CORE_KEYS = frozenset(
     {"user_name", "communication_language", "document_output_language", "output_folder"}
 )
+
+# module.yaml keys that describe the module, never a configuration variable.
+_MODULE_META_KEYS = frozenset(
+    {
+        "code",
+        "name",
+        "description",
+        "module_version",
+        "default_selected",
+        "module_greeting",
+        "agents",
+        "directories",
+        "post-install-notes",
+    }
+)
+
+
+def module_variables(module_yaml: dict) -> dict:
+    """The module.yaml entries that declare a variable (a mapping, not metadata)."""
+    return {
+        name: definition
+        for name, definition in module_yaml.items()
+        if name not in _MODULE_META_KEYS and isinstance(definition, dict)
+    }
+
+
+def fixed_value(definition: dict):
+    """The only allowed value of a `single-select` that declares exactly one option.
+
+    A one-option single-select is a fixed configuration value: the pipeline
+    implements that value and refuses the others, so there is nothing to choose.
+    """
+    options = definition.get("single-select")
+    if isinstance(options, list) and len(options) == 1:
+        option = options[0]
+        return option.get("value") if isinstance(option, dict) else option
+    return None
+
+
+def select_values(definition: dict):
+    """The values of a `single-select`/`multi-select`, or None for a free variable."""
+    for key in ("single-select", "multi-select"):
+        options = definition.get(key)
+        if isinstance(options, list):
+            return [option.get("value") if isinstance(option, dict) else option for option in options]
+    return None
+
+
+def apply_fixed_values(module_yaml: dict, module_answers: dict) -> tuple[dict, list]:
+    """Fill the fixed variables the answers leave empty. Returns (answers, applied keys)."""
+    filled = dict(module_answers)
+    applied = []
+    for name, definition in module_variables(module_yaml).items():
+        value = fixed_value(definition)
+        if value is not None and filled.get(name) in (None, ""):
+            filled[name] = value
+            applied.append(name)
+    return filled, applied
+
+
+def validate_module_answers(module_yaml: dict, module_answers: dict) -> list:
+    """Check every answer against its variable definition.
+
+    Returns the list of problems; empty means valid. A name that is not a
+    declared variable, a value outside `single-select`/`multi-select`, a
+    non-boolean for a confirm, an empty `required` field and a `regex` miss are
+    all errors, so an unsupported configuration can never reach the config files.
+    """
+    problems = []
+    variables = module_variables(module_yaml)
+
+    for name, value in module_answers.items():
+        definition = variables.get(name)
+        if definition is None:
+            declared = ", ".join(sorted(variables)) or "(none)"
+            problems.append(
+                f"'{name}' is not a module variable declared in module.yaml (declared: {declared})."
+            )
+            continue
+
+        options = select_values(definition)
+        if options is not None:
+            if isinstance(definition.get("multi-select"), list):
+                chosen = value if isinstance(value, list) else [value]
+                unknown = [item for item in chosen if item not in options]
+                if unknown:
+                    problems.append(
+                        f"'{name}': {', '.join(repr(item) for item in unknown)} not allowed "
+                        f"(allowed: {', '.join(str(option) for option in options)})."
+                    )
+            elif value not in options:
+                problems.append(
+                    f"'{name}': {value!r} is not supported (allowed: "
+                    f"{', '.join(str(option) for option in options)}). "
+                    "The pipeline implements only these values."
+                )
+
+        if isinstance(definition.get("default"), bool) and not isinstance(value, bool):
+            problems.append(f"'{name}': {value!r} is not a boolean.")
+
+        if definition.get("required") is True and value in (None, "", []):
+            problems.append(f"'{name}' is required and was left empty.")
+
+        pattern = definition.get("regex")
+        if isinstance(pattern, str) and value not in (None, ""):
+            if not re.fullmatch(pattern, str(value)):
+                problems.append(f"'{name}': {value!r} does not match {pattern}.")
+
+    return problems
+
+
+def reject_invalid_answers(module_yaml: dict, module_answers: dict) -> None:
+    """Exit 1 with a JSON message, before any write, when an answer is unsupported."""
+    problems = validate_module_answers(module_yaml, module_answers)
+    if problems:
+        print(
+            json.dumps(
+                {
+                    "status": "error",
+                    "error": "Unsupported module configuration. Nothing was written.",
+                    "problems": problems,
+                },
+                indent=2,
+            ),
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
 
 def load_legacy_values(
@@ -382,6 +516,37 @@ def main():
         sys.exit(1)
 
     answers = load_json_file(args.answers)
+    if not isinstance(answers, dict):
+        print(
+            json.dumps(
+                {
+                    "status": "error",
+                    "error": "The answers file must be a JSON object. Nothing was written.",
+                },
+                indent=2,
+            ),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    # The module answers must be an object before anything merges them: with a
+    # falsy `module` (`0`, `false`, `[]`, `""`) `apply_legacy_defaults` used to
+    # raise before the JSON refusal below could run.
+    module_answers = answers.get("module")
+    if module_answers is None:
+        module_answers = {}
+    if not isinstance(module_answers, dict):
+        print(
+            json.dumps(
+                {
+                    "status": "error",
+                    "error": "'module' in the answers file must be an object. Nothing was written.",
+                },
+                indent=2,
+            ),
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    answers["module"] = module_answers
     existing_config = load_yaml_file(args.config_path)
 
     if args.verbose:
@@ -401,6 +566,13 @@ def main():
             answers = apply_legacy_defaults(answers, legacy_core, legacy_module)
             if args.verbose:
                 print("Applied legacy values as fallback defaults", file=sys.stderr)
+
+    # Fixed configuration and refusal of unsupported values, before any write.
+    # `answers["module"]` è già un oggetto: lo ha garantito il controllo prima
+    # del merge legacy (e il merge legacy riparte da quello).
+    module_answers, fixed_applied = apply_fixed_values(module_yaml, answers["module"])
+    reject_invalid_answers(module_yaml, module_answers)
+    answers["module"] = module_answers
 
     # Merge and write config.yaml
     updated_config = merge_config(existing_config, module_yaml, answers, args.verbose)
@@ -430,6 +602,8 @@ def main():
         "module_code": module_code,
         "core_updated": bool(answers.get("core")),
         "module_keys": list(updated_config.get(module_code, {}).keys()),
+        "module_variables": module_answers,
+        "fixed_values": fixed_applied,
         "user_keys": list(user_settings.keys()),
         "legacy_configs_found": legacy_files_found,
         "legacy_configs_deleted": legacy_deleted,

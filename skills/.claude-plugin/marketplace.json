@@ -6,7 +6,7 @@
       "name": "pds",
       "source": ".",
       "version": "1.0.0",
-      "skills": ["./pds/pds-setup"]
+      "skills": ["./pds/pds-setup", "./pds/pds-design"]
     },
     {
       "name": "gitflow",

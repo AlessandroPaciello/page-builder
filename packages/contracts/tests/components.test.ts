@@ -6,7 +6,13 @@ import { describe, expect, it } from "vitest";
 
 import { accordionItem } from "../src/components/accordion-item";
 import { badge } from "../src/components/badge";
+import { checkbox } from "../src/components/checkbox";
+import { chip } from "../src/components/chip";
 import { input } from "../src/components/input";
+import { multiselect } from "../src/components/multiselect";
+import { multiselectPanel } from "../src/components/multiselect-panel";
+import { multiselectTrigger } from "../src/components/multiselect-trigger";
+import { option } from "../src/components/option";
 import { productCard } from "../src/components/product-card";
 import { contractId, propsSchema, type ComponentContract } from "../src/contract";
 import { COMPONENT_CONTRACTS } from "../src/registry";
@@ -115,6 +121,48 @@ describe("product-card@1 (Story 2.12, primo contratto ridotto)", () => {
   });
 });
 
+describe("contratti della Multiselect (Story 2.28)", () => {
+  it("multiselect: un asse option size, i field dei figli ripetuti, nessun asse di rendering", () => {
+    expect(multiselect.name).toBe("multiselect");
+    expect(multiselect.version).toBe(1);
+    expect(multiselect.axes).toEqual([{ name: "size", type: "option", values: ["md", "sm"], default: "md" }]);
+    expect(Object.keys(multiselect.fields)).toEqual(["helper", "placeholder", "selected", "options", "searchPlaceholder", "emptyLabel"]);
+    for (const name of ["open", "display", "removable", "checked", "state"]) {
+      expect(Object.keys(propsSchema(multiselect).shape)).not.toContain(name);
+    }
+    expect(multiselect.fields.selected.schema.safeParse([]).success).toBe(true);
+    expect(multiselect.fields.options.schema.safeParse([]).success).toBe(true);
+  });
+
+  it("multiselect-trigger: size option, placeholder facoltativo, selected obbligatorio", () => {
+    expect(multiselectTrigger.name).toBe("multiselect-trigger");
+    expect(multiselectTrigger.axes).toEqual([{ name: "size", type: "option", values: ["md", "sm"], default: "md" }]);
+    expect(Object.keys(multiselectTrigger.fields)).toEqual(["placeholder", "selected"]);
+    expect(multiselectTrigger.fields.placeholder.schema.safeParse(undefined).success).toBe(true);
+    expect(multiselectTrigger.fields.selected.schema.safeParse(undefined).success).toBe(false);
+  });
+
+  it("multiselect-panel: nessun asse option (`content` è resa), ricerca fuori (Story 2.35)", () => {
+    expect(multiselectPanel.name).toBe("multiselect-panel");
+    expect(multiselectPanel.axes).toEqual([]);
+    expect(Object.keys(multiselectPanel.fields)).toEqual(["options", "searchPlaceholder", "emptyLabel"]);
+    expect(Object.keys(propsSchema(multiselectPanel).shape)).toEqual(["options", "searchPlaceholder", "emptyLabel"]);
+  });
+
+  it("chip, option e checkbox: solo le scelte dell'editor; removable e checked restano rendering", () => {
+    expect(chip.axes).toEqual([{ name: "size", type: "option", values: ["md", "sm"], default: "md" }]);
+    expect(Object.keys(chip.fields)).toEqual(["label"]);
+    expect(option.axes).toEqual([]);
+    expect(Object.keys(option.fields)).toEqual(["label"]);
+    expect(checkbox.axes).toEqual([]);
+    expect(checkbox.fields).toEqual({});
+    for (const contract of [chip, option, checkbox]) {
+      expect(Object.keys(propsSchema(contract).shape)).not.toContain("removable");
+      expect(Object.keys(propsSchema(contract).shape)).not.toContain("checked");
+    }
+  });
+});
+
 describe("registry e contractId", () => {
   it("ogni file in src/components/ è nel registry con chiave = nome, e il registry non ha altro", async () => {
     const dir = resolve(import.meta.dirname, "../src/components");
@@ -134,8 +182,17 @@ describe("registry e contractId", () => {
       expect(exported[0]!.name, `src/components/${file}: il nome del contratto ≠ nome del file`).toBe(name);
       expect(registered[name], `src/components/${file}: il contratto "${name}" non è nel registry`).toBe(exported[0]);
     }
-    expect(Object.keys(COMPONENT_CONTRACTS).sort()).toEqual(files.map((file) => file.replace(/\.ts$/, "")));
+    // Ordino i nomi senza estensione: con l'estensione `multiselect-panel.ts` precede `multiselect.ts` (`-` < `.`).
+    expect(Object.keys(COMPONENT_CONTRACTS).sort()).toEqual(files.map((file) => file.replace(/\.ts$/, "")).sort());
     for (const [name, contract] of Object.entries(COMPONENT_CONTRACTS)) expect(contract.name).toBe(name);
+  });
+
+  it("un nome prefisso di un altro (multiselect / multiselect-panel) resta due contratti distinti", () => {
+    expect(Object.hasOwn(COMPONENT_CONTRACTS, "multiselect")).toBe(true);
+    expect(Object.hasOwn(COMPONENT_CONTRACTS, "multiselect-panel")).toBe(true);
+    expect(contractId(COMPONENT_CONTRACTS["multiselect"]!)).toBe("multiselect@1");
+    expect(contractId(COMPONENT_CONTRACTS["multiselect-panel"]!)).toBe("multiselect-panel@1");
+    expect(COMPONENT_CONTRACTS["multiselect"]).not.toBe(COMPONENT_CONTRACTS["multiselect-panel"]);
   });
 
   it("produce il formato nome@versione del plugin data Penpot", () => {

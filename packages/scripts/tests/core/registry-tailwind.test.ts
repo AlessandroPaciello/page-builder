@@ -10,6 +10,8 @@ import {
   RADIUS_CORNERS,
   registeredProperties,
   REGISTRY,
+  RENDERING_AXES,
+  renderingPrefix,
   scaleClass,
   scaleFromThemeCss,
   STATE_PREFIXES,
@@ -185,7 +187,29 @@ describe("livello 4 — ogni classe del registro produce CSS con la Tailwind ins
       for (const { property, cls } of batch) if (!hasSelector(output, cls)) missing.push(`${property}: ${cls}`);
     }
     expect(missing, "classi di stato che non producono CSS").toEqual([]);
+    // `error` (Story 2.28) è uno stato come gli altri, con il selettore dell'ARIA invalida.
+    expect(STATE_PREFIXES.error).toBe("[&[aria-invalid=true]]:");
+    const errorCompiler = await compile(`@import "tailwindcss";\n${css}`, { base: import.meta.dirname, onDependency: () => {} });
+    const errorClass = `${STATE_PREFIXES.error}bg-primary`;
+    expect(hasSelector(errorCompiler.build([errorClass]), errorClass)).toBe(true);
   }, 60_000);
+
+  it("Story 2.28: ogni prefisso degli assi di rendering produce CSS", async () => {
+    const theme = catalog();
+    const css = themeCss(theme);
+    const prefixes = Object.values(RENDERING_AXES)
+      .flat()
+      .flatMap((axis) => axis.values.filter((value) => value !== axis.base).map((value) => renderingPrefix(axis, value)));
+    expect(prefixes.length).toBeGreaterThan(0);
+    const classes = [...new Set(prefixes.map((prefix) => `${prefix}bg-primary`))];
+    const compiler = await compile(`@import "tailwindcss";\n${css}`, { base: import.meta.dirname, onDependency: () => {} });
+    const output = compiler.build(classes);
+    const missing = classes.filter((cls) => !hasSelector(output, cls));
+    expect(missing, "classi degli assi di rendering che non producono CSS").toEqual([]);
+    // La variante `data-[…]` compila con qualunque valore; è il nome della variante che deve esistere.
+    expect(hasSelector(compiler.build(["data-[open=forse]:bg-primary"]), "data-[open=forse]:bg-primary")).toBe(true);
+    expect(hasSelector(compiler.build(["forse:bg-primary"]), "forse:bg-primary")).toBe(false);
+  });
 
   it("rosso: una classe che Tailwind non conosce non produce CSS", async () => {
     const compiler = await compile(`@import "tailwindcss";\n${themeCss(catalog())}`, { base: import.meta.dirname, onDependency: () => {} });

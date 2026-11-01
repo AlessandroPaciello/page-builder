@@ -9,6 +9,7 @@ export * from "./geometry";
 export * from "./hash";
 export * from "./naming";
 export * from "./registry";
+export * from "./rendering";
 export * from "./schemas";
 export * from "./section";
 export * from "./token-names";
