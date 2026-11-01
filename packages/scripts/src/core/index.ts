@@ -6,6 +6,7 @@
 export * from "./build-order";
 export * from "./generate";
 export * from "./geometry";
+export * from "./group-variants";
 export * from "./hash";
 export * from "./naming";
 export * from "./registry";

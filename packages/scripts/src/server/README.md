@@ -24,14 +24,15 @@ Il processo MCP eredita l'ambiente in cui parte il client: servono **Node 22** (
 | `generate_component` | `{ name }` | `{ changes, findings, suggestions, written }` | sì, solo in `packages/ui/src/domains/<name>/` |
 | `tokens_from_css` | `{ css }` | `{ sets, themes, warnings }` | no |
 | `extract_theme` | `{ fonts? }` | `{ written, packages }` | sì, solo in `packages/tokens/src/` |
+| `group_variants` | `{ component }` | `{ outcome, component, container?, axes, cells }` | sì, solo su Penpot (le celle → un container di varianti) |
 
 `name` è il nome del contratto (`badge`, `badge@1`) o del layer in Penpot, come in `readComponent`. Ingressi e uscite sono schemi zod (`tools.ts`); l'uscita arriva sia come `structuredContent` sia come testo JSON.
 
 ## Regole
 
-- **Iniezione.** `createPdsServer({ penpot, root, contracts? })` riceve l'adattatore `{ readComponent, readTokenCatalog }` e non importa da `src/penpot`. Solo `main.ts` lega l'adattatore vero e la root del repo (`PATHS.repoRoot`); la regola `server` di `check-boundaries.mjs` lo impone.
+- **Iniezione.** `createPdsServer({ penpot, root, contracts? })` riceve l'adattatore `{ readComponent, readTokenCatalog, groupVariants }` e non importa da `src/penpot`. Solo `main.ts` lega l'adattatore vero e la root del repo (`PATHS.repoRoot`); la regola `server` di `check-boundaries.mjs` lo impone.
 - **Nessuno stato.** Ogni chiamata rilegge da Penpot il catalogo token (tutti i set più i temi) e i componenti. Dal catalogo: `tokenTypeOf` (nome → tipo) e `scale` (`scaleFromThemeCss(generateTheme(baseCatalog(catalog)).css)`) — solo la base, perché le varianti ripetono i nomi dei token.
-- **Mai su Penpot.** L'adattatore espone solo letture. Gli esiti del nucleo tornano così come sono: il server non decide niente.
+- **Una sola scrittura su Penpot** (`group_variants`, Story 2.36). L'adattatore legge le celle (`readVariantCells`, che non scrive), il nucleo decide (`planGroupVariants`: matrice dal contratto, nomi completi; un nome incompleto, un valore fuori contratto, una cella doppia o senza cella di partenza sono rifiutati, le combinazioni non disegnate una nota `notDrawn`) e solo allora la scrittura parte. Con `write: false` — `già raggruppato` o `singolo` — Penpot non si tocca: la chiamata è idempotente. Non si scrivono plugin data `pagebuilder` (li scrive `pds-code`) né token. Gli altri strumenti leggono soltanto, e gli esiti del nucleo tornano così come sono.
 - **`generated`** = le cartelle di `packages/ui/src/domains/` con un `<Comp>.styles.ts` che ha il marker `@generated` (`generated-files.ts`).
 - **Scrittura** (`write-changes.ts`). Si applicano solo i `Change` del nucleo. Prima si controllano tutti, poi si scrive: un path assoluto, con `..`/`.`/segmenti vuoti, fuori da `packages/ui/src/domains/<name>/` o che esce attraverso un symlink è un errore e non si scrive nessun file; `crea` su un file che esiste è un errore; `aggiorna` ed `elimina` toccano solo un file con marker. Con un blocco o una domanda aperta non si scrive niente (`written: []`). Il `<Comp>.tsx` dello sviluppatore non si tocca mai.
 - **Scrittura del tema** (`write-theme.ts`, Story 2.26). `extract_theme` scrive in `packages/tokens/src/` con le stesse regole (path confinato, niente symlink, sovrascrive solo file con il marker).
@@ -43,7 +44,7 @@ Il processo MCP eredita l'ambiente in cui parte il client: servono **Node 22** (
 
 ## Test (livello 2)
 
-`tests/server/server.test.ts`: il server in memoria (`InMemoryTransport`) con un adattatore finto costruito dalle `Lettura` di `tests/fixtures/components.ts` e un catalogo token scritto a mano. Ogni strumento ha un test verde e uno d'ingresso rifiutato; `generate_component` scrive in una root temporanea. Il seam `generate` (un nucleo finto) prova i path rifiutati. `tests/server/write-changes.test.ts` prova i limiti dei path uno per uno.
+`tests/server/server.test.ts`: il server in memoria (`InMemoryTransport`) con un adattatore finto costruito dalle `Lettura` di `tests/fixtures/components.ts` e un catalogo token scritto a mano. Ogni strumento ha un test verde e uno d'ingresso rifiutato; `generate_component` scrive in una root temporanea. Il seam `generate` (un nucleo finto) prova i path rifiutati. Per `group_variants` il finto Penpot applica il piano del nucleo a una lettura di celle scritta a mano, e conta le scritture: un nome incompleto o una cella di partenza mancante ferma tutto prima. `tests/server/write-changes.test.ts` prova i limiti dei path uno per uno.
 
 ## Prova a mano
 
@@ -57,4 +58,4 @@ printf '%s\n' \
   | pnpm --silent --filter @penpot-ds/scripts pds
 ```
 
-Lo stdout contiene solo le due risposte JSON-RPC, con i sei strumenti. Con Penpot collegato, `describe_component {"name":"badge"}` restituisce la `Lettura` di Badge.
+Lo stdout contiene solo le due risposte JSON-RPC, con i sette strumenti. Con Penpot collegato, `describe_component {"name":"badge"}` restituisce la `Lettura` di Badge; `group_variants {"component":"chip"}` raggruppa le celle della Chip (o risponde `già raggruppato`).

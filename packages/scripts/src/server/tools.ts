@@ -1,11 +1,11 @@
 import { z } from "zod";
 
-import { Change, Finding, Lettura, Suggerimento } from "../core";
+import { Change, Finding, GroupVariantsResult, Lettura, Suggerimento } from "../core";
 
 /**
- * Nomi, descrizioni e schemi zod dei sei strumenti del server `pds` (Story
- * 2.24). Le uscite sono oggetti: MCP vuole uno `structuredContent` oggetto,
- * quindi i `Finding[]` di `verify_component` stanno in `{ findings }`.
+ * Nomi, descrizioni e schemi zod dei sette strumenti del server `pds` (Storie
+ * 2.24 e 2.36). Le uscite sono oggetti: MCP vuole uno `structuredContent`
+ * oggetto, quindi i `Finding[]` di `verify_component` stanno in `{ findings }`.
  */
 
 const name = z.string().min(1).describe("Il componente: nome del contratto (`badge`, `badge@1`) o del layer in Penpot.");
@@ -22,7 +22,15 @@ const penpotTokenSet = z.object({ name: z.string(), tokens: z.array(penpotToken)
 const penpotTheme = z.object({ group: z.string(), name: z.string(), sets: z.array(z.string()) });
 const warning = z.object({ var: z.string(), why: z.string() });
 
-export const TOOL_NAMES = ["tokens_from_css", "describe_component", "verify_component", "build_order", "generate_component", "extract_theme"] as const;
+export const TOOL_NAMES = [
+  "tokens_from_css",
+  "describe_component",
+  "verify_component",
+  "build_order",
+  "generate_component",
+  "extract_theme",
+  "group_variants",
+] as const;
 
 export type ToolName = (typeof TOOL_NAMES)[number];
 
@@ -59,5 +67,11 @@ export const TOOLS = {
       "Legge da Penpot tutti i set e i temi (non solo quelli attivi) e scrive in packages/tokens/src/ theme.css, themes/<gruppo>-<nome>.css, fonts.css e tokens.generated.ts (@generated, con l'hash del corpo). Restituisce i file scritti e i pacchetti @fontsource/* da installare.",
     input: z.object({ fonts: z.enum(["fontsource"]).optional().describe('Solo "fontsource": un altro valore è un rifiuto esplicito.') }).strict(),
     output: z.object({ written: z.array(z.string()), packages: z.array(z.string()) }),
+  },
+  group_variants: {
+    description:
+      "Raggruppa in un container di varianti le celle sciolte «Component / Axis=Value» di un componente, con una chiamata al posto della sequenza manuale di DC: matrice dal contratto e dagli assi di rendering, nomi completi, assi impostati, istanze annidate ancora collegate; se le celle si sovrappongono le dispone in griglia, altrimenti non le sposta. L'unico strumento che scrive su Penpot (non plugin data, non token): un nome incompleto, un valore fuori contratto, una cella doppia o senza cella di partenza è un rifiuto, senza scrivere, mentre le combinazioni non disegnate sono una nota (`notDrawn`); un componente già raggruppato o a cella sola non si tocca.",
+    input: { component: name.describe("Il componente da raggruppare: nome del contratto (`chip`, `chip@1`) o del layer in Penpot.") },
+    output: GroupVariantsResult,
   },
 } as const satisfies Record<ToolName, { description: string; input: z.ZodRawShape | z.ZodObject; output?: z.ZodType }>;

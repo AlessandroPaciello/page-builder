@@ -61,3 +61,28 @@ describe("nessun process.exit in src", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+/**
+ * La scrittura su Penpot vive in un punto solo (Story 2.36): `group_variants`
+ * è l'unico strumento che muta il file, e il codice che crea il container di
+ * varianti sta solo in `src/penpot/group-variants.ts`. Nessun modulo scrive
+ * plugin data `pagebuilder` (li scrive `pds-code`) né token.
+ */
+describe("una sola scrittura su Penpot", () => {
+  const sources = sourceFiles(SRC).map((file) => ({ file: relative(PATHS.packageRoot, file), text: readFileSync(file, "utf8") }));
+
+  it("`createVariantFromComponents` compare solo in src/penpot/group-variants.ts", () => {
+    const offenders = sources.filter((source) => source.text.includes("createVariantFromComponents")).map((source) => source.file);
+    expect(offenders).toEqual([join("src", "penpot", "group-variants.ts")]);
+  });
+
+  it("nessun modulo scrive le plugin data pagebuilder", () => {
+    const offenders = sources.filter((source) => /setSharedPluginData\s*\(/.test(source.text) || /setPluginData\s*\(/.test(source.text)).map((source) => source.file);
+    expect(offenders).toEqual([]);
+  });
+
+  it("nessun modulo scrive token", () => {
+    const offenders = sources.filter((source) => /\b(addToken|applyToken|removeToken|updateToken)\s*\(/.test(source.text)).map((source) => source.file);
+    expect(offenders).toEqual([]);
+  });
+});

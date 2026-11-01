@@ -15,7 +15,7 @@ Quando la skill del kit è installata, leggila e seguila, applicando sopra le di
 ## Cosa cambia rispetto al kit
 
 - **Il plugin data lo scrive `pds-code`.** Un container disegnato da DC non ha `pagebuilder/contract`; senza quel dato la lettura per contratto non trova nulla e si passa dal nome del layer. Dillo al designer: è atteso, e `pds-code` lo scrive dopo la conferma.
-- **Il raggruppamento non ha ripiego.** Le celle sciolte `Component / Axis=Value` non sono leggibili come componente: `describe_component` cerca un container per contratto o per nome e ne legge uno solo, e una cella senza assi non risponde al nome kebab del componente. Se la mutazione non riesce, DC si ferma e lo riporta: non lascia celle separate.
+- **Il raggruppamento è una chiamata, senza ripiego.** Le celle sciolte `Component / Axis=Value` non sono leggibili come componente: `describe_component` cerca un container per contratto o per nome e ne legge uno solo, e una cella senza assi non risponde al nome kebab del componente. Il raggruppamento lo fa `group_variants` (uno strumento del server `pds`, non il kit), dopo la conferma: un nome incompleto o la cella di partenza mancante è un rifiuto che nomina la cella, e nessuna scrittura parte; le combinazioni non disegnate sono una nota. Se la chiamata fallisce, DC si ferma e lo riporta: non lascia celle separate e non torna al kit per un ripiego.
 - **Un token un proprietario.** Il vocabolario è quello che `tokens_from_css` restituisce e che `extract_theme` rigenera; il kit propone scale (Minor Third, griglia 4 px) solo quando non c'è nulla da cui partire.
 - **Niente stato persistente.** Non salvi letture Penpot nel repo, non tieni cache fra le chiamate: Penpot si rilegge quando serve.
 
@@ -25,7 +25,7 @@ Quando la skill del kit è installata, leggila e seguila, applicando sopra le di
 |---|---|
 | `applyToken` asincrono (~100 ms, ~0,8 s con molti token) e lega per nome | applica a blocchi di ~25–40 forme, verifica in una chiamata successiva, ritenta i buchi; mai applicare e rileggere nello stesso `execute_code` |
 | `createVariants.js` annida una copia nel clone | una cella per chiamata, costruita da zero |
-| Mutare le varianti (`setVariantProperty`, rinomina di assi, detach) può corrompere il file: i salvataggi successivi si bloccano | prima di raggruppare, chiedi di duplicare il **file** (non la pagina); la sequenza `transformInVariant` + `appendChild` + assi è in `draw-component.md`, e `library.local.components` deve elencare un componente per container. Se una chiamata si blocca ~30 s, fermati e riportalo: non si torna ai componenti separati |
+| Mutare le varianti (`setVariantProperty`, rinomina di assi, detach) può corrompere il file: i salvataggi successivi si bloccano | prima di raggruppare, chiedi di duplicare il **file** (non la pagina); il raggruppamento è la chiamata `group_variants` di `draw-component.md` (idempotente: una seconda chiamata non cambia niente), e `library.local.components` deve elencare un componente per container. Se la chiamata non torna entro ~30 s, fermati e riportalo: non si torna ai componenti separati |
 | Un set nuovo nasce inattivo | `set.toggleActive()` prima di aggiungere token che lo referenziano |
 | I tipi di token sono camelCase/plurale (`borderRadius`, `fontSizes`, `fontFamilies`) | verifica con `penpot_api_info('Token')` se non sei sicuro |
 | I board ritagliano per default | il ritaglio non si "sistema" a mano: si legge dopo (è la pipeline a decidere) |
