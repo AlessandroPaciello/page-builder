@@ -6,11 +6,11 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { componentPaths, Finding, generateComponent, Lettura, withGeneratedHeader, type Change, type GenerateResult } from "../../src/core";
+import { componentPaths, Finding, generateComponent, groupVariantsResult, Lettura, withGeneratedHeader, type Change, type GenerateResult, type VariantCellsReading } from "../../src/core";
 import { createPdsServer, type PdsServerOptions, type PenpotAdapter } from "../../src/server/server";
 import { TOOL_NAMES } from "../../src/server/tools";
 import type { ThemeCatalog } from "../../src/shared/theme-generator";
-import { badgeLettura, CONTRACTS, layer, SCALE, shopCardLettura } from "../fixtures/components";
+import { badgeLettura, CHIP_CELLS, CONTRACTS, GROUP_CONTRACTS, layer, SCALE, shopCardLettura, variantCell, variantReading } from "../fixtures/components";
 
 /**
  * Livello 2 della CI (Story 2.24): il server `pds` in memoria
@@ -40,6 +40,15 @@ const LETTURE: Readonly<Record<string, () => Lettura>> = {
   "shop-card": () => shopCardLettura(),
 };
 
+/** Le letture di `group_variants`: le celle sciolte della Chip e il componente già raggruppato. */
+const VARIANT_READINGS: Readonly<Record<string, VariantCellsReading>> = {
+  chip: variantReading("chip", CHIP_CELLS),
+  "multiselect-panel": variantReading("multiselect-panel", [variantCell("Multiselect Panel", "panel")]),
+  "already-grouped": variantReading("chip", [], {
+    container: { id: "container", name: "Chip", properties: ["size", "removable"], variants: [{ id: "a", name: "Chip", variant: { size: "md", removable: "false" } }] },
+  }),
+};
+
 function adapter(overrides: Partial<PenpotAdapter> = {}): PenpotAdapter {
   return {
     readComponent: async (name) => {
@@ -48,6 +57,12 @@ function adapter(overrides: Partial<PenpotAdapter> = {}): PenpotAdapter {
       return make();
     },
     readTokenCatalog: async () => structuredClone(CATALOG),
+    // Il finto Penpot di `group_variants`: applica il piano del nucleo a una
+    // lettura di prova, senza scrivere niente.
+    groupVariants: async (component, plan) => {
+      const reading = VARIANT_READINGS[component] ?? { component, boards: [], available: [] };
+      return groupVariantsResult(plan(reading));
+    },
     ...overrides,
   };
 }
@@ -108,7 +123,7 @@ const BADGE = componentPaths("badge");
 const SHOP_CARD = componentPaths("shop-card");
 
 describe("tools/list", () => {
-  it("espone i sei strumenti", async () => {
+  it("espone i sette strumenti", async () => {
     const { client } = await connect();
     const { tools } = await client.listTools();
     expect(tools.map((tool) => tool.name).sort()).toEqual([...TOOL_NAMES].sort());
@@ -384,6 +399,72 @@ describe("generate_component", () => {
     const result = await call(client, "generate_component", { name: "badge" });
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain("catalogo irraggiungibile");
+  });
+});
+
+describe("group_variants (Story 2.28)", () => {
+  it("set completo → raggruppato, assi e celle in ordine di matrice; nessun file scritto", async () => {
+    const { client, root } = await connect({ contracts: GROUP_CONTRACTS });
+    const result = await call(client, "group_variants", { component: "chip" });
+    expect(result.isError, textOf(result)).toBeFalsy();
+    expect(result.structuredContent).toEqual({
+      outcome: "raggruppato",
+      component: "chip",
+      container: "Chip",
+      axes: ["size", "removable"],
+      cells: CHIP_CELLS.map((cell) => ({
+        name: cell.name,
+        variant: { size: cell.name.includes("size=md") ? "md" : "sm", removable: cell.name.includes("removable=true") ? "true" : "false" },
+      })),
+    });
+    expect(snapshot(root)).toEqual({});
+  });
+
+  it("set parziale → isError che nomina la cella mancante, nessuna scrittura", async () => {
+    let writes = 0;
+    const { client } = await connect({
+      contracts: GROUP_CONTRACTS,
+      penpot: adapter({
+        groupVariants: async (_component, plan) => {
+          const reading = variantReading("chip", CHIP_CELLS.filter((cell) => cell.id !== "chip-sm-true"));
+          const decision = plan(reading);
+          if (decision.write) writes += 1;
+          return groupVariantsResult(decision);
+        },
+      }),
+    });
+    const result = await call(client, "group_variants", { component: "chip" });
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("Chip / size=sm, removable=true");
+    expect(writes).toBe(0);
+  });
+
+  it("componente già raggruppato → già raggruppato, una lettura sola", async () => {
+    const { client } = await connect({ contracts: GROUP_CONTRACTS });
+    const result = await call(client, "group_variants", { component: "already-grouped" });
+    expect(result.isError, textOf(result)).toBeFalsy();
+    expect(result.structuredContent).toMatchObject({ outcome: "già raggruppato", component: "chip", container: "Chip", axes: ["size", "removable"] });
+  });
+
+  it("componente a cella sola (Multiselect Panel) → singolo, nessuna scrittura", async () => {
+    const { client } = await connect({ contracts: GROUP_CONTRACTS });
+    const result = await call(client, "group_variants", { component: "multiselect-panel" });
+    expect(result.isError, textOf(result)).toBeFalsy();
+    expect(result.structuredContent).toMatchObject({ outcome: "singolo", component: "multiselect-panel", axes: [] });
+  });
+
+  it("ingresso invalido (senza component) → isError, nessuna scrittura", async () => {
+    const { client, root } = await connect({ contracts: GROUP_CONTRACTS });
+    const result = await call(client, "group_variants", {});
+    expect(result.isError).toBe(true);
+    expect(snapshot(root)).toEqual({});
+  });
+
+  it("contratto sconosciuto → isError che elenca i contratti", async () => {
+    const { client } = await connect({ contracts: GROUP_CONTRACTS });
+    const result = await call(client, "group_variants", { component: "nope" });
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("nessun contratto");
   });
 });
 

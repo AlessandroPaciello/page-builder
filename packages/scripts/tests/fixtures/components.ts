@@ -1,7 +1,7 @@
-import { badge, defineContract, multiselect, type ComponentContract } from "@app/contracts";
+import { badge, checkbox, chip, defineContract, input, multiselect, multiselectPanel, type ComponentContract } from "@app/contracts";
 import { z } from "zod";
 
-import type { Cella, Lettura, LetturaLayer, Scale, TokenType } from "../../src/core";
+import type { Cella, Lettura, LetturaLayer, Scale, TokenType, VariantCellsReading } from "../../src/core";
 
 /**
  * Letture scritte a mano per i test del nucleo (Story 2.22, livello 1): Badge
@@ -23,6 +23,15 @@ export const shopCard = defineContract({
 });
 
 export const CONTRACTS: Readonly<Record<string, ComponentContract>> = { badge, multiselect, "shop-card": shopCard };
+
+/** I contratti dei componenti di `group_variants`: la matrice viene dal contratto. */
+export const GROUP_CONTRACTS: Readonly<Record<string, ComponentContract>> = {
+  ...CONTRACTS,
+  chip,
+  checkbox,
+  input,
+  "multiselect-panel": multiselectPanel,
+};
 
 export const SCALE: Scale = [
   { suffix: "1", px: 4 },
@@ -138,4 +147,29 @@ export function multiselectLettura(): Lettura {
     })),
   );
   return { component: "Multiselect", pluginData: { contract: "multiselect@1" }, cells };
+}
+
+/** Una cella sciolta di Penpot: il board e il suo nome `Component / Axis=Value`. */
+export function variantCell(name: string, id: string = name): { id: string; name: string } {
+  return { id, name };
+}
+
+/** Le quattro celle della Chip: `size` × `removable`, nomi completi. */
+export const CHIP_CELLS = [
+  variantCell("Chip / size=md, removable=false", "chip-md-false"),
+  variantCell("Chip / size=md, removable=true", "chip-md-true"),
+  variantCell("Chip / size=sm, removable=false", "chip-sm-false"),
+  variantCell("Chip / size=sm, removable=true", "chip-sm-true"),
+];
+
+/** Le tre celle della Checkbox: solo l'asse di rendering `checked`. */
+export const CHECKBOX_CELLS = [
+  variantCell("Checkbox / checked=false", "checkbox-false"),
+  variantCell("Checkbox / checked=true", "checkbox-true"),
+  variantCell("Checkbox / checked=indeterminate", "checkbox-indeterminate"),
+];
+
+/** Una lettura di `group_variants` per il componente `component`. */
+export function variantReading(component: string, boards: { id: string; name: string }[], extra: Partial<VariantCellsReading> = {}): VariantCellsReading {
+  return { component, boards, available: boards.map((board) => board.name), ...extra };
 }

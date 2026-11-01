@@ -11,12 +11,15 @@ import {
   generateComponent,
   isStopping,
   letturaName,
+  planGroupVariants,
   scaleFromThemeCss,
   verifyComponent,
   type ContractRegistry,
   type CoreInput,
   type GenerateInput,
   type GenerateResult,
+  type GroupVariantsPlanner,
+  type GroupVariantsResult,
   type Lettura,
   type TokenType,
 } from "../core";
@@ -36,19 +39,23 @@ import { writeThemeFiles } from "./write-theme";
  *   vero.
  * - Nessuno stato: ogni chiamata rilegge il catalogo token (da cui
  *   `tokenTypeOf` e `scale`) e i componenti.
- * - Mai su Penpot: l'adattatore espone solo letture. Gli esiti del nucleo
+ * - Mai su Penpot, tranne `group_variants`: l'adattatore espone solo letture e
+ *   l'unica scrittura su Penpot, che passa dal piano del nucleo
+ *   (`planGroupVariants`) prima di toccare il file. Gli esiti del nucleo
  *   tornano così come sono.
- * - Scrive solo `generate_component`, solo i `Change` del nucleo e solo nella
- *   cartella del componente (`write-changes.ts`).
+ * - Scrive su disco solo `generate_component`, solo i `Change` del nucleo e solo
+ *   nella cartella del componente (`write-changes.ts`).
  * - Ogni errore (adattatore, nucleo, scrittura) è un risultato `isError` con
  *   il messaggio; l'ingresso non valido lo rifiuta lo schema zod dell'SDK,
  *   sempre come `isError`.
  */
 
-/** Le letture di Penpot di cui il server ha bisogno. */
+/** Le letture di Penpot di cui il server ha bisogno, e l'unica scrittura (`group_variants`). */
 export interface PenpotAdapter {
   readonly readComponent: (name: string) => Promise<Lettura>;
   readonly readTokenCatalog: () => Promise<ThemeCatalog>;
+  /** Legge le celle, valida col piano del nucleo e solo allora scrive: `write: false` non tocca Penpot. */
+  readonly groupVariants: (component: string, plan: GroupVariantsPlanner) => Promise<GroupVariantsResult>;
 }
 
 export interface PdsServerOptions {
@@ -184,6 +191,12 @@ export function createPdsServer(options: PdsServerOptions): McpServer {
       const written = writeThemeFiles(root, result.files);
       return { written, packages: result.packages };
     }),
+  );
+
+  server.registerTool(
+    "group_variants",
+    { description: TOOLS.group_variants.description, inputSchema: TOOLS.group_variants.input, outputSchema: TOOLS.group_variants.output },
+    guarded(async ({ component }) => await penpot.groupVariants(component, (reading) => planGroupVariants(reading, { contracts }))),
   );
 
   return server;

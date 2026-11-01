@@ -3,8 +3,9 @@
 - `mcp-client.ts` — utilità MCP: `callPenpotTool`, `parseExecuteCodeEnvelope`, `resolveMcpEndpoint` (variabili `PENPOT_MCP_URL`, `PENPOT_MCP_TOKEN`).
 - `penpot-reader.ts` — legge solo il catalogo token per `theme --live` (resta fino alla Story 2.26).
 - `read-component.ts` — `readComponent(nome)` (Story 2.23): legge un componente e restituisce una `Lettura` validata con zod.
+- `group-variants.ts` — `groupVariants(nome, piano)` (Story 2.36): legge le celle sciolte e, dopo la validazione del nucleo, le raggruppa in un container di varianti. È l'unico file qui che scrive su Penpot.
 
-Nessun file qui scrive su Penpot: niente `set*`, niente `storage`, nessun plugin data scritto.
+Nessun altro file scrive su Penpot: fuori da `group-variants.ts` non ci sono `set*`, `storage` né plugin data scritti (`group-variants.ts` crea solo il container e imposta gli assi; i plugin data `pagebuilder` li scrive `pds-code`).
 
 ## `readComponent(nome, { endpoint?, callTool?, timeoutMs? })`
 
@@ -47,6 +48,16 @@ Il confronto vede solo ciò che l'adattatore legge. Un override su una propriet�
 - il sorgente restituisce `{ error }` per nome ignoto, doppio, cella senza variante, `variantError` o eccezione in Penpot, e l'adattatore lo rilancia così com'è;
 - una `Lettura` che non passa lo schema dà un errore con il percorso zod di ogni problema (`cells.0.root.children.0.name: …`).
 
+## `groupVariants(nome, piano, { endpoint?, callTool?, timeoutMs? })`
+
+La sequenza, con il piano del nucleo in mezzo a due chiamate `execute_code`:
+
+1. `READ_VARIANT_CELLS_SOURCE` (non scrive): trova il container che già raggruppa il componente — per plugin data `pagebuilder.contract` o per nome, come `readComponent` — oppure le celle sciolte `Component / Axis=Value` con lo stesso prefisso. Restituisce `{ reading }` (`VariantCellsReading`) o `{ error }`, validato con zod.
+2. `planGroupVariants` (in `src/core/group-variants.ts`, iniettato dal server): calcola la matrice dal contratto e dagli assi di rendering, controlla nomi e valori, e restituisce il piano. Con un errore non si va avanti: nessuna scrittura.
+3. Solo se il piano ha `write: true`, `GROUP_VARIANTS_SOURCE` chiama `penpot.createVariantFromComponents` (la stessa operazione di «Combine as variants»: nasce senza variante automatica), rinomina le proprietà sui nomi degli assi, aggiunge quelle mancanti e imposta i valori delle celle. Ogni mutazione è asincrona: si attende lo stato atteso prima del passo successivo, e alla fine si rilegge il container.
+
+L'esito è `{ outcome, component, container?, axes, cells }`. `già raggruppato` (il container c'è) e `singolo` (una cella sola senza assi, o una matrice di una combinazione) non scrivono: la chiamata è idempotente. Il sorgente non scrive mai plugin data `pagebuilder` né token.
+
 ## Scheda Penpot sospesa
 
 Il plugin MCP gira nella scheda di Penpot. Se il browser la sospende (scheda in secondo piano o finestra coperta) `execute_code` non risponde e la chiamata va in timeout. Tieni la finestra di Penpot visibile, oppure avvia il browser con:
@@ -57,7 +68,7 @@ Il plugin MCP gira nella scheda di Penpot. Se il browser la sospende (scheda in 
 
 ## Test
 
-- Livello 1, senza Penpot: `tests/penpot/read-component.test.ts`. Usa un `callTool` finto e non salva letture Penpot nel repo (regola 5).
+- Livello 1, senza Penpot: `tests/penpot/read-component.test.ts` e `tests/penpot/group-variants.test.ts`. Usano un `callTool` finto e non salvano letture Penpot nel repo (regola 5). Il secondo prova anche che la lettura delle celle non scriva e che la scrittura parta solo dopo il piano.
 - Dal vivo: `tests/penpot/read-component.live.test.ts` legge Badge, ShopCard e Carousel dal file "tailwind" (Penpot 2.18.3). Senza `PDS_PENPOT_LIVE=1` si salta, quindi in CI non gira mai. Per lanciarlo a mano, con Penpot aperto, il plugin MCP connesso e `PENPOT_MCP_TOKEN` nell'ambiente:
 
 ```

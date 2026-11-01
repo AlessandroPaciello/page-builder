@@ -4,6 +4,7 @@ import { pathToFileURL } from "node:url";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
 import { readPenpotTokenCatalog } from "../penpot/penpot-reader";
+import { groupVariants } from "../penpot/group-variants";
 import { readComponent } from "../penpot/read-component";
 import { PATHS } from "../shared/paths";
 import { createPdsServer } from "./server";
@@ -23,6 +24,7 @@ export async function startPdsServer(): Promise<void> {
     penpot: {
       readComponent: (name) => readComponent(name),
       readTokenCatalog: () => readPenpotTokenCatalog(),
+      groupVariants: (component, plan) => groupVariants(component, plan),
     },
     root: PATHS.repoRoot,
   });
