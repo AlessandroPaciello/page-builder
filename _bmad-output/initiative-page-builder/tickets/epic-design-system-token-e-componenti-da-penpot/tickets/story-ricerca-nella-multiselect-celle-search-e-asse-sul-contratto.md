@@ -4,8 +4,8 @@ type: story
 title: "Ricerca nella Multiselect: celle `search` e asse sul contratto"
 parent: epic-design-system-token-e-componenti-da-penpot
 covers: [R2]
-after: ["119"]
-hitl: true
+after: ["122"]
+hitl: false
 risk: low
 tracker_id: "121"
 remote: "https://github.com/AlessandroPaciello/page-builder/issues/121"
@@ -17,15 +17,15 @@ refined: true
 
 ## Description
 
-La Multiselect composta non mostra mai la ricerca: tutte le celle usano il pannello con `search=false`, quindi dal blocco `multiselect` la ricerca non si può accendere. Il designer aggiunge la proprietà `search` alla composizione (valore `false` sulle celle esistenti) e disegna le due celle aperte `md` e `sm` con la ricerca; poi il contratto `multiselect` riceve l'asse `search` (`false`, `true`, default `false`) e il blocco lo espone come campo. Senza celle non si aggiunge l'asse: Penpot resta la fonte di verità.
+La Multiselect composta non mostra mai la ricerca: tutte le celle usano il pannello con `search=false`, quindi dal blocco `multiselect` la ricerca non si può accendere. In Penpot il pannello ha già l'asse `search` con le quattro celle e la ricerca disegnata; manca l'asse sulla composizione. La 2.39 dà alla skill la procedura per aggiungerlo (le 12 celle esistenti a `false`, le due aperte `md` e `sm` con il pannello a `search=true`); poi il contratto `multiselect` riceve l'asse `search` (`false`, `true`, default `false`) e il blocco lo espone come campo. Penpot resta la fonte di verità: l'asse non entra nel contratto prima che il disegno lo mostri.
 
 ## Requirements
 
 1. **Celle disegnate** (R2)
-   **Given** il componente Multiselect in Penpot
-   **When** il designer ha aggiunto la proprietà `search` alla composizione
+   **Given** il componente Multiselect in Penpot, con il pannello che ha già `search` e la ricerca disegnata
+   **When** la 2.39 ha aggiunto l'asse `search` alla composizione
    **Then** ogni cella esistente ha `search=false`
-   **And** esistono due celle aperte, `md` e `sm`, con la ricerca e `search=true`
+   **And** le due celle aperte `md` e `sm` usano il pannello con `search=true`
 
 2. **Lettura delle celle** (R2)
    **Given** le celle del punto 1
@@ -49,7 +49,7 @@ La Multiselect composta non mostra mai la ricerca: tutte le celle usano il panne
    **Then** la voce 6 del fingerprint include l'asse `search`, la versione dello schema resta 6 e la sua nota di versione lo dice
    **And** il test del fingerprint passa
 
-Il passo 1 è del designer in Penpot (hitl): il lavoro sul contratto parte solo dopo che le celle esistono. Senza celle l'asse non si aggiunge.
+Il passo 1 è della skill con la procedura della 2.39; il lavoro sul contratto parte solo dopo che le celle esistono. Senza celle l'asse non si aggiunge.
 
 ## Boundaries
 
@@ -60,6 +60,7 @@ Il passo 1 è del designer in Penpot (hitl): il lavoro sul contratto parte solo 
 
 - Risk: low — aggiunge un asse facoltativo con default `false` a un solo contratto, senza toccare i payload esistenti.
 - Decision: 2026-11-01 — la voce 6 si riscrive perché non è su `main`; se fosse già rilasciata al momento della build, il ticket si riapre per aggiungere la 7.
+- Stato del disegno (2026-11-01): il pannello ha già le quattro celle con `search` e la ricerca disegnata (board `Search`, `Icon / search`, `Search placeholder`); la composizione ha gli assi `size`, `open`, `display`, `state` e 12 celle, senza `search`.
 - Percorsi utili: `packages/contracts/src/components/multiselect.ts`, `packages/contracts/src/schema-version.ts`, `packages/contracts/tests/contracts.fingerprint.json`.
 
 ## References
@@ -67,3 +68,4 @@ Il passo 1 è del designer in Penpot (hitl): il lavoro sul contratto parte solo 
 - parent — _bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/epic-design-system-token-e-componenti-da-penpot.md
 - story — story-operazione-pds-di-raggruppamento-in-varianti.md (2.36, raggruppamento in varianti usato per le celle)
 - epic Notes — il Decision del 2026-11-01 sulla ricerca della Multiselect, nel file dell'epic
+- story — story-dc-aggiungere-un-asse-a-un-componente-gia-raggruppato.md (2.39, la procedura che aggiunge l'asse)

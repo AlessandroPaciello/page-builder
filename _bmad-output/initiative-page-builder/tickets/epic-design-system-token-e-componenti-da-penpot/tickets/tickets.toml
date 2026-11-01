@@ -334,14 +334,25 @@ hitl = false
 risk = "medium"
 
 [[entry]]
-id = 37
+id = 39
 type = "story"
-title = "Ricerca nella Multiselect: celle `search` e asse sul contratto"
-description = "La Multiselect composta non mostra mai la ricerca: tutte le celle usano il pannello con `search=false`, quindi dal blocco `multiselect` la ricerca non si può accendere. Il designer aggiunge la proprietà `search` alla composizione (valore `false` sulle celle esistenti) e disegna le due celle aperte `md` e `sm` con la ricerca; poi il contratto `multiselect` riceve l'asse `search` (`false`, `true`, default `false`) e il blocco lo espone come campo. Senza celle non si aggiunge l'asse: Penpot resta la fonte di verità."
-verify = "`verify_component { name: \"Multiselect\" }` dà un solo blocco, la mancanza di `pagebuilder/contract`, con ogni cella che porta `search`; `describe_component` legge le due celle con `search=true`; il contratto `multiselect` espone l'asse `search` con default `false` e il fingerprint ne ha la voce — la 6 si riscrive se non è ancora rilasciata, altrimenti si aggiunge la 7."
+title = "DC: aggiungere un asse a un componente già raggruppato"
+description = "La voce DC di `pds-design` sa disegnare celle nuove e raggrupparle, ma non aggiungere una proprietà a un container di varianti che esiste già: `group_variants` risponde «già raggruppato» e non scrive. La voce impara la procedura: legge gli assi del container, aggiunge la proprietà, dà il valore alle celle esistenti, adatta o crea le celle nuove, con lo switch di variante delle istanze annidate), verifica e mostra prima del sì. Si prova sulla Multiselect, dove manca l'asse `search`."
+verify = "Su un file Penpot duplicato, seguendo la voce, aggiungere l'asse `search` alla Multiselect lascia le 12 celle esistenti a `false`, porta le due celle aperte a usare il pannello con `search=true` e non cambia nessun'altra cella; `describe_component` legge i due valori, `verify_component` trova il componente e una seconda esecuzione non cambia nulla. Un nome di asse già presente o fuori da `IDENTIFIER` è rifiutato con il nome, senza scrivere."
 covers = ["R2"]
 after = [36]
 hitl = true
+risk = "medium"
+
+[[entry]]
+id = 37
+type = "story"
+title = "Ricerca nella Multiselect: celle `search` e asse sul contratto"
+description = "La Multiselect composta non mostra mai la ricerca: tutte le celle usano il pannello con `search=false`, quindi dal blocco `multiselect` la ricerca non si può accendere. In Penpot il pannello ha già l'asse `search` con le quattro celle e la ricerca disegnata; manca l'asse sulla composizione. La 2.39 aggiunge l'asse (celle esistenti a `false`, le due aperte `md` e `sm` con il pannello a `search=true`); poi il contratto `multiselect` riceve l'asse `search` (`false`, `true`, default `false`) e il blocco lo espone come campo. Senza celle non si aggiunge l'asse: Penpot resta la fonte di verità."
+verify = "`verify_component { name: \"Multiselect\" }` dà un solo blocco, la mancanza di `pagebuilder/contract`, con ogni cella che porta `search`; `describe_component` legge le due celle con `search=true`; il contratto `multiselect` espone l'asse `search` con default `false` e il fingerprint ne ha la voce — la 6 si riscrive se non è ancora rilasciata, altrimenti si aggiunge la 7."
+covers = ["R2"]
+after = [39]
+hitl = false
 risk = "low"
 
 [[entry]]
@@ -395,6 +406,6 @@ title = "Refactor sweep dell'epica"
 description = "Pulizia di ciò che i plan e le review dell'epica hanno rimandato, con lo scope fissato all'inizio del lavoro e solo cleanup: nessun nuovo comportamento. Chiude l'epica dopo ogni altra entry aperta."
 verify = "Il piano della sweep elenca ogni voce di `deferred-work.md` che tocca l'epica con la sua chiusura o il suo rinvio motivato, e `pnpm check-types`, `pnpm lint` e `pnpm test` sono verdi dopo la pulizia."
 covers = []
-after = [28, 29, 30, 31, 32, 33, 36, 37]
+after = [28, 29, 30, 31, 32, 33, 36, 37, 39]
 hitl = false
 risk = "low"
