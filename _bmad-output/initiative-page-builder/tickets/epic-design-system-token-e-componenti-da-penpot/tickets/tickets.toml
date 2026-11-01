@@ -341,7 +341,7 @@ description = "La voce DC di `pds-design` sa disegnare celle nuove e raggrupparl
 verify = "Su un file Penpot duplicato, seguendo la voce, aggiungere l'asse `search` alla Multiselect lascia le 12 celle esistenti a `false`, porta le due celle aperte a usare il pannello con `search=true` e non cambia nessun'altra cella; `describe_component` legge i due valori, `verify_component` trova il componente e una seconda esecuzione non cambia nulla. Un nome di asse già presente o fuori da `IDENTIFIER` è rifiutato con il nome, senza scrivere."
 covers = ["R2"]
 after = [36]
-hitl = true
+hitl = false
 risk = "medium"
 
 [[entry]]
