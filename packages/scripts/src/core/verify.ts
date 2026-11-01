@@ -4,6 +4,7 @@ import { GEOMETRY_ENTRIES, rootSizeClasses, type Scale } from "./geometry";
 import { byString, variantLabel, withInvalidAnswer } from "./internal";
 import { camelCase, kebabOf, pascalCase, PART_KEY, wordsOf } from "./naming";
 import { layerClasses, type TokenTypeOf } from "./registry";
+import { renderingAxesOf, renderingPrefix, type RenderingAxis } from "./rendering";
 import { sectionContract, slotOf } from "./section";
 import type { Cella, Finding, Instance, LetturaLayer, PluginData } from "./schemas";
 
@@ -36,16 +37,17 @@ export const STATE_AXIS = "state";
 /** L'unico asse a cui uno stato si generalizza (convenzione sul nome): le taglie. */
 export const SIZE_AXIS = "size";
 
-export const STATE_VALUES = ["default", "hover", "active", "focus", "disabled"] as const;
+export const STATE_VALUES = ["default", "hover", "active", "focus", "disabled", "error"] as const;
 
 export type InteractiveState = Exclude<(typeof STATE_VALUES)[number], "default">;
 
-/** Prefisso Tailwind di ogni stato; `disabled` ricalca il default di `globals.css`. */
+/** Prefisso Tailwind di ogni stato; `disabled` ricalca il default di `globals.css`, `error` l'ARIA invalida. */
 export const STATE_PREFIXES: Readonly<Record<InteractiveState, string>> = {
   hover: "hover:",
   active: "active:",
   focus: "focus-visible:",
   disabled: "[&:is(:disabled,[data-disabled],[aria-disabled=true])]:",
+  error: "[&[aria-invalid=true]]:",
 };
 
 const INTERACTIVE_STATES = Object.keys(STATE_PREFIXES) as InteractiveState[];
@@ -62,10 +64,16 @@ export const ROOT_KEY = "root";
 /** Override che non sono override: dimensionamento e geometria dell'istanza (bug 12). */
 export const PLACEMENT_PROPERTIES: readonly string[] = ["sizingH", "sizingV", ...Object.keys(GEOMETRY_ENTRIES)];
 
-/** Una cella normalizzata: tutti gli assi `option` (default dove manca) e lo stato. */
+/**
+ * Una cella normalizzata: tutti gli assi `option` del contratto (default dove
+ * manca), gli assi di rendering dichiarati in `rendering.ts` (base dove
+ * mancano) e lo stato.
+ */
 export interface ModelCell {
   readonly index: number;
   readonly axes: Readonly<Record<string, string>>;
+  /** Gli assi di rendering dichiarati per il contratto, sempre valorizzati. */
+  readonly rendering: Readonly<Record<string, string>>;
   readonly state: (typeof STATE_VALUES)[number];
   readonly label: string;
 }
@@ -167,10 +175,21 @@ function labelOf(variant: Readonly<Record<string, string>>): string {
   return `cella ${variantLabel(variant)}`;
 }
 
-/** Ordine stabile delle celle: i valori nell'ordine del contratto, poi lo stato. */
-function cellRank(contract: ComponentContract, cell: ModelCell): number[] {
+/** La chiave dei soli assi di rendering dichiarati, nell'ordine della tabella. */
+function renderingKey(declared: readonly RenderingAxis[], rendering: Readonly<Record<string, string>>): string {
+  return declared.map((axis) => rendering[axis.name] ?? axis.base).join("|");
+}
+
+/** La cella di partenza: `state=default` e ogni asse di rendering al suo valore base. */
+function isBaseCell(declared: readonly RenderingAxis[], cell: ModelCell): boolean {
+  return cell.state === "default" && declared.every((axis) => (cell.rendering[axis.name] ?? axis.base) === axis.base);
+}
+
+/** Ordine stabile delle celle: i valori nell'ordine del contratto, quelli di rendering, poi lo stato. */
+function cellRank(declared: readonly RenderingAxis[], contract: ComponentContract, cell: ModelCell): number[] {
   return [
     ...contract.axes.map((axis) => (axis.values as readonly string[]).indexOf(cell.axes[axis.name]!)),
+    ...declared.map((axis) => (axis.values as readonly string[]).indexOf(cell.rendering[axis.name] ?? axis.base)),
     (STATE_VALUES as readonly string[]).indexOf(cell.state),
   ];
 }
@@ -249,13 +268,24 @@ interface NormalizedCells {
   /** Le celle valide, in ordine stabile. */
   readonly cells: readonly ModelCell[];
   readonly baseCells: readonly ModelCell[];
-  /** `axesKey` → la cella base con quegli assi. */
+  /** `axesKey` → la cella di partenza con quegli assi. */
   readonly baseOf: ReadonlyMap<string, ModelCell>;
+  /** `axesKey|assi di rendering|stato` → la cella. */
+  readonly byKey: ReadonlyMap<string, ModelCell>;
   readonly findings: Finding[];
 }
 
-/** Celle: assi del contratto più `state` facoltativo; le celle mancanti non sono un errore. */
+const cellKey = (contract: ComponentContract, declared: readonly RenderingAxis[], cell: ModelCell): string =>
+  `${axesKey(contract, cell.axes)}|${renderingKey(declared, cell.rendering)}|${cell.state}`;
+
+/**
+ * Celle: assi del contratto, assi di rendering dichiarati (`rendering.ts`) e
+ * `state` facoltativo; le celle mancanti non sono un errore. Un asse che non è
+ * né del contratto né di rendering resta un blocco (asse estraneo).
+ */
 function normalizeCells(cellsIn: readonly Cella[], contract: ComponentContract): NormalizedCells {
+  const declared = renderingAxesOf(contract.name);
+  const axisNames = [...contract.axes.map((axis) => axis.name), ...declared.map((axis) => axis.name), STATE_AXIS];
   const findings: Finding[] = [];
   const cells: ModelCell[] = [];
   const seenCells = new Set<string>();
@@ -264,6 +294,7 @@ function normalizeCells(cellsIn: readonly Cella[], contract: ComponentContract):
     let ok = true;
     let state: ModelCell["state"] = "default";
     const axes: Record<string, string> = {};
+    const rendering: Record<string, string> = {};
     for (const [axisName, value] of Object.entries(cell.variant).sort(([a], [b]) => byString(a, b))) {
       if (axisName === STATE_AXIS) {
         if ((STATE_VALUES as readonly string[]).includes(value)) state = value as ModelCell["state"];
@@ -274,37 +305,54 @@ function normalizeCells(cellsIn: readonly Cella[], contract: ComponentContract):
         continue;
       }
       const axis = contract.axes.find((candidate) => candidate.name === axisName);
-      if (axis === undefined) {
-        ok = false;
-        findings.push(blocco(label, `Asse "${axisName}" estraneo al contratto "${contract.name}": gli assi sono [${[...contract.axes.map((a) => a.name), STATE_AXIS].join(", ")}].`));
+      if (axis !== undefined) {
+        if (!(axis.values as readonly string[]).includes(value)) {
+          ok = false;
+          findings.push(blocco(label, `Valore "${value}" fuori contratto per l'asse "${axisName}": ammette [${axis.values.join(", ")}].`));
+          continue;
+        }
+        axes[axisName] = value;
         continue;
       }
-      if (!(axis.values as readonly string[]).includes(value)) {
-        ok = false;
-        findings.push(blocco(label, `Valore "${value}" fuori contratto per l'asse "${axisName}": ammette [${axis.values.join(", ")}].`));
+      const renderingAxis = declared.find((candidate) => candidate.name === axisName);
+      if (renderingAxis !== undefined) {
+        if (!renderingAxis.values.includes(value)) {
+          ok = false;
+          findings.push(
+            blocco(label, `Valore "${value}" fuori dagli assi di rendering per l'asse "${axisName}": ammette [${renderingAxis.values.join(", ")}].`),
+          );
+          continue;
+        }
+        rendering[axisName] = value;
         continue;
       }
-      axes[axisName] = value;
+      ok = false;
+      findings.push(blocco(label, `Asse "${axisName}" estraneo al contratto "${contract.name}": gli assi sono [${axisNames.join(", ")}].`));
     }
     for (const axis of contract.axes) axes[axis.name] ??= axis.default;
+    for (const axis of declared) rendering[axis.name] ??= axis.base;
     if (!ok) return;
-    const identity = `${axesKey(contract, axes)}|${state}`;
+    const model: ModelCell = { index, axes, rendering, state, label };
+    const identity = cellKey(contract, declared, model);
     if (seenCells.has(identity)) {
       findings.push(blocco(label, "Cella doppia: un'altra cella ha gli stessi valori di variante e lo stesso stato."));
       return;
     }
     seenCells.add(identity);
-    cells.push({ index, axes, state, label });
+    cells.push(model);
   });
-  cells.sort((a, b) => compareRanks(cellRank(contract, a), cellRank(contract, b)));
-  const baseCells = cells.filter((cell) => cell.state === "default");
+  cells.sort((a, b) => compareRanks(cellRank(declared, contract, a), cellRank(declared, contract, b)));
+  const baseCells = cells.filter((cell) => isBaseCell(declared, cell));
   const baseOf = new Map<string, ModelCell>(baseCells.map((cell) => [axesKey(contract, cell.axes), cell]));
+  const byKey = new Map<string, ModelCell>(cells.map((cell) => [cellKey(contract, declared, cell), cell]));
+  const baseLabel = [...declared.map((axis) => `${axis.name}=${axis.base}`), `${STATE_AXIS}=default`].join(", ");
   for (const cell of cells) {
-    if (cell.state !== "default" && !baseOf.has(axesKey(contract, cell.axes))) {
-      findings.push(blocco(cell.label, `Cella di stato "${cell.state}" senza la cella base (stessi assi, state=default o senza state): la differenza non si può calcolare.`));
+    if (isBaseCell(declared, cell)) continue;
+    if (!baseOf.has(axesKey(contract, cell.axes))) {
+      findings.push(blocco(cell.label, `Cella di rendering senza la cella base (stessi assi, ${baseLabel}): la differenza non si può calcolare.`));
     }
   }
-  return { cells, baseCells, baseOf, findings };
+  return { cells, baseCells, baseOf, byKey, findings };
 }
 
 /** Una parte come la visita la incontra la prima volta: il resto del modello arriva dalle fasi successive. */
@@ -337,6 +385,7 @@ interface CollectedParts {
 /** Lo stato di lavoro di `collectParts`: vive solo durante la visita e non esce dalla fase. */
 interface Visit {
   readonly input: Pick<CoreInput, "tokenTypeOf" | "scale">;
+  readonly contract: ComponentContract;
   readonly contracts: ContractRegistry;
   readonly section: SectionDefinition | undefined;
   readonly findings: Finding[];
@@ -390,11 +439,30 @@ function visitInstance(visit: Visit, cell: ModelCell, layer: LetturaLayer, key: 
     return;
   }
   visit.instances.set(key, { name, contract: nested });
+  const rendering = renderingAxesOf(nested.name);
   const props: Record<string, string> = {};
   for (const [axisName, value] of Object.entries(instance.variant).sort(([a], [b]) => byString(a, b))) {
+    if (axisName === STATE_AXIS) {
+      // Lo stato dell'istanza è resa come nelle celle: si valida, non è una prop.
+      if (!(STATE_VALUES as readonly string[]).includes(value)) {
+        visit.findings.push(blocco(where, `Istanza di "${name}": stato "${value}" sconosciuto per l'asse "state" (ammette [${STATE_VALUES.join(", ")}]).`));
+      }
+      continue;
+    }
+    const renderingAxis = rendering.find((candidate) => candidate.name === axisName);
+    if (renderingAxis !== undefined) {
+      // Un asse di rendering non è una prop: si valida e resta fuori da `props`.
+      if (!renderingAxis.values.includes(value)) {
+        visit.findings.push(
+          blocco(where, `Istanza di "${name}": valore "${value}" fuori dagli assi di rendering per l'asse "${axisName}" (ammette [${renderingAxis.values.join(", ")}]).`),
+        );
+      }
+      continue;
+    }
     const axis = nested.axes.find((candidate) => candidate.name === axisName);
     if (axis === undefined) {
-      visit.findings.push(blocco(where, `Istanza di "${name}": l'asse "${axisName}" non è nel contratto "${name}" (assi [${nested.axes.map((a) => a.name).join(", ")}]).`));
+      const axisNames = [...nested.axes.map((candidate) => candidate.name), ...rendering.map((candidate) => candidate.name)];
+      visit.findings.push(blocco(where, `Istanza di "${name}": l'asse "${axisName}" non è nel contratto "${name}" (assi [${axisNames.join(", ")}]).`));
       continue;
     }
     if (!(axis.values as readonly string[]).includes(value)) {
@@ -412,7 +480,7 @@ function visitInstance(visit: Visit, cell: ModelCell, layer: LetturaLayer, key: 
       ),
     );
   }
-  if (cell.state === "default") {
+  if (isBaseCell(renderingAxesOf(visit.contract.name), cell)) {
     const perCell = visit.instanceProps.get(key) ?? new Map<number, Record<string, string>>();
     perCell.set(cell.index, props);
     visit.instanceProps.set(key, perCell);
@@ -525,11 +593,13 @@ function collectParts(
   drawn: readonly Cella[],
   rootSizes: readonly string[][],
   input: Pick<CoreInput, "tokenTypeOf" | "scale">,
+  contract: ComponentContract,
   contracts: ContractRegistry,
   section: SectionDefinition | undefined,
 ): CollectedParts {
   const visit: Visit = {
     input: { tokenTypeOf: input.tokenTypeOf, scale: input.scale },
+    contract,
     contracts,
     section,
     findings: [],
@@ -575,26 +645,44 @@ interface StatedClasses {
   readonly findings: Finding[];
 }
 
+/** Il prefisso di tutti gli assi di rendering non base di una cella: prima i dichiarati, poi lo stato. */
+function cellPrefixes(declared: readonly RenderingAxis[], cell: ModelCell): string {
+  const declaredPrefixes = declared
+    .filter((axis) => (cell.rendering[axis.name] ?? axis.base) !== axis.base)
+    .map((axis) => renderingPrefix(axis, cell.rendering[axis.name] ?? axis.base));
+  const statePrefix = cell.state === "default" ? [] : [STATE_PREFIXES[cell.state]];
+  return [...declaredPrefixes, ...statePrefix].join("");
+}
+
 /**
- * Stati: la differenza dalla cella base, con il prefisso. Si generalizza solo l'asse `size`
- * (convenzione sul nome): gli altri assi devono coincidere con la cella di stato.
+ * Rendering: la differenza tra una cella non base e la sua cella di partenza,
+ * con il prefisso di ogni asse. `state` si generalizza sull'asse `size`
+ * (convenzione sul nome) ed è la sola parte che il codice conosce da sempre;
+ * gli assi dichiarati in `rendering.ts` valgono per il contratto che li dichiara
+ * e non producono prop. Le classi finiscono nella cella di partenza, dove la
+ * `cva` le legge.
  */
 function applyStates(contract: ComponentContract, normalized: NormalizedCells, occurrences: ReadonlyMap<string, readonly Occurrence[]>): StatedClasses {
+  const declared = renderingAxesOf(contract.name);
   const { cells, baseCells, baseOf } = normalized;
   const findings: Finding[] = [];
   const sizeAxis = contract.axes.find((axis) => axis.name === SIZE_AXIS);
   const stateClasses = new Map<string, Map<number, string[]>>();
+  const at = (key: string, cell: ModelCell): string[] | undefined =>
+    occurrences.get(key)?.find((occurrence) => occurrence.cell === cell)?.classes;
+
   for (const state of INTERACTIVE_STATES) {
     const stateCells = cells.filter((cell) => cell.state === state);
     if (stateCells.length === 0) continue;
-    for (const [key, list] of occurrences) {
-      const at = (cell: ModelCell): string[] | undefined => list.find((occurrence) => occurrence.cell === cell)?.classes;
+    for (const key of occurrences.keys()) {
       const diffs = new Map<ModelCell, string[]>();
       for (const stateCell of stateCells) {
-        const base = baseOf.get(axesKey(contract, stateCell.axes));
+        const base =
+          normalized.byKey.get(`${axesKey(contract, stateCell.axes)}|${renderingKey(declared, stateCell.rendering)}|default`) ??
+          baseOf.get(axesKey(contract, stateCell.axes));
         if (base === undefined) continue;
-        const drawn = at(stateCell);
-        const baseClasses = at(base);
+        const drawn = at(key, stateCell);
+        const baseClasses = at(key, base);
         if (drawn === undefined && baseClasses === undefined) continue;
         if (drawn === undefined || baseClasses === undefined) {
           findings.push({
@@ -616,21 +704,76 @@ function applyStates(contract: ComponentContract, normalized: NormalizedCells, o
           }
           continue;
         }
-        diffs.set(stateCell, added.map((cls) => `${STATE_PREFIXES[state]}${cls}`));
+        const prefix = cellPrefixes(declared, stateCell);
+        diffs.set(stateCell, added.map((cls) => `${prefix}${cls}`));
       }
       if (diffs.size === 0) continue;
+      // Le celle di stato con gli stessi assi di rendering sono un gruppo: ognuno
+      // contribuisce alla cella di partenza con il proprio prefisso.
+      const groups = new Map<string, ModelCell[]>();
+      for (const cell of diffs.keys()) {
+        const group = renderingKey(declared, cell.rendering);
+        groups.set(group, [...(groups.get(group) ?? []), cell]);
+      }
       for (const target of baseCells) {
-        if (at(target) === undefined) continue;
-        const candidates = [...diffs.keys()].filter((cell) => contract.axes.every((axis) => axis === sizeAxis || cell.axes[axis.name] === target.axes[axis.name]));
-        if (candidates.length === 0) continue;
-        // La taglia disegnata, poi la taglia di default del contratto, poi la prima taglia disegnata.
-        const chosen =
-          (sizeAxis === undefined ? candidates[0] : undefined) ??
-          candidates.find((cell) => cell.axes[sizeAxis!.name] === target.axes[sizeAxis!.name]) ??
-          candidates.find((cell) => cell.axes[sizeAxis!.name] === sizeAxis!.default) ??
-          candidates[0]!;
+        if (at(key, target) === undefined) continue;
+        for (const candidates of groups.values()) {
+          const matching = candidates.filter((cell) => contract.axes.every((axis) => axis === sizeAxis || cell.axes[axis.name] === target.axes[axis.name]));
+          if (matching.length === 0) continue;
+          // La taglia disegnata, poi la taglia di default del contratto, poi la prima taglia disegnata.
+          const chosen =
+            (sizeAxis === undefined ? matching[0] : undefined) ??
+            matching.find((cell) => cell.axes[sizeAxis!.name] === target.axes[sizeAxis!.name]) ??
+            matching.find((cell) => cell.axes[sizeAxis!.name] === sizeAxis!.default) ??
+            matching[0]!;
+          const perCell = stateClasses.get(key) ?? new Map<number, string[]>();
+          perCell.set(target.index, [...(perCell.get(target.index) ?? []), ...diffs.get(chosen)!]);
+          stateClasses.set(key, perCell);
+        }
+      }
+    }
+  }
+
+  // Assi di rendering dichiarati: per ogni asse non base, la differenza dalla
+  // cella con lo stesso stato e gli altri assi uguali, con l'asse al valore base.
+  for (const key of occurrences.keys()) {
+    for (const cell of cells) {
+      const nonBase = declared.filter((axis) => (cell.rendering[axis.name] ?? axis.base) !== axis.base);
+      if (nonBase.length === 0) continue;
+      const base = baseOf.get(axesKey(contract, cell.axes));
+      if (base === undefined) continue;
+      for (const axis of nonBase) {
+        const value = cell.rendering[axis.name] ?? axis.base;
+        const reference =
+          normalized.byKey.get(
+            `${axesKey(contract, cell.axes)}|${renderingKey(declared, { ...cell.rendering, [axis.name]: axis.base })}|${cell.state}`,
+          ) ?? base;
+        const drawn = at(key, cell);
+        const referenceClasses = at(key, reference);
+        if (drawn === undefined && referenceClasses === undefined) continue;
+        if (drawn === undefined || referenceClasses === undefined) {
+          findings.push({
+            level: "avviso",
+            where: `${cell.label} › parte "${key}"`,
+            message: `La parte "${key}" c'è ${drawn === undefined ? "nella cella di riferimento ma non" : "solo"} nella cella di rendering "${axis.name}=${value}": un asse di rendering non mostra né nasconde parti, nessuna classe.`,
+          });
+          continue;
+        }
+        const added = drawn.filter((cls) => !referenceClasses.includes(cls));
+        const removed = referenceClasses.filter((cls) => !drawn.includes(cls));
+        if (added.length === 0) {
+          if (removed.length > 0) {
+            findings.push({
+              level: "avviso",
+              where: `${cell.label} › parte "${key}"`,
+              message: `La cella di rendering "${axis.name}=${value}" toglie soltanto classi [${removed.join(" ")}]: una classe non si toglie con un prefisso, nessuna classe. Disegna la resa con un valore che sostituisce.`,
+            });
+          }
+          continue;
+        }
+        const prefix = cellPrefixes(declared, cell);
         const perCell = stateClasses.get(key) ?? new Map<number, string[]>();
-        perCell.set(target.index, [...(perCell.get(target.index) ?? []), ...diffs.get(chosen)!]);
+        perCell.set(base.index, [...(perCell.get(base.index) ?? []), ...added.map((cls) => `${prefix}${cls}`)]);
         stateClasses.set(key, perCell);
       }
     }
@@ -640,7 +783,7 @@ function applyStates(contract: ComponentContract, normalized: NormalizedCells, o
   for (const [key, list] of occurrences) {
     const perCell = new Map<number, string[]>();
     for (const { cell, classes: drawn } of list) {
-      if (cell.state !== "default") continue;
+      if (!isBaseCell(declared, cell)) continue;
       const extra = stateClasses.get(key)?.get(cell.index) ?? [];
       perCell.set(cell.index, [...new Set([...drawn, ...extra])].sort());
     }
@@ -769,7 +912,7 @@ export function analyzeComponent(lettura: ComponentReading, input: CoreInput): A
   // Le celle disegnate, allineate a `normalized.cells`: le misure della radice e la visita usano le stesse posizioni.
   const drawn = normalized.cells.map((cell) => lettura.cells[cell.index]!);
   const rootSizes = rootSizeClasses(drawn, { scale: input.scale });
-  const collected = collectParts(normalized.cells, drawn, rootSizes.classes, input, contracts, section);
+  const collected = collectParts(normalized.cells, drawn, rootSizes.classes, input, contract, contracts, section);
   const stated = applyStates(contract, normalized, collected.occurrences);
   const ordered = treeOrder(collected.drafts);
   const proposed = proposeElements(ordered, collected, input.existingTsx === undefined);

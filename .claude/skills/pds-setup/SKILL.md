@@ -33,7 +33,22 @@ If the user provides arguments (e.g. `accept all defaults`, `--headless`, or inl
 Le skill del modulo sono LIVE: parlano con un Penpot locale via server MCP. Il setup si limita a controllare che siano presenti e rimanda al README — **non installa nulla**:
 
 1. **Server MCP Penpot raggiungibile**: controlla che `{project-root}/README.md` abbia la sezione `#penpot-locale-e-server-mcp` e chiedi all'utente di confermare che lo stack Penpot locale sia attivo (docker, `http://localhost:9001`) con il flag `enable-mcp`. Se non è attivo, rimanda alla sezione README e continua il setup (la configurazione scritta non dipende dal server).
-2. **Token e plugin**: ricordall'utente che i comandi `*:library` leggono `PENPOT_MCP_URL`/`PENPOT_MCP_TOKEN` dall'ambiente (mai dalla config del modulo) e che il plugin MCP va connesso al file Penpot aperto (File → Plugins → MCP Server → Connect). Endpoint e token non sono variabili di config di questo modulo.
+2. **Token e plugin**: ricorda all'utente che `.mcp.json` registra due server, con ruoli diversi: `pds` (stdio; gli strumenti del nucleo — `tokens_from_css`, `describe_component`, `verify_component`, `build_order`, `generate_component`, `extract_theme`) e `penpot` (`http` su `http://localhost:9001/mcp/stream`, su cui `pds-design` esegue `execute_code`). Il nucleo legge `PENPOT_MCP_URL`/`PENPOT_MCP_TOKEN` dall'ambiente (mai dalla config del modulo) per raggiungere Penpot, e il plugin MCP va connesso al file Penpot aperto (File → Plugins → MCP Server → Connect). Endpoint e token non sono variabili di config di questo modulo.
+
+## Fixed configuration
+
+La pipeline v3 implementa **una** configurazione, quindi il setup non la chiede: la scrive.
+
+| Variabile | Valore |
+|---|---|
+| `framework` | `react` |
+| `headless` | `base-ui` |
+| `styling` | `tailwind-v4` |
+| `fonts` | `fontsource` |
+
+In `./assets/module.yaml` ognuna è un `single-select` con una sola opzione. `scripts/merge-config.py` completa i valori che il file delle risposte non porta e **rifiuta** ogni altro valore — negli argomenti, nel file delle risposte o in una config legacy — con exit 1, nessuna scrittura su `config.yaml`/`config.user.yaml` e un messaggio che nomina la variabile e i valori ammessi. Se l'utente chiede Radix, Vue, Tailwind v3, `next/font` o un'altra libreria, non mappare la richiesta su un valore: dì che la pipeline non la implementa e lascia la configurazione com'è.
+
+`pds-design` legge questi quattro valori all'attivazione e si ferma (prima di ogni scrittura) se mancano o sono diversi. La prova del rifiuto: `uv run --with pytest --with pyyaml pytest ./scripts/tests/test_merge_config.py`.
 
 ## Collect Configuration
 
@@ -43,7 +58,7 @@ Ask the user for values. Show defaults in brackets. Present all values together 
 
 **Core config** (only if no core keys exist yet): `user_name` (default: BMad), `communication_language` and `document_output_language` (default: English — ask as a single language question, both keys get the same answer), `output_folder` (default: `{project-root}/_bmad-output`). Of these, `user_name` and `communication_language` are written exclusively to `config.user.yaml`. The rest go to `config.yaml` at root and are shared across all modules.
 
-**Module config**: Read each variable in `./assets/module.yaml` that has a `prompt` field. Ask using that prompt with its default value (or legacy value if available).
+**Module config**: Read each variable in `./assets/module.yaml` that has a `prompt` field. Ask using that prompt with its default value (or legacy value if available). Variables that are **fixed** (a `single-select` with exactly one option — all four today, see "Fixed configuration") are not asked: state the value and write it.
 
 ## Write Files
 
@@ -80,7 +95,7 @@ Check `directories_removed` and `files_removed_count` in the JSON output for the
 
 ## Confirm
 
-Use the script JSON output to display what was written — config values set (written to `config.yaml` at root for core, module section for module values), user settings written to `config.user.yaml` (`user_keys` in result), help entries added, fresh install vs update. If legacy files were deleted, mention the migration. If legacy directories were removed, report the count and list (e.g. "Cleaned up 106 installer package files from bmb/, core/, \_config/ — skills are installed at .claude/skills/"). Then display the `module_greeting` from `./assets/module.yaml` to the user.
+Use the script JSON output to display what was written — config values set (written to `config.yaml` at root for core, module section for module values), user settings written to `config.user.yaml` (`user_keys` in result), help entries added, fresh install vs update. The result carries `module_variables` with the values that landed in the module section: use it to show `framework`, `headless`, `styling`, `fonts` explicitly, and `fixed_values` for the ones the script completed. If legacy files were deleted, mention the migration. If legacy directories were removed, report the count and list (e.g. "Cleaned up 106 installer package files from bmb/, core/, \_config/ — skills are installed at .claude/skills/"). Then display the `module_greeting` from `./assets/module.yaml` to the user.
 
 ## Outcome
 

@@ -1,7 +1,18 @@
+import { COMPONENT_CONTRACTS, multiselect, propsSchema } from "@app/contracts";
 import { describe, expect, it } from "vitest";
 
-import { Finding, isPartUsed, verifyComponent, type Lettura, type LetturaLayer } from "../../src/core";
-import { badgeInstance, badgeLettura, badgeRoot, CONTRACTS, layer, SCALE, shopCardLettura, tokenTypeOf } from "../fixtures/components";
+import { analyzeComponent, Finding, isPartUsed, RENDERING_AXES, verifyComponent, type Lettura, type LetturaLayer } from "../../src/core";
+import {
+  badgeInstance,
+  badgeLettura,
+  badgeRoot,
+  CONTRACTS,
+  layer,
+  multiselectLettura,
+  SCALE,
+  shopCardLettura,
+  tokenTypeOf,
+} from "../fixtures/components";
 
 /**
  * Livello 1 della CI (Story 2.22): verifica di un componente intero — chiavi
@@ -224,5 +235,176 @@ describe("verifyComponent — contratto, assi e stati", () => {
     const warnings = of(verify(badgeLettura(children)), "avviso");
     expect(warnings).toHaveLength(6);
     expect(warnings[0]!.where).toBe('cella variant=default, size=sm › layer "Testo"');
+  });
+});
+
+describe("assi di rendering (Story 2.28)", () => {
+  it("la tabella nomina solo contratti registrati, con il valore base tra i valori", () => {
+    expect(Object.keys(RENDERING_AXES).sort()).toEqual(["checkbox", "chip", "multiselect", "multiselect-panel", "multiselect-trigger", "option"]);
+    for (const [name, axes] of Object.entries(RENDERING_AXES)) {
+      expect(Object.hasOwn(COMPONENT_CONTRACTS, name), `contratto "${name}" non registrato`).toBe(true);
+      for (const axis of axes) expect(axis.values).toContain(axis.base);
+    }
+  });
+
+  it("i valori della tabella sono quelli delle celle lette in Penpot (Multiselect, Trigger, Panel)", () => {
+    const axes = (name: string) => Object.fromEntries(RENDERING_AXES[name]!.map((axis) => [axis.name, axis.values]));
+    expect(axes("multiselect")).toEqual({ open: ["false", "true"], display: ["chips", "placeholder"] });
+    expect(axes("multiselect-trigger")).toEqual({ display: ["chips", "overflow", "placeholder"] });
+    expect(axes("multiselect-panel")).toEqual({ content: ["options", "empty"] });
+  });
+
+  it("verde: `open` e `state` su multiselect, contratto con il solo asse option `size`", () => {
+    const findings = verify(multiselectLettura());
+    expect(of(findings, "blocco")).toEqual([]);
+    expect(of(findings, "domanda")).toEqual([]);
+    expect(of(findings, "avviso")).toEqual([]);
+    // `open` non diventa una prop: il contratto dell'editor resta `option` + field.
+    expect(Object.keys(propsSchema(multiselect).shape)).toEqual(["size", "helper", "placeholder", "selected", "options", "searchPlaceholder", "emptyLabel"]);
+  });
+
+  it("le celle non base contribuiscono alla base le classi con il prefisso dell'asse", () => {
+    const { model, findings } = analyzeComponent(multiselectLettura(), input);
+    expect(of(findings, "blocco")).toEqual([]);
+    expect(model?.baseCells).toHaveLength(1);
+    const root = model!.parts[0]!;
+    const classes = [...(root.classes.get(model!.baseCells[0]!.index) ?? [])];
+    expect(classes).toEqual(
+      expect.arrayContaining(["bg-primary", "hover:bg-secondary", "data-[open=true]:bg-accent", "data-[open=true]:hover:bg-destructive"]),
+    );
+    // La cella non base non compare tra le celle da cui si genera.
+    expect(model!.cells.filter((cell) => cell.rendering.open === "true")).toHaveLength(2);
+  });
+
+  it("rosso: una proprietà di variante non dichiarata resta il blocco «asse estraneo»", () => {
+    const lettura = multiselectLettura();
+    lettura.cells.push({ variant: { open: "false", state: "default", size: "md", foo: "bar" }, root: layer({ name: "Multiselect", kind: "board" }) });
+    const blocks = of(verify(lettura), "blocco");
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]!.message).toContain('Asse "foo" estraneo al contratto "multiselect"');
+    expect(blocks[0]!.message).toContain("open");
+  });
+
+  it("rosso: un valore fuori dagli assi di rendering è un blocco", () => {
+    const lettura = multiselectLettura();
+    lettura.cells.push({ variant: { open: "forse", state: "default", size: "md" }, root: layer({ name: "Multiselect", kind: "board" }) });
+    const blocks = of(verify(lettura), "blocco");
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]!.message).toContain('Valore "forse" fuori dagli assi di rendering per l\'asse "open"');
+    expect(blocks[0]!.message).toContain("false, true");
+  });
+
+  it("rosso: una cella di rendering senza la cella base è un blocco", () => {
+    const cell = multiselectLettura().cells.find((candidate) => candidate.variant.open === "true" && candidate.variant.state === "default")!;
+    const blocks = of(verify({ component: "Multiselect", pluginData: { contract: "multiselect@1" }, cells: [cell] }), "blocco");
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]!.message).toContain("senza la cella base");
+    expect(blocks[0]!.message).toContain("open=false");
+  });
+
+  it("contratto senza voce nella tabella: nessun asse di rendering ammesso", () => {
+    const lettura = badgeLettura();
+    lettura.cells.push({ variant: { variant: "default", size: "md", open: "true" }, root: badgeRoot("default", "md") });
+    expect(of(verify(lettura), "blocco")[0]!.message).toContain('Asse "open" estraneo al contratto "badge"');
+  });
+
+  it("`display` sul container della Multiselect è resa: nessun blocco, classi con il prefisso dell'asse", () => {
+    const lettura = multiselectLettura();
+    lettura.cells.push({
+      variant: { open: "false", state: "default", size: "md", display: "placeholder" },
+      root: layer({ name: "Multiselect", kind: "board", tokens: { fill: "muted" }, style: { layoutDir: "column" } }),
+    });
+    const findings = verify(lettura);
+    expect(of(findings, "blocco")).toEqual([]);
+    const { model } = analyzeComponent(lettura, input);
+    const base = model!.baseCells[0]!;
+    expect([...(model!.parts[0]!.classes.get(base.index) ?? [])]).toContain("data-[display=placeholder]:bg-muted");
+  });
+
+  it("`content` sul pannello: la cella `empty` è resa con il prefisso dell'asse", () => {
+    const root = (fill: string) => layer({ name: "Multiselect Panel", kind: "board", tokens: { fill } });
+    const lettura: Lettura = {
+      component: "Multiselect Panel",
+      pluginData: { contract: "multiselect-panel@1" },
+      cells: [
+        { variant: { content: "options" }, root: root("primary") },
+        { variant: { content: "empty" }, root: root("muted") },
+      ],
+    };
+    const { findings, model } = analyzeComponent(lettura, { ...input, contracts: COMPONENT_CONTRACTS });
+    expect(of(findings, "blocco")).toEqual([]);
+    expect([...(model!.parts[0]!.classes.get(model!.baseCells[0]!.index) ?? [])]).toContain("data-[content=empty]:bg-muted");
+  });
+
+  it("`search` sul pannello resta fuori (Story 2.35): le sue celle sono un blocco, non un asse inventato", () => {
+    const root = (fill: string) => layer({ name: "Multiselect Panel", kind: "board", tokens: { fill } });
+    const findings = verifyComponent(
+      {
+        component: "Multiselect Panel",
+        pluginData: { contract: "multiselect-panel@1" },
+        cells: [
+          { variant: { content: "options", search: "false" }, root: root("primary") },
+          { variant: { content: "empty", search: "false" }, root: root("muted") },
+          { variant: { content: "options", search: "true" }, root: root("primary") },
+        ],
+      },
+      { ...input, contracts: COMPONENT_CONTRACTS },
+    );
+    const messages = of(findings, "blocco").map((finding) => finding.message);
+    expect(messages).toHaveLength(3);
+    for (const message of messages) expect(message).toContain('Asse "search" estraneo al contratto "multiselect-panel"');
+  });
+
+  it("verde: `state=error` con la sua cella base, classi con `[&[aria-invalid=true]]:`", () => {
+    const lettura = multiselectLettura();
+    lettura.cells.push({
+      variant: { open: "false", state: "error", size: "md" },
+      root: layer({ name: "Multiselect", kind: "board", tokens: { fill: "muted" }, style: { layoutDir: "column" } }),
+    });
+    expect(of(verify(lettura), "blocco")).toEqual([]);
+    const { model } = analyzeComponent(lettura, input);
+    const base = model!.baseCells[0]!;
+    const classes = [...(model!.parts[0]!.classes.get(base.index) ?? [])];
+    expect(classes).toContain("[&[aria-invalid=true]]:bg-muted");
+  });
+
+  it("rosso: `state=error` senza la cella base resta un blocco", () => {
+    const blocks = of(
+      verify({
+        component: "Multiselect",
+        pluginData: { contract: "multiselect@1" },
+        cells: [{ variant: { open: "false", state: "error", size: "md" }, root: layer({ name: "Multiselect", kind: "board" }) }],
+      }),
+      "blocco",
+    );
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]!.message).toContain("senza la cella base");
+    expect(blocks[0]!.message).toContain("state=default");
+  });
+
+  it("istanza annidata con un asse di rendering e uno stato: accettati, e non diventano prop", () => {
+    const trigger = (display: string) =>
+      layer({
+        name: "Trigger",
+        kind: "board",
+        pluginData: { part: "trigger" },
+        instance: { component: "multiselect-trigger", variant: { size: "md", state: "focus", display }, overrides: [] },
+      });
+    const root = (display: string) => layer({ name: "Multiselect", kind: "board", children: [trigger(display)] });
+    const { model, findings } = analyzeComponent(
+      {
+        component: "Multiselect",
+        pluginData: { contract: "multiselect@1" },
+        cells: [
+          { variant: { open: "false", size: "md" }, root: root("chips") },
+          { variant: { open: "false", size: "md", display: "placeholder" }, root: root("placeholder") },
+        ],
+      },
+      { ...input, contracts: COMPONENT_CONTRACTS },
+    );
+    expect(of(findings, "blocco")).toEqual([]);
+    const part = model!.parts.find((candidate) => candidate.key === "trigger")!;
+    // `display` e `state` sono resa: si validano, ma le props dell'istanza restano il solo `size`.
+    expect(part.instanceProps.get(model!.baseCells[0]!.index)).toEqual({ size: "md" });
   });
 });

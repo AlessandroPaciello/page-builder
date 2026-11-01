@@ -1,7 +1,7 @@
 # A container's agreed children, in its tickets/ folder; tickets.py ignores unknown keys.
 # Table order is build order. `id` is permanent, never reused.
 # No status here: the plan carries `status`.
-# next_id = 33 # written by `tickets.py move`; the folder's counter never goes below it
+# next_id = 36 # written by `tickets.py move`; the folder's counter never goes below it
 
 [[entry]]
 id = 1
@@ -304,11 +304,33 @@ risk = "low"
 id = 28
 type = "story"
 title = "Skill `pds-design` e configurazione di progetto"
-description = "La skill `pds-design` porta tema e componenti in Penpot attraverso il kit ufficiale, con le voci TB, TV, CN, DC, CD e MS, facendo da wrapper alle skill del kit dove ha senso e senza scrivere metadati in Penpot."
-verify = "Le sei voci sono costruite con `bmad-workflow-builder` e verificate sulle due strade su un componente reale, `pds-setup` accetta solo i valori fissati e rifiuta gli altri, e ogni scrittura passa da una conferma."
+description = "La skill `pds-design` porta tema e componenti in Penpot attraverso il kit ufficiale, con le voci TB, TV, CN, DC, CD e MS, facendo da wrapper alle skill del kit dove ha senso e senza scrivere metadati in Penpot. La sequenza di raggruppamento che DC mette per iscritto è la base dell'operazione `pds` della Story 2.33."
+verify = "Le sei voci sono costruite con `bmad-workflow-builder` e verificate sulle due strade su un componente reale. Un componente con due assi e istanze annidate, seguendo solo la voce DC, arriva a `verify_component` senza altri blocchi che la mancanza di `pagebuilder/contract`, e la skill non descrive più «componenti separati» come ripiego valido. `pds-setup` accetta solo i valori fissati e rifiuta gli altri, e ogni scrittura passa da una conferma."
 covers = ["R1", "R2"]
 after = []
 hitl = false
+risk = "low"
+
+[[entry]]
+id = 33
+type = "story"
+title = "Operazione `pds` di raggruppamento in varianti"
+description = "Il server `pds` espone un'operazione che, dato un componente e le proprietà delle sue celle, le raggruppa in un container di varianti con una sola chiamata: nomi completi, eliminazione della variante automatica, assi impostati, istanze annidate ancora collegate. Esegue dal server la sequenza che DC mette per iscritto nella 2.28 e la voce DC la chiama dopo la conferma, al posto della sequenza manuale. Estende il confine della 2.24: è l'unico strumento del server che scrive su Penpot."
+verify = "Su un file Penpot duplicato con i cinque set della Multiselect (Chip, Checkbox, Option, Multiselect Trigger, Multiselect), seguendo la voce DC il raggruppamento è una chiamata sola per componente, dopo la conferma, e dà un container senza `variantError` con varianti distinte, `verify_component` che trova il componente e istanze annidate collegate; una seconda chiamata non cambia nulla, mentre un set parziale o un nome senza tutte le proprietà è rifiutato nominando la cella, senza scrivere. Multiselect Panel, senza assi, resta un componente singolo."
+covers = ["R2"]
+after = [28]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 35
+type = "story"
+title = "Ricerca nella Multiselect: celle `search` e asse sul contratto"
+description = "La Multiselect composta non mostra mai la ricerca: tutte le celle usano il pannello con `search=false`, quindi dal blocco `multiselect` la ricerca non si può accendere. Il designer aggiunge la proprietà `search` alla composizione (valore `false` sulle celle esistenti) e disegna le due celle aperte `md` e `sm` con la ricerca; poi il contratto `multiselect` riceve l'asse `search` (`false`, `true`, default `false`) e il blocco lo espone come campo. Senza celle non si aggiunge l'asse: Penpot resta la fonte di verità."
+verify = "`verify_component { name: \"Multiselect\" }` dà un solo blocco, la mancanza di `pagebuilder/contract`, con ogni cella che porta `search`; `describe_component` legge le due celle con `search=true`; il contratto `multiselect` espone l'asse `search` con default `false` e il fingerprint ne ha la voce — la 6 si riscrive se non è ancora rilasciata, altrimenti si aggiunge la 7."
+covers = ["R2"]
+after = [33]
+hitl = true
 risk = "low"
 
 [[entry]]
@@ -352,5 +374,16 @@ description = "La libreria dei domini (data-display, inputs, feedback, layout, n
 verify = "Ogni componente interattivo ha focus visibile WCAG AA, stato comunicato da testo + colore e ARIA corretto, axe è verde su ogni story generata, e `domains/` non importa da `editor/` (lint bloccante)."
 covers = ["R3"]
 after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 34
+type = "story"
+title = "Refactor sweep dell'epica"
+description = "Pulizia di ciò che i plan e le review dell'epica hanno rimandato, con lo scope fissato all'inizio del lavoro e solo cleanup: nessun nuovo comportamento. Chiude l'epica dopo ogni altra entry aperta."
+verify = "Il piano della sweep elenca ogni voce di `deferred-work.md` che tocca l'epica con la sua chiusura o il suo rinvio motivato, e `pnpm check-types`, `pnpm lint` e `pnpm test` sono verdi dopo la pulizia."
+covers = []
+after = [28, 29, 30, 31, 32, 33, 35]
 hitl = false
 risk = "low"

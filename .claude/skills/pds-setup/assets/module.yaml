@@ -1,7 +1,40 @@
 code: pds
 name: "Penpot DS"
-description: "Pipeline Penpot → codice del design system del page builder. Le skill operative pds-design e pds-code arrivano con la v3 (Story 2.28–2.29)."
+description: "Pipeline Penpot → codice del design system del page builder: tema e componenti in Penpot con pds-design, codice con pds-code. La configurazione di progetto è fissata (react, base-ui, tailwind-v4, fontsource)."
 module_version: 1.0.0
 default_selected: false
 module_greeting: >
-  Modulo Penpot DS registrato. Le skill operative (pds-design, pds-code) arrivano con la v3; per ora è disponibile solo [SU] (setup).
+  Modulo Penpot DS registrato. Configurazione fissata: framework=react, headless=base-ui,
+  styling=tailwind-v4, fonts=fontsource — nessun altro valore è implementato dalla pipeline.
+
+  Le voci di pds-design sono disponibili (TB tema base, TV variante di tema, CN contratto nuovo,
+  DC disegna componente, CD contratto dal design, MS modifica struttura, ST stato); pds-code arriva
+  con la Story 2.29.
+
+# Configurazione fissata dalla pipeline v3 (AD-11, Story 2.28): ogni variabile è un
+# `single-select` con un solo valore, quindi non c'è niente da scegliere. Un valore diverso
+# — negli argomenti, in un file di risposte o in una config legacy — è rifiutato da
+# `scripts/merge-config.py` con exit 1 e nessuna scrittura.
+framework:
+  default: "react"
+  single-select:
+    - value: "react"
+      label: "React 19"
+
+headless:
+  default: "base-ui"
+  single-select:
+    - value: "base-ui"
+      label: "Base UI"
+
+styling:
+  default: "tailwind-v4"
+  single-select:
+    - value: "tailwind-v4"
+      label: "Tailwind CSS 4"
+
+fonts:
+  default: "fontsource"
+  single-select:
+    - value: "fontsource"
+      label: "Fontsource (un pacchetto per famiglia)"
