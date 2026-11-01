@@ -216,6 +216,7 @@ function fakePenpot(children: readonly { id: string; name: string }[]) {
   };
 
   return {
+    container,
     currentPage: { getShapeById: (id: string) => boards.get(id) ?? null },
     createVariantFromComponents: (shapes: unknown[]) => {
       if (shapes.length !== children.length) throw new Error("il finto Penpot ha ricevuto il numero sbagliato di board");
@@ -250,6 +251,32 @@ describe("il sorgente di scrittura su un Penpot finto", () => {
         { name: CHIP_CELLS[3]!.name, props: { size: "sm", removable: "true" } },
       ],
     });
+  });
+
+  it("celle sovrapposte: le dispone in griglia e adatta il container; distanziate: non le tocca", async () => {
+    const plan = planGroupVariants(variantReading("chip", CHIP_CELLS));
+    const place = (positions: readonly [number, number][]) => {
+      const penpot = fakePenpot(CHIP_CELLS);
+      const geometry = CHIP_CELLS.map((cell, index) => {
+        const board = penpot.currentPage.getShapeById(cell.id) as unknown as Record<string, number>;
+        Object.assign(board, { x: positions[index]![0], y: positions[index]![1], width: 40, height: 20 });
+        return board as { x: number; y: number; width: number; height: number };
+      });
+      const resized: number[][] = [];
+      Object.assign(penpot.container, { x: 100, y: 200, resize: (w: number, h: number) => resized.push([w, h]) });
+      return { penpot, geometry, resized };
+    };
+
+    const stacked = place([[130, 230], [130, 230], [130, 230], [130, 230]]);
+    await runWriteSource(plan, stacked.penpot);
+    // Due colonne (valori dell'ultimo asse, `removable`), due righe; padding 30, spazio 24.
+    expect(stacked.geometry.map((shape) => [shape.x, shape.y])).toEqual([[130, 230], [194, 230], [130, 274], [194, 274]]);
+    expect(stacked.resized).toEqual([[164, 124]]);
+
+    const apart = place([[130, 230], [200, 230], [270, 230], [340, 230]]);
+    await runWriteSource(plan, apart.penpot);
+    expect(apart.geometry.map((shape) => shape.x)).toEqual([130, 200, 270, 340]);
+    expect(apart.resized).toEqual([]);
   });
 
   it("una cella fuori dalla pagina corrente ferma la scrittura prima di creare il container", async () => {

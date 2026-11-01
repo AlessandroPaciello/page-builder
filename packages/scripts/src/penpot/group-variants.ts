@@ -202,6 +202,53 @@ function variantMap(container, cells) {
   if (missing.length > 0) throw new Error("group_variants: le varianti " + JSON.stringify(missing) + " non sono nel container: gli assi non si impostano.");
   return map;
 }
+function overlaps(a, b) {
+  return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+}
+// Se le celle si sovrappongono (Penpot tiene le posizioni che trova), le dispone
+// in griglia come il comando «Combine as variants» dell'interfaccia: una colonna
+// per ogni valore dell'ultimo asse, e il container si adatta. Se sono già
+// distanziate non si tocca niente.
+function arrangeIfOverlapping(container, shapes, axes) {
+  const geometric = shapes.every(function (shape) {
+    return [shape.x, shape.y, shape.width, shape.height].every(function (n) {
+      return typeof n === "number";
+    });
+  });
+  if (!geometric || typeof container.resize !== "function") return false;
+  let overlapping = false;
+  for (let i = 0; i < shapes.length && !overlapping; i += 1) {
+    for (let j = i + 1; j < shapes.length; j += 1) {
+      if (overlaps(shapes[i], shapes[j])) {
+        overlapping = true;
+        break;
+      }
+    }
+  }
+  if (!overlapping) return false;
+  const PAD = 30;
+  const GAP = 24;
+  const last = axes[axes.length - 1];
+  const values = [];
+  for (const cell of PLAN.cells) if (values.indexOf(cell.variant[last]) < 0) values.push(cell.variant[last]);
+  const columns = Math.max(1, values.length);
+  let y = container.y + PAD;
+  let width = 0;
+  for (let start = 0; start < shapes.length; start += columns) {
+    let x = container.x + PAD;
+    let height = 0;
+    for (const shape of shapes.slice(start, start + columns)) {
+      shape.x = x;
+      shape.y = y;
+      x += shape.width + GAP;
+      height = Math.max(height, shape.height);
+    }
+    width = Math.max(width, x - GAP - container.x);
+    y += height + GAP;
+  }
+  container.resize(width + PAD, y - GAP - container.y + PAD);
+  return true;
+}
 async function groupVariants() {
   if (typeof penpot.createVariantFromComponents !== "function") {
     throw new Error("group_variants: questa versione di Penpot non ha createVariantFromComponents (serve Penpot 2.18 o successiva): il raggruppamento non parte.");
@@ -256,6 +303,10 @@ async function groupVariants() {
     const component = byBoard.get(cell.id);
     for (let i = 0; i < axes.length; i += 1) component.setVariantProperty(i, cell.variant[axes[i]]);
   }
+
+  arrangeIfOverlapping(container, PLAN.cells.map(function (cell) {
+    return byBoard.get(cell.id).mainInstance();
+  }), axes);
 
   // Il risultato si legge dal file, non si presume: nessun variantError, tutte
   // le varianti con i valori del piano.
