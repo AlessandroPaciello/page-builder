@@ -9,7 +9,7 @@ hitl: false
 risk: low
 tracker_id: "115"
 remote: "https://github.com/AlessandroPaciello/page-builder/issues/115"
-tracker_status: in-progress
+tracker_status: done
 ---
 
 # Rendering condizionale e field structure come content
