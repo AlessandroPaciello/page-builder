@@ -3,7 +3,7 @@
 - `mcp-client.ts` — utilità MCP: `callPenpotTool`, `parseExecuteCodeEnvelope`, `resolveMcpEndpoint` (variabili `PENPOT_MCP_URL`, `PENPOT_MCP_TOKEN`).
 - `penpot-reader.ts` — legge solo il catalogo token per `theme --live` (resta fino alla Story 2.26).
 - `read-component.ts` — `readComponent(nome)` (Story 2.23): legge un componente e restituisce una `Lettura` validata con zod.
-- `group-variants.ts` — `groupVariants(nome, piano)` (Story 2.36): legge le celle sciolte e, dopo la validazione del nucleo, le raggruppa in un container di varianti. È l'unico file qui che scrive su Penpot.
+- `group-variants.ts` — `groupVariants(nome, piano)` (Story 2.36): legge le celle sciolte e, dopo la validazione del nucleo, le raggruppa in un container di varianti. È l'unico file qui che scrive su Penpot. Dopo il raggruppamento, se le celle si sovrappongono le dispone in griglia; altrimenti non le muove.
 
 Nessun altro file scrive su Penpot: fuori da `group-variants.ts` non ci sono `set*`, `storage` né plugin data scritti (`group-variants.ts` crea solo il container e imposta gli assi; i plugin data `pagebuilder` li scrive `pds-code`).
 
