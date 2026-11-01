@@ -9,7 +9,7 @@ hitl: false
 risk: medium
 tracker_id: "119"
 remote: "https://github.com/AlessandroPaciello/page-builder/issues/119"
-tracker_status: in-progress
+tracker_status: done
 ---
 
 # Operazione `pds` di raggruppamento in varianti
