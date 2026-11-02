@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { SECTION_DEFINITIONS, type SectionDefinition } from "@app/contracts";
 
 import {
   buildOrder,
@@ -64,6 +65,8 @@ export interface PdsServerOptions {
   readonly root: string;
   /** I contratti; di default `COMPONENT_CONTRACTS` (come `CoreInput`). I test ne passano di scritti a mano. */
   readonly contracts?: ContractRegistry;
+  /** Le sezioni; di default `SECTION_DEFINITIONS` (come `CoreInput`). Una `Lettura` può portare il contratto di una sezione. */
+  readonly sections?: Readonly<Record<string, SectionDefinition>>;
   /** Seam dei test: il generatore del nucleo; di default `generateComponent`. */
   readonly generate?: (lettura: Lettura, input: GenerateInput) => GenerateResult;
 }
@@ -106,7 +109,7 @@ function readTailwindDefaultCss(): string {
 }
 
 /** `tokenTypeOf` e `scale` dal catalogo token: si rileggono a ogni chiamata. Solo la base (le varianti ripetono i nomi). */
-function coreContext(catalog: ThemeCatalog, contracts: ContractRegistry | undefined): CoreInput {
+function coreContext(catalog: ThemeCatalog, contracts: ContractRegistry | undefined, sections: Readonly<Record<string, SectionDefinition>>): CoreInput {
   const base = baseCatalog(catalog);
   const types = new Map<string, TokenType>();
   for (const set of base.sets) for (const token of set.tokens) types.set(token.name, token.type);
@@ -114,15 +117,17 @@ function coreContext(catalog: ThemeCatalog, contracts: ContractRegistry | undefi
     tokenTypeOf: (tokenName) => types.get(tokenName),
     scale: scaleFromThemeCss(generateTheme(base).css),
     ...(contracts === undefined ? {} : { contracts }),
+    sections,
   };
 }
 
 export function createPdsServer(options: PdsServerOptions): McpServer {
   const { penpot, root, contracts } = options;
+  const sections = options.sections ?? SECTION_DEFINITIONS;
   const generate = options.generate ?? generateComponent;
   const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION });
 
-  const context = async (): Promise<CoreInput> => coreContext(await penpot.readTokenCatalog(), contracts);
+  const context = async (): Promise<CoreInput> => coreContext(await penpot.readTokenCatalog(), contracts, sections);
   const existing = (name: string) => {
     const paths = componentPaths(name);
     const tsx = readIfExists(join(root, paths.tsx));
@@ -147,7 +152,7 @@ export function createPdsServer(options: PdsServerOptions): McpServer {
     guarded(async ({ name }) => {
       const lettura = await penpot.readComponent(name);
       const input = await context();
-      const { existingTsx } = existing(letturaName(lettura, contracts));
+      const { existingTsx } = existing(letturaName(lettura, contracts, sections));
       return { findings: verifyComponent(lettura, { ...input, ...(existingTsx === undefined ? {} : { existingTsx }) }) };
     }),
   );
@@ -158,7 +163,7 @@ export function createPdsServer(options: PdsServerOptions): McpServer {
     guarded(async ({ names }) => {
       const letture: Lettura[] = [];
       for (const name of names) letture.push(await penpot.readComponent(name));
-      const result = buildOrder(letture, generatedComponents(root), contracts);
+      const result = buildOrder(letture, generatedComponents(root), contracts, sections);
       return { order: result.order, findings: result.findings };
     }),
   );
@@ -169,7 +174,7 @@ export function createPdsServer(options: PdsServerOptions): McpServer {
     guarded(async ({ name }) => {
       const lettura = await penpot.readComponent(name);
       const input = await context();
-      const component = letturaName(lettura, contracts);
+      const component = letturaName(lettura, contracts, sections);
       const result = generate(lettura, { ...input, ...existing(component), generated: generatedComponents(root) });
       // Con un blocco o una domanda aperta non si scrive niente, qualunque cosa contengano i `changes`.
       const written = result.findings.some(isStopping) ? [] : writeChanges(root, component, result.changes);

@@ -166,6 +166,41 @@ function instanceNameOf(instance: { readonly component: string; readonly contrac
   return instance.contract === undefined ? kebabOf(instance.component) : instance.contract.split("@")[0]!;
 }
 
+export interface SlotCandidates {
+  /** Il plugin data `slot` dichiarato, se c'è (anche quando non è uno slot della sezione). */
+  readonly declared?: string;
+  /** Gli slot che il layer può essere: quello dichiarato o quelli che ammettono i figli. */
+  readonly candidates: readonly SlotDef[];
+}
+
+/**
+ * Gli slot candidati di un layer: `pluginData.slot` vince; altrimenti il layer
+ * è uno slot se tutti i figli sono istanze e uno o più slot le ammettono. È
+ * l'unica regola degli esempi: `slotOf` ci costruisce sopra i `Finding` e
+ * `isSlotLayer` risponde senza esiti.
+ */
+export function slotCandidatesOf(layer: LetturaLayer, section: SectionDefinition): SlotCandidates {
+  const declared = layer.pluginData?.slot;
+  if (declared !== undefined) {
+    return { declared, candidates: section.slots.filter((candidate) => candidate.id === declared) };
+  }
+  if (layer.instance !== undefined || layer.children.length === 0) return { candidates: [] };
+  if (!layer.children.every((child) => child.instance !== undefined)) return { candidates: [] };
+
+  const names = layer.children.map((child) => instanceNameOf(child.instance!));
+  return { candidates: section.slots.filter((candidate) => names.every((name) => candidate.allow.includes(name))) };
+}
+
+/**
+ * Il layer è uno slot della sezione: i suoi figli sono esempi del disegno, non
+ * parti né dipendenze dell'ordine di generazione. Vale solo con un candidato
+ * vero: un `pluginData.slot` che non nomina uno slot della sezione non nasconde
+ * i figli (il blocco lo dà `slotOf`).
+ */
+export function isSlotLayer(layer: LetturaLayer, section: SectionDefinition): boolean {
+  return slotCandidatesOf(layer, section).candidates.length > 0;
+}
+
 /**
  * Lo slot di un layer. `pluginData.slot` vince; altrimenti il layer è uno slot
  * se tutti i figli sono istanze e uno solo slot le ammette. Più candidati sono
@@ -174,9 +209,9 @@ function instanceNameOf(instance: { readonly component: string; readonly contrac
  */
 export function slotOf(layer: LetturaLayer, section: SectionDefinition): SlotResolution {
   const where = `sezione "${section.name}" › layer "${layer.name}"`;
-  const declared = layer.pluginData?.slot;
+  const { declared, candidates } = slotCandidatesOf(layer, section);
   if (declared !== undefined) {
-    const slot = section.slots.find((candidate) => candidate.id === declared);
+    const slot = candidates[0];
     if (slot === undefined) {
       return {
         findings: [
@@ -191,11 +226,6 @@ export function slotOf(layer: LetturaLayer, section: SectionDefinition): SlotRes
     return { slot, findings: [] };
   }
 
-  if (layer.instance !== undefined || layer.children.length === 0) return { findings: [] };
-  if (!layer.children.every((child) => child.instance !== undefined)) return { findings: [] };
-
-  const names = layer.children.map((child) => instanceNameOf(child.instance!));
-  const candidates = section.slots.filter((candidate) => names.every((name) => candidate.allow.includes(name)));
   if (candidates.length === 0) return { findings: [] };
   if (candidates.length === 1) return { slot: candidates[0]!, findings: [] };
 

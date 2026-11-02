@@ -147,6 +147,45 @@ export function contractOf(value: string | undefined, contracts: ContractRegistr
   return { contract };
 }
 
+/** Un contratto di componente o una sezione, da `pluginData.contract`. */
+export interface DefinitionResolution {
+  readonly component?: ComponentContract;
+  readonly section?: SectionDefinition;
+  /** Il problema, senza il prefisso `Contratto: ` (lo aggiunge chi lo riporta). */
+  readonly problem?: string;
+}
+
+/**
+ * L'unico punto di risoluzione di `pluginData.contract` (Story 2.31): il nome
+ * può essere di un contratto di componente o di una sezione. Un nome presente
+ * in entrambi i registri è un problema, non una precedenza; la versione si
+ * controlla sulla definizione trovata. I messaggi sono quelli di
+ * `resolveDefinition`, così `buildOrder` e il server riportano gli stessi.
+ */
+export function definitionOf(
+  value: string | undefined,
+  contracts: ContractRegistry,
+  sections: Readonly<Record<string, SectionDefinition>>,
+): DefinitionResolution {
+  if (value === undefined) return { problem: 'manca il contratto: il container non ha "contract" nei plugin data (pagebuilder).' };
+  const [name, version] = value.split("@") as [string, string | undefined];
+  const component = Object.hasOwn(contracts, name) ? contracts[name] : undefined;
+  const section = Object.hasOwn(sections, name) ? sections[name] : undefined;
+  if (component !== undefined && section !== undefined) {
+    return { problem: `"${name}" è sia un contratto di componente sia una sezione: i nomi devono essere distinti.` };
+  }
+  const definition = component ?? section;
+  if (definition === undefined) {
+    return {
+      problem: `contratto "${value}" sconosciuto: i contratti sono [${Object.keys(contracts).sort().join(", ")}], le sezioni sono [${Object.keys(sections).sort().join(", ")}].`,
+    };
+  }
+  if (version !== undefined && version !== String(definition.version)) {
+    return { problem: `contratto "${value}": la versione nel codice è ${definition.version}. Allinea i plugin data o il contratto.` };
+  }
+  return component !== undefined ? { component } : { section: section! };
+}
+
 /**
  * Il nome kebab del contratto di un'istanza annidata: il nome in
  * `instance.contract` (`badge@1` → `badge`) se c'è, altrimenti il kebab del
@@ -909,34 +948,10 @@ function resolveDefinition(
   sections: Readonly<Record<string, SectionDefinition>>,
 ): ResolvedDefinition {
   const where = `componente "${lettura.component}"`;
-  const value = lettura.pluginData?.contract;
-  if (value === undefined) {
-    return { findings: [blocco(where, 'Contratto: manca il contratto: il container non ha "contract" nei plugin data (pagebuilder).')] };
-  }
-  const [name, version] = value.split("@") as [string, string | undefined];
-  const component = Object.hasOwn(contracts, name) ? contracts[name] : undefined;
-  const section = Object.hasOwn(sections, name) ? sections[name] : undefined;
-  if (component !== undefined && section !== undefined) {
-    return { findings: [blocco(where, `Contratto: "${name}" è sia un contratto di componente sia una sezione: i nomi devono essere distinti.`)] };
-  }
-  const definition = component ?? section;
-  if (definition === undefined) {
-    return {
-      findings: [
-        blocco(
-          where,
-          `Contratto: contratto "${value}" sconosciuto: i contratti sono [${Object.keys(contracts).sort().join(", ")}], le sezioni sono [${Object.keys(sections).sort().join(", ")}].`,
-        ),
-      ],
-    };
-  }
-  if (version !== undefined && version !== String(definition.version)) {
-    return {
-      findings: [blocco(where, `Contratto: contratto "${value}": la versione nel codice è ${definition.version}. Allinea i plugin data o il contratto.`)],
-    };
-  }
-  if (component !== undefined) return { contract: component, findings: [] };
-  return { ...sectionContract(section!, lettura.cells, lettura.pluginData ?? {}), section: section! };
+  const found = definitionOf(lettura.pluginData?.contract, contracts, sections);
+  if (found.problem !== undefined) return { findings: [blocco(where, `Contratto: ${found.problem}`)] };
+  if (found.component !== undefined) return { contract: found.component, findings: [] };
+  return { ...sectionContract(found.section!, lettura.cells, lettura.pluginData ?? {}), section: found.section! };
 }
 
 /**

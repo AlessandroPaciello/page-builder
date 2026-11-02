@@ -558,6 +558,9 @@ importers:
       '@app/config':
         specifier: workspace:*
         version: link:../config
+      '@penpot-ds/scripts':
+        specifier: workspace:*
+        version: link:../scripts
       '@storybook/react':
         specifier: 'catalog:'
         version: 10.6.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(storybook@10.6.0(@types/react@19.2.17)(react@19.2.8))(typescript@6.0.3)
