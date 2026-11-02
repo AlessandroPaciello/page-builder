@@ -8,8 +8,9 @@ module_greeting: >
   styling=tailwind-v4, fonts=fontsource — nessun altro valore è implementato dalla pipeline.
 
   Le voci di pds-design sono disponibili (TB tema base, TV variante di tema, CN contratto nuovo,
-  DC disegna componente, CD contratto dal design, MS modifica struttura, ST stato); pds-code arriva
-  con la Story 2.29.
+  DC disegna componente, CD contratto dal design, MS modifica struttura, ST stato); quelle di
+  pds-code sono ET (estrai tema), VC (verifica componente), GC (genera componente), AC (riallinea
+  stili), GA (gate).
 
 # Configurazione fissata dalla pipeline v3 (AD-11, Story 2.28): ogni variabile è un
 # `single-select` con un solo valore, quindi non c'è niente da scegliere. Un valore diverso

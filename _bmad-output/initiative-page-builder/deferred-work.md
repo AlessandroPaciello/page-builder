@@ -436,3 +436,39 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `_bmad-output/initia
 - source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-sezioni-plan.md`
   summary: **routed: Story 2.38** — il test di determinismo confronta due chiamate nello stesso processo con lo stesso input (quasi tautologico): non vede ordine di iterazione né deriva dell'hash. Sostituirlo con un golden su disco o con due processi.
   evidence: `packages/scripts/tests/core/sections.test.ts:110-112`.
+
+## Deferred from: Story 2.29 — skill `pds-code` (2026-11-02)
+
+- source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-skill-pds-code-plan.md`
+  summary: **routed: Story 2.38** — l'override noto nel campione (`overrides: []` oggi controlla solo un'istanza senza override) non entra nella 2.29: si aggiunge alla prima ricostruzione di `campione.penpot`, con un'asserzione che `overrides` nomini il testo cambiato.
+  evidence: decisione 5 del piano 2.29 (2026-11-02); il campione ha una sola istanza di `Etichetta`, senza override. Voce originale dalla review 2.25.
+- source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-skill-pds-code-plan.md`
+  summary: **routed: Story 2.31** — `build_order` e `letturaName` continuano a conoscere solo i contratti di componente: `pds-code` GC su una sezione dà blocco «contratto sconosciuto». Serve passare anche `SECTION_DEFINITIONS` a `contractOf` in `src/core/build-order.ts` e nel server.
+  evidence: decisione 5 del piano 2.29 (2026-11-02), che sposta la voce dalla 2.29 alla 2.31; prova del 2026-11-02: `buildOrder([carouselLettura()], [])` → `order: []` e blocco `contratto "carousel@1" sconosciuto`.
+- source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-skill-pds-code-plan.md`
+  summary: **non instradata** — il generatore non deduce `when` né segnala in quali celle una parte manca: `pds-code` scrive `when` solo quando la decisione è dell'utente, e una parte presente in alcune celle resta resa sempre dallo scaffold.
+  evidence: decisione 5 del piano 2.29 (2026-11-02), che la toglie dal perimetro; la voce era stata instradata alla 2.29 dall'analisi della 2.27. Serve una regola di deduzione (assenza in alcune celle → quale field) prima di poterla assegnare.
+- source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-skill-pds-code-plan.md`
+  summary: **non instradata** — un layer nascosto in Penpot resta una parte come le altre (oggi dà solo l'avviso «hidden non registrata»): decidere se è una parte assente in quella cella (con `when`) o un errore del disegno.
+  evidence: decisione 5 del piano 2.29 (2026-11-02); la voce era stata instradata alla 2.29 dalla review 2.23. Richiede una decisione di disegno prima di un'implementazione.
+- source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-skill-pds-code-plan.md`
+  summary: **da correggere in Penpot, nessuna story** — `color.muted-foreground` (`neutral.500`, `#737373`) su `color.muted` (`neutral.100`, `#F5F5F5`) dà 4.35:1, sotto il pavimento di 4.5:1 del test `packages/ui/src/styles/theme-contrast.test.ts`. Il test tiene la coppia al pavimento non-test di WCAG (3:1) e verifica `muted-foreground` a 4.5:1 su `background`/`card`, dove il ruolo è usato (4.74:1). Alzare il token in Penpot (con `pds-design` TB/TV, poi ET) permette di togliere l'eccezione.
+  evidence: `packages/tokens/src/theme.css` (semantic: `--color-muted: var(--color-neutral-100)`, `--color-muted-foreground: var(--color-neutral-500)`), letto anche dal vivo in Penpot il 2026-11-02 (set `semantic`, `color.muted-foreground = {neutral.500}`). È il primo difetto trovato dal gate nuovo: nessuno lo aveva misurato prima.
+
+## Deferred from: Story 2.29 — prova live su Chip e Multiselect (2026-11-02)
+
+- source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-skill-pds-code-plan.md`
+  summary: il generatore non legge lo stile delle parti che esistono solo nelle celle di un asse di rendering: `icon-x`/`x-path` del Chip (solo `removable=true`) escono con `cva` vuote, mentre il nucleo dà solo l'avviso «un asse di rendering non mostra né nasconde parti».
+  evidence: prova live 2.29 sul Chip; `Chip.styles.ts` generato. Il TSX lo aggira usando la `cva` di `plus-path` per la croce.
+- source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-skill-pds-code-plan.md`
+  summary: icone disegnate come path con solo tratto (linee 5×0.01) diventano `div` con `stroke-*` e misure `h-[0.01px]`: invisibili in HTML. Serve una regola per le icone (parte resa come SVG o icona dello sviluppatore, senza classi di misura dai path).
+  evidence: prova live 2.29; risolto a mano nel `Chip.tsx` con lucide su richiesta di Alessandro.
+- source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-skill-pds-code-plan.md`
+  summary: una radice hug in Penpot (`sizingH: auto`) esce `flex` senza `w-fit`/`inline-flex` e occupa tutta la riga; e le story coprono solo gli assi del contratto, non quelli di rendering (`removable`), quindi 2 story invece di 4 celle.
+  evidence: prova live 2.29; `w-fit` aggiunto a mano nel `Chip.tsx`.
+- source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-skill-pds-code-plan.md`
+  summary: disegno della Checkbox (per `pds-design`): nelle celle `state=focus`/`error` l'anello è un board contenitore attorno al quadratino, e il nucleo blocca («`icon-check` compare in rami diversi»); l'anello va disegnato sulla stessa board (token d'ombra `ring`). Probabile lo stesso schema nel `Ring` del Multiselect Trigger. Finché non si corregge, la Multiselect intera non si genera.
+  evidence: prova live 2.29; `part` della checkbox già scritte (`checkbox`, `icon-check`, `icon-minus`), `contract` sui sei container scritti.
+- source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-skill-pds-code-plan.md`
+  summary: la voce AC di `pds-code` non è stata provata dal vivo su un cambio di struttura: nella prova sul Chip `generate_component` non ha dato `suggestions`, quindi «mostrati come diff senza essere applicati» resta verificato solo sul testo della skill.
+  evidence: review quick 2.29 (finding 3). Si chiude alla prima parte aggiunta o tolta in Penpot su un componente generato (2.31 o 2.32).
