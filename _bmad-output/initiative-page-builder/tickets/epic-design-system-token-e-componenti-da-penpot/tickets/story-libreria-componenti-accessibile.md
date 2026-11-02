@@ -4,7 +4,7 @@ type: story
 title: "Libreria componenti accessibile"
 parent: epic-design-system-token-e-componenti-da-penpot
 covers: [R3]
-after: []
+after: [31, 40, 41]
 hitl: false
 risk: low
 tracker_id: "91"
@@ -16,7 +16,7 @@ tracker_status: backlog
 
 ## Description
 
-La libreria dei domini (data-display, inputs, feedback, layout, navigation, overlays, commerce) vive in `packages/ui/src/domains`, ciascun componente con contratto dell'editor, `styles.ts` e story `@generated` e componente dello sviluppatore, conforme alla a11y baseline.
+La libreria dei domini (data-display, inputs, feedback, layout, navigation, overlays, commerce) vive in `packages/ui/src/domains`, ciascun componente con contratto dell'editor, `styles.ts` e story `@generated` e componente dello sviluppatore, conforme alla a11y baseline. Nasce dai componenti della 2.31, 2.40 e 2.41.
 
 ## Requirements
 

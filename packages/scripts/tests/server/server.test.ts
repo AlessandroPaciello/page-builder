@@ -11,6 +11,7 @@ import { createPdsServer, type PdsServerOptions, type PenpotAdapter } from "../.
 import { TOOL_NAMES } from "../../src/server/tools";
 import type { ThemeCatalog } from "../../src/shared/theme-generator";
 import { badgeLettura, CHIP_CELLS, CONTRACTS, GROUP_CONTRACTS, layer, SCALE, shopCardLettura, variantCell, variantReading } from "../fixtures/components";
+import { carouselLettura } from "../fixtures/sections";
 
 /**
  * Livello 2 della CI (Story 2.24): il server `pds` in memoria
@@ -38,6 +39,7 @@ const CATALOG: ThemeCatalog = {
 const LETTURE: Readonly<Record<string, () => Lettura>> = {
   badge: () => badgeLettura(),
   "shop-card": () => shopCardLettura(),
+  carousel: () => carouselLettura(),
 };
 
 /** Le letture di `group_variants`: le celle sciolte della Chip e il componente già raggruppato. */
@@ -121,6 +123,7 @@ function put(root: string, path: string, content: string): void {
 
 const BADGE = componentPaths("badge");
 const SHOP_CARD = componentPaths("shop-card");
+const CAROUSEL = componentPaths("carousel");
 
 describe("tools/list", () => {
   it("espone i sette strumenti", async () => {
@@ -221,6 +224,13 @@ describe("build_order", () => {
     const { client } = await connect();
     expect((await call(client, "build_order", { names: [] })).isError).toBe(true);
   });
+
+  it("una sezione (Carousel) è una lettura valida: ordine col suo nome, esempi dello slot esclusi", async () => {
+    const { client } = await connect();
+    const result = await call(client, "build_order", { names: ["carousel"] });
+    expect(result.isError, textOf(result)).toBeFalsy();
+    expect(result.structuredContent).toEqual({ order: ["carousel"], findings: [] });
+  });
 });
 
 describe("generate_component", () => {
@@ -282,6 +292,21 @@ describe("generate_component", () => {
     expect(result.isError, textOf(result)).toBeFalsy();
     expect((result.structuredContent as { written: string[] }).written).toEqual([SHOP_CARD.styles, SHOP_CARD.stories, SHOP_CARD.tsx]);
     expect(existsSync(join(root, SHOP_CARD.styles))).toBe(true);
+  });
+
+  it("layer rinominato: la cartella è quella del contratto (domains/carousel/), non del layer", async () => {
+    const { client, root } = await connect({
+      penpot: adapter({ readComponent: async () => ({ ...carouselLettura(), component: "Prodotti" }) }),
+    });
+    const result = await call(client, "generate_component", { name: "prodotti" });
+    expect(result.isError, textOf(result)).toBeFalsy();
+    expect((result.structuredContent as { written: string[] }).written).toEqual([CAROUSEL.styles, CAROUSEL.stories, CAROUSEL.tsx]);
+    expect(existsSync(join(root, CAROUSEL.styles))).toBe(true);
+    expect(snapshot(root)).toEqual({
+      [CAROUSEL.styles]: expect.any(String),
+      [CAROUSEL.stories]: expect.any(String),
+      [CAROUSEL.tsx]: expect.any(String),
+    });
   });
 
   /** Un nucleo finto che restituisce i `changes` dati, senza esiti. */

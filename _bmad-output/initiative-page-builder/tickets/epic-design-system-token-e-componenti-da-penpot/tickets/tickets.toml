@@ -1,7 +1,7 @@
 # A container's agreed children, in its tickets/ folder; tickets.py ignores unknown keys.
 # Table order is build order. `id` is permanent, never reused.
 # No status here: the plan carries `status`.
-# next_id = 39 # written by `tickets.py move`; the folder's counter never goes below it
+# next_id = 42 # written by `tickets.py move`; the folder's counter never goes below it
 
 [[entry]]
 id = 1
@@ -380,22 +380,44 @@ risk = "low"
 [[entry]]
 id = 31
 type = "story"
-title = "Rigenerazione dei componenti di prova con la v3"
-description = "Badge, ShopCard e Carousel sono rifatti con le due skill, dal disegno al componente, dimostrando il modello v3 su un atomo, una card con istanze e una sezione prima della libreria."
-verify = "Ciascuno ha `styles.ts` e story `@generated`, il componente dello sviluppatore, test e axe verdi e il giudizio visivo in Storybook; Badge passa dalla strada dal contratto e ShopCard da quella dal design, e la CI a quattro livelli è verde senza leggere Penpot."
-covers = ["R1", "R2", "R3"]
+title = "Prerequisiti della prova con la v3"
+description = "Due buchi che la prova sui componenti si porterebbe dietro: `build_order` e `letturaName` conoscono solo i contratti di componente, e una lettura di sezione (`carousel@1`) dà «contratto sconosciuto»; e nessun test compila gli output del generatore (`styles.ts`, `stories.tsx`, scaffold) con `tsc` né li passa allo smoke delle story. Si passa `SECTION_DEFINITIONS` a `contractOf` nel nucleo e nel server, e si aggiunge il test che compila un componente e una sezione generati."
+verify = "`buildOrder` su una lettura di `carousel@1` restituisce l'ordine con la sezione e senza blocchi; un output del generatore, per un componente e per una sezione, compila con `tsc` e passa lo smoke delle story; `pnpm check-types`, `pnpm lint` e `pnpm test` sono verdi, con il rosso provato prima del verde."
+covers = ["R1"]
 after = []
 hitl = false
 risk = "low"
 
 [[entry]]
+id = 40
+type = "story"
+title = "Badge e ShopCard con le due strade"
+description = "Badge si porta in codice dalla strada dal contratto (DC→GC: `badge@1` esiste già) e ShopCard da quella dal design (DC libero→CD→GC), con la card che contiene un'istanza di Badge. `product-card@1` si rimuove: il contratto nuovo è `shop-card@1`, scritto da CD sulla forma disegnata, e la sezione Carousel aggiorna lo slot `slides` e i tre figli di default; `SCHEMA_VERSION` va a 7 con la voce nuova nel fingerprint, la 4 resta. Entrambi hanno `styles.ts` e story `@generated`, il TSX dello sviluppatore con i test, axe verde e il giudizio visivo in Storybook."
+verify = "Badge e ShopCard hanno `styles.ts` e story `@generated`, il TSX dello sviluppatore con i suoi test, axe verde e il giudizio in Storybook; ShopCard contiene un'istanza di Badge e `build_order` li ordina Badge → ShopCard; `product-card@1` non esiste più, nel registro c'è `shop-card@1` e il fingerprint ha la voce 7 con `SCHEMA_VERSION` 7; lo slot `slides` del Carousel ammette `shop-card` e i suoi tre figli di default usano i field di `shop-card`; i quattro livelli della CI sono verdi senza leggere Penpot."
+covers = ["R1", "R2", "R3"]
+after = []
+hitl = true
+risk = "medium"
+
+[[entry]]
+id = 41
+type = "story"
+title = "Carousel: sezione con slot e comportamento"
+description = "Il Carousel, sezione con lo slot `slides` che contiene le ShopCard della 2.40, si disegna in Penpot dalla strada dal contratto (CN→DC) con lo slot come layer contenitore, si genera con GC e riceve il comportamento: non esiste un primitivo Base UI, quindi ricetta shadcn `base` e pattern APG letti dal vivo, con la dipendenza scelta dallo sviluppatore o l'alternativa senza dipendenze, un diff e un test per comportamento. Il giudizio visivo è in Storybook."
+verify = "Il Carousel ha `styles.ts` e story `@generated`, il TSX dello sviluppatore con i test di tastiera e controlli, axe verde e il giudizio in Storybook; lo slot è riconosciuto come layer contenitore e le istanze non producono domande `part`; `build_order` genera Badge → ShopCard → Carousel; i quattro livelli della CI sono verdi senza leggere Penpot."
+covers = ["R1", "R3"]
+after = [31, 40]
+hitl = true
+risk = "medium"
+
+[[entry]]
 id = 32
 type = "story"
 title = "Libreria componenti accessibile"
-description = "La libreria dei domini (data-display, inputs, feedback, layout, navigation, overlays, commerce) vive in `packages/ui/src/domains`, ciascun componente con contratto dell'editor, `styles.ts` e story `@generated` e componente dello sviluppatore, conforme alla a11y baseline."
+description = "La libreria dei domini (data-display, inputs, feedback, layout, navigation, overlays, commerce) vive in `packages/ui/src/domains`, ciascun componente con contratto dell'editor, `styles.ts` e story `@generated` e componente dello sviluppatore, conforme alla a11y baseline. Nasce dai componenti della 2.31, 2.40 e 2.41."
 verify = "Ogni componente interattivo ha focus visibile WCAG AA, stato comunicato da testo + colore e ARIA corretto, axe è verde su ogni story generata, e `domains/` non importa da `editor/` (lint bloccante)."
 covers = ["R3"]
-after = []
+after = [31, 40, 41]
 hitl = false
 risk = "low"
 
@@ -406,6 +428,6 @@ title = "Refactor sweep dell'epica"
 description = "Pulizia di ciò che i plan e le review dell'epica hanno rimandato, con lo scope fissato all'inizio del lavoro e solo cleanup: nessun nuovo comportamento. Chiude l'epica dopo ogni altra entry aperta."
 verify = "Il piano della sweep elenca ogni voce di `deferred-work.md` che tocca l'epica con la sua chiusura o il suo rinvio motivato, e `pnpm check-types`, `pnpm lint` e `pnpm test` sono verdi dopo la pulizia."
 covers = []
-after = [28, 29, 30, 31, 32, 33, 36, 37, 39]
+after = [28, 29, 30, 31, 32, 33, 36, 37, 39, 40, 41]
 hitl = false
 risk = "low"

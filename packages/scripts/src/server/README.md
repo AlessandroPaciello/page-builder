@@ -26,11 +26,11 @@ Il processo MCP eredita l'ambiente in cui parte il client: servono **Node 22** (
 | `extract_theme` | `{ fonts? }` | `{ written, packages }` | sì, solo in `packages/tokens/src/` |
 | `group_variants` | `{ component }` | `{ outcome, component, container?, axes, cells }` | sì, solo su Penpot (le celle → un container di varianti) |
 
-`name` è il nome del contratto (`badge`, `badge@1`) o del layer in Penpot, come in `readComponent`. Ingressi e uscite sono schemi zod (`tools.ts`); l'uscita arriva sia come `structuredContent` sia come testo JSON.
+`name` è il nome del contratto (`badge`, `badge@1`) o di una sezione (`carousel`), oppure del layer in Penpot, come in `readComponent`. Ingressi e uscite sono schemi zod (`tools.ts`); l'uscita arriva sia come `structuredContent` sia come testo JSON.
 
 ## Regole
 
-- **Iniezione.** `createPdsServer({ penpot, root, contracts? })` riceve l'adattatore `{ readComponent, readTokenCatalog, groupVariants }` e non importa da `src/penpot`. Solo `main.ts` lega l'adattatore vero e la root del repo (`PATHS.repoRoot`); la regola `server` di `check-boundaries.mjs` lo impone.
+- **Iniezione.** `createPdsServer({ penpot, root, contracts?, sections? })` riceve l'adattatore `{ readComponent, readTokenCatalog, groupVariants }` e non importa da `src/penpot`. `sections` (default `SECTION_DEFINITIONS`) arriva a `verify_component`, `build_order` e `generate_component`, così una lettura di sezione ha lo stesso nome-cartella del contratto. Solo `main.ts` lega l'adattatore vero e la root del repo (`PATHS.repoRoot`); la regola `server` di `check-boundaries.mjs` lo impone.
 - **Nessuno stato.** Ogni chiamata rilegge da Penpot il catalogo token (tutti i set più i temi) e i componenti. Dal catalogo: `tokenTypeOf` (nome → tipo) e `scale` (`scaleFromThemeCss(generateTheme(baseCatalog(catalog)).css)`) — solo la base, perché le varianti ripetono i nomi dei token.
 - **Una sola scrittura su Penpot** (`group_variants`, Story 2.36). L'adattatore legge le celle (`readVariantCells`, che non scrive), il nucleo decide (`planGroupVariants`: matrice dal contratto, nomi completi; un nome incompleto, un valore fuori contratto, una cella doppia o senza cella di partenza sono rifiutati, le combinazioni non disegnate una nota `notDrawn`) e solo allora la scrittura parte. Con `write: false` — `già raggruppato` o `singolo` — Penpot non si tocca: la chiamata è idempotente. Non si scrivono plugin data `pagebuilder` (li scrive `pds-code`) né token. Gli altri strumenti leggono soltanto, e gli esiti del nucleo tornano così come sono.
 - **`generated`** = le cartelle di `packages/ui/src/domains/` con un `<Comp>.styles.ts` che ha il marker `@generated` (`generated-files.ts`).

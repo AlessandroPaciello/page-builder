@@ -8,7 +8,7 @@ import { Change, Finding, GroupVariantsResult, Lettura, Suggerimento } from "../
  * oggetto, quindi i `Finding[]` di `verify_component` stanno in `{ findings }`.
  */
 
-const name = z.string().min(1).describe("Il componente: nome del contratto (`badge`, `badge@1`) o del layer in Penpot.");
+const name = z.string().min(1).describe("Il componente o la sezione: nome del contratto (`badge`, `badge@1`), della sezione (`carousel`) o del layer in Penpot.");
 
 /** Un token Penpot serializzato: lo stesso valore del catalogo (stringa, lista di family o layer shadow). */
 const tokenValue = z.union([
@@ -46,8 +46,8 @@ export const TOOLS = {
     output: z.object({ findings: z.array(Finding) }),
   },
   build_order: {
-    description: "Legge i componenti da Penpot e restituisce l'ordine in cui generarli (un componente dopo quelli che contiene). I componenti già generati sono quelli con un <Comp>.styles.ts @generated nel repo. Non scrive niente.",
-    input: { names: z.array(name).min(1).describe("I componenti da generare.") },
+    description: "Legge i componenti e le sezioni da Penpot e restituisce l'ordine in cui generarli (ognuno dopo quelli che contiene; gli esempi degli slot non contano). I componenti già generati sono quelli con un <Comp>.styles.ts @generated nel repo. Non scrive niente.",
+    input: { names: z.array(name).min(1).describe("I componenti e le sezioni da generare.") },
     output: z.object({ order: z.array(z.string()), findings: z.array(Finding) }),
   },
   generate_component: {

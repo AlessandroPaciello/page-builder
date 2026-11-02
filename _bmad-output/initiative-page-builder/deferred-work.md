@@ -404,7 +404,7 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `_bmad-output/initia
   evidence: `sectionContract` riceveva solo sezione e celle, non le risposte; il piano non diceva dove si registra "passa a content" (verificato in revisione, severità medium).
 
 - source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-skill-pds-design-e-configurazione-di-progetto-plan.md`
-  summary: Resta da eseguire dal vivo, con le conferme umane, la strada `CN→DC` su un secondo componente (Carousel) e la `DC` libera su un componente reale; il `DC→CD` sulla Multiselect è invece verificato.
+  summary: Resta da eseguire dal vivo, con le conferme umane, la strada `CN→DC` su un secondo componente (Carousel) e la `DC` libera su un componente reale; il `DC→CD` sulla Multiselect è invece verificato. **routed: 2.40 e 2.41** (2026-11-02).
   evidence: 2026-11-01, Penpot 2.18.3 col plugin MCP autenticato: `readComponent` legge `Multiselect` (12 celle, assi `open`/`state`/`size`/`display`), Trigger (24), Panel (4), Chip (4), Option (6), Checkbox (6); col plugin data `pagebuilder/contract` in memoria `verifyComponent` sulla Multiselect dà **zero blocchi** (solo domande sulle chiavi `part`, che risponde `pds-code`, e avvisi di misura), e i prefissi generati dalle celle vere sono `data-[display=placeholder]:` e `[&[aria-invalid=true]]:`. Restano fuori: le due strade che richiedono di **scrivere** in Penpot con un sì umano (CN→DC sul Carousel, DC libero su un componente reale), e il pannello ha celle `search` che nessuna decisione dichiara (Story 2.35): `verify_component` le dà come asse estraneo, come previsto.
 - source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-skill-pds-design-e-configurazione-di-progetto-plan.md`
   summary: Verificare il legame set↔tema attribuito a `createThemes.js` in `skills/pds/pds-design/references/theme-base.md`.
@@ -471,4 +471,4 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `_bmad-output/initia
   evidence: prova live 2.29; `part` della checkbox già scritte (`checkbox`, `icon-check`, `icon-minus`), `contract` sui sei container scritti.
 - source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-skill-pds-code-plan.md`
   summary: la voce AC di `pds-code` non è stata provata dal vivo su un cambio di struttura: nella prova sul Chip `generate_component` non ha dato `suggestions`, quindi «mostrati come diff senza essere applicati» resta verificato solo sul testo della skill.
-  evidence: review quick 2.29 (finding 3). Si chiude alla prima parte aggiunta o tolta in Penpot su un componente generato (2.31 o 2.32).
+  evidence: review quick 2.29 (finding 3). Si chiude alla prima parte aggiunta o tolta in Penpot su un componente generato (2.40 o 2.41).
