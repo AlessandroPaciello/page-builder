@@ -122,10 +122,13 @@ describe("product-card@1 (Story 2.12, primo contratto ridotto)", () => {
 });
 
 describe("contratti della Multiselect (Story 2.28)", () => {
-  it("multiselect: un asse option size, i field dei figli ripetuti, nessun asse di rendering", () => {
+  it("multiselect: assi option size e search, i field dei figli ripetuti, nessun asse di rendering", () => {
     expect(multiselect.name).toBe("multiselect");
     expect(multiselect.version).toBe(1);
-    expect(multiselect.axes).toEqual([{ name: "size", type: "option", values: ["md", "sm"], default: "md" }]);
+    expect(multiselect.axes).toEqual([
+      { name: "size", type: "option", values: ["md", "sm"], default: "md" },
+      { name: "search", type: "option", values: ["false", "true"], default: "false" },
+    ]);
     expect(Object.keys(multiselect.fields)).toEqual(["helper", "placeholder", "selected", "options", "searchPlaceholder", "emptyLabel"]);
     for (const name of ["open", "display", "removable", "checked", "state"]) {
       expect(Object.keys(propsSchema(multiselect).shape)).not.toContain(name);
@@ -142,11 +145,11 @@ describe("contratti della Multiselect (Story 2.28)", () => {
     expect(multiselectTrigger.fields.selected.schema.safeParse(undefined).success).toBe(false);
   });
 
-  it("multiselect-panel: nessun asse option (`content` è resa), ricerca fuori (Story 2.35)", () => {
+  it("multiselect-panel: asse option search (`content` è resa)", () => {
     expect(multiselectPanel.name).toBe("multiselect-panel");
-    expect(multiselectPanel.axes).toEqual([]);
+    expect(multiselectPanel.axes).toEqual([{ name: "search", type: "option", values: ["false", "true"], default: "false" }]);
     expect(Object.keys(multiselectPanel.fields)).toEqual(["options", "searchPlaceholder", "emptyLabel"]);
-    expect(Object.keys(propsSchema(multiselectPanel).shape)).toEqual(["options", "searchPlaceholder", "emptyLabel"]);
+    expect(Object.keys(propsSchema(multiselectPanel).shape)).toEqual(["search", "options", "searchPlaceholder", "emptyLabel"]);
   });
 
   it("chip, option e checkbox: solo le scelte dell'editor; removable e checked restano rendering", () => {

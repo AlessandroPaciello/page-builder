@@ -254,13 +254,13 @@ describe("assi di rendering (Story 2.28)", () => {
     expect(axes("multiselect-panel")).toEqual({ content: ["options", "empty"] });
   });
 
-  it("verde: `open` e `state` su multiselect, contratto con il solo asse option `size`", () => {
+  it("verde: `open` e `state` su multiselect, contratto con gli assi option `size` e `search`", () => {
     const findings = verify(multiselectLettura());
     expect(of(findings, "blocco")).toEqual([]);
     expect(of(findings, "domanda")).toEqual([]);
     expect(of(findings, "avviso")).toEqual([]);
     // `open` non diventa una prop: il contratto dell'editor resta `option` + field.
-    expect(Object.keys(propsSchema(multiselect).shape)).toEqual(["size", "helper", "placeholder", "selected", "options", "searchPlaceholder", "emptyLabel"]);
+    expect(Object.keys(propsSchema(multiselect).shape)).toEqual(["size", "search", "helper", "placeholder", "selected", "options", "searchPlaceholder", "emptyLabel"]);
   });
 
   it("le celle non base contribuiscono alla base le classi con il prefisso dell'asse", () => {
@@ -336,7 +336,7 @@ describe("assi di rendering (Story 2.28)", () => {
     expect([...(model!.parts[0]!.classes.get(model!.baseCells[0]!.index) ?? [])]).toContain("data-[content=empty]:bg-muted");
   });
 
-  it("`search` sul pannello resta fuori (Story 2.35): le sue celle sono un blocco, non un asse inventato", () => {
+  it("`search` sul pannello è un asse del contratto (Story 2.37): le celle lo portano senza blocchi", () => {
     const root = (fill: string) => layer({ name: "Multiselect Panel", kind: "board", tokens: { fill } });
     const findings = verifyComponent(
       {
@@ -350,9 +350,7 @@ describe("assi di rendering (Story 2.28)", () => {
       },
       { ...input, contracts: COMPONENT_CONTRACTS },
     );
-    const messages = of(findings, "blocco").map((finding) => finding.message);
-    expect(messages).toHaveLength(3);
-    for (const message of messages) expect(message).toContain('Asse "search" estraneo al contratto "multiselect-panel"');
+    expect(of(findings, "blocco")).toEqual([]);
   });
 
   it("verde: `state=error` con la sua cella base, classi con `[&[aria-invalid=true]]:`", () => {
@@ -406,5 +404,31 @@ describe("assi di rendering (Story 2.28)", () => {
     const part = model!.parts.find((candidate) => candidate.key === "trigger")!;
     // `display` e `state` sono resa: si validano, ma le props dell'istanza restano il solo `size`.
     expect(part.instanceProps.get(model!.baseCells[0]!.index)).toEqual({ size: "md" });
+  });
+
+  it("istanza del pannello con `search` (Story 2.37): l'asse è del contratto e diventa prop", () => {
+    const panel = (search: string) =>
+      layer({
+        name: "Multiselect Panel",
+        kind: "board",
+        pluginData: { part: "panel" },
+        instance: { component: "multiselect-panel", variant: { content: "options", search }, overrides: [] },
+      });
+    const root = (search: string) => layer({ name: "Multiselect", kind: "board", children: [panel(search)] });
+    const { model, findings } = analyzeComponent(
+      {
+        component: "Multiselect",
+        pluginData: { contract: "multiselect@1" },
+        cells: [
+          { variant: { open: "false", size: "md", search: "false" }, root: root("false") },
+          { variant: { open: "false", size: "md", search: "true" }, root: root("true") },
+        ],
+      },
+      { ...input, contracts: COMPONENT_CONTRACTS },
+    );
+    expect(of(findings, "blocco")).toEqual([]);
+    const part = model!.parts.find((candidate) => candidate.key === "panel")!;
+    const base = model!.baseCells.find((cell) => cell.axes.search === "true")!;
+    expect(part.instanceProps.get(base.index)).toEqual({ search: "true" });
   });
 });

@@ -37,8 +37,9 @@ export interface RenderingAxis {
  * quelli delle celle lette in Penpot (Multiselect: `open` false/true, `display`
  * chips/placeholder; Trigger: `display` chips/overflow/placeholder; Panel:
  * `content` options/empty). `state` non compare qui: è l'asse riservato che il
- * nucleo conosce da sempre (`STATE_AXIS`), `error` compreso. La ricerca del
- * pannello (`search`) resta fuori: è la Story 2.35.
+ * nucleo conosce da sempre (`STATE_AXIS`), `error` compreso. La ricerca
+ * (`search`) non è un asse di rendering: è un asse `option` dei contratti
+ * `multiselect` e `multiselect-panel` (Story 2.37).
  */
 export const RENDERING_AXES: Readonly<Record<string, readonly RenderingAxis[]>> = {
   multiselect: [

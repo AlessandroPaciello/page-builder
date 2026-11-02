@@ -12,12 +12,14 @@
  * `slides` su `product-card`, tre figli di default).
  *
  * 6 (Story 2.28): entrano i contratti della Multiselect e dei componenti che
- * contiene, uno per componente annidato: `multiselect` (asse `size`, field
- * `helper`, `placeholder`, `searchPlaceholder` ed `emptyLabel` facoltativi,
- * `selected` e `options` obbligatori), `multiselect-trigger` (asse `size`,
- * field `placeholder` facoltativo e `selected`), `multiselect-panel` (nessun
- * asse: `content` è un asse di rendering, non una scelta dell'editor — field
- * `options` obbligatorio, `searchPlaceholder` ed `emptyLabel` facoltativi),
+ * contiene, uno per componente annidato: `multiselect` (assi `size` e, dalla
+ * Story 2.37, `search` con default `false`; field `helper`, `placeholder`,
+ * `searchPlaceholder` ed `emptyLabel` facoltativi, `selected` e `options`
+ * obbligatori), `multiselect-trigger` (asse `size`,
+ * field `placeholder` facoltativo e `selected`), `multiselect-panel` (asse
+ * `search`, Story 2.37; `content` è un asse di rendering, non una scelta
+ * dell'editor — field `options` obbligatorio, `searchPlaceholder` ed
+ * `emptyLabel` facoltativi),
  * `chip` (asse `size`, field `label`), `option` (field `label`) e `checkbox`
  * (nessun asse né field). I field di contenuto sono ripetuti su `multiselect`
  * perché nell'editor la Multiselect è un blocco solo: i figli restano

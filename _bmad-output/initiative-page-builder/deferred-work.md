@@ -264,7 +264,7 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `_bmad-output/initia
 
 - **Copertura review precedente parziale** — chiusa da questa CR: 4/4 layer (`blind-hunter`, `edge-case-hunter`, `verification-gap`, `acceptance-auditor`) verdi, nessun 429. Nessuna azione ulteriore.
 - **`writeTheme` non atomica su due file** — `packages/scripts/src/theme/theme-command.ts`: ogni file è tmp+rename ma la coppia no; pattern preesistente all'estrazione, re-run chiude il buco.
-- **Sezione senza `slots` → TypeError in fingerprint (maybe-false, sarebbe medium)** — `packages/contracts/src/fingerprint.ts:76`: da dirimere leggendo `SectionDefinition` (slots obbligatorio?) o `?? []`.
+- **Sezione senza `slots` → TypeError in fingerprint — chiusa come "senza oggetto" (2026-11-02, analisi 2.27)** — `SectionDefinition.slots` è obbligatorio nel tipo e nello schema (`packages/contracts/src/section.ts`) e `fingerprint.ts` fa `section.slots.map` senza `?? []`: il caso non è rappresentabile. Voce originale (CR 2.12): da dirimere leggendo `SectionDefinition` (slots obbligatorio?) o `?? []`.
 
 ## Deferred from: code review of 2-14-extract-e-render-una-istantanea-quattro-file (2026-09-27)
 
@@ -345,7 +345,7 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `_bmad-output/initia
   evidence: non verificato (maybe-false, medium). Lo decide la 2.23: cosa porta `Instance.component` (nome del componente o `pluginData.contract` del componente d'origine). Se porta il nome, servono il `contract` del componente d'origine nell'`Instance` e un controllo della versione.
 - source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-verifica-e-generazione-chiavi-di-parte-styles-scaffold-story-plan.md`
   summary: una parte presente solo in alcune celle (es. un nastro "offerta") lo scaffold la rende sempre, e nessun finding né suggerimento dice in quali celle manca.
-  evidence: review 2.22 (Blind, Edge). Servono le regole `when` (forgia punti aperti: `part`/`when` scritti da `pds-code`) per sapere da quale field o asse dipende la presenza; da fare con le sezioni (2.27) o con `pds-code` (2.29).
+  evidence: review 2.22 (Blind, Edge). Servono le regole `when` (forgia punti aperti: `part`/`when` scritti da `pds-code`) per sapere da quale field o asse dipende la presenza; da fare con le sezioni (2.27) o con `pds-code` (2.29). **routed: Story 2.29** (2026-11-02, analisi 2.27): la 2.27 non l'ha coperta; la 2.33 ha dato il meccanismo `when`, ma il generatore non deduce ancora né segnala in quali celle la parte manca.
 - source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-verifica-e-generazione-chiavi-di-parte-styles-scaffold-story-plan.md`
   summary: **spostata alla 2.31** — nessun test automatico compila l'output del generatore (`styles.ts`, `stories.tsx`, scaffold) con `tsc` né lo passa allo smoke delle story; il controllo della 2.22 è stato fatto una volta a mano.
   evidence: review 2.22 (VG). I test controllano solo singole righe dell'output: una virgola mancante in `compoundVariants` o un path sbagliato di `cn` passerebbero. Spostata alla Story 2.31 (decisione di Alessandro, 2026-10-26, spec 2.24): la compilazione arriva quando `pnpm check-types` compila i file generati in `packages/ui`.
@@ -363,7 +363,7 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `_bmad-output/initia
   evidence: review 2.23 (VG, Blind): i test di livello 1 usano solo `callTool` finti. L'AC della 2.23 vuole i test dell'adattatore solo nel collaudo; regressioni come togliere `> 0` sul padding o `PLACEMENT` dagli override passano la CI.
 - source_spec: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-adattatore-penpot-readcomponent-plan.md`
   summary: un layer nascosto in Penpot diventa una parte come gli altri (oggi dà solo l'avviso "hidden non registrata"); serve decidere con le regole `when` se è una parte assente in quella cella.
-  evidence: review 2.23 (Blind, Edge). Da fare con le sezioni (2.27) o con `pds-code` (2.29).
+  evidence: review 2.23 (Blind, Edge). Da fare con le sezioni (2.27) o con `pds-code` (2.29). **routed: Story 2.29** (2026-11-02, analisi 2.27): la 2.27 non ha toccato i layer nascosti; la decisione su `when` spetta a chi scrive i plugin data.
 
 ## Deferred from: Story 2.24 — server MCP pds (2026-10-26)
 
@@ -412,3 +412,27 @@ Pianificato da `sprint-change-proposal-2026-09-17.md` (SPEC `_bmad-output/initia
 - source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-dc-aggiungere-un-asse-a-un-componente-gia-raggruppato-plan.md`
   summary: La 2.37 deve prevedere una cella base anche per `search=true` (a `open=false`), altrimenti `verify_component` dà «Cella di rendering senza la cella base» sulle due celle aperte adattate.
   evidence: `packages/scripts/src/core/verify.ts:353-357` richiede, per ogni cella non base, una cella con gli stessi assi di contratto e gli assi di rendering al valore base (`isBaseCell`, righe 188-190). Con `search` nel contratto, le due celle `search=true` sono `open=true` e non hanno una base `search=true, open=false, state=default`: il blocco arriva appena `pagebuilder/contract` è scritto sul container. Oggi non si vede perché senza plugin data `analyzeComponent` si ferma al contratto mancante (`verify.ts:912-915`).
+- source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-ricerca-nella-multiselect-celle-search-e-asse-sul-contratto-plan.md`
+  summary: **chiusa con la Story 2.37 (2026-11-02)** — il file Penpot «tailwind» ha ora due celle base e due celle `error` per `search=true` (`md` e `sm`), 16 varianti senza `variantError`, e i contratti `multiselect` e `multiselect-panel` dichiarano l'asse `search`.
+  evidence: `describe_component` legge `search` su tutte le 14 celle (4 a `true`); `verify_component` sul container senza `pagebuilder/contract` dà il solo blocco «manca il contratto»; la voce 6 del fingerprint è riscritta con l'asse.
+
+## Deferred from: analisi della Story 2.27 — sezioni (2026-11-02)
+
+- source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-sezioni-plan.md`
+  summary: **routed: Story 2.29** — `build_order` e `letturaName` conoscono solo i contratti di componente: una lettura di sezione (`carousel@1`) dà blocco «contratto sconosciuto» e ordine vuoto, e il nome per i path ricade sul nome del layer Penpot (`kebabOf`), che se non è esattamente il nome del contratto fa rifiutare i `Change` da `writeChanges` («fuori dalla cartella del componente»). Serve passare anche `SECTION_DEFINITIONS` a `contractOf` (o un resolver equivalente) in `src/core/build-order.ts` e nel server.
+  evidence: prova del 2026-11-02 sul nucleo: `buildOrder([carouselLettura()], [])` → `order: []` e blocco `contratto "carousel@1" sconosciuto`; `server.ts:161` chiama `buildOrder` con `COMPONENT_CONTRACTS`; `write-changes.ts:49-56` rifiuta i path fuori da `domains/<name>/`.
+- source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-sezioni-plan.md`
+  summary: **routed: Story 3.4** — `SectionDefinition.root.slot` non è letto dal nucleo: lo slot esiste solo se è un layer disegnato i cui figli sono tutti istanze. Disegnare gli item direttamente nella radice (la lettura naturale di `root.slot`, come per l'Accordion) produce una domanda `part` per ogni item e nessun `{children}`. Decidere: riconoscere i figli della radice quando `root.slot` è dichiarato, oppure togliere `root.slot` e scrivere la convenzione del wrapper in `penpot-pipeline.md` e in `pds-design`.
+  evidence: prova del 2026-11-02 con l'Accordion: figli diretti → 2 domande `part`; layer `Items` che li contiene → zero finding e `<div data-slot="items">{children}`. `root.slot` non ha usi in `packages/scripts/src`; lo legge solo `validateSectionDefinition` (`packages/contracts/src/section.ts:145-150`) per validare i figli di default.
+- source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-sezioni-plan.md`
+  summary: **routed: Story 3.4** — più slot sono ammessi dal modello (`section.slots` è una lista e `slotOf` ne riconosce più d'uno) ma lo scaffold accetta un solo `children` e lo rende in ogni slot: con due slot lo stesso contenuto finirebbe in entrambi. Nessuna sezione oggi ne ha due; va deciso prima della prima sezione a due slot.
+  evidence: `renderScaffold` destruttura `children` una volta sola e `renderPart` rende `{children}` per ogni parte con `slot` (`generate.ts`). Il modello non ha ancora un modo per distinguere i contenuti di slot diversi.
+- source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-sezioni-plan.md`
+  summary: **annotata, nessun ticket (epic 3)** — i default dei field `content` (`autoplay=false`, `interval=5`) restano nella definizione: la story li salta (`fieldArgs` scarta gli opzionali) e lo scaffold li lascia `undefined`. Accettabile finché è l'editor a fornirli dal contratto; si chiude con i blocchi (epic 3) se i default arrivano da lì.
+  evidence: `generate.ts:274-276`; output generato della Carousel: `CarouselFields` con `autoplay?`/`interval?` e story con il solo `label`.
+- source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-sezioni-plan.md`
+  summary: **routed: Story 2.38** — nessun test rosso/verde per: field `structure` disegnato ma non enum (blocco), slot dichiarato con figli fuori `allow`, slot ripetuto tra fratelli, collisione nome componente/sezione, versione di sezione sbagliata, istanza con `slot` addosso (vince il dichiarato prima del controllo istanza). La suite resterebbe verde se uno di questi rami cambiasse.
+  evidence: `packages/scripts/tests/core/sections.test.ts` copre solo le righe della matrice del piano; verifica del 2026-11-02.
+- source_plan: `_bmad-output/initiative-page-builder/tickets/epic-design-system-token-e-componenti-da-penpot/tickets/story-sezioni-plan.md`
+  summary: **routed: Story 2.38** — il test di determinismo confronta due chiamate nello stesso processo con lo stesso input (quasi tautologico): non vede ordine di iterazione né deriva dell'hash. Sostituirlo con un golden su disco o con due processi.
+  evidence: `packages/scripts/tests/core/sections.test.ts:110-112`.
