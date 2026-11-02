@@ -33,15 +33,16 @@ I comandi partono dalla root del repo. Il compose è lo stesso del Penpot vero (
    docker compose -p penpot-collaudo -f docker/penpot/docker-compose.yml up -d
    ```
 4. **Utente**: registrati su [http://localhost:9001](http://localhost:9001). Le mail arrivano a [http://localhost:1080](http://localhost:1080).
-5. **Token MCP**: *Settings → Integrations → MCP server*, attivalo e copia il token. È diverso da quello del Penpot vero. Un `export` nella shell non basta: direnv (`.envrc` = `dotenv`, anche l'estensione VS Code `mkhl.direnv`) lo sovrascrive con il `.env`. Per il test il token si passa sulla riga di comando (passo 8). Per costruire il campione con Claude Code, metti per un po' il token di collaudo nel `.env`, tenendo da parte quello vero, e riapri VS Code (vedi il [README alla root](../../../README.md#penpot-locale-e-server-mcp)); il token vero torna nel `.env` al passo 9.
+5. **Token MCP**: *Settings → Integrations → MCP server*, attivalo e copia il token. È diverso da quello del Penpot vero. Un `export` nella shell non basta: direnv (`.envrc` = `dotenv`, anche l'estensione VS Code `mkhl.direnv`) lo sovrascrive con il `.env`. Per il test il token si passa sulla riga di comando (passo 9). Per costruire il campione con Claude Code, metti per un po' il token di collaudo nel `.env`, tenendo da parte quello vero, e riapri VS Code (vedi il [README alla root](../../../README.md#penpot-locale-e-server-mcp)); il token vero torna nel `.env` al passo 10.
 6. **Import**: in un progetto, *Import* → `packages/scripts/collaudo/campione.penpot`. Apri il file importato.
 7. **Plugin**: nel file, *File → Plugins → MCP Server → Connect*. Tieni la scheda visibile (vedi [Scheda Penpot sospesa](../src/penpot/README.md#scheda-penpot-sospesa)).
-8. **Collaudo**:
+8. **Plugin data** (quando cambia la versione di Penpot): ripeti la checklist di § [Operazioni che cancellano i plugin data](#operazioni-che-cancellano-i-plugin-data-story-229) sulla copia importata, prima di lasciar scrivere `pds-code` sul Penpot vero.
+9. **Collaudo**:
    ```bash
    PENPOT_MCP_TOKEN=<token-collaudo> PDS_PENPOT_COLLAUDO=1 pnpm --filter @penpot-ds/scripts exec vitest run collaudo/
    ```
    **Prova del rosso**, dopo il verde: su una seconda copia importata del campione togli, in tutte e due le celle di `Collaudo`, il plugin data `slot` da `Slot` (valore vuoto) e il legame di `opacity.muted` da `Assoluto` (cambia l'opacità grezza, per esempio a 0.4). Rilancia: il collaudo deve dare due rossi, `"slot" non compare nella lettura (layer atteso: Slot)` e `"opacity" non compare in tokens … (layer atteso: Assoluto)`. Se resta verde, è il collaudo a non vedere più cosa manca. Poi la copia si butta.
-9. **Chiusura**: `docker compose -p penpot-collaudo -f docker/penpot/docker-compose.yml down -v` (cancella solo i volumi `penpot-collaudo_*`), poi `docker compose -f docker/penpot/docker-compose.yml start`. Se al passo 5 hai messo il token di collaudo nel `.env`, rimetti quello vero e riapri VS Code. Controlla con `docker volume ls` che i volumi `penpot_penpot_*` ci siano ancora.
+10. **Chiusura**: `docker compose -p penpot-collaudo -f docker/penpot/docker-compose.yml down -v` (cancella solo i volumi `penpot-collaudo_*`), poi `docker compose -f docker/penpot/docker-compose.yml start`. Se al passo 5 hai messo il token di collaudo nel `.env`, rimetti quello vero e riapri VS Code. Controlla con `docker volume ls` che i volumi `penpot_penpot_*` ci siano ancora.
 
 **Il Penpot vero si aggiorna solo se il collaudo passa** sulla versione candidata. Poi si alza `PENPOT_VERSION` (default nel compose) e la versione di riferimento in questo README (anche la tabella § Esiti), in `src/penpot/README.md`, in `penpot-pipeline.md` e nel commento di `UNTOUCHED_ALIGN` in `collaudo.live.test.ts`. Se un esito cambia (per esempio il default di `layoutAlign`), si aggiorna la costante e la riga degli esiti, si riesporta il campione dalla versione nuova e si annota la data.
 
@@ -147,4 +148,39 @@ Il campione lo costruisce Claude via MCP Penpot sull'istanza di collaudo, mai su
 | "fill dentro hug" (`FillDentroHug`) | leggibile, arriva come domanda `fillInHugH`. Si costruisce solo mettendo prima il figlio in *fill* e poi il genitore in hug: nell'ordine inverso Penpot riporta il genitore a *fix*. Genitore e figlio collassano a 0.01 px di larghezza |
 | default di `layoutAlign` su un flex non toccato | `start` (`flex.alignItems`), quindi `items-start`. Il `default` del registro, `stretch`, è il valore senza classi del CSS, non il default di Penpot |
 
-Quali operazioni di Penpot cancellano i plugin data (raggruppa, booleana, copia tra file, ripristino di versione, stacco dell'istanza, duplica) non si misura qui: lo misura la Story 2.29 sul campione, prima che `pds-code` scriva plugin data.
+## Operazioni che cancellano i plugin data (Story 2.29)
+
+`pds-code` scrive le risposte alle domande del nucleo come **shared** plugin data `pagebuilder` sul layer che la domanda nomina: `contract`, `part`, `repeat`, `element`, `slot`, `when`, `asse.<field>`, `fillInHugH`/`fillInHugV`, `overflow`. Un'operazione di Penpot può portarle via senza dirlo. La misura si fa qui, su una copia del campione importata nell'istanza di collaudo, **prima** che `pds-code` scriva sul file vero, e si ripete a ogni aggiornamento di Penpot (passo 8 della procedura).
+
+Procedura, una volta e poi a ogni aggiornamento:
+
+1. importa `campione.penpot` in una copia (passi 3-6), apri il file, collega il plugin;
+2. leggi le chiavi di partenza di `Collaudo` e dei suoi layer con `execute_code`:
+
+   ```js
+   const keysOf = (shape) =>
+     Object.fromEntries(
+       (shape.getSharedPluginDataKeys("pagebuilder") || []).map((key) => [key, shape.getSharedPluginData("pagebuilder", key)]),
+     );
+   const container = penpot.currentPage.findShapes({ name: "Collaudo" })[0];
+   const walk = (shape) => ({ name: shape.name, pluginData: keysOf(shape), children: (shape.children || []).map(walk) });
+   return walk(container);
+   ```
+
+3. esegui **una** operazione per volta sulla copia, mai sul Penpot vero;
+4. rileggi le stesse chiavi con lo stesso codice: **resta** (chiavi e valori uguali) / **si perde** (nessuna chiave) / **in parte** (alcune chiavi o solo alcuni layer);
+5. annota l'esito nella tabella e butta la copia.
+
+| Operazione | Come si fa | Esito su 2.18.3 | Note |
+|---|---|---|---|
+| raggruppa | seleziona i layer di una cella → *Group* | **resta** | le chiavi restano sui layer raggruppati; il gruppo nuovo non ne ha e si mette in mezzo all'albero (diventa una parte senza chiave per il nucleo) |
+| booleana | due forme sovrapposte → *Union* / *Difference* | **in parte** | le forme dentro la booleana tengono le chiavi; il layer booleano nuovo non ne ha: una `part` messa su una forma resta dentro, non sul layer che si disegna |
+| copia tra file | copia i layer di una cella e incollali in un altro file | **resta** | `Riga` incollata in un altro file porta `part`, `when` e le sonde su ogni figlio; il layer booleano resta senza chiavi |
+| ripristino di versione | *History* (Alt+H) → *Restore* di una versione salvata | **resta** | le chiavi tornano come erano nella versione salvata: una chiave cancellata dopo torna, una scritta dopo si perde |
+| stacco dell'istanza | istanza → *Detach* | **resta** | su una copia di primo livello la board staccata tiene le chiavi; un'istanza annidata in un componente principale non si stacca (né da plugin né, nella prova, da UI) |
+| duplica | *Duplicate* (Ctrl+D) su una cella o su un layer | **resta** | la copia porta tutte le chiavi, comprese `part` e `when`; una cella duplicata prende la variante `Value N`, da rinominare |
+
+Misurato il 2026-11-02 su Penpot 2.18.3 (istanza di collaudo, copia importata del campione) con una chiave sonda `probe` scritta sui layer senza chiavi; le letture dopo ogni operazione sono in una chiamata `execute_code` separata. Per togliere una chiave si scrive `""`: la chiave resta in `getSharedPluginDataKeys` con valore vuoto, e il lettore la ignora.
+
+Un esito «si perde» o «in parte» diventa un controllo fisso: dopo quell'operazione `pds-code` rilegge con `describe_component` e riscrive le chiavi mancanti con un nuovo sì. Oggi è il caso della **booleana**, che crea un layer senza chiavi. Anche raggruppa e duplica lasciano lavoro: un gruppo nuovo senza chiave, una variante `Value N`. A un aggiornamento di Penpot, finché la tabella non è rimisurata sulla versione nuova, `pds-code` non scrive plugin data sul file vero.
+
