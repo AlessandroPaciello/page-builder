@@ -32,7 +32,6 @@
   },
   "devDependencies": {
     "@app/config": "workspace:*",
-    "@penpot-ds/scripts": "workspace:*",
     "@storybook/react": "catalog:",
     "@tailwindcss/node": "catalog:",
     "@tailwindcss/postcss": "catalog:",

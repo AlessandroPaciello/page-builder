@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -10,22 +11,25 @@ import { cleanup, render } from "@testing-library/react";
 import type { ComponentType } from "react";
 import { describe, expect, it } from "vitest";
 
-import { DOMAINS_DIR, generateComponent, type Change } from "@penpot-ds/scripts/src/core";
-import { badgeLettura, CONTRACTS } from "@penpot-ds/scripts/tests/fixtures/components";
-import { carouselLettura, SECTION_INPUT } from "@penpot-ds/scripts/tests/fixtures/sections";
+import { DOMAINS_DIR, generateComponent, type Change } from "../src/core";
+import { badgeLettura, CONTRACTS } from "./fixtures/components";
+import { carouselLettura, SECTION_INPUT } from "./fixtures/sections";
 
 /**
  * Il controllo della Story 2.22 fatto in modo permanente (Story 2.31): il
  * generatore produce Badge e la sezione Carousel in una cartella temporanea
- * dentro `packages/ui/tmp/`, e l'output viene compilato con `tsc` e passato
- * allo smoke delle story (`stories.smoke.test.tsx`).
+ * dentro `packages/scripts/tmp/`, e l'output viene compilato con `tsc` e
+ * passato alle stesse asserzioni dello smoke delle story
+ * (`packages/ui/src/stories.smoke.test.tsx`).
  *
- * La cartella sta sotto `packages/ui` perché i generati importano
- * `../../lib/utils` e i pacchetti bare (`react`, `class-variance-authority`,
- * `@storybook/react`): solo qui la risoluzione è quella vera. Gli stub
- * (`lib/utils.ts`, `domains/product-card/ProductCard.tsx`) coprono ciò che il
- * generatore dà per esistente: `ProductCard` arriva con la 2.41. Il test non
- * scrive sotto `src/` e rimuove la cartella in `finally`.
+ * La cartella sta dentro questo package — non in `packages/ui` — perché il
+ * generatore è suo: `@penpot-ds/scripts` non deve entrare nelle dipendenze di
+ * `@penpot-ds/ui`, che è un package dell'app (lo porterebbe nel grafo di
+ * `turbo run build --filter=web`, e con lui `@app/contracts`).
+ *
+ * Gli stub (`lib/utils.ts`, `domains/product-card/ProductCard.tsx`) coprono ciò
+ * che il generatore dà per esistente: `ProductCard` arriva con la 2.41. Il test
+ * non scrive sotto `src/` e rimuove la cartella in `finally`.
  */
 
 const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -55,11 +59,11 @@ export function ProductCard(_props: ProductCardProps) {
 }
 `;
 
-/** Il tsconfig dei generati: la risoluzione è quella di `packages/ui`, i file sono solo quelli della prova. */
+/** Il tsconfig dei generati: la risoluzione è quella del package, i file sono solo quelli della prova. */
 const TSCONFIG = `${JSON.stringify(
   {
     extends: "../../tsconfig.json",
-    compilerOptions: { noEmit: true },
+    compilerOptions: { noEmit: true, jsx: "react-jsx", lib: ["ESNext", "DOM", "DOM.Iterable"] },
     include: ["domains/**/*.ts", "domains/**/*.tsx", "lib/**/*.ts"],
   },
   null,
@@ -136,7 +140,7 @@ async function expectStoriesRender(storiesPath: string): Promise<void> {
   }
 }
 
-/** Una cartella temporanea nuova dentro `packages/ui/tmp/`, rimossa dal chiamante. */
+/** Una cartella temporanea nuova dentro `packages/scripts/tmp/`, rimossa dal chiamante. */
 function tempRoot(): string {
   mkdirSync(TMP_DIR, { recursive: true });
   return mkdtempSync(join(TMP_DIR, "generated-"));

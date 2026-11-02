@@ -2,15 +2,19 @@
   "extends": "@app/config/tsconfig.base.json",
   "compilerOptions": {
     "lib": [
-      "ESNext"
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
     ],
     "types": [
       "node"
-    ]
+    ],
+    "jsx": "react-jsx"
   },
   "include": [
     "src/**/*.ts",
     "tests/**/*.ts",
+    "tests/**/*.tsx",
     "collaudo/**/*.ts"
   ],
   "exclude": [
