@@ -29,7 +29,8 @@ Il componente — o i componenti — da generare. Per una composizione (la Multi
 
    Un giudizio negativo è un cambio da fare in Penpot (con `pds-design`), non una modifica a mano dei file generati.
 
-4. **Comportamento e a11y, solo su richiesta.** Dopo lo scaffold, se l'utente vuole il comportamento: prima un **elenco** di comportamenti da scegliere (primitive Base UI se esiste, altrimenti pattern APG), poi un diff piccolo per comportamento con conferma, e un test per ogni comportamento nel file dello sviluppatore (lo esegue GA). Le dipendenze nuove le sceglie lo sviluppatore, con l'alternativa senza dipendenze. Non riproporre se non è richiesto o se un cambio di struttura tocca una parte usata da un comportamento.
+4. **Comportamento e a11y, solo su richiesta.** Dopo lo scaffold, se l'utente vuole il comportamento: l'elenco, le fonti in ordine (Base UI → ricetta shadcn `base` + APG, letti dal vivo), un diff per comportamento con conferma e un test per comportamento.
+   La procedura è in `references/behaviour.md`.
 
 5. **Esito.** Due righe per componente: file scritti, suggerimenti aperti, giudizio. Poi GA.
 

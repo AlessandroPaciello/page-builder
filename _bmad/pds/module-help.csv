@@ -2,6 +2,6 @@ module,skill,display-name,menu-code,description,action,args,phase,preceded-by,fo
 pds,pds-setup,[SU] Setup,SU,"Registra il modulo Penpot DS nel progetto",configure,,anytime,,,false,,
 pds,pds-code,[ET] Estrai tema,ET,Riporta in packages/tokens/src il tema di Penpot (extract_theme),estrai-tema,,anytime,,,false,,
 pds,pds-code,[VC] Verifica componente,VC,"verify_component: blocchi, avvisi, domande; le risposte si scrivono in Penpot",verifica-componente,,anytime,,GC,false,,
-pds,pds-code,[GC] Genera componente,GC,"build_order → generate_component: styles.ts, scaffold, story; giudizio in Storybook",genera-componente,,anytime,VC,AC,false,,
+pds,pds-code,[GC] Genera componente,GC,"build_order → generate_component: styles.ts, scaffold, story; comportamento su richiesta, un diff e un test per pezzo; giudizio in Storybook",genera-componente,,anytime,VC,AC,false,,
 pds,pds-code,[AC] Riallinea stili,AC,"Rigenera styles.ts dopo un cambio di aspetto; il TSX resta identico byte per byte",riallinea-stili,,anytime,GC,GA,false,,
 pds,pds-code,[GA] Gate,GA,"check-types + test: tema nel CSS, contrasto, font, axe, file @generated",gate,,anytime,AC,,false,,
