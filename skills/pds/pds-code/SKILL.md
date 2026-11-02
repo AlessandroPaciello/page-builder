@@ -1,6 +1,6 @@
 ---
 name: "pds-code"
-description: "Porta in codice tema e componenti del page builder da Penpot: estrae il tema, verifica e genera i componenti, riallinea gli stili, esegue il gate. Use only when explicitly invoked as 'pds-code' (or /pds-code), or when the user says 'estrai il tema', 'verifica il componente', 'genera il componente', 'riallinea gli stili', 'gate finale', 'rispondi alle domande', or picks a voice code (ET, VC, GC, AC, GA). Generic Penpot requests are the kit's penpot-* skills."
+description: "Porta in codice tema e componenti del page builder da Penpot: estrae il tema, verifica e genera i componenti, riallinea gli stili, propone il comportamento, esegue il gate. Use only when explicitly invoked as 'pds-code' (or /pds-code), or when the user says 'estrai il tema', 'verifica il componente', 'genera il componente', 'riallinea gli stili', 'proponi il comportamento', 'gate finale', 'rispondi alle domande', or picks a voice code (ET, VC, GC, AC, GA). Generic Penpot requests are the kit's penpot-* skills."
 ---
 
 # pds-code
@@ -22,6 +22,7 @@ Porta in codice ciò che è in Penpot: il tema in `packages/tokens/src`, i compo
 - **GC rispetta `build_order`.** Un componente si genera dopo quelli che contiene; con un blocco di `build_order` ci si ferma, non si sceglie un ordine a mano.
 - **Il giudizio è umano.** Dopo GC la story si guarda in Storybook; «testo + colore» è una voce fissa del giudizio (nessuno stato che cambi solo di colore). Nessuno score automatico sostituisce l'occhio.
 - **Il TSX dello sviluppatore non si tocca senza richiesta.** Un cambio di struttura produce `suggestions` con un esempio: si mostrano come diff e si applicano solo se l'utente lo chiede.
+- **Il comportamento è un pezzo alla volta, con il suo test.** Dopo lo scaffold, se l'utente lo chiede: Base UI se il primitivo esiste, altrimenti la ricetta shadcn `base` e il pattern APG letti dal vivo, mai salvati nel repo. Per ogni comportamento un diff piccolo con conferma e un test nel file dello sviluppatore; le dipendenze nuove le sceglie l'utente, con l'alternativa senza dipendenze. `styles.ts` e la story restano `@generated`; il comportamento resta dentro GC.
 - **Trigger.** Questa skill parte solo su invocazione esplicita o su una delle frasi qui sopra. «Porta il tema in Penpot», «disegna il componente», «aggiungi un asse» sono di `pds-design`; una richiesta generica a Penpot è del kit (`penpot-router`, `penpot-foundations`).
 
 ## On activation
@@ -38,7 +39,7 @@ Porta in codice ciò che è in Penpot: il tema in `packages/tokens/src`, i compo
 |---|---|---|---|
 | **ET** | Estrai tema | `theme.css`, `themes/*.css`, `fonts.css`, `tokens.generated.ts` dai set e temi di Penpot (via `extract_theme`) | `references/theme-extract.md` |
 | **VC** | Verifica componente | `verify_component`: blocchi, avvisi, domande; il `contract` mancante; le risposte scritte in Penpot una per conferma | `references/verify.md` |
-| **GC** | Genera componente | `build_order` → `generate_component`: `styles.ts`, scaffold, story; giudizio in Storybook | `references/generate.md` |
+| **GC** | Genera componente | `build_order` → `generate_component`: `styles.ts`, scaffold, story; comportamento su richiesta, un diff e un test per pezzo; giudizio in Storybook | `references/generate.md`, `references/behaviour.md` |
 | **AC** | Riallinea stili | `styles.ts` rigenerato dopo un cambio di aspetto; il TSX resta identico; i cambi di struttura solo come diff proposto | `references/align.md` |
 | **GA** | Gate | `check-types` + `test`: tema nel CSS, contrasto, font, axe sulle story `@generated`, file `@generated` intatti | `references/gate.md` |
 
@@ -52,5 +53,6 @@ Le domande del nucleo e le chiavi che le chiudono stanno in `references/answers.
 - `references/theme-extract.md` — ET.
 - `references/verify.md` — VC: contratto mancante, domande, avvisi.
 - `references/generate.md` — GC: ordine, file scritti, giudizio in Storybook.
+- `references/behaviour.md` — GC, comportamento: fonti in ordine, elenco, un diff e un test per pezzo, dipendenze.
 - `references/align.md` — AC: aspetto contro struttura.
 - `references/gate.md` — GA: i comandi, cosa li rende rossi, come si riporta un rosso.
