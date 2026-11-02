@@ -34,8 +34,8 @@ describe("la matrice attesa", () => {
     expect(plan.cells.map((cell) => cell.variant.checked)).toEqual(["false", "true", "indeterminate"]);
   });
 
-  it("Multiselect: i due assi del contratto e il rendering dichiarato, size × open × display", () => {
-    expect(variantAxes(multiselectContract).map((axis) => axis.name)).toEqual(["size", "open", "display"]);
+  it("Multiselect: gli assi del contratto e il rendering dichiarato, size × search × open × display", () => {
+    expect(variantAxes(multiselectContract).map((axis) => axis.name)).toEqual(["size", "search", "open", "display"]);
   });
 });
 

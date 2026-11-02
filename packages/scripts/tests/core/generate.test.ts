@@ -1,4 +1,4 @@
-import { badge, defineContract } from "@app/contracts";
+import { badge, COMPONENT_CONTRACTS, defineContract } from "@app/contracts";
 import { z } from "zod";
 import { describe, expect, it } from "vitest";
 
@@ -396,10 +396,34 @@ describe("assi di rendering (Story 2.28)", () => {
     expect(styles).toContain("hover:bg-secondary");
     expect(styles).toContain("data-[open=true]:hover:bg-destructive");
     // `open` non è un asse del contratto: non compare in `MultiselectAxes` né tra le varianti.
-    expect(styles).toContain("export type MultiselectAxes = {\n  readonly size?: \"md\" | \"sm\";\n};");
+    expect(styles).toContain("export type MultiselectAxes = {\n  readonly size?: \"md\" | \"sm\";\n  readonly search?: \"false\" | \"true\";\n};");
     expect(styles).not.toContain("readonly open");
     // Una story per cella di partenza: gli assi di rendering non moltiplicano le story.
     const stories = contentOf(result.changes, ".stories.tsx");
     expect(stories.match(/export const \w+: Story = /g)).toHaveLength(1);
+  });
+});
+
+describe("assi del contratto (Story 2.37)", () => {
+  it("`search` con lo stato error su entrambi i valori: la classe di stato resta nella base", () => {
+    const root = (fill: string) => layer({ name: "Multiselect", kind: "board", tokens: { fill }, style: { layoutDir: "column" } });
+    const result = generate(
+      {
+        component: "Multiselect",
+        pluginData: { contract: "multiselect@1" },
+        cells: [
+          { variant: { size: "md", search: "false", open: "false", state: "default" }, root: root("primary") },
+          { variant: { size: "md", search: "false", open: "false", state: "error" }, root: root("muted") },
+          { variant: { size: "md", search: "true", open: "false", state: "default" }, root: root("primary") },
+          { variant: { size: "md", search: "true", open: "false", state: "error" }, root: root("muted") },
+        ],
+      },
+      { contracts: COMPONENT_CONTRACTS },
+    );
+    expect(result.findings).toEqual([]);
+    const styles = contentOf(result.changes, ".styles.ts");
+    expect(styles).toContain("[&[aria-invalid=true]]:bg-muted");
+    // Lo stato non è spiegato dall'asse: nessun valore di `search` porta la classe.
+    expect(styles).toContain('search: {\n        false: "",\n        true: "",\n      },');
   });
 });
