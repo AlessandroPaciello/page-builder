@@ -9,7 +9,7 @@ hitl: false
 risk: low
 tracker_id: "98"
 remote: "https://github.com/AlessandroPaciello/page-builder/issues/98"
-tracker_status: in-progress
+tracker_status: done
 ---
 
 # Prerequisiti della prova con la v3
