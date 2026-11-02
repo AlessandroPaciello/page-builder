@@ -9,7 +9,7 @@ hitl: false
 risk: low
 tracker_id: "80"
 remote: "https://github.com/AlessandroPaciello/page-builder/issues/80"
-tracker_status: backlog
+tracker_status: in-progress
 ---
 
 # Comportamento accessibile
