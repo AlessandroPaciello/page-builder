@@ -8,7 +8,7 @@ import { multiselect } from "./components/multiselect";
 import { multiselectPanel } from "./components/multiselect-panel";
 import { multiselectTrigger } from "./components/multiselect-trigger";
 import { option } from "./components/option";
-import { productCard } from "./components/product-card";
+import { shopCard } from "./components/shop-card";
 import type { ComponentContract } from "./contract";
 import type { SectionDefinition } from "./section";
 import { accordion } from "./sections/accordion";
@@ -33,7 +33,7 @@ export const COMPONENT_CONTRACTS = {
   [checkbox.name]: checkbox,
   [accordionItem.name]: accordionItem,
   [alert.name]: alert,
-  [productCard.name]: productCard,
+  [shopCard.name]: shopCard,
 } as const satisfies Readonly<Record<string, ComponentContract>>;
 
 /** Unico punto che elenca le definizioni di sezione. */

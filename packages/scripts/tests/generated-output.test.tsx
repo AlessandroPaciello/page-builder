@@ -27,9 +27,11 @@ import { carouselLettura, SECTION_INPUT } from "./fixtures/sections";
  * `@penpot-ds/ui`, che è un package dell'app (lo porterebbe nel grafo di
  * `turbo run build --filter=web`, e con lui `@app/contracts`).
  *
- * Gli stub (`lib/utils.ts`, `domains/product-card/ProductCard.tsx`) coprono ciò
- * che il generatore dà per esistente: `ProductCard` arriva con la 2.41. Il test
- * non scrive sotto `src/` e rimuove la cartella in `finally`.
+ * Gli stub (`lib/utils.ts`, `domains/shop-card/ShopCard.tsx`) coprono ciò che il
+ * generatore dà per esistente: la cartella della prova non contiene i componenti
+ * scritti a mano, e le story della sezione Carousel importano il figlio di
+ * default `ShopCard`. Il test non scrive sotto `src/` e rimuove la cartella in
+ * `finally`.
  */
 
 const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -41,20 +43,24 @@ export function cn(...inputs: unknown[]): string {
 }
 `;
 
-const STUB_PRODUCT_CARD = `/**
- * Stub di \`domains/product-card/ProductCard\`: le story della sezione Carousel
- * lo importano per i figli di default. Il componente vero arriva con la 2.41.
+const STUB_SHOP_CARD = `/**
+ * Stub di \`domains/shop-card/ShopCard\`: le story della sezione Carousel lo
+ * importano per i figli di default. La cartella della prova non ha i componenti
+ * scritti a mano, quindi le props che la story passa devono esistere qui.
  */
-export interface ProductCardProps {
-  readonly image?: string;
-  readonly price?: string;
-  readonly description?: string;
-  readonly tags?: readonly string[];
+export interface ShopCardProps {
   readonly href?: string;
+  readonly image?: string;
+  readonly imageAlt?: string;
+  readonly category?: string;
+  readonly heading?: string;
+  readonly description?: string;
+  readonly price?: string;
   readonly badgeLabel?: string;
+  readonly ctaLabel?: string;
 }
 
-export function ProductCard(_props: ProductCardProps) {
+export function ShopCard(_props: ShopCardProps) {
   return null;
 }
 `;
@@ -91,9 +97,9 @@ function writeChange(root: string, change: Change): void {
 /** Genera Badge e Carousel nella root data, con gli stub e il tsconfig; restituisce i path delle story. */
 function generateInto(root: string): string[] {
   mkdirSync(join(root, "lib"), { recursive: true });
-  mkdirSync(join(root, "domains", "product-card"), { recursive: true });
+  mkdirSync(join(root, "domains", "shop-card"), { recursive: true });
   writeFileSync(join(root, "lib", "utils.ts"), STUB_UTILS);
-  writeFileSync(join(root, "domains", "product-card", "ProductCard.tsx"), STUB_PRODUCT_CARD);
+  writeFileSync(join(root, "domains", "shop-card", "ShopCard.tsx"), STUB_SHOP_CARD);
   writeFileSync(join(root, "tsconfig.json"), TSCONFIG);
 
   const input = { ...SECTION_INPUT, contracts: CONTRACTS, generated: [] as string[] };

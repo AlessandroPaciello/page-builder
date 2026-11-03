@@ -54,8 +54,8 @@ describe("sezioni — matrice della spec", () => {
     expect(scaffold).toContain('data-slot="slides"');
     expect(scaffold).toContain("{children}");
     const stories = contentOf(result.changes, "Carousel.stories.tsx");
-    expect(stories).toContain("../product-card/ProductCard");
-    expect(stories.match(/<ProductCard /g)).toHaveLength(9); // 3 figli di default in ciascuna delle 3 story
+    expect(stories).toContain("../shop-card/ShopCard");
+    expect(stories.match(/<ShopCard /g)).toHaveLength(9); // 3 figli di default in ciascuna delle 3 story
     expect(stories).toContain("children:");
   });
 
@@ -64,8 +64,8 @@ describe("sezioni — matrice della spec", () => {
       carousel: {
         ...input.sections!.carousel!,
         slots: [
-          { id: "slides", allow: ["product-card"] },
-          { id: "thumbs", allow: ["product-card"] },
+          { id: "slides", allow: ["shop-card"] },
+          { id: "thumbs", allow: ["shop-card"] },
         ],
       },
     } as unknown as NonNullable<GenerateInput["sections"]>;

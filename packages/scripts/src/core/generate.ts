@@ -275,7 +275,7 @@ function fieldArgs(contract: ComponentContract): string[] {
   return fieldsOf(contract).flatMap(([name, shape]) => (shape.optional || shape.sample === undefined ? [] : [`${propKey(name)}: ${literal(shape.sample)}`]));
 }
 
-/** Un figlio di default della sezione come JSX: `<ProductCard key="slide-1" … />`. */
+/** Un figlio di default della sezione come JSX: `<ShopCard key="slide-1" … />`. */
 function defaultChild(node: { readonly id: string; readonly component: string; readonly props: Readonly<Record<string, unknown>> }): string {
   const attributes = [`key=${q(node.id)}`, ...Object.entries(node.props).map(([name, value]) => `${propKey(name)}={${literal(value)}}`)];
   return `<${pascalCase(node.component)} ${attributes.join(" ")} />`;

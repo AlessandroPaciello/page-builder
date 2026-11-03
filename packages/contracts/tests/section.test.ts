@@ -76,12 +76,19 @@ describe("Carousel", () => {
     expect(carousel.fields.label?.kind).toBe("content");
   });
 
-  it("ha lo slot slides su product-card e tre figli di default", () => {
-    expect(carousel.slots).toEqual([{ id: "slides", allow: ["product-card"] }]);
+  it("ha lo slot slides su shop-card e tre figli di default", () => {
+    expect(carousel.slots).toEqual([{ id: "slides", allow: ["shop-card"] }]);
     expect(carousel.root.component).toBe("carousel");
     expect(carousel.root.slot).toBe("slides");
-    expect(carousel.root.children?.map((child) => child.component)).toEqual(["product-card", "product-card", "product-card"]);
+    expect(carousel.root.children?.map((child) => child.component)).toEqual(["shop-card", "shop-card", "shop-card"]);
     expect(carousel.root.children?.map((child) => child.id)).toEqual(["slide-1", "slide-2", "slide-3"]);
+  });
+
+  it("i figli di default usano i field di shop-card", () => {
+    const props = carousel.root.children![0]!.props;
+    expect(Object.keys(props).sort()).toEqual(
+      ["ctaLabel", "description", "heading", "href", "image", "imageAlt", "price", "stockLabel", "tagLabel"].sort(),
+    );
   });
 });
 

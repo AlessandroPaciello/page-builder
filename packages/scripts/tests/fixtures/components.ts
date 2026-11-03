@@ -6,9 +6,10 @@ import type { Cella, Lettura, LetturaLayer, Scale, TokenType, VariantCellsReadin
 /**
  * Letture scritte a mano per i test del nucleo (Story 2.22, livello 1): Badge
  * (contratto vero di `@app/contracts`) e ShopCard⊃Badge (contratto di prova,
- * scritto qui: `@app/contracts` non ha una ShopCard e la story non lo tocca).
- * Dalla Story 2.28 anche Multiselect, col contratto vero: l'asse di rendering
- * `open` sta in `packages/scripts` (`rendering.ts`), non nel contratto.
+ * scritto qui: la ShopCard vera nasce nella Story 2.40, e questi test restano
+ * indipendenti dalla sua forma). Dalla Story 2.28 anche Multiselect, col
+ * contratto vero: l'asse di rendering `open` sta in `packages/scripts`
+ * (`rendering.ts`), non nel contratto.
  */
 
 export const shopCard = defineContract({

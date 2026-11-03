@@ -9,7 +9,7 @@ export { multiselect } from "./components/multiselect";
 export { multiselectPanel } from "./components/multiselect-panel";
 export { multiselectTrigger } from "./components/multiselect-trigger";
 export { option } from "./components/option";
-export { productCard } from "./components/product-card";
+export { shopCard } from "./components/shop-card";
 export {
   type Axis,
   type AxisType,

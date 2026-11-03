@@ -8,19 +8,22 @@ import type { SectionDefinition, SectionNode } from "../section";
  * diventano l'asse delle varianti. `autoplay`, `interval` e `label` li imposta
  * chi compone la pagina. `label` è il nome accessibile della regione.
  *
- * Lo slot `slides` ammette `product-card`; i tre figli di default sono gli
+ * Lo slot `slides` ammette `shop-card`; i tre figli di default sono gli
  * esempi che finiscono nella story (e che in Penpot restano esempi, mai parti).
  */
 const slide = (n: number): SectionNode => ({
   id: `slide-${n}`,
-  component: "product-card",
+  component: "shop-card",
   props: {
-    image: `https://images.example.com/prodotti/${n}.jpg`,
-    price: "€ 49,90",
-    description: "Scarpe comode per ogni giorno.",
-    tags: ["nuovo", "bio"],
     href: `https://shop.example.com/prodotti/${n}`,
-    badgeLabel: "Offerta",
+    image: `https://images.example.com/prodotti/${n}.jpg`,
+    imageAlt: `Scarpe comode, paio ${n}`,
+    heading: "Scarpe comode",
+    description: "Scarpe comode per ogni giorno.",
+    price: "€ 49,90",
+    tagLabel: "Novità",
+    stockLabel: "Ultimi pezzi",
+    ctaLabel: "Scopri",
   },
 });
 
@@ -40,5 +43,5 @@ export const carousel: SectionDefinition = {
     slot: "slides",
     children: [slide(1), slide(2), slide(3)],
   },
-  slots: [{ id: "slides", allow: ["product-card"] }],
+  slots: [{ id: "slides", allow: ["shop-card"] }],
 };

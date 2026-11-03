@@ -5,27 +5,27 @@ import { layer, SCALE, tokenTypeOf } from "./components";
 
 /**
  * `Lettura` scritte a mano per la sezione Carousel (Story 2.27): la radice con
- * il layer slot `Slides` e tre istanze `ProductCard` di esempio. Gli esempi
- * dello slot non si visitano: sono dati del disegno, non parti.
+ * il layer slot `Slides` e tre istanze `ShopCard` di esempio. Gli esempi dello
+ * slot non si visitano: sono dati del disegno, non parti.
  */
 
 export const SECTIONS: Readonly<Record<string, SectionDefinition>> = { carousel };
 
 export const SECTION_INPUT = { tokenTypeOf, scale: SCALE, sections: SECTIONS };
 
-/** L'istanza di ProductCard dentro lo slot: un esempio, senza chiave di parte. */
+/** L'istanza di ShopCard dentro lo slot: un esempio, senza chiave di parte. */
 export function slide(n: number): LetturaLayer {
   return layer({
     name: `Slide ${n}`,
     kind: "board",
     style: { sizingH: "fill" },
-    instance: { component: "ProductCard", contract: "product-card@1", variant: {}, overrides: [] },
+    instance: { component: "ShopCard", contract: "shop-card@1", variant: {}, overrides: [] },
   });
 }
 
 /**
  * La radice di una cella: il layer `Slides` (i cui figli sono tutte istanze di
- * `product-card`, quindi lo slot `slides`) e le parti proprie passate in
+ * `shop-card`, quindi lo slot `slides`) e le parti proprie passate in
  * `extra`. `perView=1` è in colonna, gli altri in riga: l'asse cambia le classi.
  */
 export function carouselRoot(perView: string, extra: readonly LetturaLayer[] = []): LetturaLayer {

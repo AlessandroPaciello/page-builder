@@ -99,7 +99,7 @@ Quattro funzioni pure, `Lettura` → dati, guidate dal contratto di `@app/contra
 - **Slot:** vale `pluginData.slot`; altrimenti il layer è uno slot se tutti i figli sono istanze e uno solo slot le ammette. Più candidati → domanda `slot` con gli id; id non dichiarato → blocco. I figli dello slot sono esempi: non diventano parti e non si visitano.
 - **Forma disegnata** (layer `path`): una parte come le altre. Con `pluginData.part` ha `cva` e `data-slot`; senza, domanda `part` [kebab del nome, `ignora`].
 - **Rendering condizionale (`when`):** una parte con `when=<field>` si rende solo se il field c'è: lo scaffold la avvolge in `{field ? (…) : null}` (ternario e non `&&`: un field numerico `0` stamperebbe «0»), e su una lista il ternario sta fuori dall'`Array.from` così si nasconde la lista intera. `when` nomina un field del contratto, non un asse né un valore; la validazione sta in `verify.ts` (vedi sopra).
-- **Output:** lo scaffold rende `{children}` dentro `data-slot="<slot>"`; ogni story passa come `children` i figli di default del contratto (`section.root.children`), con import fra pari (`../product-card/ProductCard`) una volta sola.
+- **Output:** lo scaffold rende `{children}` dentro `data-slot="<slot>"`; ogni story passa come `children` i figli di default del contratto (`section.root.children`), con import fra pari (`../shop-card/ShopCard`) una volta sola.
 
 Il livello 4 (`tests/core/registry-tailwind.test.ts`) compila anche ogni classe del registro e della geometria con il prefisso di ogni stato.
 
