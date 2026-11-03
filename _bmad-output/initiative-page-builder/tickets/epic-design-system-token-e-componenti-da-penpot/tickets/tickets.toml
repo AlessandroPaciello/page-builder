@@ -400,6 +400,28 @@ hitl = true
 risk = "medium"
 
 [[entry]]
+id = 42
+type = "bug"
+title = "DC raggruppa celle che non sono componenti e `group_variants` non le trova"
+description = "La procedura DC di `pds-design` costruisce le celle come board e non dice di renderle componenti: `group_variants` legge solo i componenti della library e risponde che il componente non esiste. La reference di DC deve dire di rendere componente ogni cella appena costruita, con la verifica del nome."
+verify = "La reference di DC fa rendere componente ogni cella subito dopo averla costruita e fa verificare, in una chiamata separata, che l'istanza principale resti `Component / Axis=Value`; seguendola su due celle nuove, `group_variants` raggruppa al primo tentativo."
+covers = ["R2"]
+after = []
+hitl = false
+risk = "low"
+
+[[entry]]
+id = 43
+type = "spike"
+title = "Il server `pds` deve ricaricare i contratti cambiati, o basta riavviarlo?"
+description = "Dopo una modifica di `packages/contracts` il server `pds` usa ancora i contratti letti all'avvio, finché il processo non riparte, e le skill indicano un riavvio (`/mcp` → reconnect) che in OpenCode/OpenChamber non esiste. Lo spike sceglie fra ricarica a ogni chiamata, blocco che chiede il riavvio e solo documentazione per client, e apre il ticket della correzione."
+verify = "Il file dello spike confronta le tre strade, ha una prova del riavvio su OpenCode/OpenChamber e una `Decision:` datata accettata dall'utente, e il ticket della correzione esiste nell'epica."
+covers = ["R2"]
+after = []
+hitl = true
+risk = "low"
+
+[[entry]]
 id = 41
 type = "story"
 title = "Carousel: sezione con slot e comportamento"
@@ -428,6 +450,6 @@ title = "Refactor sweep dell'epica"
 description = "Pulizia di ciò che i plan e le review dell'epica hanno rimandato, con lo scope fissato all'inizio del lavoro e solo cleanup: nessun nuovo comportamento. Chiude l'epica dopo ogni altra entry aperta."
 verify = "Il piano della sweep elenca ogni voce di `deferred-work.md` che tocca l'epica con la sua chiusura o il suo rinvio motivato, e `pnpm check-types`, `pnpm lint` e `pnpm test` sono verdi dopo la pulizia."
 covers = []
-after = [28, 29, 30, 31, 32, 33, 36, 37, 39, 40, 41]
+after = [28, 29, 30, 31, 32, 33, 36, 37, 39, 40, 41, 42, 43]
 hitl = false
 risk = "low"
