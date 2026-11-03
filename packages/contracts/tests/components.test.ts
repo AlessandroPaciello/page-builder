@@ -92,7 +92,7 @@ describe("alert@1 (ridotto, Story 2.16)", () => {
 });
 
 describe("shop-card@1 (Story 2.40, contratto dalla forma disegnata)", () => {
-  it("ha un asse option, nove field content e nessuna estensione v1", () => {
+  it("ha un asse option, otto field content e nessuna estensione v1", () => {
     expect(shopCard.name).toBe("shop-card");
     expect(shopCard.version).toBe(1);
     expect(shopCard.axes).toEqual([{ name: "size", type: "option", values: ["default", "sm"], default: "default" }]);
@@ -103,8 +103,7 @@ describe("shop-card@1 (Story 2.40, contratto dalla forma disegnata)", () => {
       "heading",
       "description",
       "price",
-      "tagLabel",
-      "stockLabel",
+      "tags",
       "ctaLabel",
     ]);
     expect("parts" in shopCard).toBe(false);
@@ -121,15 +120,14 @@ describe("shop-card@1 (Story 2.40, contratto dalla forma disegnata)", () => {
       heading: "Strawberry",
       description: "Desc",
       price: "$50",
-      tagLabel: "Seasonal Favorite",
-      stockLabel: "9 left",
+      tags: ["Seasonal Favorite", "9 left"],
       ctaLabel: "Add to cart",
     };
     expect(schema.parse(valid)).toEqual({ size: "default", ...valid });
     expect(schema.safeParse({ ...valid, image: "non-un-url" }).success).toBe(false);
     expect(schema.safeParse({ ...valid, href: "non-un-url" }).success).toBe(false);
     expect(schema.safeParse({ ...valid, size: "lg" }).success).toBe(false);
-    for (const field of ["imageAlt", "heading", "description", "price", "tagLabel", "stockLabel", "ctaLabel"]) {
+    for (const field of ["imageAlt", "heading", "description", "price", "tags", "ctaLabel"]) {
       const rest: Record<string, unknown> = { ...valid };
       delete rest[field];
       expect(schema.safeParse(rest).success, `field mancante: ${field}`).toBe(false);

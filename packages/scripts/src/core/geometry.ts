@@ -363,6 +363,16 @@ function rootMeasure(root: LetturaLayer, axis: Axis): number | undefined {
   return num(root, AXES[axis].size);
 }
 
+/**
+ * La larghezza fissa della radice di una cella, anche dove `rootSizeClasses`
+ * tace perché i figli la riempiono: lì la misura la decide chi usa il
+ * componente, e la story generata è uno di quelli, quindi la cella di Penpot
+ * dà il contenitore in cui renderla.
+ */
+export function rootFixedWidth(root: LetturaLayer): number | undefined {
+  return sizingOf(root, "H") === "fix" ? num(root, "width") : undefined;
+}
+
 export interface RootSizeClasses {
   /** Le classi di misura della radice, una lista per cella, nell'ordine delle celle. */
   readonly classes: string[][];

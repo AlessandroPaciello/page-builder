@@ -21,8 +21,7 @@ const slide = (n: number): SectionNode => ({
     heading: "Scarpe comode",
     description: "Scarpe comode per ogni giorno.",
     price: "€ 49,90",
-    tagLabel: "Novità",
-    stockLabel: "Ultimi pezzi",
+    tags: ["Novità", "Ultimi pezzi"],
     ctaLabel: "Scopri",
   },
 });

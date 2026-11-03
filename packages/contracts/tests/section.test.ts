@@ -87,7 +87,7 @@ describe("Carousel", () => {
   it("i figli di default usano i field di shop-card", () => {
     const props = carousel.root.children![0]!.props;
     expect(Object.keys(props).sort()).toEqual(
-      ["ctaLabel", "description", "heading", "href", "image", "imageAlt", "price", "stockLabel", "tagLabel"].sort(),
+      ["ctaLabel", "description", "heading", "href", "image", "imageAlt", "price", "tags"].sort(),
     );
   });
 });

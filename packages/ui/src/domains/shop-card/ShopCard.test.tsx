@@ -10,25 +10,26 @@ afterEach(() => {
 
 const FIELDS: ShopCardProps = {
   size: "default",
-  promo: "discount",
   href: "https://shop.example.com/prodotti/1",
   image: "https://images.example.com/prodotti/1.jpg",
   imageAlt: "Scarpe comode, paio 1",
-  category: "Scarpe",
   heading: "Scarpe comode",
   description: "Scarpe comode per ogni giorno.",
   price: "€ 49,90",
-  badgeLabel: "Offerta",
+  tags: ["Novità", "Disponibile"],
   ctaLabel: "Scopri",
 };
 
+const renderCard = (props: Partial<ShopCardProps> = {}) =>
+  render(
+    <main>
+      <ShopCard {...FIELDS} {...props} />
+    </main>,
+  );
+
 describe("ShopCard", () => {
   it("tutta la card è il link, con immagine e alt dal field", () => {
-    const { container } = render(
-      <main>
-        <ShopCard {...FIELDS} />
-      </main>,
-    );
+    const { container } = renderCard();
     const root = container.querySelector('[data-slot="shop-card"]');
     expect(root?.tagName.toLowerCase()).toBe("a");
     expect(root?.getAttribute("href")).toBe(FIELDS.href);
@@ -37,62 +38,31 @@ describe("ShopCard", () => {
     expect(image?.getAttribute("alt")).toBe(FIELDS.imageAlt);
   });
 
-  it("con promo=discount mostra il Badge col testo del field", () => {
-    const { container } = render(
-      <main>
-        <ShopCard {...FIELDS} />
-      </main>,
-    );
-    const badge = container.querySelector('[data-slot="badge"]');
-    expect(badge).not.toBeNull();
-    expect(badge?.getAttribute("data-slot")).toBe("badge");
-    expect(screen.getByText("Offerta").getAttribute("data-slot")).toBe("label");
-  });
-
-  it("con promo=none il Badge non esiste e badgeLabel resta inerte", () => {
-    const { container } = render(
-      <main>
-        <ShopCard {...FIELDS} promo="none" />
-      </main>,
-    );
-    expect(container.querySelector('[data-slot="badge"]')).toBeNull();
-    expect(screen.queryByText("Offerta")).toBeNull();
-  });
-
   it("mostra le parti del disegno con i field", () => {
-    const { container } = render(
-      <main>
-        <ShopCard {...FIELDS} />
-      </main>,
-    );
+    const { container } = renderCard();
     for (const [slot, text] of [
-      ["category", FIELDS.category],
-      ["title", FIELDS.heading],
+      ["heading", FIELDS.heading],
       ["description", FIELDS.description],
-      ["price", FIELDS.price],
-      ["cta", FIELDS.ctaLabel],
     ] as const) {
       expect(container.querySelector(`[data-slot="${slot}"]`)?.textContent).toBe(text);
     }
-    expect(container.querySelector('[data-slot="title"]')?.tagName.toLowerCase()).toBe("h3");
+    expect(container.querySelector('[data-slot="cta"] [data-slot="label"]')?.textContent).toBe(FIELDS.ctaLabel);
+    expect(container.querySelector('[data-slot="heading"]')?.tagName.toLowerCase()).toBe("h3");
+  });
+
+  it("le istanze Badge mostrano il prezzo e un Badge per ogni tag", () => {
+    const { container } = renderCard();
+    const badges = [...container.querySelectorAll('[data-slot="badge"]')];
+    expect(badges.map((badge) => badge.textContent)).toEqual([FIELDS.price, ...FIELDS.tags]);
   });
 
   it("il nome accessibile del link contiene il testo visibile della Cta", () => {
-    render(
-      <main>
-        <ShopCard {...FIELDS} />
-      </main>,
-    );
+    renderCard();
     expect(screen.getByRole("link").textContent).toContain(FIELDS.ctaLabel);
   });
 
   it("non ha violazioni axe", async () => {
-    render(
-      <main>
-        <ShopCard {...FIELDS} />
-        <ShopCard {...FIELDS} promo="none" />
-      </main>,
-    );
+    renderCard();
     expect((await axe(document.body)).violations).toEqual([]);
   });
 });

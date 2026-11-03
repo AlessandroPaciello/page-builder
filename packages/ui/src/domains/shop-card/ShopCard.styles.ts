@@ -1,4 +1,4 @@
-// @generated pds 1 sha256:c9be03e9000a4db2e07e18a9d094205f8c3ed6dd169f603bc4dcf2e54c7e0ff0 — non modificare a mano
+// @generated pds 1 sha256:45f6e3b39411f1603948767df6723d41a85136c736ac3309dcb9a5ebc60736b3 — non modificare a mano
 import { cva } from "class-variance-authority";
 
 import type { BadgeAxes } from "../badge/Badge.styles";
@@ -6,168 +6,123 @@ import type { BadgeAxes } from "../badge/Badge.styles";
 /** Assi `option` del contratto "shop-card" (v1). */
 export type ShopCardAxes = {
   readonly size?: "default" | "sm";
-  readonly promo?: "none" | "discount";
 };
 
 /** Le parti: la chiave è il `data-slot` dell'elemento nel TSX. */
-export const shopCardParts = ["root", "image", "header", "category", "title", "description", "action", "content", "price", "footer", "cta"] as const;
+export const shopCardParts = ["root", "image", "body", "header", "heading", "price", "description", "tags", "tag", "cta", "label"] as const;
 
 /** Le parti che si ripetono (un `.map` nel TSX, una `cva` sola). */
-export const shopCardListParts = [] as const;
+export const shopCardListParts = ["tag"] as const;
 
 export const shopCardStyles = {
-  root: cva("bg-card border-(length:--border-width-default) border-border flex flex-col items-start overflow-hidden pl-0 pr-0 pt-0 rounded-2xl", {
+  root: cva("bg-card border-(length:--border-width-default) border-border flex flex-col overflow-hidden rounded-2xl shadow-xs", {
     variants: {
       size: {
-        default: "gap-y-4 pb-4",
-        sm: "gap-y-3 pb-3",
-      },
-      promo: {
-        none: "",
-        discount: "",
+        default: "gap-y-3 pb-3 pl-3 pr-3 pt-3",
+        sm: "gap-y-2 pb-2 pl-2 pr-2 pt-2",
       },
     },
-    compoundVariants: [
-      { size: "default", promo: "none", class: "h-[350px]" },
-      { size: "default", promo: "discount", class: "h-[376px]" },
-      { size: "sm", promo: "none", class: "h-[292px]" },
-      { size: "sm", promo: "discount", class: "h-[318px]" },
-    ],
-    defaultVariants: { size: "default", promo: "none" },
+    defaultVariants: { size: "default" },
   }),
-  image: cva("rounded-xl self-stretch", {
+  image: cva("bg-muted rounded-xl self-stretch", {
     variants: {
       size: {
-        default: "h-40",
-        sm: "h-32",
-      },
-      promo: {
-        none: "",
-        discount: "",
+        default: "h-60",
+        sm: "h-[200px]",
       },
     },
-    defaultVariants: { size: "default", promo: "none" },
+    defaultVariants: { size: "default" },
   }),
-  header: cva("flex flex-col gap-y-1 items-start pb-0 pt-0 self-stretch", {
-    variants: {
-      size: {
-        default: "pl-4 pr-4",
-        sm: "pl-3 pr-3",
-      },
-      promo: {
-        none: "",
-        discount: "",
-      },
-    },
-    defaultVariants: { size: "default", promo: "none" },
-  }),
-  category: cva("font-medium font-sans h-[14px] self-stretch text-muted-foreground text-xs tracking-normal", {
+  body: cva("flex flex-col gap-y-2 pb-0 pl-1 pr-1 pt-0 self-stretch", {
     variants: {
       size: {
         default: "",
         sm: "",
       },
-      promo: {
-        none: "",
-        discount: "",
-      },
     },
-    defaultVariants: { size: "default", promo: "none" },
+    defaultVariants: { size: "default" },
   }),
-  title: cva("font-medium font-sans self-stretch text-card-foreground tracking-normal", {
-    variants: {
-      size: {
-        default: "h-[19px] text-base",
-        sm: "h-[17px] text-sm",
-      },
-      promo: {
-        none: "",
-        discount: "",
-      },
-    },
-    defaultVariants: { size: "default", promo: "none" },
-  }),
-  description: cva("font-normal font-sans h-[17px] self-stretch text-muted-foreground text-sm tracking-normal", {
+  header: cva("flex flex-row gap-x-2 items-center justify-between self-stretch", {
     variants: {
       size: {
         default: "",
         sm: "",
       },
-      promo: {
-        none: "",
-        discount: "",
+    },
+    defaultVariants: { size: "default" },
+  }),
+  heading: cva("font-bold font-sans text-card-foreground tracking-normal", {
+    variants: {
+      size: {
+        default: "h-[22px] text-lg w-[100px]",
+        sm: "h-[19px] text-base w-[89px]",
       },
     },
-    defaultVariants: { size: "default", promo: "none" },
+    defaultVariants: { size: "default" },
   }),
-  action: cva("", {
+  price: cva("", {
     variants: {
       size: {
         default: "",
         sm: "",
       },
-      promo: {
-        none: "",
-        discount: "",
-      },
     },
-    defaultVariants: { size: "default", promo: "none" },
+    defaultVariants: { size: "default" },
   }),
-  content: cva("flex flex-1 flex-col items-start pb-0 pt-0 self-stretch", {
+  description: cva("font-normal font-sans self-stretch text-muted-foreground tracking-normal", {
     variants: {
       size: {
-        default: "pl-4 pr-4",
-        sm: "pl-3 pr-3",
-      },
-      promo: {
-        none: "",
-        discount: "",
+        default: "h-[68px] text-sm",
+        sm: "h-14 text-xs",
       },
     },
-    defaultVariants: { size: "default", promo: "none" },
+    defaultVariants: { size: "default" },
   }),
-  price: cva("font-sans font-semibold h-[19px] self-stretch text-base text-foreground tracking-normal", {
+  tags: cva("flex flex-row gap-x-2 items-center self-stretch", {
     variants: {
       size: {
         default: "",
         sm: "",
       },
-      promo: {
-        none: "",
-        discount: "",
-      },
     },
-    defaultVariants: { size: "default", promo: "none" },
+    defaultVariants: { size: "default" },
   }),
-  footer: cva("bg-muted flex flex-row items-center self-stretch", {
-    variants: {
-      size: {
-        default: "pb-4 pl-4 pr-4 pt-4",
-        sm: "pb-3 pl-3 pr-3 pt-3",
-      },
-      promo: {
-        none: "",
-        discount: "",
-      },
-    },
-    defaultVariants: { size: "default", promo: "none" },
-  }),
-  cta: cva("flex-1 font-medium font-sans h-[17px] text-primary text-sm tracking-normal", {
+  tag: cva("", {
     variants: {
       size: {
         default: "",
         sm: "",
       },
-      promo: {
-        none: "",
-        discount: "",
+    },
+    defaultVariants: { size: "default" },
+  }),
+  cta: cva("bg-primary flex flex-row items-center justify-center rounded-full self-stretch", {
+    variants: {
+      size: {
+        default: "pb-3 pl-3 pr-3 pt-3",
+        sm: "pb-2 pl-2 pr-2 pt-2",
       },
     },
-    defaultVariants: { size: "default", promo: "none" },
+    defaultVariants: { size: "default" },
   }),
+  label: cva("font-sans font-semibold text-primary-foreground tracking-normal", {
+    variants: {
+      size: {
+        default: "h-[19px] text-base w-[86px]",
+        sm: "h-[17px] text-sm w-[75px]",
+      },
+    },
+    defaultVariants: { size: "default" },
+  }),
+};
+
+const shopCardPriceInstances: Readonly<Record<string, BadgeAxes>> = {
+  "default": { size: "md", variant: "default" },
+  "sm": { size: "sm", variant: "default" },
 };
 
 /** Le props di variante delle istanze annidate, per gli assi del componente. */
 export const shopCardInstances = {
-  action: (_axes: ShopCardAxes = {}): BadgeAxes => ({ size: "sm", variant: "destructive" }),
+  price: (axes: ShopCardAxes = {}): BadgeAxes => shopCardPriceInstances[[axes.size ?? "default"].join("|")] ?? {},
+  tag: (_axes: ShopCardAxes = {}): BadgeAxes => ({ size: "sm", variant: "secondary" }),
 };

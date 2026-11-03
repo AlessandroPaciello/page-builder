@@ -1,4 +1,4 @@
-// @generated pds 1 sha256:2127d3aa32fea5adc8adcb84f7dbe212b13d0045b2e2183b29052a8550146ea3 — non modificare a mano
+// @generated pds 1 sha256:947443bf6039ac9b055799333897545f8235fabb65dc6414ace68231ae08d4a0 — non modificare a mano
 import type { Meta, StoryObj } from "@storybook/react";
 
 import { ShopCard } from "./ShopCard";
@@ -9,7 +9,5 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const DefaultNone: Story = { args: { size: "default", promo: "none", href: "href", image: "image", imageAlt: "imageAlt", category: "category", heading: "heading", description: "description", price: "price", badgeLabel: "badgeLabel", ctaLabel: "ctaLabel" } };
-export const DefaultDiscount: Story = { args: { size: "default", promo: "discount", href: "href", image: "image", imageAlt: "imageAlt", category: "category", heading: "heading", description: "description", price: "price", badgeLabel: "badgeLabel", ctaLabel: "ctaLabel" } };
-export const SmNone: Story = { args: { size: "sm", promo: "none", href: "href", image: "image", imageAlt: "imageAlt", category: "category", heading: "heading", description: "description", price: "price", badgeLabel: "badgeLabel", ctaLabel: "ctaLabel" } };
-export const SmDiscount: Story = { args: { size: "sm", promo: "discount", href: "href", image: "image", imageAlt: "imageAlt", category: "category", heading: "heading", description: "description", price: "price", badgeLabel: "badgeLabel", ctaLabel: "ctaLabel" } };
+export const Default: Story = { decorators: [(Story) => <div style={{ width: 288 }}><Story /></div>], args: { size: "default", href: "href", image: "https://picsum.photos/seed/shop-card/800/600", imageAlt: "imageAlt", heading: "heading", description: "description", price: "price", tags: ["Novità","Disponibile"], ctaLabel: "ctaLabel" } };
+export const Sm: Story = { decorators: [(Story) => <div style={{ width: 240 }}><Story /></div>], args: { size: "sm", href: "href", image: "https://picsum.photos/seed/shop-card/800/600", imageAlt: "imageAlt", heading: "heading", description: "description", price: "price", tags: ["Novità","Disponibile"], ctaLabel: "ctaLabel" } };

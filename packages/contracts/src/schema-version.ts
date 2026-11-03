@@ -33,5 +33,10 @@
  * `heading`, `description`, `price`, `tagLabel`, `stockLabel`, `ctaLabel`) — ed esce il contratto della card della v2; lo slot `slides` del
  * Carousel ammette `shop-card` e i suoi tre figli di default usano i field
  * nuovi. `badge@1` è invariato.
+ *
+ * 8 (Story 2.40): i due field `tagLabel` e `stockLabel` di `shop-card` diventano
+ * un unico field `tags` (`string[]`): in Penpot i due Badge `Tag` e `Stock` sono
+ * una parte ripetuta (`repeat: lista`), quindi la card ha una cva sola e un
+ * `.map` per i tag. Una pagina salvata con la versione 7 tiene i due field.
  */
-export const SCHEMA_VERSION = 7;
+export const SCHEMA_VERSION = 8;

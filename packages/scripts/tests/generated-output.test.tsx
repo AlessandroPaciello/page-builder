@@ -52,11 +52,10 @@ export interface ShopCardProps {
   readonly href?: string;
   readonly image?: string;
   readonly imageAlt?: string;
-  readonly category?: string;
   readonly heading?: string;
   readonly description?: string;
   readonly price?: string;
-  readonly badgeLabel?: string;
+  readonly tags?: readonly string[];
   readonly ctaLabel?: string;
 }
 

@@ -314,6 +314,18 @@ describe("story CSF3", () => {
     expect(stories).toContain('export const Offer: Story = { args: { promo: "offer", price: "price", heading: "heading" } };');
     // `note` è opzionale: omesso.
     expect(stories).not.toContain("note");
+    // Nessuna cella ha una larghezza fissa: nessun contenitore.
+    expect(stories).not.toContain("decorators");
+  });
+
+  it("la larghezza fissa della radice diventa il contenitore della story", () => {
+    const lettura = shopCardLettura();
+    const sized: Lettura = {
+      ...lettura,
+      cells: lettura.cells.map((cell) => ({ ...cell, root: { ...cell.root, style: { ...cell.root.style, sizingH: "fix", width: 288 } } })),
+    };
+    const stories = contentOf(generate(sized, { generated: ["badge"] }).changes, ".stories.tsx");
+    expect(stories).toContain("decorators: [(Story) => <div style={{ width: 288 }}><Story /></div>]");
   });
 
   it("campioni dallo schema zod: stringa → nome, numero 1, booleano false, enum → primo valore, opzionale omesso", () => {
@@ -324,6 +336,22 @@ describe("story CSF3", () => {
     expect(fieldShape("tone", z.enum(["a", "b"]))).toEqual({ ts: '"a" | "b"', optional: false, sample: "a" });
     expect(fieldShape("note", z.string().optional())).toEqual({ ts: "string", optional: true });
     expect(fieldShape("tags", z.array(z.string()))).toEqual({ ts: "readonly (string)[]", optional: false, sample: [] });
+  });
+
+  it("il sample dichiarato nel contratto vince sul campione ricavato dallo schema", () => {
+    const placeholder = "https://picsum.photos/seed/immagine/800/600";
+    const contract = defineContract({
+      name: "shop-card",
+      version: 1,
+      axes: [{ name: "promo", type: "option", values: ["none", "offer"], default: "none" }],
+      fields: {
+        image: { schema: z.url(), kind: "content", sample: placeholder },
+        heading: { schema: z.string(), kind: "content" },
+      },
+    });
+    const stories = contentOf(generate(shopCardLettura(), { contracts: { ...CONTRACTS, "shop-card": contract }, generated: ["badge"] }).changes, ".stories.tsx");
+    expect(stories).toContain(`image: ${JSON.stringify(placeholder)}, heading: "heading"`);
+    expect(stories).not.toContain('image: "image"');
   });
 });
 

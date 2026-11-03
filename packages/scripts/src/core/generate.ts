@@ -111,8 +111,12 @@ export function fieldShape(name: string, schema: unknown): FieldShape {
   }
 }
 
+/** I field col campione dal tipo zod, sostituito dal `sample` dichiarato nel contratto quando c'è. */
 function fieldsOf(contract: ComponentContract): [string, FieldShape][] {
-  return Object.entries(contract.fields).map(([name, field]) => [name, fieldShape(name, field.schema)]);
+  return Object.entries(contract.fields).map(([name, field]) => {
+    const shape = fieldShape(name, field.schema);
+    return [name, field.sample === undefined ? shape : { ...shape, sample: field.sample }];
+  });
 }
 
 // --- Scomposizione in cva ---------------------------------------------------
@@ -309,7 +313,10 @@ export function renderStories(model: ComponentModel): string {
       ...fields,
       ...(children.jsx === undefined ? [] : [`children: (${children.jsx})`]),
     ];
-    return `export const ${storyName(contract, cell, taken)}: Story = { args: { ${args.join(", ")} } };`;
+    // La cella di Penpot ha una larghezza fissa: la radice la lascia a chi la
+    // usa, quindi la story, che è chi la usa, la mette nel contenitore.
+    const box = cell.width === undefined ? [] : [`decorators: [(Story) => <div style={{ width: ${cell.width} }}><Story /></div>]`];
+    return `export const ${storyName(contract, cell, taken)}: Story = { ${[...box, `args: { ${args.join(", ")} }`].join(", ")} };`;
   });
   return [
     importLine("type { Meta, StoryObj }", "@storybook/react"),
