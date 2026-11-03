@@ -75,3 +75,6 @@ temp
 
 # backup della migrazione BMad v6→v7 (non committare)
 .v6-v7-migration-backup-*/
+
+# screenshot del pannello browser (artefatti di sessione)
+.openchamber/

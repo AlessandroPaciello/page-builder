@@ -89,8 +89,8 @@ describe("buildOrder", () => {
   it("una sezione da sola entra nell'ordine col suo nome: gli esempi dello slot non sono dipendenze", () => {
     const result = buildOrder([carouselLettura()], [], CONTRACTS, SECTIONS);
     expect(result).toEqual({ order: ["carousel"], findings: [] });
-    // `product-card` non è in CONTRACTS: se lo slot fosse visitato sarebbe un blocco.
-    expect(result.findings.some((finding) => finding.message.includes("product-card"))).toBe(false);
+    // `shop-card` non è né da generare né già generato: se lo slot fosse visitato sarebbe un blocco.
+    expect(result.findings.some((finding) => finding.message.includes("shop-card"))).toBe(false);
   });
 
   it("il nome di una lettura viene dal contratto, anche se il layer si chiama diversamente (sezione)", () => {

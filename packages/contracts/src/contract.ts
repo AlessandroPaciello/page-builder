@@ -30,6 +30,15 @@ export interface Axis<V extends AxisValues = AxisValues> {
 export interface FieldDef {
   readonly schema: z.ZodType;
   readonly kind: FieldKind;
+  /**
+   * Il valore d'esempio che la story generata e lo scaffold mettono nell'arg
+   * del field: serve quando il campione ricavato dallo schema non si vede, per
+   * esempio un'immagine segnaposto per un `z.url()`. Senza `sample` il
+   * generatore ricava il campione dal tipo zod (nome del field, `1`, `false`,
+   * il primo valore di un enum). Non entra nel fingerprint: non lega le pagine
+   * salvate.
+   */
+  readonly sample?: unknown;
 }
 
 /**

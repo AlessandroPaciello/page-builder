@@ -9,7 +9,7 @@ hitl: true
 risk: medium
 tracker_id: "127"
 remote: "https://github.com/AlessandroPaciello/page-builder/issues/127"
-tracker_status: backlog
+tracker_status: in-progress
 ---
 
 # Badge e ShopCard con le due strade

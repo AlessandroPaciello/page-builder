@@ -111,8 +111,12 @@ export function fieldShape(name: string, schema: unknown): FieldShape {
   }
 }
 
+/** I field col campione dal tipo zod, sostituito dal `sample` dichiarato nel contratto quando c'è. */
 function fieldsOf(contract: ComponentContract): [string, FieldShape][] {
-  return Object.entries(contract.fields).map(([name, field]) => [name, fieldShape(name, field.schema)]);
+  return Object.entries(contract.fields).map(([name, field]) => {
+    const shape = fieldShape(name, field.schema);
+    return [name, field.sample === undefined ? shape : { ...shape, sample: field.sample }];
+  });
 }
 
 // --- Scomposizione in cva ---------------------------------------------------
@@ -275,7 +279,7 @@ function fieldArgs(contract: ComponentContract): string[] {
   return fieldsOf(contract).flatMap(([name, shape]) => (shape.optional || shape.sample === undefined ? [] : [`${propKey(name)}: ${literal(shape.sample)}`]));
 }
 
-/** Un figlio di default della sezione come JSX: `<ProductCard key="slide-1" … />`. */
+/** Un figlio di default della sezione come JSX: `<ShopCard key="slide-1" … />`. */
 function defaultChild(node: { readonly id: string; readonly component: string; readonly props: Readonly<Record<string, unknown>> }): string {
   const attributes = [`key=${q(node.id)}`, ...Object.entries(node.props).map(([name, value]) => `${propKey(name)}={${literal(value)}}`)];
   return `<${pascalCase(node.component)} ${attributes.join(" ")} />`;
@@ -309,7 +313,10 @@ export function renderStories(model: ComponentModel): string {
       ...fields,
       ...(children.jsx === undefined ? [] : [`children: (${children.jsx})`]),
     ];
-    return `export const ${storyName(contract, cell, taken)}: Story = { args: { ${args.join(", ")} } };`;
+    // La cella di Penpot ha una larghezza fissa: la radice la lascia a chi la
+    // usa, quindi la story, che è chi la usa, la mette nel contenitore.
+    const box = cell.width === undefined ? [] : [`decorators: [(Story) => <div style={{ width: ${cell.width} }}><Story /></div>]`];
+    return `export const ${storyName(contract, cell, taken)}: Story = { ${[...box, `args: { ${args.join(", ")} }`].join(", ")} };`;
   });
   return [
     importLine("type { Meta, StoryObj }", "@storybook/react"),

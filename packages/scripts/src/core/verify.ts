@@ -1,6 +1,6 @@
 import { COMPONENT_CONTRACTS, SECTION_DEFINITIONS, type ComponentContract, type SectionDefinition } from "@app/contracts";
 
-import { GEOMETRY_ENTRIES, rootSizeClasses, type Scale } from "./geometry";
+import { GEOMETRY_ENTRIES, rootFixedWidth, rootSizeClasses, type Scale } from "./geometry";
 import { byString, variantLabel, withInvalidAnswer } from "./internal";
 import { camelCase, kebabOf, pascalCase, PART_KEY, wordsOf } from "./naming";
 import { layerClasses, type TokenTypeOf } from "./registry";
@@ -78,6 +78,8 @@ export interface ModelCell {
   readonly rendering: Readonly<Record<string, string>>;
   readonly state: (typeof STATE_VALUES)[number];
   readonly label: string;
+  /** La larghezza fissa della radice in Penpot, se c'è: il contenitore della story. */
+  readonly width?: number;
 }
 
 export interface ModelInstance {
@@ -375,7 +377,8 @@ function normalizeCells(cellsIn: readonly Cella[], contract: ComponentContract):
     for (const axis of contract.axes) axes[axis.name] ??= axis.default;
     for (const axis of declared) rendering[axis.name] ??= axis.base;
     if (!ok) return;
-    const model: ModelCell = { index, axes, rendering, state, label };
+    const width = rootFixedWidth(cell.root);
+    const model: ModelCell = { index, axes, rendering, state, label, ...(width === undefined ? {} : { width }) };
     const identity = cellKey(contract, declared, model);
     if (seenCells.has(identity)) {
       findings.push(blocco(label, "Cella doppia: un'altra cella ha gli stessi valori di variante e lo stesso stato."));

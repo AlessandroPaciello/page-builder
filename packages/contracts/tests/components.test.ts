@@ -13,7 +13,7 @@ import { multiselect } from "../src/components/multiselect";
 import { multiselectPanel } from "../src/components/multiselect-panel";
 import { multiselectTrigger } from "../src/components/multiselect-trigger";
 import { option } from "../src/components/option";
-import { productCard } from "../src/components/product-card";
+import { shopCard } from "../src/components/shop-card";
 import { contractId, propsSchema, type ComponentContract } from "../src/contract";
 import { COMPONENT_CONTRACTS } from "../src/registry";
 
@@ -91,33 +91,47 @@ describe("alert@1 (ridotto, Story 2.16)", () => {
   });
 });
 
-describe("product-card@1 (Story 2.12, primo contratto ridotto)", () => {
-  it("ha un solo asse option, sei field e nessuna estensione v1", () => {
-    expect(productCard.name).toBe("product-card");
-    expect(productCard.version).toBe(1);
-    expect(productCard.axes).toEqual([
-      { name: "promo", type: "option", values: ["none", "offer", "discount"], default: "none" },
+describe("shop-card@1 (Story 2.40, contratto dalla forma disegnata)", () => {
+  it("ha un asse option, otto field content e nessuna estensione v1", () => {
+    expect(shopCard.name).toBe("shop-card");
+    expect(shopCard.version).toBe(1);
+    expect(shopCard.axes).toEqual([{ name: "size", type: "option", values: ["default", "sm"], default: "default" }]);
+    expect(Object.keys(shopCard.fields)).toEqual([
+      "href",
+      "image",
+      "imageAlt",
+      "heading",
+      "description",
+      "price",
+      "tags",
+      "ctaLabel",
     ]);
-    expect(Object.keys(productCard.fields)).toEqual(["image", "price", "description", "tags", "href", "badgeLabel"]);
-    expect("parts" in productCard).toBe(false);
-    expect("partRoles" in productCard).toBe(false);
-    for (const field of Object.values(productCard.fields)) expect(field.kind).toBe("content");
+    expect("parts" in shopCard).toBe(false);
+    expect("partRoles" in shopCard).toBe(false);
+    for (const field of Object.values(shopCard.fields)) expect(field.kind).toBe("content");
   });
 
-  it("valida le props: url per image e href, array di stringhe per tags, badgeLabel testo dell'editor", () => {
-    const schema = propsSchema(productCard);
+  it("valida le props: url per href e image, gli altri field sono testo obbligatorio", () => {
+    const schema = propsSchema(shopCard);
     const valid = {
-      image: "https://example.test/a.png",
-      price: "9,90 €",
-      description: "Desc",
-      tags: ["nuovo", "bio"],
       href: "https://example.test/p/1",
-      badgeLabel: "Offerta",
+      image: "https://example.test/a.png",
+      imageAlt: "Fragole",
+      heading: "Strawberry",
+      description: "Desc",
+      price: "$50",
+      tags: ["Seasonal Favorite", "9 left"],
+      ctaLabel: "Add to cart",
     };
-    expect(schema.parse(valid)).toEqual({ promo: "none", ...valid });
+    expect(schema.parse(valid)).toEqual({ size: "default", ...valid });
     expect(schema.safeParse({ ...valid, image: "non-un-url" }).success).toBe(false);
-    expect(schema.safeParse({ ...valid, tags: "bio" }).success).toBe(false);
-    expect(schema.safeParse({ ...valid, promo: "sale" }).success).toBe(false);
+    expect(schema.safeParse({ ...valid, href: "non-un-url" }).success).toBe(false);
+    expect(schema.safeParse({ ...valid, size: "lg" }).success).toBe(false);
+    for (const field of ["imageAlt", "heading", "description", "price", "tags", "ctaLabel"]) {
+      const rest: Record<string, unknown> = { ...valid };
+      delete rest[field];
+      expect(schema.safeParse(rest).success, `field mancante: ${field}`).toBe(false);
+    }
   });
 });
 
@@ -202,5 +216,6 @@ describe("registry e contractId", () => {
     expect(contractId(badge)).toBe("badge@1");
     expect(contractId(input)).toBe("input@1");
     expect(contractId(accordionItem)).toBe("accordion-item@1");
+    expect(contractId(shopCard)).toBe("shop-card@1");
   });
 });

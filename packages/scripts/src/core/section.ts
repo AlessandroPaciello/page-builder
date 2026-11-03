@@ -161,7 +161,7 @@ export interface SlotResolution {
   readonly findings: Finding[];
 }
 
-/** Il nome kebab del contratto di un'istanza (`ProductCard` → `product-card`). */
+/** Il nome kebab del contratto di un'istanza (`ShopCard` → `shop-card`). */
 function instanceNameOf(instance: { readonly component: string; readonly contract?: string }): string {
   return instance.contract === undefined ? kebabOf(instance.component) : instance.contract.split("@")[0]!;
 }
